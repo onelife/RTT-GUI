@@ -20,6 +20,7 @@
  * Change Logs:
  * Date           Author       Notes
  * 2009-10-04     Bernard      first version
+ * 2019-05-17     onelife      refactor
  */
 #ifndef __RTGUI_OBJECT_H__
 #define __RTGUI_OBJECT_H__
@@ -39,21 +40,10 @@ extern "C" {
 #define RTGUI_DESTRUCTOR(destructor) ((rtgui_destructor_t)(destructor))
 
 /* pre-definition */
-struct rtgui_obj;
 struct rtgui_app;
 
-typedef struct rtgui_obj rtgui_obj_t;
-typedef void (*rtgui_constructor_t)(rtgui_obj_t *object);
-typedef void (*rtgui_destructor_t)(rtgui_obj_t *object);
 
-/* rtgui type */
-typedef struct rtgui_type {
-    char *name;
-    const struct rtgui_type *parent;
-    rtgui_constructor_t constructor;
-    rtgui_destructor_t destructor;
-    rt_size_t size;
-} rtgui_type_t;
+
 
 #define RTGUI_TYPE(type)            (_rtgui_##type##_get_type())
 #define RTGUI_PARENT_TYPE(type)     (const rtgui_type_t *)(&_rtgui_##type)
@@ -99,48 +89,20 @@ DECLARE_CLASS_TYPE(object);
 /** Gets the type of an object */
 #define RTGUI_OBJECT_TYPE       RTGUI_TYPE(object)
 /** Casts the object to an rtgui_obj_t */
-#define RTGUI_OBJECT(obj)       (RTGUI_OBJECT_CAST((obj), RTGUI_OBJECT_TYPE, struct rtgui_obj))
+#define RTGUI_OBJECT(obj)       (RTGUI_OBJECT_CAST((obj), RTGUI_OBJECT_TYPE, rtgui_obj_t))
 /** Checks if the object is an rtgui_Object */
 #define RTGUI_IS_OBJECT(obj)    (RTGUI_OBJECT_CHECK_TYPE((obj), RTGUI_OBJECT_TYPE))
 
-enum rtgui_object_flag {
-    RTGUI_OBJECT_FLAG_NONE     = 0x0000,
-    RTGUI_OBJECT_FLAG_STATIC   = 0x0001,
-    RTGUI_OBJECT_FLAG_DISABLED = 0x0002,
-    /*  When an object is created, it's flag is set to valid.
-        When an object is deleted, the valid bits will be cleared. */
-    RTGUI_OBJECT_FLAG_VALID    = 0xAB00,
-};
-
-/* rtgui base object */
-struct rtgui_obj {
-    /* object type */
-    const rtgui_type_t *type;
-    /* the event handler */
-    rtgui_evt_hdl_p event_handler;
-
-    enum rtgui_object_flag flag;
-
-    rt_ubase_t id;
-};
 
 rtgui_obj_t *rtgui_object_create(const rtgui_type_t *type);
 void rtgui_object_destroy(rtgui_obj_t *object);
 
 /* set the event handler of object */
-void rtgui_object_set_event_handler(struct rtgui_obj *object,
-    rtgui_evt_hdl_p handler);
+void rtgui_object_set_event_handler(rtgui_obj_t *object,
+    rtgui_evt_hdl_t handler);
 /* object default event handler */
-rt_bool_t rtgui_object_event_handler(struct rtgui_obj *object,
-    union rtgui_evt_generic *event);
-/* helper micro. widget event handlers could use this. */
-#define RTGUI_WIDGET_EVENT_HANDLER_PREPARE \
-    struct rtgui_widget *widget;  \
-    RT_ASSERT(obj != RT_NULL); \
-    RT_ASSERT(evt != RT_NULL);  \
-    widget = RTGUI_WIDGET(obj); \
-    /* supress compiler warning */ \
-    widget = widget;
+rt_bool_t rtgui_object_event_handler(rtgui_obj_t *object,
+    rtgui_evt_generic_t *event);
 
 /** handle @param event on @param object's own event handler
  *
@@ -148,8 +110,8 @@ rt_bool_t rtgui_object_event_handler(struct rtgui_obj *object,
  * does not interested in any event, it will return RT_FALSE. Otherwise, the
  * return code of that handler is returned.
  */
-rt_inline rt_bool_t rtgui_object_handle(struct rtgui_obj *obj,
-    union rtgui_evt_generic *evt) {
+rt_inline rt_bool_t rtgui_object_handle(rtgui_obj_t *obj,
+    rtgui_evt_generic_t *evt) {
     if (obj->event_handler) {
         return obj->event_handler(obj, evt);
     }
@@ -160,10 +122,10 @@ rtgui_obj_t *rtgui_object_check_cast(rtgui_obj_t *object,
     const rtgui_type_t *type, const char *func, int line);
 const rtgui_type_t *rtgui_object_object_type_get(rtgui_obj_t *object);
 
-void rtgui_object_set_id(struct rtgui_obj *obj, rt_uint32_t id);
-rt_uint32_t rtgui_object_get_id(struct rtgui_obj *obj);
-struct rtgui_obj* rtgui_get_object(struct rtgui_app *app, rt_uint32_t id);
-struct rtgui_obj* rtgui_get_self_object(rt_uint32_t id);
+void rtgui_object_set_id(rtgui_obj_t *obj, rt_uint32_t id);
+rt_uint32_t rtgui_object_get_id(rtgui_obj_t *obj);
+rtgui_obj_t* rtgui_get_object(struct rtgui_app *app, rt_uint32_t id);
+rtgui_obj_t* rtgui_get_self_object(rt_uint32_t id);
 
 #ifdef __cplusplus
 }

@@ -89,12 +89,8 @@ void rtgui_graphic_driver_vmode_exit(void)
 }
 RTM_EXPORT(rtgui_graphic_driver_vmode_exit);
 
-rt_bool_t rtgui_graphic_driver_is_vmode(void)
-{
-    if (_current_driver == &_vfb_driver)
-        return RT_TRUE;
-
-    return RT_FALSE;
+rt_bool_t rtgui_graphic_driver_is_vmode(void) {
+    return (_current_driver == &_vfb_driver);
 }
 RTM_EXPORT(rtgui_graphic_driver_is_vmode);
 
@@ -150,8 +146,7 @@ rtgui_graphic_driver_get_rect_buffer(const struct rtgui_graphic_driver *drv,
 }
 RTM_EXPORT(rtgui_graphic_driver_get_rect_buffer);
 #else /* GUIENGIN_USING_VFRAMEBUFFER */
-rt_bool_t rtgui_graphic_driver_is_vmode(void)
-{
+rt_bool_t rtgui_graphic_driver_is_vmode(void) {
     return RT_FALSE;
 }
 RTM_EXPORT(rtgui_graphic_driver_is_vmode);

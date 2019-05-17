@@ -56,7 +56,7 @@ struct rtgui_cursor
 
 #ifdef RTGUI_USING_WINMOVE
     /* move window rect and border */
-    struct rtgui_win *win;
+    rtgui_win_t *win;
     rtgui_rect_t    win_rect;
     rt_uint8_t      *win_left, *win_right;
     rt_uint8_t      *win_top, *win_bottom;
@@ -426,7 +426,7 @@ static void rtgui_cursor_show()
 #endif
 
 #ifdef RTGUI_USING_WINMOVE
-void rtgui_winrect_set(struct rtgui_win *win)
+void rtgui_winrect_set(rtgui_win_t *win)
 {
     /* set win rect show */
     _rtgui_cursor->win_rect_show = RT_TRUE;
@@ -441,7 +441,7 @@ void rtgui_winrect_set(struct rtgui_win *win)
 }
 
 rt_bool_t rtgui_winrect_moved_done(rtgui_rect_t *winrect,
-    struct rtgui_win **win) {
+    rtgui_win_t **win) {
     rt_bool_t moved = RT_FALSE;
 
     /* restore winrect */

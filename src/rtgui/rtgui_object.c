@@ -58,7 +58,7 @@ DEFINE_CLASS_TYPE(
     RT_NULL,
     _rtgui_object_constructor,
     _rtgui_object_destructor,
-    sizeof(struct rtgui_obj));
+    sizeof(rtgui_obj_t));
 RTM_EXPORT(_rtgui_object);
 
 void rtgui_type_object_construct(const rtgui_type_t *type,
@@ -213,16 +213,16 @@ const rtgui_type_t *rtgui_object_object_type_get(rtgui_obj_t *obj) {
 }
 RTM_EXPORT(rtgui_object_object_type_get);
 
-void rtgui_object_set_event_handler(struct rtgui_obj *obj,
-    rtgui_evt_hdl_p hdr) {
+void rtgui_object_set_event_handler(rtgui_obj_t *obj,
+    rtgui_evt_hdl_t hdr) {
     RT_ASSERT(obj != RT_NULL);
 
     obj->event_handler = hdr;
 }
 RTM_EXPORT(rtgui_object_set_event_handler);
 
-rt_bool_t rtgui_object_event_handler(struct rtgui_obj *obj,
-    union rtgui_evt_generic *evt) {
+rt_bool_t rtgui_object_event_handler(rtgui_obj_t *obj,
+    rtgui_evt_generic_t *evt) {
     (void)obj;
     (void)evt;
 
@@ -230,9 +230,9 @@ rt_bool_t rtgui_object_event_handler(struct rtgui_obj *obj,
 }
 RTM_EXPORT(rtgui_object_event_handler);
 
-void rtgui_object_set_id(struct rtgui_obj *obj, rt_uint32_t id) {
+void rtgui_object_set_id(rtgui_obj_t *obj, rt_uint32_t id) {
     #ifdef RTGUI_USING_ID_CHECK
-        struct rtgui_obj *_obj = rtgui_get_self_object(id);
+        rtgui_obj_t *_obj = rtgui_get_self_object(id);
         RT_ASSERT(!_obj);
     #endif
 
@@ -240,7 +240,7 @@ void rtgui_object_set_id(struct rtgui_obj *obj, rt_uint32_t id) {
 }
 RTM_EXPORT(rtgui_object_set_id);
 
-rt_uint32_t rtgui_object_get_id(struct rtgui_obj *obj) {
+rt_uint32_t rtgui_object_get_id(rtgui_obj_t *obj) {
     return obj->id;
 }
 RTM_EXPORT(rtgui_object_get_id);

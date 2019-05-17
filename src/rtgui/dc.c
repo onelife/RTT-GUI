@@ -38,7 +38,7 @@
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    LOG_LVL_DBG
 // # define LOG_LVL                   LOG_LVL_INFO
-# define LOG_TAG                    "GUI_WGT"
+# define LOG_TAG                    "GUI_DC "
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
@@ -1817,86 +1817,96 @@ extern void rtgui_mouse_show_cursor(void);
 extern void rtgui_mouse_hide_cursor(void);
 
 struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
-    struct rtgui_dc *dc;
-    struct rtgui_widget *widget, *parent;
-    struct rtgui_win *win;
+    struct rtgui_dc *dc = RT_NULL;
 
     RT_ASSERT(owner != RT_NULL);
 
-    win = owner->toplevel;
-    if (win == RT_NULL)
-        return RT_NULL;
+    LOG_D("dc begin");
+    do {
+        rtgui_win_t *win;
+        struct rtgui_widget *parent, *widget;
 
-    parent = (struct rtgui_widget *)win;
-
-    if (!(win->flag & RTGUI_WIN_FLAG_ACTIVATE) &&
-            (win->outer_clip.extents.x1 == win->outer_clip.extents.x2 ||
-             win->outer_clip.extents.y1 == win->outer_clip.extents.y2))
-        return RT_NULL;
-
-    if (!(win->flag & RTGUI_WIN_FLAG_ACTIVATE) &&
-            (parent->clip.extents.x1 == parent->clip.extents.x2 ||
-             parent->clip.extents.y1 == parent->clip.extents.y2))
-        return RT_NULL;
-
-    /* increase drawing count */
-    if (win->drawing == 0) {
-        memset(&(win->drawing_rect), 0x0, sizeof(struct rtgui_rect));
-    }
-    win->drawing ++;
-
-    /* always drawing on the virtual mode */
-    if (rtgui_graphic_driver_is_vmode() == RT_FALSE) {
-        /* set the initial visible as true */
-        RTGUI_WIDGET_DC_SET_VISIBLE(owner);
-
-        /* check the visible of widget */
-        widget = owner;
-        while (widget != RT_NULL) {
-            if (RTGUI_WIDGET_IS_HIDE(widget))
-            {
-                RTGUI_WIDGET_DC_SET_UNVISIBLE(owner);
-                win->drawing --;
-                return RT_NULL;
-            }
-            widget = widget->parent;
+        win = owner->toplevel;
+        if (!win) {
+            LOG_E("no toplevel");
+            break;
         }
-    }
 
-    rtgui_screen_lock(RT_WAITING_FOREVER);
+        if (!(win->flag & RTGUI_WIN_FLAG_ACTIVATE)) {
+            if ((win->outer_clip.extents.x1 == win->outer_clip.extents.x2) || \
+                (win->outer_clip.extents.y1 == win->outer_clip.extents.y2)) {
+                LOG_D("b1");
+                break;
+            }
 
-    /* create client or hardware DC */
-    if ((rtgui_region_is_flat(&owner->clip) == RT_EOK) &&
-            rtgui_rect_is_equal(&(owner->extent), &(owner->clip.extents)) == RT_EOK)
-        dc = rtgui_dc_hw_create(owner);
-    else
-        dc = rtgui_dc_client_create(owner);
+            parent = RTGUI_WIDGET(win);
+            if ((parent->clip.extents.x1 == parent->clip.extents.x2) || \
+                (parent->clip.extents.y1 == parent->clip.extents.y2)) {
+                LOG_D("b2");
+                break;
+            }
+        }
 
-    if (dc == RT_NULL)
-    {
-        /* restore drawing counter */
-        win->drawing--;
-        rtgui_screen_unlock();
-    }
-    else if (win->drawing == 1 && rtgui_graphic_driver_is_vmode() == RT_FALSE)
-    {
-        #ifdef RTGUI_USING_MOUSE_CURSOR
-            rt_mutex_take(&cursor_mutex, RT_WAITING_FOREVER);
-            rtgui_mouse_hide_cursor();
-        #endif
+        /* increase drawing count */
+        if (win->drawing == 0) {
+            memset(&(win->drawing_rect), 0x0, sizeof(struct rtgui_rect));
+        }
+        win->drawing++;
+        LOG_D("drawing %d", win->drawing);
 
-        if (!RTGUI_IS_WIN_TITLE(win)) {
-            /* send draw begin to server */
-            rtgui_evt_generic_t *evt;
+        /* always drawing on the virtual mode */
+        if (!rtgui_graphic_driver_is_vmode()) {
+            /* set the initial visible as true */
+            RTGUI_WIDGET_DC_SET_VISIBLE(owner);
+            /* check the visible of widget */
+            widget = owner;
+            while (widget) {
+                if (RTGUI_WIDGET_IS_HIDE(widget)) {
+                    RTGUI_WIDGET_DC_SET_UNVISIBLE(owner);
+                    win->drawing--;
+                    break;
+                }
+                widget = widget->parent;
+            }
+        }
 
-            /* send RTGUI_EVENT_UPDATE_BEGIN */
-            evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                rtgui_event_pool, RT_WAITING_FOREVER);
-            if (evt) {
+        rtgui_screen_lock(RT_WAITING_FOREVER);
+
+        /* create client or hardware DC */
+        if (rtgui_region_is_flat(&owner->clip) && \
+            rtgui_rect_is_equal(&(owner->extent), &(owner->clip.extents))) {
+            dc = rtgui_dc_hw_create(owner);
+        } else {
+            dc = rtgui_dc_client_create(owner);
+        }
+
+        if (!dc) {
+            /* restore drawing counter */
+            win->drawing--;
+            rtgui_screen_unlock();
+            LOG_E("no dc");
+            break;
+
+        } else if (win->drawing == 1 && !rtgui_graphic_driver_is_vmode()) {
+            #ifdef RTGUI_USING_MOUSE_CURSOR
+                rt_mutex_take(&cursor_mutex, RT_WAITING_FOREVER);
+                rtgui_mouse_hide_cursor();
+            #endif
+
+            if (!RTGUI_IS_WIN_TITLE(win)) {
+                /* send draw begin to server */
+                rtgui_evt_generic_t *evt;
                 rt_err_t ret;
-
+                /* send RTGUI_EVENT_UPDATE_BEGIN */
+                evt = (rtgui_evt_generic_t *)rt_mp_alloc(
+                    rtgui_event_pool, RT_WAITING_FOREVER);
+                if (!evt) {
+                    LOG_D("update mem err");
+                    break;
+                }
                 RTGUI_EVENT_UPDATE_BEGIN_INIT(&evt->update_begin);
                 evt->update_begin.rect = RTGUI_WIDGET(win)->extent;
+                LOG_D("post update");
                 ret = rtgui_server_post_event(evt);
                 if (ret) {
                     rt_mp_free(evt);
@@ -1904,18 +1914,20 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
                 }
             }
         }
-    }
+    } while (0);
 
+    LOG_D("dc %p", dc);
     return dc;
 }
 RTM_EXPORT(rtgui_dc_begin_drawing);
 
 void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
     struct rtgui_widget *owner;
-    struct rtgui_win *win;
+    rtgui_win_t *win;
 
     RT_ASSERT(dc != RT_NULL);
 
+    LOG_D("dc end");
     /* get owner */
     if (dc->type == RTGUI_DC_CLIENT)
         owner = RTGUI_CONTAINER_OF(dc, struct rtgui_widget, dc_type);
@@ -1964,7 +1976,7 @@ void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
                 //RTGUI_EVENT_UPDATE_END_INIT(&(eupdate));
                 //eupdate.rect = owner->extent;
 
-                //rtgui_server_post_event((struct rtgui_evt *)&eupdate, sizeof(eupdate));
+                //rtgui_server_post_event((rtgui_evt_base_t *)&eupdate, sizeof(eupdate));
             }
         }
     }

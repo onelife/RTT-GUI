@@ -24,7 +24,6 @@
  */
 
 #include "../include/rtgui.h"
-#include "../include/event.h"
 #include "../include/rtgui_system.h"
 #include "../include/rtgui_object.h"
 #include "../include/rtgui_app.h"
@@ -118,7 +117,7 @@ rt_bool_t rtgui_server_handle_mouse_btn(rtgui_evt_generic_t *evt) {
         #ifdef RTGUI_USING_WINMOVE
             if (rtgui_winrect_is_moved() && (evt->mouse.button & \
                 (RTGUI_MOUSE_BUTTON_LEFT | RTGUI_MOUSE_BUTTON_UP))) {
-                struct rtgui_win *win;
+                rtgui_win_t *win;
                 rtgui_rect_t rect;
 
                 if (rtgui_winrect_moved_done(&rect, &win)) {
@@ -217,11 +216,11 @@ rt_bool_t rtgui_server_handle_kbd(rtgui_evt_generic_t *evt) {
 
 static rt_bool_t rtgui_server_event_handler(rtgui_obj_t *obj,
     rtgui_evt_generic_t *evt) {
-    rt_uint32_t ack = RTGUI_STATUS_OK;
+    rt_uint32_t ack = RT_EOK;
     rt_bool_t done = RT_TRUE;
     (void)obj;
 
-    LOG_D("srv rx %d from %s", evt->base.type, evt->base.sender->mb->parent.parent.name);
+    LOG_D("srv rx %x from %s", evt->base.type, evt->base.sender->mb->parent.parent.name);
     switch (evt->base.type) {
     case RTGUI_EVENT_APP_CREATE:
     case RTGUI_EVENT_APP_DESTROY:
@@ -256,39 +255,39 @@ static rt_bool_t rtgui_server_event_handler(rtgui_obj_t *obj,
     /* window event */
     case RTGUI_EVENT_WIN_CREATE:
         if (RT_EOK != rtgui_topwin_add(&evt->win_create))
-            ack = RTGUI_STATUS_ERROR;
+            ack = RT_ERROR;
         break;
 
     case RTGUI_EVENT_WIN_SHOW:
         if (_show_win_hook) _show_win_hook();
         if (RT_EOK != rtgui_topwin_show(&evt->win_base))
-            ack = RTGUI_STATUS_ERROR;
+            ack = RT_ERROR;
         break;
 
     case RTGUI_EVENT_WIN_HIDE:
         if (RT_EOK != rtgui_topwin_hide(&evt->win_base))
-            ack = RTGUI_STATUS_ERROR;
+            ack = RT_ERROR;
         break;
 
     case RTGUI_EVENT_WIN_MOVE:
         if (RT_EOK != rtgui_topwin_move(evt))
-            ack = RTGUI_STATUS_ERROR;
+            ack = RT_ERROR;
         break;
 
     case RTGUI_EVENT_WIN_MODAL_ENTER:
         if (RT_EOK != rtgui_topwin_modal_enter(&evt->win_modal_enter))
-            ack = RTGUI_STATUS_ERROR;
+            ack = RT_ERROR;
         break;
 
     case RTGUI_EVENT_WIN_ACTIVATE:
         if (_act_win_hook) _act_win_hook();
         if (RT_EOK != rtgui_topwin_activate(&evt->win_activate))
-            ack = RTGUI_STATUS_ERROR;
+            ack = RT_ERROR;
         break;
 
     case RTGUI_EVENT_WIN_DESTROY:
         if (RT_EOK != rtgui_topwin_remove(evt->win_base.wid))
-            ack = RTGUI_STATUS_ERROR;
+            ack = RT_ERROR;
         break;
 
     case RTGUI_EVENT_WIN_RESIZE:
@@ -299,7 +298,7 @@ static rt_bool_t rtgui_server_event_handler(rtgui_obj_t *obj,
         if (!rtgui_wm_app) {
             rtgui_wm_app = evt->set_wm.app;
         } else {
-            ack = RTGUI_STATUS_ERROR;
+            ack = RT_ERROR;
         }
         break;
 
@@ -332,13 +331,13 @@ static rt_bool_t rtgui_server_event_handler(rtgui_obj_t *obj,
 
     default:
         LOG_E("bad event [%d]", evt->base.type);
-        ack = RTGUI_STATUS_ERROR;
+        ack = RT_ERROR;
         break;
     }
 
     if (done && evt) {
         rtgui_ack(evt, ack);
-        LOG_E("free %p [%d]", evt, ack);
+        // LOG_W("srv free %p [%d]", evt, ack);
         rt_mp_free(evt);
         evt = RT_NULL;
     }
@@ -383,7 +382,7 @@ rt_err_t rtgui_server_post_event(rtgui_evt_generic_t *evt) {
 
 rt_err_t rtgui_server_post_event_sync(rtgui_evt_generic_t *evt) {
     if (rtgui_srv_app) {
-        return rtgui_send_sync(rtgui_srv_app, RT_NULL, evt);
+        return rtgui_send_sync(rtgui_srv_app, evt);
     } else {
         LOG_E("post sync bf srv start");
         return -RT_ENOSYS;

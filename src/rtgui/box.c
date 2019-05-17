@@ -82,7 +82,7 @@ static void rtgui_box_layout_vertical(struct rtgui_box *box,
     rt_int32_t space_count;
     rt_int32_t next_x, next_y;
     rt_int32_t total_height, space_height;
-    union rtgui_evt_generic *evt;
+    rtgui_evt_generic_t *evt;
 
     /* find spaces */
     space_count  = 0;
@@ -176,7 +176,7 @@ static void rtgui_box_layout_horizontal(struct rtgui_box *box,
     rt_int32_t space_count;
     rt_int32_t next_x, next_y;
     rt_int32_t total_width, space_width;
-    union rtgui_evt_generic *evt;
+    rtgui_evt_generic_t *evt;
 
     /* find spaces */
     space_count = 0;

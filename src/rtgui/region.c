@@ -2061,14 +2061,8 @@ void rtgui_region_draw_clip(rtgui_region_t *region, struct rtgui_dc *dc)
 RTM_EXPORT(rtgui_region_draw_clip);
 #endif
 
-int rtgui_region_is_flat(rtgui_region_t *region)
-{
-    int num;
-
-    num = PIXREGION_NUM_RECTS(region);
-    if (num == 1) return RT_EOK;
-
-    return -RT_ERROR;
+rt_bool_t rtgui_region_is_flat(rtgui_region_t *region) {
+    return (1 == PIXREGION_NUM_RECTS(region));
 }
 RTM_EXPORT(rtgui_region_is_flat);
 
@@ -2219,15 +2213,10 @@ rt_bool_t rtgui_rect_is_intersect(const rtgui_rect_t *rect1,
 }
 RTM_EXPORT(rtgui_rect_is_intersect);
 
-int rtgui_rect_is_equal(const rtgui_rect_t *rect1, const rtgui_rect_t *rect2)
-{
-    if (*((rt_uint32_t *)(rect1)) == *((rt_uint32_t *)(rect2)) &&
-            *(((rt_uint32_t *)(rect1)) + 1) == *(((rt_uint32_t *)(rect2)) + 1))
-    {
-        return RT_EOK;
-    }
-
-    return -RT_ERROR;
+rt_bool_t rtgui_rect_is_equal(const rtgui_rect_t *rect1,
+    const rtgui_rect_t *rect2) {
+    return (*((rt_uint32_t *)rect1) == *((rt_uint32_t *)rect2) && \
+            *((rt_uint32_t *)rect1 + 1) == *((rt_uint32_t *)rect2 + 1));
 }
 RTM_EXPORT(rtgui_rect_is_equal);
 

@@ -57,26 +57,6 @@ extern "C" {
         ((r1)->y1 >= (r2)->y1) && \
         ((r1)->y2 <= (r2)->y2) )
 
-typedef struct rtgui_region_data rtgui_region_data_t;
-struct rtgui_dc;
-
-struct rtgui_region_data {
-    rt_uint32_t size;
-    rt_uint32_t numRects;
-    /* XXX: And why, exactly, do we have this bogus struct definition? */
-    /* rtgui_rect_t rects[size]; in memory but not explicitly declared */
-};
-
-typedef struct rtgui_region {
-    rtgui_rect_t          extents;
-    rtgui_region_data_t  *data;
-} rtgui_region_t;
-
-typedef enum {
-    RTGUI_REGION_STATUS_FAILURE,
-    RTGUI_REGION_STATUS_SUCCESS
-} rtgui_region_status_t;
-
 /* creation/destruction */
 
 void rtgui_region_init(rtgui_region_t *region);
@@ -118,7 +98,7 @@ void rtgui_region_reset(rtgui_region_t *region, rtgui_rect_t *rect);
 void rtgui_region_empty(rtgui_region_t *region);
 void rtgui_region_dump(rtgui_region_t *region);
 void rtgui_region_draw_clip(rtgui_region_t *region, struct rtgui_dc *dc);
-int rtgui_region_is_flat(rtgui_region_t *region);
+rt_bool_t rtgui_region_is_flat(rtgui_region_t *region);
 
 /* rect functions */
 extern rtgui_rect_t rtgui_empty_rect;
@@ -131,7 +111,8 @@ void rtgui_rect_intersect(rtgui_rect_t *src, rtgui_rect_t *dest);
 rt_bool_t rtgui_rect_contains_point(const rtgui_rect_t *rect, int x, int y);
 int  rtgui_rect_contains_rect(const rtgui_rect_t *rect1, const rtgui_rect_t *rect2);
 rt_bool_t rtgui_rect_is_intersect(const rtgui_rect_t *rect1, const rtgui_rect_t *rect2);
-int  rtgui_rect_is_equal(const rtgui_rect_t *rect1, const rtgui_rect_t *rect2);
+rt_bool_t rtgui_rect_is_equal(const rtgui_rect_t *rect1,
+  const rtgui_rect_t *rect2);
 rtgui_rect_t *rtgui_rect_set(rtgui_rect_t *rect, int x, int y, int w, int h);
 rt_bool_t rtgui_rect_is_empty(const rtgui_rect_t *rect);
 void rtgui_rect_union(rtgui_rect_t *src, rtgui_rect_t *dest);

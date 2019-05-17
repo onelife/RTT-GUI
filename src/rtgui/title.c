@@ -30,8 +30,7 @@
 #include "../include/widgets/title.h"
 
 #ifdef RT_USING_ULOG
-# define LOG_LVL                    LOG_LVL_DBG
-// # define LOG_LVL                   LOG_LVL_INFO
+# define LOG_LVL                    RTGUI_LOG_LEVEL
 # define LOG_TAG                    "GUI_TTL"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
@@ -68,7 +67,7 @@ static void _rtgui_win_title_deconstructor(rtgui_win_title_t *win_t) {
 }
 
 /* Public functions ----------------------------------------------------------*/
-rtgui_win_title_t *rtgui_win_title_create(struct rtgui_win *win) {
+rtgui_win_title_t *rtgui_win_title_create(rtgui_win_t *win) {
     rtgui_win_title_t *win_t;
 
     win_t = (rtgui_win_title_t *)rtgui_widget_create(RTGUI_WIN_TITLE_TYPE);
@@ -81,13 +80,11 @@ void rtgui_win_title_destroy(rtgui_win_title_t *win_t) {
     return rtgui_widget_destroy(RTGUI_WIDGET(win_t));
 }
 
-rt_bool_t rtgui_win_tile_event_handler(struct rtgui_obj *obj,
+rt_bool_t rtgui_win_tile_event_handler(rtgui_obj_t *obj,
     rtgui_evt_generic_t *evt) {
     struct rtgui_win_title *win_t;
     rtgui_widget_t *wgt;
     rt_bool_t done;
-
-    if (!obj || !evt) return RT_FALSE;
 
     win_t = RTGUI_WIN_TITLE(obj);
     wgt = RTGUI_WIDGET(obj);
@@ -97,6 +94,7 @@ rt_bool_t rtgui_win_tile_event_handler(struct rtgui_obj *obj,
     }
     done = RT_FALSE;
 
+    LOG_D("title rx %x from %s", evt->base.type, evt->base.sender->mb->parent.parent.name);
     switch (evt->base.type) {
     case RTGUI_EVENT_PAINT:
         rtgui_theme_draw_win(win_t);
@@ -153,10 +151,13 @@ rt_bool_t rtgui_win_tile_event_handler(struct rtgui_obj *obj,
         break;
     }
 
+    LOG_D("title done %d", done);
     if (done && evt) {
-        LOG_D("free %p", evt);
-        rt_mp_free(evt);
-        evt = RT_NULL;
+        if (!evt->base.ack) {
+            LOG_W("title free %p", evt);
+            rt_mp_free(evt);
+            evt = RT_NULL;
+        }
     }
     return done;
 }

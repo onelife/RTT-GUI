@@ -25,7 +25,6 @@
 #define __RTGUI_FONT_H__
 
 #include "./rtgui.h"
-#include "./list.h"
 
 
 #ifdef __cplusplus

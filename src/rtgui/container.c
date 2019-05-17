@@ -108,7 +108,7 @@ RTM_EXPORT(rtgui_container_dispatch_event);
 /* broadcast means that the return value of event handlers will be ignored. The
  * events will always reach every child.*/
 rt_bool_t rtgui_container_broadcast_event(struct rtgui_container *cntr,
-    union rtgui_evt_generic *evt) {
+    rtgui_evt_generic_t *evt) {
     struct rtgui_list_node *node;
 
     rtgui_list_foreach(node, &(cntr->children)) {
@@ -153,8 +153,8 @@ rt_bool_t rtgui_container_dispatch_mouse_event(rtgui_container_t *cntr,
 }
 RTM_EXPORT(rtgui_container_dispatch_mouse_event);
 
-rt_bool_t rtgui_container_event_handler(struct rtgui_obj *obj,
-    union rtgui_evt_generic *evt) {
+rt_bool_t rtgui_container_event_handler(rtgui_obj_t *obj,
+    rtgui_evt_generic_t *evt) {
     struct rtgui_container *cntr;
     struct rtgui_widget *wgt;
     rt_bool_t done;
@@ -164,6 +164,7 @@ rt_bool_t rtgui_container_event_handler(struct rtgui_obj *obj,
     wgt = RTGUI_WIDGET(obj);
     done = RT_FALSE;
 
+    LOG_D("cntr rx %x from %s", evt->base.type, evt->base.sender->mb->parent.parent.name);
     switch (evt->base.type) {
     case RTGUI_EVENT_PAINT:
     {
@@ -225,10 +226,13 @@ rt_bool_t rtgui_container_event_handler(struct rtgui_obj *obj,
         break;
     }
 
+    LOG_D("cntr done %d", done);
     if (done && evt) {
-        LOG_D("free %p", evt);
-        rt_mp_free(evt);
-        evt = RT_NULL;
+        if (!evt->base.ack) {
+            LOG_W("cntr free %p", evt);
+            rt_mp_free(evt);
+            evt = RT_NULL;
+        }
     }
     return done;
 }
@@ -269,8 +273,8 @@ void rtgui_container_add_child(rtgui_container_t *cntr,
 
     /* update children toplevel */
     if (RTGUI_WIDGET(cntr)->toplevel) {
-        union rtgui_evt_generic *evt;
-        struct rtgui_win *top;
+        rtgui_evt_generic_t *evt;
+        rtgui_win_t *top;
 
         /* send RTGUI_EVENT_UPDATE_TOPLVL */
         evt = rtgui_malloc(sizeof(struct rtgui_event_update_toplvl));
@@ -383,14 +387,14 @@ void rtgui_container_layout(struct rtgui_container *cntr) {
 }
 RTM_EXPORT(rtgui_container_layout);
 
-struct rtgui_obj* rtgui_container_get_object(struct rtgui_container *cntr,
+rtgui_obj_t* rtgui_container_get_object(struct rtgui_container *cntr,
                                                 rt_uint32_t id)
 {
     struct rtgui_list_node *node;
 
     rtgui_list_foreach(node, &(cntr->children))
     {
-        struct rtgui_obj *o;
+        rtgui_obj_t *o;
         o = RTGUI_OBJECT(rtgui_list_entry(node, struct rtgui_widget, sibling));
 
         if (o->id == id)
@@ -398,7 +402,7 @@ struct rtgui_obj* rtgui_container_get_object(struct rtgui_container *cntr,
 
         if (RTGUI_IS_CONTAINER(o))
         {
-            struct rtgui_obj *obj;
+            rtgui_obj_t *obj;
 
             obj = rtgui_container_get_object(RTGUI_CONTAINER(o), id);
             if (obj)

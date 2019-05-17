@@ -27,7 +27,7 @@
 #include "../include/rtgui.h"
 #include "../include/image.h"
 #include "../include/font.h"
-#include "../include/event.h"
+#include "../include/types.h"
 #include "../include/rtgui_app.h"
 #include "../include/rtgui_server.h"
 #include "../include/rtgui_system.h"
@@ -117,7 +117,7 @@ static void rtgui_time_out(void *param) {
 }
 
 rtgui_timer_t *rtgui_timer_create(rt_int32_t time, rt_int32_t flag,
-    rtgui_timeout_func timeout, void *param) {
+    rtgui_timeout_hdl_t timeout, void *param) {
     rtgui_timer_t *timer;
 
     timer = (rtgui_timer_t *)rtgui_malloc(sizeof(rtgui_timer_t));
@@ -375,58 +375,6 @@ FINSH_FUNCTION_EXPORT(list_guimem, display memory information);
 /* RTGUI Event Dump                                                     */
 /************************************************************************/
 #ifdef RTGUI_EVENT_DEBUG
-    const char *rtgui_event_string[] = {
-        /* application event */
-        "APP_CREATE",           /* create an application */
-        "APP_DESTROY",          /* destroy an application */
-        "APP_ACTIVATE",         /* activate an application */
-
-        /* window event */
-        "WIN_CREATE",           /* create a window  */
-        "WIN_DESTROY",          /* destroy a window     */
-        "WIN_SHOW",             /* show a window        */
-        "WIN_HIDE",             /* hide a window        */
-        "WIN_ACTIVATE",         /* activate a window    */
-        "WIN_DEACTIVATE",       /* deactivate a window  */
-        "WIN_CLOSE",            /* close a window       */
-        "WIN_MOVE",             /* move a window        */
-        "WIN_RESIZE",           /* resize a window      */
-        "WIN_UPDATE_END",
-        "WIN_MODAL_ENTER",          /* a window modals      */
-
-        "SET_WM",               /* set window manager   */
-
-        "UPDATE_BEGIN",         /* begin of update rect */
-        "UPDATE_END",           /* end of update rect   */
-        "MONITOR_ADD",          /* add a monitor rect   */
-        "MONITOR_REMOVE",       /* remove a monitor rect*/
-        "SHOW",                 /* the widget is going to be shown */
-        "HIDE",                 /* the widget is going to be hidden */
-        "PAINT",                /* paint on screen      */
-        "TIMER",                /* timer                */
-        "UPDATE_TOPLVL",        /* update toplevel      */
-
-        "VPAINT_REQ",           /* virtual paint request */
-
-        /* clip rect information */
-        "CLIP_INFO",            /* clip rect info       */
-
-        /* mouse and keyboard event */
-        "MOUSE_MOTION",         /* mouse motion */
-        "MOUSE_BUTTON",         /* mouse button info    */
-        "KBD",                  /* keyboard info        */
-        "TOUCH",                /* touch info           */
-        "GESTURE",              /* gesture              */
-
-        "FOCUSED",              /* widget got focuse    */
-        "SCROLLED",             /* scroll bar scrolled  */
-        "RESIZE",               /* widget resize        */
-        "SELECTED",             /* widget selected      */
-        "UNSELECTED",           /* widget unselected    */
-        "MV_MODEL",             /* modal chaned in MV   */
-        "BUS_NOTIFY_EVENT",
-    };
-
     static void rtgui_event_dump(struct rtgui_app* app,
         rtgui_evt_generic_t *evt) {
         char *sender;
@@ -446,12 +394,12 @@ FINSH_FUNCTION_EXPORT(list_guimem, display memory information);
         }
 
         if (evt->base.type >= RTGUI_EVENT_COMMAND) {
-            rt_kprintf("[%-*.s] (%-*.s) => [%-*.s]\n",  RT_NAME_MAX, sender, 16,
-                "COMMAND",  RT_NAME_MAX, app->name);
+            rt_kprintf("[%-*.s] (%s) => [%-*.s]\n",  RT_NAME_MAX, sender,
+                "CMD ",  RT_NAME_MAX, app->name);
             return;
         } else {
-            rt_kprintf("[%-*.s] (%-*.s) => [%-*.s] { ", RT_NAME_MAX, sender, 16,
-                rtgui_event_string[evt->base.type], RT_NAME_MAX, app->name);
+            rt_kprintf("[%-*.s] (%04x) => [%-*.s] { ", RT_NAME_MAX, sender,
+                evt->base.type, RT_NAME_MAX, app->name);
         }
 
         switch (evt->base.type) {
@@ -576,8 +524,7 @@ rt_err_t rtgui_send(rtgui_app_t* app, rtgui_evt_generic_t *evt,
 }
 RTM_EXPORT(rtgui_send);
 
-rt_err_t rtgui_send_sync(rtgui_app_t* dst, struct rtgui_app *src,
-    rtgui_evt_generic_t *evt) {
+rt_err_t rtgui_send_sync(rtgui_app_t* dst, rtgui_evt_generic_t *evt) {
     rt_ubase_t ack;
     rt_err_t ret;
 
@@ -597,7 +544,7 @@ rt_err_t rtgui_send_sync(rtgui_app_t* dst, struct rtgui_app *src,
             LOG_E("rx ack err %d", ret);
             break;
         }
-        if (ack != RTGUI_STATUS_OK) {
+        if (ack != RT_EOK) {
             LOG_E("ack err %d", ack);
             ret = -RT_ERROR;
         }

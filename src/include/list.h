@@ -26,19 +26,11 @@
 
 #include "./rtgui.h"
 
-struct rtgui_list_node
-{
-    struct rtgui_list_node *next;
-};
-typedef struct rtgui_list_node rtgui_list_t;
-
-rt_inline void rtgui_list_init(rtgui_list_t *l)
-{
+rt_inline void rtgui_list_init(rtgui_list_t *l) {
     l->next = (struct rtgui_list_node *)0;
 }
 
-rt_inline void rtgui_list_append(rtgui_list_t *l, rtgui_list_t *n)
-{
+rt_inline void rtgui_list_append(rtgui_list_t *l, rtgui_list_t *n) {
     struct rtgui_list_node *node;
 
     node = l;
@@ -49,21 +41,19 @@ rt_inline void rtgui_list_append(rtgui_list_t *l, rtgui_list_t *n)
     n->next = (struct rtgui_list_node *) 0;
 }
 
-rt_inline void rtgui_list_insert(rtgui_list_t *l, rtgui_list_t *n)
-{
+rt_inline void rtgui_list_insert(rtgui_list_t *l, rtgui_list_t *n) {
     n->next = l->next;
     l->next = n;
 }
 
-rt_inline rtgui_list_t *rtgui_list_remove(rtgui_list_t *l, rtgui_list_t *n)
-{
+rt_inline rtgui_list_t *rtgui_list_remove(rtgui_list_t *l, rtgui_list_t *n) {
     /* remove slist head */
     struct rtgui_list_node *node = l;
-    while (node->next && node->next != n) node = node->next;
-
+    while (node->next && (node->next != n))
+        node = node->next;
     /* remove node */
-    if (node->next != (rtgui_list_t *)0) node->next = node->next->next;
-
+    if (node->next)
+        node->next = node->next->next;
     return l;
 }
 

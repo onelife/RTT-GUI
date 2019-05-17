@@ -27,12 +27,11 @@
 #include "../rtgui.h"
 #include "../rtgui_server.h"
 #include "../region.h"
-#include "../event.h"
 #include "./title.h"
 
 /* add or remove a top win */
 rt_err_t rtgui_topwin_add(struct rtgui_event_win_create *event);
-rt_err_t rtgui_topwin_remove(struct rtgui_win *wid);
+rt_err_t rtgui_topwin_remove(rtgui_win_t *wid);
 rt_err_t rtgui_topwin_activate(struct rtgui_event_win_activate *event);
 rt_err_t rtgui_topwin_activate_topwin(struct rtgui_topwin *win);
 
@@ -43,7 +42,7 @@ rt_err_t rtgui_topwin_hide(struct rtgui_event_win *event);
 /* move a window */
 rt_err_t rtgui_topwin_move(rtgui_evt_generic_t *event);
 /* resize a window */
-void rtgui_topwin_resize(struct rtgui_win *wid, rtgui_rect_t *r);
+void rtgui_topwin_resize(rtgui_win_t *wid, rtgui_rect_t *r);
 /* a window is entering modal mode */
 rt_err_t rtgui_topwin_modal_enter(struct rtgui_event_win_modal_enter *event);
 
@@ -58,8 +57,8 @@ void rtgui_topwin_title_ondraw(struct rtgui_topwin *win);
 void rtgui_topwin_title_onmouse(struct rtgui_topwin *win, struct rtgui_event_mouse *event);
 
 /* monitor rect */
-void rtgui_topwin_append_monitor_rect(struct rtgui_win *wid, rtgui_rect_t *rect);
-void rtgui_topwin_remove_monitor_rect(struct rtgui_win *wid, rtgui_rect_t *rect);
+void rtgui_topwin_append_monitor_rect(rtgui_win_t *wid, rtgui_rect_t *rect);
+void rtgui_topwin_remove_monitor_rect(rtgui_win_t *wid, rtgui_rect_t *rect);
 
 /* get the topwin that is currently focused */
 struct rtgui_topwin *rtgui_topwin_get_focus(void);

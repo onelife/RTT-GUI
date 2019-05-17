@@ -25,9 +25,8 @@
 #define __RTGUI_WIDGET_H__
 
 #include "../rtgui.h"
-#include "../list.h"
+// #include "../list.h"
 #include "../region.h"
-#include "../event.h"
 #include "../color.h"
 #include "../font.h"
 
@@ -70,8 +69,8 @@ extern "C" {
 #define RTGUI_WIDGET_SET_UNFOCUSABLE(w) RTGUI_WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_FOCUSABLE
 
 #define RTGUI_WIDGET_IS_DC_VISIBLE(w)   (RTGUI_WIDGET_FLAG(w) & RTGUI_WIDGET_FLAG_DC_VISIBLE)
-#define RTGUI_WIDGET_DC_SET_VISIBLE(w)  RTGUI_WIDGET_FLAG(w) |= RTGUI_WIDGET_FLAG_DC_VISIBLE
-#define RTGUI_WIDGET_DC_SET_UNVISIBLE(w) RTGUI_WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_DC_VISIBLE
+#define RTGUI_WIDGET_DC_SET_VISIBLE(w)  (RTGUI_WIDGET_FLAG(w) |= RTGUI_WIDGET_FLAG_DC_VISIBLE)
+#define RTGUI_WIDGET_DC_SET_UNVISIBLE(w) (RTGUI_WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_DC_VISIBLE)
 #define RTGUI_WIDGET_DC(w)              ((struct rtgui_dc*)&((w)->dc_type))
 
 DECLARE_CLASS_TYPE(widget);
@@ -83,68 +82,19 @@ DECLARE_CLASS_TYPE(widget);
 /** Check if the object is a rtgui_widget */
 #define RTGUI_IS_WIDGET(obj)    (RTGUI_OBJECT_CHECK_TYPE((obj), RTGUI_WIDGET_TYPE))
 
-/*
- * the base widget object
- */
-typedef struct rtgui_widget
-{
-    /* inherit from rtgui_obj */
-    struct rtgui_obj object;
-
-    /* the widget that contains this widget */
-    struct rtgui_widget *parent;
-    /* the window that contains this widget */
-    struct rtgui_win *toplevel;
-    /* the widget children and sibling */
-    rtgui_list_t sibling;
-
-    /* widget flag */
-    rt_int32_t flag;
-
-    /* hardware device context */
-    rt_ubase_t dc_type;
-    const struct rtgui_dc_engine *dc_engine;
-
-    /* the graphic context of widget */
-    rtgui_gc_t gc;
-
-    /* the widget extent */
-    rtgui_rect_t extent;
-    /* the visiable extent (includes the rectangles of children) */
-    rtgui_rect_t extent_visiable;
-    /* the rect clip information */
-    rtgui_region_t clip;
-
-    /* minimal width and height of widget */
-    rt_int16_t min_width, min_height;
-    /* widget align */
-    rt_int32_t align;
-    rt_uint16_t border;
-    rt_uint16_t border_style;
-
-    /* call back */
-    rt_bool_t (*on_focus_in)(struct rtgui_obj *widget,
-        union rtgui_evt_generic *event);
-    rt_bool_t (*on_focus_out)(struct rtgui_obj *widget,
-        union rtgui_evt_generic *event);
-
-    /* user private data */
-    rt_uint32_t user_data;
-} rtgui_widget_t;
-
 rtgui_widget_t *rtgui_widget_create(const rtgui_type_t *widget_type);
 void rtgui_widget_destroy(rtgui_widget_t *widget);
 
-rt_bool_t rtgui_widget_event_handler(struct rtgui_obj *object,
-    union rtgui_evt_generic *event);
+rt_bool_t rtgui_widget_event_handler(rtgui_obj_t *object,
+    rtgui_evt_generic_t *event);
 
 /* focus and unfocus */
 void rtgui_widget_focus(rtgui_widget_t *widget);
 void rtgui_widget_unfocus(rtgui_widget_t *widget);
 
 /* event handler for each command */
-void rtgui_widget_set_onfocus(rtgui_widget_t *widget, rtgui_evt_hdl_p handler);
-void rtgui_widget_set_onunfocus(rtgui_widget_t *widget, rtgui_evt_hdl_p handler);
+void rtgui_widget_set_onfocus(rtgui_widget_t *widget, rtgui_evt_hdl_t handler);
+void rtgui_widget_set_onunfocus(rtgui_widget_t *widget, rtgui_evt_hdl_t handler);
 
 /* get and set rect of widget */
 void rtgui_widget_get_rect(rtgui_widget_t *widget, rtgui_rect_t *rect);
@@ -179,18 +129,18 @@ void rtgui_widget_move_to_logic(rtgui_widget_t *widget, int dx, int dy);
 void rtgui_widget_update_clip(rtgui_widget_t *widget);
 
 /* get the toplevel widget of widget */
-struct rtgui_win *rtgui_widget_get_toplevel(rtgui_widget_t *widget);
-rt_bool_t rtgui_widget_onupdate_toplvl(struct rtgui_obj *object,
-    union rtgui_evt_generic *event);
+rtgui_win_t *rtgui_widget_get_toplevel(rtgui_widget_t *widget);
+rt_bool_t rtgui_widget_onupdate_toplvl(rtgui_obj_t *object,
+    rtgui_evt_generic_t *event);
 
 void rtgui_widget_show(rtgui_widget_t *widget);
-rt_bool_t rtgui_widget_onshow(struct rtgui_obj *object,
-    union rtgui_evt_generic *event);
+rt_bool_t rtgui_widget_onshow(rtgui_obj_t *object,
+    rtgui_evt_generic_t *event);
 void rtgui_widget_hide(rtgui_widget_t *widget);
-rt_bool_t rtgui_widget_onhide(struct rtgui_obj *object,
-    union rtgui_evt_generic *event);
+rt_bool_t rtgui_widget_onhide(rtgui_obj_t *object,
+    rtgui_evt_generic_t *event);
 void rtgui_widget_update(rtgui_widget_t *widget);
-rt_bool_t rtgui_widget_onpaint(struct rtgui_obj *object, struct rtgui_evt *event);
+rt_bool_t rtgui_widget_onpaint(rtgui_obj_t *object, rtgui_evt_base_t *event);
 
 /* get parent color */
 rtgui_color_t rtgui_widget_get_parent_foreground(rtgui_widget_t *widget);

@@ -1,0 +1,665 @@
+/*
+ * File      : types.h
+ * This file is part of RT-Thread GUI Engine
+ * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ * 2019-05-17     onelife      move all typedef here
+ */
+#ifndef __RTGUI_TYPES_H__
+#define __RTGUI_TYPES_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Includes ------------------------------------------------------------------*/
+#include "include/rtthread.h"
+
+/* Exported defines ----------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
+typedef struct rtgui_list_node rtgui_list_t;
+
+typedef struct rtgui_rect rtgui_rect_t;
+typedef struct rtgui_point rtgui_point_t;
+typedef struct rtgui_line rtgui_line_t;
+typedef struct rtgui_region_data rtgui_region_data_t;
+typedef struct rtgui_region rtgui_region_t;
+
+typedef struct rtgui_type rtgui_type_t;
+typedef struct rtgui_obj rtgui_obj_t;
+typedef struct rtgui_app rtgui_app_t;
+typedef struct rtgui_box rtgui_box_t;
+typedef struct rtgui_container rtgui_container_t;
+typedef struct rtgui_widget rtgui_widget_t;
+typedef struct rtgui_win rtgui_win_t;
+typedef struct rtgui_timer rtgui_timer_t;
+
+typedef struct rtgui_evt_base rtgui_evt_base_t;
+typedef struct rtgui_event_timer rtgui_event_timer_t;
+typedef union rtgui_evt_generic rtgui_evt_generic_t;
+
+typedef void (*rtgui_constructor_t)(rtgui_type_t *obj);
+typedef void (*rtgui_destructor_t)(rtgui_type_t *obj);
+typedef rt_bool_t (*rtgui_evt_hdl_t)(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
+typedef void (*rtgui_onbutton_hdl_p)(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
+typedef void (*rtgui_idle_hdl_t)(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
+typedef void (*rtgui_timeout_hdl_t)(rtgui_timer_t *timer, void *parameter);
+
+typedef rt_uint32_t rtgui_color_t;
+typedef struct rtgui_gc rtgui_gc_t;
+
+/* list data structure */
+struct rtgui_list_node {
+    struct rtgui_list_node *next;
+};
+
+/* coordinate point */
+struct rtgui_point {
+    rt_int16_t x, y;
+};
+
+/* line segment */
+struct rtgui_line {
+    rtgui_point_t start, end;
+};
+
+/* rectangle structure */
+struct rtgui_rect {
+    rt_int16_t x1, y1, x2, y2;
+};
+
+/* region*/
+struct rtgui_region_data {
+    rt_uint32_t size;
+    rt_uint32_t numRects;
+    /* XXX: And why, exactly, do we have this bogus struct definition? */
+    /* rtgui_rect_t rects[size]; in memory but not explicitly declared */
+};
+
+struct rtgui_region {
+    rtgui_rect_t extents;
+    rtgui_region_data_t *data;
+};
+
+typedef enum {
+    RTGUI_REGION_STATUS_FAILURE,
+    RTGUI_REGION_STATUS_SUCCESS
+} rtgui_region_status_t;
+
+/* graphic context */
+struct rtgui_gc {
+    rtgui_color_t foreground, background;
+    rt_uint16_t textstyle;
+    rt_uint16_t textalign;
+    struct rtgui_font *font;
+};
+
+/* type */
+struct rtgui_type {
+    char *name;
+    const struct rtgui_type *parent;
+    rtgui_constructor_t constructor;
+    rtgui_destructor_t destructor;
+    rt_size_t size;
+};
+
+/* object */
+typedef enum rtgui_obj_flag {
+    RTGUI_OBJECT_FLAG_NONE                  = 0x0000,
+    RTGUI_OBJECT_FLAG_STATIC                = 0x0001,
+    RTGUI_OBJECT_FLAG_DISABLED              = 0x0002,
+    /* when created, set to valid
+       when deleted, clear valid */
+    RTGUI_OBJECT_FLAG_VALID                 = 0xAB00,
+} rtgui_obj_flag_t;
+
+struct rtgui_obj {
+    const rtgui_type_t *type;
+    rtgui_evt_hdl_t event_handler;
+    rtgui_obj_flag_t flag;
+    rt_ubase_t id;
+};
+
+/* app */
+typedef enum rtgui_app_flag {
+    RTGUI_APP_FLAG_EXITED                   = 0x04,
+    RTGUI_APP_FLAG_SHOWN                    = 0x08,
+    RTGUI_APP_FLAG_KEEP                     = 0x80,
+} rtgui_app_flag_t;
+
+
+struct rtgui_app {
+    rtgui_obj_t parent;
+    char *name;
+    rt_thread_t tid;
+    rt_mailbox_t mb;
+    rt_base_t ref_cnt;
+    rt_base_t exit_code;
+    struct rtgui_image *icon;
+    rtgui_app_flag_t state_flag;
+    /* if not RT_NULL, the main_object is the one will be activated when the
+     * app recieves activate event. By default, it is the first window shown in
+     * the app. */
+    rtgui_obj_t *main_object;
+    rtgui_idle_hdl_t on_idle;
+    unsigned int window_cnt;
+    unsigned int win_acti_cnt;              /* activate count */
+    void *user_data;
+};
+
+/* widget */
+struct rtgui_widget {
+    rtgui_obj_t object;                     /* parent class */
+    rtgui_widget_t *parent;                 /* parent widget */
+    rtgui_win_t *toplevel;                  /* parent window */
+    rtgui_list_t sibling;                   /* children and sibling */
+
+    rt_int32_t flag;
+    rt_ubase_t dc_type;                     /* hardware device context */
+    const struct rtgui_dc_engine *dc_engine;
+    rtgui_gc_t gc;                          /* graphic context */
+    rtgui_rect_t extent;
+    rtgui_rect_t extent_visiable;           /* including children */
+    rtgui_region_t clip;
+
+    rt_int16_t min_width, min_height;
+    rt_int32_t align;
+    rt_uint16_t border;
+    rt_uint16_t border_style;
+
+    rt_bool_t (*on_focus_in)(rtgui_obj_t *widget, rtgui_evt_generic_t *event);
+    rt_bool_t (*on_focus_out)(rtgui_obj_t *widget, rtgui_evt_generic_t *event);
+
+    rt_uint32_t user_data;
+};
+
+/* layout box -*/
+struct rtgui_box {
+    rtgui_obj_t parent;
+    rt_uint16_t orient;
+    rt_uint16_t border_size;
+    rtgui_container_t *container;
+};
+
+/* container */
+struct rtgui_container {
+    rtgui_widget_t parent;
+    rtgui_box_t *layout_box;
+    rtgui_list_t children;
+};
+
+/* window */
+typedef enum rtgui_win_flag {
+    RTGUI_WIN_FLAG_INIT                     = 0x00,
+    RTGUI_WIN_FLAG_MODAL                    = 0x01,
+    RTGUI_WIN_FLAG_CLOSED                   = 0x02,
+    RTGUI_WIN_FLAG_ACTIVATE                 = 0x04,
+    RTGUI_WIN_FLAG_UNDER_MODAL              = 0x08,  /* (modaled by other) */
+    RTGUI_WIN_FLAG_CONNECTED                = 0x10,
+    /* connected to server */
+    /* window is event_key dispatcher(dispatch it to the focused widget in
+     * current window) _and_ a key handler(it should be able to handle keys
+     * such as ESC). Both of dispatching and handling are in the same
+     * function(rtgui_win_event_handler). So we have to distinguish between the
+     * two modes.
+     *
+     * If this flag is set, we are in key-handling mode.
+     */
+    RTGUI_WIN_FLAG_HANDLE_KEY               = 0x20,
+    RTGUI_WIN_FLAG_CB_PRESSED               = 0x40,
+} rtgui_win_flag_t;
+
+typedef enum rtgui_modal_code {
+    RTGUI_MODAL_OK,
+    RTGUI_MODAL_CANCEL,
+    RTGUI_MODAL_MAX                         = 0xFFFF,
+} rtgui_modal_code_t;
+
+struct rtgui_win {
+    rtgui_container_t parent;               /* parent class */
+    rt_base_t update;                       /* update count */
+    rt_base_t drawing;                      /* drawing count */
+    rtgui_rect_t drawing_rect;
+    rtgui_win_t *parent_window;             /* parent window */
+
+    struct rtgui_region outer_clip;
+    rtgui_rect_t outer_extent;
+
+    rtgui_widget_t *focused_widget;
+
+    struct rtgui_app *app;
+    rt_uint16_t style;
+    rtgui_win_flag_t flag;
+    rtgui_modal_code_t modal_code;
+
+    rtgui_widget_t *last_mevent_widget;     /* last mouse event handler */
+
+    char *title;
+    struct rtgui_win_title *_title_wgt;
+
+    rt_bool_t (*on_activate)(rtgui_obj_t *widget, rtgui_evt_generic_t *wvt);
+    rt_bool_t (*on_deactivate)(rtgui_obj_t *widget, rtgui_evt_generic_t *wvt);
+    rt_bool_t (*on_close)(rtgui_obj_t *widget, rtgui_evt_generic_t *evt);
+    /* the key is sent to the focused widget by default. If the focused widget
+     * and all of it's parents didn't handle the key event, it will be handled
+     * by @func on_key
+     *
+     * If you want to handle key event on your own, it's better to overload
+     * this function other than handle EVENT_KBD in event_handler.
+     */
+    rt_bool_t (*on_key)(rtgui_obj_t *widget, rtgui_evt_generic_t *evt);
+
+    void *user_data;
+
+    /* private data */
+    rt_err_t (*_do_show)(rtgui_win_t *win);
+    /* app ref_cnt */
+    rt_uint16_t app_ref_count;
+    /* win magic flag, magic value is 0xA5A55A5A */
+    rt_uint32_t magic;
+};
+
+/* timer */
+typedef enum rtgui_timer_state {
+    RTGUI_TIMER_ST_INIT,
+    RTGUI_TIMER_ST_RUNNING,
+    RTGUI_TIMER_ST_DESTROY_PENDING,
+} rtgui_timer_state_t;
+
+struct rtgui_timer {
+    struct rtgui_app* app;
+    struct rt_timer timer;
+    int pending_cnt;                        /* #(pending event) */
+    rtgui_timer_state_t state;
+    rtgui_timeout_hdl_t timeout;
+    void *user_data;
+};
+
+/* event */
+typedef enum rtgui_evt_type {
+    /* app event */
+    RTGUI_EVENT_APP_CREATE                  = 0x0000,
+    RTGUI_EVENT_APP_DESTROY,
+    RTGUI_EVENT_APP_ACTIVATE,
+    /* WM event */
+    RTGUI_EVENT_SET_WM,
+    /* win event */
+    RTGUI_EVENT_WIN_CREATE                  = 0x1000,
+    RTGUI_EVENT_WIN_DESTROY,
+    RTGUI_EVENT_WIN_SHOW,
+    RTGUI_EVENT_WIN_HIDE,
+    RTGUI_EVENT_WIN_MOVE,
+    RTGUI_EVENT_WIN_RESIZE,
+    RTGUI_EVENT_WIN_CLOSE,
+    RTGUI_EVENT_WIN_ACTIVATE,
+    RTGUI_EVENT_WIN_DEACTIVATE,
+    RTGUI_EVENT_WIN_UPDATE_END,
+    /* sent after window setup and before the app setup */
+    RTGUI_EVENT_WIN_MODAL_ENTER,
+    /* widget event */
+    RTGUI_EVENT_SHOW                        = 0x2000,
+    RTGUI_EVENT_HIDE,
+    RTGUI_EVENT_PAINT,
+    RTGUI_EVENT_FOCUSED,
+    RTGUI_EVENT_SCROLLED,
+    RTGUI_EVENT_RESIZE,
+    RTGUI_EVENT_SELECTED,
+    RTGUI_EVENT_UNSELECTED,
+    RTGUI_EVENT_MV_MODEL,
+    RTGUI_EVENT_UPDATE_TOPLVL               = 0x3000,
+    RTGUI_EVENT_UPDATE_BEGIN,
+    RTGUI_EVENT_UPDATE_END,
+    RTGUI_EVENT_MONITOR_ADD,
+    RTGUI_EVENT_MONITOR_REMOVE,
+    RTGUI_EVENT_TIMER,
+    /* virtual paint event (server -> client) */
+    RTGUI_EVENT_VPAINT_REQ,
+    /* clip rect information */
+    RTGUI_EVENT_CLIP_INFO,
+    /* mouse and keyboard event */
+    RTGUI_EVENT_MOUSE_MOTION                = 0x4000,
+    RTGUI_EVENT_MOUSE_BUTTON,
+    RTGUI_EVENT_KBD,
+    RTGUI_EVENT_TOUCH,
+    RTGUI_EVENT_GESTURE,
+    WBUS_NOTIFY_EVENT                       = 0x5000,
+    /* user command (at bottom) */
+    RTGUI_EVENT_COMMAND                     = 0xF000,
+} rtgui_evt_type_t;
+
+/* base event */
+struct rtgui_evt_base {
+    rtgui_evt_type_t type;
+    rt_uint16_t user;
+    struct rtgui_app *sender;
+    rt_mailbox_t ack;
+};
+
+/* app event */
+struct rtgui_evt_app {
+    rtgui_evt_base_t parent;
+    struct rtgui_app *app;
+};
+
+/* window manager event  */
+struct rtgui_event_set_wm {
+    rtgui_evt_base_t parent;
+    struct rtgui_app *app;
+};
+
+/* window event */
+#define _RTGUI_EVENT_WIN_ELEMENTS           \
+    rtgui_evt_base_t parent;                \
+    rtgui_win_t *wid;
+
+struct rtgui_event_win {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+};
+
+struct rtgui_event_win_create {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+    rtgui_win_t *parent_window;
+};
+
+struct rtgui_event_win_move {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+    rt_int16_t x, y;
+};
+
+struct rtgui_event_win_resize {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+    rtgui_rect_t rect;
+};
+
+struct rtgui_event_win_update_end {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+    rtgui_rect_t rect;
+};
+
+#define rtgui_event_win_destroy             rtgui_event_win
+#define rtgui_event_win_show                rtgui_event_win
+#define rtgui_event_win_hide                rtgui_event_win
+#define rtgui_event_win_activate            rtgui_event_win
+#define rtgui_event_win_deactivate          rtgui_event_win
+#define rtgui_event_win_close               rtgui_event_win
+#define rtgui_event_win_modal_enter         rtgui_event_win
+
+/* other window event */
+struct rtgui_event_update_begin {
+    rtgui_evt_base_t parent;
+    /* the update rect */
+    rtgui_rect_t rect;
+};
+
+struct rtgui_evt_update_end {
+    rtgui_evt_base_t parent;
+    /* the update rect */
+    rtgui_rect_t rect;
+};
+
+struct rtgui_event_monitor {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+    /* the monitor rect */
+    rtgui_rect_t rect;
+};
+
+struct rtgui_event_paint {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+    /* rect to be updated */
+    rtgui_rect_t rect;
+};
+
+struct rtgui_event_clip_info {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+    /* the number of rects */
+    /*rt_uint32_t num_rect;*/
+    /* rtgui_rect_t *rects */
+};
+// #define RTGUI_EVENT_GET_RECT(e, i)          &(((rtgui_rect_t*)(e + 1))[i])
+
+#define rtgui_event_show rtgui_evt_base
+#define rtgui_event_hide rtgui_evt_base
+
+struct rtgui_event_update_toplvl {
+    rtgui_evt_base_t parent;
+    rtgui_win_t *toplvl;
+};
+
+struct rtgui_event_timer {
+    rtgui_evt_base_t parent;
+    struct rtgui_timer *timer;
+};
+
+// TODO(onelife): ??
+struct rt_completion {
+    void *hi;
+};
+
+struct rtgui_event_vpaint_req {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+    struct rtgui_event_vpaint_req *sender;
+    struct rt_completion *cmp;
+    struct rtgui_dc* buffer;
+};
+
+/* gesture event */
+enum rtgui_gesture_type {
+    RTGUI_GESTURE_NONE                      = 0x0000,
+    RTGUI_GESTURE_TAP                       = 0x0001,
+    /* Usually used to zoom in and out. */
+    RTGUI_GESTURE_LONGPRESS                 = 0x0002,
+    RTGUI_GESTURE_DRAG_HORIZONTAL           = 0x0004,
+    RTGUI_GESTURE_DRAG_VERTICAL             = 0x0008,
+    RTGUI_GESTURE_DRAG                      = (RTGUI_GESTURE_DRAG_HORIZONTAL | \
+                                               RTGUI_GESTURE_DRAG_VERTICAL),
+    /* PINCH, DRAG finished. */
+    RTGUI_GESTURE_FINISH                    = 0x8000,
+    /* The corresponding gesture should be canceled. */
+    RTGUI_GESTURE_CANCEL                    = 0x4000,
+    RTGUI_GESTURE_TYPE_MASK                 = 0x0FFF,
+};
+
+struct rtgui_event_gesture {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+    enum rtgui_gesture_type type;
+    rt_uint32_t win_acti_cnt;               /* window activate count */
+};
+
+/* mouse and keyboard event */
+struct rtgui_event_mouse {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+    rt_uint16_t x, y;
+    rt_uint16_t button;
+    rt_tick_t ts;                           /* timestamp */
+    /* id of touch session(from down to up). Different session should have
+     * different id. id should never be 0. */
+    rt_uint32_t id;
+    rt_uint32_t win_acti_cnt;               /* window activate count */
+};
+
+struct rtgui_event_kbd {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+    rt_uint32_t win_acti_cnt;               /* window activate count */
+    rt_uint16_t type;                       /* key down or up */
+    rt_uint16_t key;                        /* current key */
+    rt_uint16_t mod;                        /* current key modifiers */
+    rt_uint16_t unicode;                    /* translated character */
+};
+
+/* touch event: handled by server */
+struct rtgui_event_touch {
+    rtgui_evt_base_t parent;
+    rt_uint16_t x, y;
+    rt_uint16_t up_down;
+    rt_uint16_t resv;
+};
+
+/* user command event */
+#ifndef GUIENGINE_CMD_STRING_MAX
+# define GUIENGINE_CMD_STRING_MAX            16
+#endif
+struct rtgui_event_command {
+    _RTGUI_EVENT_WIN_ELEMENTS;
+    rt_int32_t type;
+    rt_int32_t command_id;
+    char command_string[GUIENGINE_CMD_STRING_MAX];
+};
+
+/* widget event */
+struct rtgui_event_scrollbar {
+    rtgui_evt_base_t parent;
+    rt_uint8_t event;
+};
+
+struct rtgui_event_focused {
+    rtgui_evt_base_t parent;
+    rtgui_widget_t *widget;
+};
+
+struct rtgui_event_resize {
+    rtgui_evt_base_t parent;
+    rt_int16_t x, y;
+    rt_int16_t w, h;
+};
+
+typedef enum rtgui_event_model_mode {
+    RTGUI_MV_DATA_ADDED,
+    RTGUI_MV_DATA_CHANGED,
+    RTGUI_MV_DATA_DELETED,
+} rtgui_event_model_mode_t;
+
+struct rtgui_event_mv_model {
+    rtgui_evt_base_t parent;
+    struct rtgui_mv_model *model;
+    struct rtgui_mv_view  *view;
+    rt_size_t first_data_changed_idx;
+    rt_size_t last_data_changed_idx;
+};
+
+
+/* generic event */
+union rtgui_evt_generic {
+    struct rtgui_evt_base base;
+    struct rtgui_evt_app app_create;
+    struct rtgui_evt_app app_destroy;
+    struct rtgui_evt_app app_activate;
+    struct rtgui_event_set_wm set_wm;
+    struct rtgui_event_win win_base;
+    struct rtgui_event_win_create win_create;
+    struct rtgui_event_win_move win_move;
+    struct rtgui_event_win_resize win_resize;
+    struct rtgui_event_win_destroy win_destroy;
+    struct rtgui_event_win_show win_show;
+    struct rtgui_event_win_hide win_hide;
+    struct rtgui_event_win_update_end win_update;
+    struct rtgui_event_win_activate win_activate;
+    struct rtgui_event_win_deactivate win_deactivate;
+    struct rtgui_event_win_close win_close;
+    struct rtgui_event_win_modal_enter win_modal_enter;
+    struct rtgui_event_update_begin update_begin;
+    struct rtgui_evt_update_end update_end;
+    struct rtgui_event_monitor monitor;
+    struct rtgui_event_paint paint;
+    struct rtgui_event_update_toplvl update_toplvl;
+    struct rtgui_event_vpaint_req vpaint_req;
+    struct rtgui_event_clip_info clip_info;
+    struct rtgui_event_timer timer;
+    struct rtgui_event_mouse mouse;
+    struct rtgui_event_kbd kbd;
+    struct rtgui_event_touch touch;
+    struct rtgui_event_gesture gesture;
+    struct rtgui_event_scrollbar scrollbar;
+    struct rtgui_event_focused focused;
+    struct rtgui_event_resize resize;
+    struct rtgui_event_mv_model model;
+    struct rtgui_event_command command;
+};
+
+/* other types */
+enum RTGUI_MARGIN_STYLE {
+    RTGUI_MARGIN_LEFT                       = 0x01,
+    RTGUI_MARGIN_RIGHT                      = 0x02,
+    RTGUI_MARGIN_TOP                        = 0x04,
+    RTGUI_MARGIN_BOTTOM                     = 0x08,
+    RTGUI_MARGIN_ALL                        = RTGUI_MARGIN_LEFT | \
+                                              RTGUI_MARGIN_RIGHT | \
+                                              RTGUI_MARGIN_TOP | \
+                                              RTGUI_MARGIN_BOTTOM,
+};
+
+enum RTGUI_BORDER_STYLE {
+    RTGUI_BORDER_NONE                       = 0,
+    RTGUI_BORDER_SIMPLE,
+    RTGUI_BORDER_RAISE,
+    RTGUI_BORDER_SUNKEN,
+    RTGUI_BORDER_BOX,
+    RTGUI_BORDER_STATIC,
+    RTGUI_BORDER_EXTRA,
+    RTGUI_BORDER_UP,
+    RTGUI_BORDER_DOWN,
+    RTGUI_BORDER_DEFAULT_WIDTH              = 2,
+    RTGUI_WIDGET_DEFAULT_MARGIN             = 3,
+};
+
+/* Blend mode */
+enum RTGUI_BLENDMODE {
+    RTGUI_BLENDMODE_NONE                    = 0x00,
+    RTGUI_BLENDMODE_BLEND,
+    RTGUI_BLENDMODE_ADD,
+    RTGUI_BLENDMODE_MOD,
+};
+
+enum RTGUI_ORIENTATION {
+    RTGUI_HORIZONTAL                        = 0x01,
+    RTGUI_VERTICAL                          = 0x02,
+    RTGUI_ORIENTATION_BOTH                  = RTGUI_HORIZONTAL | RTGUI_VERTICAL,
+};
+
+enum RTGUI_ALIGN {
+    RTGUI_ALIGN_NOT                         = 0x00,
+    RTGUI_ALIGN_CENTER_HORIZONTAL           = 0x01,
+    RTGUI_ALIGN_LEFT                        = RTGUI_ALIGN_NOT,
+    RTGUI_ALIGN_TOP                         = RTGUI_ALIGN_NOT,
+    RTGUI_ALIGN_RIGHT                       = 0x02,
+    RTGUI_ALIGN_BOTTOM                      = 0x04,
+    RTGUI_ALIGN_CENTER_VERTICAL             = 0x08,
+    RTGUI_ALIGN_CENTER                      = RTGUI_ALIGN_CENTER_HORIZONTAL | \
+                                              RTGUI_ALIGN_CENTER_VERTICAL,
+    RTGUI_ALIGN_EXPAND                      = 0x10,
+    RTGUI_ALIGN_STRETCH                     = 0x20,
+    RTGUI_ALIGN_TTF_SIZE                    = 0x40,
+};
+
+enum RTGUI_TEXTSTYLE {
+    RTGUI_TEXTSTYLE_NORMAL                  = 0x00,
+    RTGUI_TEXTSTYLE_DRAW_BACKGROUND         = 0x01,
+    RTGUI_TEXTSTYLE_SHADOW                  = 0x02,
+    RTGUI_TEXTSTYLE_OUTLINE                 = 0x04,
+};
+
+#undef _RTGUI_EVENT_WIN_ELEMENTS
+
+/* Exported constants --------------------------------------------------------*/
+/* Exported functions ------------------------------------------------------- */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __RTGUI_TYPES_H__ */

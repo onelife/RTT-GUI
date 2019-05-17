@@ -47,9 +47,9 @@ typedef struct rtgui_win_title {
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-rtgui_win_title_t *rtgui_win_title_create(struct rtgui_win *window);
+rtgui_win_title_t *rtgui_win_title_create(rtgui_win_t *window);
 void rtgui_win_title_destroy(rtgui_win_title_t *win_t);
-rt_bool_t rtgui_win_tile_event_handler(struct rtgui_obj *obj,
+rt_bool_t rtgui_win_tile_event_handler(rtgui_obj_t *obj,
     rtgui_evt_generic_t *evt);
 
 #endif /* __RTGUI_TITLE__ */

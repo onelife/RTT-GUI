@@ -41,17 +41,6 @@ DECLARE_CLASS_TYPE(box);
 /** Checks if the object is an rtgui_box */
 #define RTGUI_IS_BOX(obj)    (RTGUI_OBJECT_CHECK_TYPE((obj), RTGUI_BOX_TYPE))
 
-struct rtgui_box
-{
-    struct rtgui_obj parent;
-
-    rt_uint16_t orient;
-    rt_uint16_t border_size;
-
-    struct rtgui_container *container;
-};
-typedef struct rtgui_box rtgui_box_t;
-
 struct rtgui_box *rtgui_box_create(int orientation, int border_size);
 void rtgui_box_destroy(struct rtgui_box *box);
 

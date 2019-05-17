@@ -20,51 +20,19 @@
  * Change Logs:
  * Date           Author       Notes
  * 2009-10-04     Bernard      first version
+ * 2019-05-15     onelife      refactor
  */
 #ifndef __RTGUI_SYSTEM_H__
 #define __RTGUI_SYSTEM_H__
 
-#include "include/rtthread.h"
 #include "./rtgui.h"
-#include "./event.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-union rtgui_evt_generic;
-struct rtgui_dc;
-struct rtgui_evt;
-struct rtgui_widget;
-
-struct rtgui_timer;
-typedef void (*rtgui_timeout_func)(struct rtgui_timer *timer, void *parameter);
-
-enum rtgui_timer_state
-{
-    RTGUI_TIMER_ST_INIT,
-    RTGUI_TIMER_ST_RUNNING,
-    RTGUI_TIMER_ST_DESTROY_PENDING,
-};
-
-struct rtgui_timer
-{
-    /* the rtgui application it runs on */
-    struct rtgui_app* app;
-    /* rt timer */
-    struct rt_timer timer;
-    /* How many events are pending on the queue. */
-    int pending_cnt;
-    enum rtgui_timer_state state;
-
-    /* timeout function and user data */
-    rtgui_timeout_func timeout;
-    void *user_data;
-};
-typedef struct rtgui_timer rtgui_timer_t;
-
 rtgui_timer_t *rtgui_timer_create(rt_int32_t time, rt_int32_t flag,
-    rtgui_timeout_func timeout, void *parameter);
+    rtgui_timeout_hdl_t timeout, void *parameter);
 void rtgui_timer_destory(rtgui_timer_t *timer);
 
 void rtgui_timer_set_timeout(rtgui_timer_t *timer, rt_int32_t time);
@@ -96,13 +64,12 @@ void rtgui_screen_unlock(void);
 int rtgui_screen_lock_freeze(void);
 void rtgui_screen_lock_thaw(int value);
 
-rt_err_t rtgui_send(struct rtgui_app* app, union rtgui_evt_generic *evt,
+rt_err_t rtgui_send(struct rtgui_app* app, rtgui_evt_generic_t *evt,
     rt_int32_t timeout);
-rt_err_t rtgui_recv(union rtgui_evt_generic **evt, rt_int32_t timeout);
-rt_err_t rtgui_send_sync(struct rtgui_app *des, struct rtgui_app *src,
-    union rtgui_evt_generic *evt);
-rt_err_t rtgui_ack(union rtgui_evt_generic *evt, rt_uint32_t val);
-rt_err_t rtgui_recv_filter(rt_uint32_t type, union rtgui_evt_generic *evt);
+rt_err_t rtgui_recv(rtgui_evt_generic_t **evt, rt_int32_t timeout);
+rt_err_t rtgui_send_sync(struct rtgui_app *des, rtgui_evt_generic_t *evt);
+rt_err_t rtgui_ack(rtgui_evt_generic_t *evt, rt_uint32_t val);
+rt_err_t rtgui_recv_filter(rt_uint32_t type, rtgui_evt_generic_t *evt);
 
 #ifdef __cplusplus
 }

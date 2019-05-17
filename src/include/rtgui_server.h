@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 #include "include/rtservice.h"
-#include "./list.h"
+#include "./rtgui.h"
 
 /* RTGUI server definitions */
 
@@ -59,7 +59,7 @@ struct rtgui_topwin
     struct rtgui_win_title *title;
 
     /* the window id */
-    struct rtgui_win *wid;
+    rtgui_win_t *wid;
 
     /* which app I belong */
     struct rtgui_app *app;

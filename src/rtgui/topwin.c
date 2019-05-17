@@ -24,7 +24,7 @@
  * 2019-05-15     onelife      Refactor
  */
 
-#include "../include/event.h"
+#include "../include/rtgui.h"
 #include "../include/widgets/topwin.h"
 #include "../include/widgets/mouse.h"
 
@@ -88,7 +88,7 @@ void rtgui_topwin_init(void) {
 }
 
 static struct rtgui_topwin *rtgui_topwin_search_in_list(
-    struct rtgui_win *window, struct rt_list_node *list) {
+    rtgui_win_t *window, struct rt_list_node *list) {
     /* TODO: use a cache to speed up the search. */
     struct rt_list_node *node;
     struct rtgui_topwin *topwin;
@@ -238,7 +238,7 @@ struct rtgui_topwin *rtgui_topwin_get_topmost_window_shown_all(void)
     return top;
 }
 
-struct rtgui_win* rtgui_win_get_topmost_shown(void)
+rtgui_win_t* rtgui_win_get_topmost_shown(void)
 {
     struct rtgui_topwin *top;
 
@@ -274,7 +274,7 @@ static struct rtgui_topwin* _rtgui_topwin_get_next_shown(struct rtgui_topwin *to
     return top;
 }
 
-struct rtgui_win* rtgui_win_get_next_shown(void)
+rtgui_win_t* rtgui_win_get_next_shown(void)
 {
     struct rtgui_topwin *top;
 
@@ -347,7 +347,7 @@ static struct rt_list_node *_rtgui_topwin_free_tree(struct rtgui_topwin *topwin)
     return next_node;
 }
 
-rt_err_t rtgui_topwin_remove(struct rtgui_win *wid)
+rt_err_t rtgui_topwin_remove(rtgui_win_t *wid)
 {
     struct rtgui_topwin *topwin, *old_focus;
     struct rtgui_region region;
@@ -696,7 +696,7 @@ rt_inline void _rtgui_topwin_mark_shown(struct rtgui_topwin *topwin) {
 
 rt_err_t rtgui_topwin_show(struct rtgui_event_win *evt) {
     struct rtgui_topwin *topwin;
-    struct rtgui_win *wid = evt->wid;
+    rtgui_win_t *wid = evt->wid;
 
     LOG_D("search topwin %s [%p] (%s)", wid->title, wid, wid->app->name);
     topwin = rtgui_topwin_search_in_list(wid, &_rtgui_topwin_list);
@@ -739,7 +739,7 @@ _out:
 rt_err_t rtgui_topwin_hide(struct rtgui_event_win *evt) {
     struct rtgui_topwin *topwin;
     struct rtgui_topwin *last_topwin;
-    struct rtgui_win    *wid;
+    rtgui_win_t    *wid;
     struct rt_list_node *containing_list;
 
     if (!evt)
@@ -859,7 +859,7 @@ rt_err_t rtgui_topwin_move(rtgui_evt_generic_t *evt) {
  * resize a top win
  * Note: currently, only support resize hidden window
  */
-void rtgui_topwin_resize(struct rtgui_win *wid, rtgui_rect_t *rect)
+void rtgui_topwin_resize(rtgui_win_t *wid, rtgui_rect_t *rect)
 {
     struct rtgui_topwin *topwin;
     struct rtgui_region region;
@@ -1117,7 +1117,7 @@ rt_err_t rtgui_topwin_modal_enter(struct rtgui_event_win_modal_enter *event) {
     return RT_EOK;
 }
 
-void rtgui_topwin_append_monitor_rect(struct rtgui_win *wid,
+void rtgui_topwin_append_monitor_rect(rtgui_win_t *wid,
     rtgui_rect_t *rect) {
     struct rtgui_topwin *win;
 
@@ -1131,7 +1131,7 @@ void rtgui_topwin_append_monitor_rect(struct rtgui_win *wid,
     rtgui_mouse_monitor_append(&(win->monitor_list), rect);
 }
 
-void rtgui_topwin_remove_monitor_rect(struct rtgui_win *wid,
+void rtgui_topwin_remove_monitor_rect(rtgui_win_t *wid,
     rtgui_rect_t *rect) {
     struct rtgui_topwin *win;
 
@@ -1148,9 +1148,9 @@ void rtgui_topwin_remove_monitor_rect(struct rtgui_win *wid,
     rtgui_mouse_monitor_remove(&(win->monitor_list), rect);
 }
 
-static struct rtgui_obj* _get_obj_in_topwin(struct rtgui_topwin *topwin,
+static rtgui_obj_t* _get_obj_in_topwin(struct rtgui_topwin *topwin,
     struct rtgui_app *app, rt_uint32_t id) {
-    struct rtgui_obj *object;
+    rtgui_obj_t *object;
     struct rt_list_node *node;
 
     object = RTGUI_OBJECT(topwin->wid);
@@ -1172,8 +1172,8 @@ static struct rtgui_obj* _get_obj_in_topwin(struct rtgui_topwin *topwin,
     return RT_NULL;
 }
 
-struct rtgui_obj* rtgui_get_object(struct rtgui_app *app, rt_uint32_t id) {
-    struct rtgui_obj *obj;
+rtgui_obj_t* rtgui_get_object(struct rtgui_app *app, rt_uint32_t id) {
+    rtgui_obj_t *obj;
     struct rt_list_node *node;
 
     obj = RTGUI_OBJECT(app);
@@ -1192,7 +1192,7 @@ struct rtgui_obj* rtgui_get_object(struct rtgui_app *app, rt_uint32_t id) {
 }
 RTM_EXPORT(rtgui_get_object);
 
-struct rtgui_obj* rtgui_get_self_object(rt_uint32_t id) {
+rtgui_obj_t* rtgui_get_self_object(rt_uint32_t id) {
     return rtgui_get_object(rtgui_app_self(), id);
 }
 RTM_EXPORT(rtgui_get_self_object);
