@@ -22,15 +22,15 @@
  * 2010-09-15     Grissom      first version
  */
 
-#include <rtthread.h>
+#include "include/rtthread.h"
 
 #ifdef GUIENGINE_USING_TTF
-#include <rtgui/rtgui.h>
-#include <rtgui/rtgui_system.h>
-#include <rtgui/dc.h>
-#include <rtgui/blit.h>
-#include <rtgui/font.h>
-#include <rtgui/font_freetype.h>
+#include "../include/rtgui.h"
+#include "../include/rtgui_system.h"
+#include "../include/dc.h"
+#include "../include/blit.h"
+#include "../include/font.h"
+#include "../include/font_freetype.h"
 
 #include <ftcache.h>
 #include <ft2build.h>
@@ -930,7 +930,7 @@ void rtgui_freetype_font_destroy(rtgui_font_t *font)
 RTM_EXPORT(rtgui_freetype_font_destroy);
 
 #ifdef RT_USING_FINSH
-#include <finsh.h>
+#include "components/finsh/finsh.h"
 FINSH_FUNCTION_EXPORT_ALIAS(rtgui_freetype_font_create, ffc, "create freetype font: name, size, family")
 #endif
 #endif

@@ -24,8 +24,8 @@
 #ifndef __RTGUI_FONT_H__
 #define __RTGUI_FONT_H__
 
-#include <rtgui/rtgui.h>
-#include <rtgui/list.h>
+#include "./rtgui.h"
+#include "./list.h"
 
 
 #ifdef __cplusplus
@@ -64,7 +64,7 @@ struct rtgui_font_bitmap
 };
 extern const struct rtgui_font_engine bmp_font_engine;
 
-#include <rtgui/tree.h>
+#include "../include/tree.h"
 SPLAY_HEAD(cache_tree, hz_cache);
 struct hz_cache
 {

@@ -21,12 +21,12 @@
  * Date           Author       Notes
  * 2010-09-15     Bernard      first version
  */
-#include <rtthread.h>
-#include <rtgui/dc.h>
-#include <rtgui/image.h>
-#include <rtgui/rtgui_system.h>
-#include <rtgui/image_hdc.h>
-#include <rtgui/blit.h>
+#include "include/rtthread.h"
+#include "../include/dc.h"
+#include "../include/image.h"
+#include "../include/rtgui_system.h"
+#include "../include/image_hdc.h"
+#include "../include/blit.h"
 
 #ifdef GUIENGINE_USING_HDC
 

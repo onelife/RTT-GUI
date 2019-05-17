@@ -24,8 +24,8 @@
 #ifndef __RT_GUI_H__
 #define __RT_GUI_H__
 
-#include <rtthread.h>
-#include <rtgui/rtgui_config.h>
+#include "include/rtthread.h"
+#include "./rtgui_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,22 +46,22 @@ extern "C" {
 #define RTGUI_PURE __attribute__((pure))
 #endif
 
-struct rtgui_event;
+extern struct rt_mempool *rtgui_event_pool;
 
-struct rtgui_object;
+struct rtgui_obj;
 struct rtgui_widget;
 struct rtgui_win;
 struct rtgui_font;
+union rtgui_evt_generic;
 
 typedef struct rtgui_win rtgui_win_t;
-typedef rt_bool_t (*rtgui_event_handler_ptr)(struct rtgui_object *object, struct rtgui_event *event);
-typedef void (*rtgui_onbutton_func_t)(struct rtgui_object *object, struct rtgui_event *event);
+typedef rt_bool_t (*rtgui_evt_hdl_p)(struct rtgui_obj *object, union rtgui_evt_generic *event);
+typedef void (*rtgui_onbutton_func_t)(struct rtgui_obj *object, union rtgui_evt_generic *event);
 
 /**
  * Coordinate point
  */
-struct rtgui_point
-{
+struct rtgui_point {
     rt_int16_t x, y;
 };
 typedef struct rtgui_point rtgui_point_t;
@@ -70,8 +70,7 @@ extern rtgui_point_t rtgui_empty_point;
 /**
 * line segment
 */
-struct rtgui_line
-{
+struct rtgui_line {
     rtgui_point_t start, end;
 };
 typedef struct rtgui_line rtgui_line_t;
@@ -79,8 +78,7 @@ typedef struct rtgui_line rtgui_line_t;
 /**
  * Rectangle structure
  */
-struct rtgui_rect
-{
+struct rtgui_rect {
     rt_int16_t x1, y1, x2, y2;
 };
 typedef struct rtgui_rect rtgui_rect_t;
@@ -186,7 +184,7 @@ enum RTGUI_MODAL_CODE
 };
 typedef enum RTGUI_MODAL_CODE rtgui_modal_code_t;
 
-#include <rtgui/rtgui_object.h>
+#include "./rtgui_object.h"
 
 #ifdef __cplusplus
 }

@@ -24,8 +24,8 @@
 #ifndef __RTGUI_CONTAINER_H__
 #define __RTGUI_CONTAINER_H__
 
-#include <rtgui/widgets/widget.h>
-#include <rtgui/widgets/box.h>
+#include "./widget.h"
+#include "./box.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,8 +42,7 @@ DECLARE_CLASS_TYPE(container);
 /*
  * the container widget
  */
-struct rtgui_container
-{
+struct rtgui_container {
     struct rtgui_widget parent;
 
     /* layout box */
@@ -56,8 +55,6 @@ typedef struct rtgui_container rtgui_container_t;
 rtgui_container_t *rtgui_container_create(void);
 void rtgui_container_destroy(rtgui_container_t *container);
 
-rt_bool_t rtgui_container_event_handler(struct rtgui_object *widget, struct rtgui_event *event);
-
 /* set layout box */
 void rtgui_container_set_box(struct rtgui_container *container, struct rtgui_box *box);
 void rtgui_container_layout(struct rtgui_container *container);
@@ -67,12 +64,15 @@ void rtgui_container_remove_child(rtgui_container_t *container, rtgui_widget_t *
 void rtgui_container_destroy_children(rtgui_container_t *container);
 rtgui_widget_t *rtgui_container_get_first_child(rtgui_container_t *container);
 
-rt_bool_t rtgui_container_event_handler(struct rtgui_object *widget, rtgui_event_t *event);
+rt_bool_t rtgui_container_event_handler(struct rtgui_obj *widget,
+    union rtgui_evt_generic *event);
 
-rt_bool_t rtgui_container_dispatch_event(rtgui_container_t *container, rtgui_event_t *event);
-rt_bool_t rtgui_container_dispatch_mouse_event(rtgui_container_t *container, struct rtgui_event_mouse *event);
+rt_bool_t rtgui_container_dispatch_event(rtgui_container_t *container,
+    union rtgui_evt_generic *event);
+rt_bool_t rtgui_container_dispatch_mouse_event(rtgui_container_t *container,
+    union rtgui_evt_generic *event);
 
-struct rtgui_object* rtgui_container_get_object(struct rtgui_container *container, rt_uint32_t id);
+struct rtgui_obj* rtgui_container_get_object(struct rtgui_container *container, rt_uint32_t id);
 #ifdef __cplusplus
 }
 #endif

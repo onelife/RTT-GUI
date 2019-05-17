@@ -24,12 +24,12 @@
 #ifndef __RTGUI_WIDGET_H__
 #define __RTGUI_WIDGET_H__
 
-#include <rtgui/rtgui.h>
-#include <rtgui/list.h>
-#include <rtgui/region.h>
-#include <rtgui/event.h>
-#include <rtgui/color.h>
-#include <rtgui/font.h>
+#include "../rtgui.h"
+#include "../list.h"
+#include "../region.h"
+#include "../event.h"
+#include "../color.h"
+#include "../font.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,10 +86,10 @@ DECLARE_CLASS_TYPE(widget);
 /*
  * the base widget object
  */
-struct rtgui_widget
+typedef struct rtgui_widget
 {
-    /* inherit from rtgui_object */
-    struct rtgui_object object;
+    /* inherit from rtgui_obj */
+    struct rtgui_obj object;
 
     /* the widget that contains this widget */
     struct rtgui_widget *parent;
@@ -123,26 +123,28 @@ struct rtgui_widget
     rt_uint16_t border_style;
 
     /* call back */
-    rt_bool_t (*on_focus_in)(struct rtgui_object *widget, struct rtgui_event *event);
-    rt_bool_t (*on_focus_out)(struct rtgui_object *widget, struct rtgui_event *event);
+    rt_bool_t (*on_focus_in)(struct rtgui_obj *widget,
+        union rtgui_evt_generic *event);
+    rt_bool_t (*on_focus_out)(struct rtgui_obj *widget,
+        union rtgui_evt_generic *event);
 
     /* user private data */
     rt_uint32_t user_data;
-};
-typedef struct rtgui_widget rtgui_widget_t;
+} rtgui_widget_t;
 
 rtgui_widget_t *rtgui_widget_create(const rtgui_type_t *widget_type);
 void rtgui_widget_destroy(rtgui_widget_t *widget);
 
-rt_bool_t rtgui_widget_event_handler(struct rtgui_object *object, rtgui_event_t *event);
+rt_bool_t rtgui_widget_event_handler(struct rtgui_obj *object,
+    union rtgui_evt_generic *event);
 
 /* focus and unfocus */
 void rtgui_widget_focus(rtgui_widget_t *widget);
 void rtgui_widget_unfocus(rtgui_widget_t *widget);
 
 /* event handler for each command */
-void rtgui_widget_set_onfocus(rtgui_widget_t *widget, rtgui_event_handler_ptr handler);
-void rtgui_widget_set_onunfocus(rtgui_widget_t *widget, rtgui_event_handler_ptr handler);
+void rtgui_widget_set_onfocus(rtgui_widget_t *widget, rtgui_evt_hdl_p handler);
+void rtgui_widget_set_onunfocus(rtgui_widget_t *widget, rtgui_evt_hdl_p handler);
 
 /* get and set rect of widget */
 void rtgui_widget_get_rect(rtgui_widget_t *widget, rtgui_rect_t *rect);
@@ -178,14 +180,17 @@ void rtgui_widget_update_clip(rtgui_widget_t *widget);
 
 /* get the toplevel widget of widget */
 struct rtgui_win *rtgui_widget_get_toplevel(rtgui_widget_t *widget);
-rt_bool_t rtgui_widget_onupdate_toplvl(struct rtgui_object *object, struct rtgui_event *event);
+rt_bool_t rtgui_widget_onupdate_toplvl(struct rtgui_obj *object,
+    union rtgui_evt_generic *event);
 
 void rtgui_widget_show(rtgui_widget_t *widget);
-rt_bool_t rtgui_widget_onshow(struct rtgui_object *object, struct rtgui_event *event);
+rt_bool_t rtgui_widget_onshow(struct rtgui_obj *object,
+    union rtgui_evt_generic *event);
 void rtgui_widget_hide(rtgui_widget_t *widget);
-rt_bool_t rtgui_widget_onhide(struct rtgui_object *object, struct rtgui_event *event);
+rt_bool_t rtgui_widget_onhide(struct rtgui_obj *object,
+    union rtgui_evt_generic *event);
 void rtgui_widget_update(rtgui_widget_t *widget);
-rt_bool_t rtgui_widget_onpaint(struct rtgui_object *object, struct rtgui_event *event);
+rt_bool_t rtgui_widget_onpaint(struct rtgui_obj *object, struct rtgui_evt *event);
 
 /* get parent color */
 rtgui_color_t rtgui_widget_get_parent_foreground(rtgui_widget_t *widget);

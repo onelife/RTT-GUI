@@ -25,14 +25,14 @@
  *                             by appele
  * 2010-09-14     Bernard      fix vline and hline coordinate issue
  */
-#include <rtgui/dc.h>
 
-#include <rtgui/driver.h>
-#include <rtgui/rtgui_system.h>
-#include <rtgui/rtgui_app.h>
-#include <rtgui/rtgui_server.h>
-#include <rtgui/widgets/container.h>
-#include <rtgui/widgets/window.h>
+#include "../include/dc.h"
+#include "../include/driver.h"
+#include "../include/rtgui_system.h"
+#include "../include/rtgui_app.h"
+#include "../include/rtgui_server.h"
+#include "../include/widgets/container.h"
+#include "../include/widgets/window.h"
 
 static void rtgui_dc_client_draw_point(struct rtgui_dc *dc, int x, int y);
 static void rtgui_dc_client_draw_color_point(struct rtgui_dc *dc, int x, int y, rtgui_color_t color);

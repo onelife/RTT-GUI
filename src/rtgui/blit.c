@@ -44,14 +44,13 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-
-#include <rtgui/rtgui.h>
-#include <rtgui/blit.h>
-#include <rtgui/color.h>
-#include <rtgui/region.h>
-#include <rtgui/dc.h>
-
 #include <string.h>
+
+#include "../include/rtgui.h"
+#include "../include/blit.h"
+#include "../include/color.h"
+#include "../include/region.h"
+#include "../include/dc.h"
 
 /* Lookup tables to expand partial bytes to the full 0..255 range */
 

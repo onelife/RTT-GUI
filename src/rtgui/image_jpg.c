@@ -22,21 +22,21 @@
  * 2010-09-15     Bernard      first version
  * 2012-01-24     onelife      add TJpgDec (Tiny JPEG Decompressor) support
  */
-#include <rtthread.h>
-#include <rtgui/rtgui.h>
-#include <rtgui/image.h>
+#include "include/rtthread.h"
+#include "../include/rtgui.h"
+#include "../include/image.h"
 
 #ifdef GUIENGINE_IMAGE_JPEG
 #include <stdio.h>
 #include <stdlib.h>
 #include "jpeglib.h"
 
-#include <rtgui/rtgui_system.h>
-#include <rtgui/filerw.h>
-#include <rtgui/blit.h>
+#include "../include/rtgui_system.h"
+#include "../include/filerw.h"
+#include "../include/blit.h"
 
 #ifdef GUIENGINE_USING_DFS_FILERW
-#include <dfs_posix.h>
+#include "components/dfs/include/dfs_posix.h"
 #endif
 
 static rt_bool_t rtgui_image_jpeg_check(struct rtgui_filerw *file);
@@ -608,12 +608,12 @@ static rt_bool_t rtgui_image_jpeg_check(struct rtgui_filerw *file)
 /* Includes ------------------------------------------------------------------*/
 #include "tjpgd.h"
 
-#include <rtgui/rtgui_system.h>
-#include <rtgui/filerw.h>
-#include <rtgui/blit.h>
+#include "../include/rtgui_system.h"
+#include "../include/filerw.h"
+#include "../include/blit.h"
 
 #ifdef GUIENGINE_USING_DFS_FILERW
-#include <dfs_posix.h>
+# include "components/dfs/include/dfs_posix.h"
 #endif
 
 /* Private typedef -----------------------------------------------------------*/

@@ -28,56 +28,66 @@
 
 /* RTGUI options */
 
-#ifndef RT_USING_DFS
-#undef GUIENGINE_USING_DFS_FILERW
-#undef GUIENGINE_USING_HZ_FILE
+#define RTGUI_MQ_SIZE                       (16)
+#define RTGUI_MB_SIZE                       (16)
+#define RTGUI_EVENT_POOL_NUMBER             (32)
+#define RTGUI_EVENT_RESEND_DELAY            (RT_TICK_PER_SECOND / 50)
+
+#define RTGUI_LOG_LEVEL                     (LOG_LVL_DBG)
+
+// #define RTGUI_OBJECT_TRACE
+
+#ifndef GUIENGINE_SVR_THREAD_PRIORITY
+# define GUIENGINE_SVR_THREAD_PRIORITY      (20)
 #endif
+#ifndef GUIENGINE_SVR_THREAD_TIMESLICE
+# define GUIENGINE_SVR_THREAD_TIMESLICE     (10)
+#endif
+#ifndef GUIENGIN_SVR_THREAD_STACK_SIZE
+# define GUIENGIN_SVR_THREAD_STACK_SIZE      (4 * 1024 )
+#endif
+
+// #define GUIENGIN_APP_THREAD_PRIORITY        25
+// #define GUIENGIN_APP_THREAD_TIMESLICE       10
+// #define GUIENGIN_APP_THREAD_STACK_SIZE      4 * 1024
 
 #ifdef RT_USING_DFS
-/* if file system is used, the DFS_FILERW will be defined */
-#ifndef GUIENGINE_USING_DFS_FILERW
-#define GUIENGINE_USING_DFS_FILERW
-#endif
+# ifndef GUIENGINE_USING_DFS_FILERW
+#  define GUIENGINE_USING_DFS_FILERW
+# endif
+#else
+# ifdef GUIENGINE_USING_DFS_FILERW
+#   undef GUIENGINE_USING_DFS_FILERW
+# endif
+# ifdef GUIENGINE_USING_HZ_FILE
+#  undef GUIENGINE_USING_HZ_FILE
+# endif
 #endif
 
-#define GUIENGINE_SVR_THREAD_PRIORITY       15
-#define GUIENGINE_SVR_THREAD_TIMESLICE      5
-#ifndef GUIENGIN_SVR_THREAD_STACK_SIZE
-#ifdef GUIENGIN_USING_SMALL_SIZE
-#define GUIENGIN_SVR_THREAD_STACK_SIZE     1024
-#else
-#define GUIENGIN_SVR_THREAD_STACK_SIZE     2048
-#endif
-#endif
 
-#define GUIENGIN_APP_THREAD_PRIORITY       25
-#define GUIENGIN_APP_THREAD_TIMESLICE      5
-#ifdef GUIENGIN_USING_SMALL_SIZE
-#define GUIENGIN_APP_THREAD_STACK_SIZE     1024
-#else
-#define GUIENGIN_APP_THREAD_STACK_SIZE     2048
-#endif
+#define RTGUI_EVENT_DEBUG
+
+
 
 // #define GUIENGIN_USING_CAST_CHECK
 
 // #define GUIENGIN_USING_DESKTOP_WINDOW
-// #undef GUIENGIN_USING_SMALL_SIZE
 
 // #define GUIENGIN_USING_CALIBRATION
 
-#define GUIENGIN_USING_VFRAMEBUFFER
+// #define GUIENGIN_USING_VFRAMEBUFFER
 
-//#ifndef PKG_USING_RGB888_PIXEL_BITS_32
-//#ifndef PKG_USING_RGB888_PIXEL_BITS_24
-//#define PKG_USING_RGB888_PIXEL_BITS_32
-//#define PKG_USING_RGB888_PIXEL_BITS 32
-//#endif
-//#endif
+#ifndef PKG_USING_RGB888_PIXEL_BITS_32
+# ifndef PKG_USING_RGB888_PIXEL_BITS_24
+#  define PKG_USING_RGB888_PIXEL_BITS_32
+#  define PKG_USING_RGB888_PIXEL_BITS 32
+# endif
+#endif
 
 #ifdef DEBUG_MEMLEAK
-#define rtgui_malloc     rt_malloc
-#define rtgui_realloc    rt_realloc
-#define rtgui_free       rt_free
+# define rtgui_malloc     rt_malloc
+# define rtgui_realloc    rt_realloc
+# define rtgui_free       rt_free
 #endif
 
 #endif

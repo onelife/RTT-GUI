@@ -21,14 +21,15 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
-#include <rtgui/rtgui.h>
-#include <rtgui/dc.h>
-#include <rtgui/blit.h>
-#include <rtgui/color.h>
-#include <rtgui/rtgui_system.h>
-#include <rtgui/dc_draw.h>
-#include <rtgui/image_container.h>
 #include <string.h>
+
+#include "../include/rtgui.h"
+#include "../include/dc.h"
+#include "../include/blit.h"
+#include "../include/color.h"
+#include "../include/rtgui_system.h"
+#include "../include/dc_draw.h"
+#include "../include/image_container.h"
 
 static rt_bool_t rtgui_dc_buffer_fini(struct rtgui_dc *dc);
 static void rtgui_dc_buffer_draw_point(struct rtgui_dc *dc, int x, int y);
@@ -691,7 +692,7 @@ static void rtgui_dc_buffer_blit_line(struct rtgui_dc *self, int x1, int x2, int
 }
 
 #ifdef RT_USING_DFS
-#include <dfs_posix.h>
+# include "components/dfs/include/dfs_posix.h"
 void rtgui_dc_buffer_dump(struct rtgui_dc *self, char *fn)
 {
     struct dc_file_header

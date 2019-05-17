@@ -1,6 +1,6 @@
 
-#include <rtthread.h>
-#include <rtgui/gb2312.h>
+#include "include/rtthread.h"
+#include "../include/gb2312.h"
 
 /* This invariably comes in handy */
 #define lenof(x) ( sizeof((x)) / sizeof(*(x)) )

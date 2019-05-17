@@ -21,14 +21,14 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
-#include <rtgui/dc.h>
-#include <rtgui/driver.h>
-#include <rtgui/rtgui_system.h>
-#include <rtgui/rtgui_app.h>
-#include <rtgui/rtgui_server.h>
+#include "../include/dc.h"
+#include "../include/driver.h"
+#include "../include/rtgui_system.h"
+#include "../include/rtgui_app.h"
+#include "../include/rtgui_server.h"
 
-#include <rtgui/widgets/container.h>
-#include <rtgui/widgets/window.h>
+#include "../include/widgets/container.h"
+#include "../include/widgets/window.h"
 
 #define _int_swap(x, y)         do {x ^= y; y ^= x; x ^= y;} while (0)
 

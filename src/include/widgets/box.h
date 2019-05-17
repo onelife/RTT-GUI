@@ -24,9 +24,9 @@
 #ifndef __RTGUI_BOX_H__
 #define __RTGUI_BOX_H__
 
-#include <rtgui/rtgui.h>
-#include <rtgui/widgets/widget.h>
-#include <rtgui/widgets/container.h>
+#include "../rtgui.h"
+#include "./widget.h"
+#include "./container.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +43,7 @@ DECLARE_CLASS_TYPE(box);
 
 struct rtgui_box
 {
-    struct rtgui_object parent;
+    struct rtgui_obj parent;
 
     rt_uint16_t orient;
     rt_uint16_t border_size;

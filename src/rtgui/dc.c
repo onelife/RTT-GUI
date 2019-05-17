@@ -25,21 +25,27 @@
  * 2011-04-25     Bernard      fix fill polygon issue, which found by loveic
  */
 
-/* for sin/cos etc */
-#include <math.h>
-
-#include <rtgui/dc.h>
-
-#include <rtgui/rtgui_system.h>
-#include <rtgui/rtgui_server.h>
-#include <rtgui/widgets/window.h>
-#include <rtgui/widgets/title.h>
-
-#include <string.h> /* for strlen */
 #include <stdlib.h> /* fir qsort  */
+#include <string.h> /* for strlen */
+#include <math.h>   /* for sin/cos etc */
 
-static int _int_compare(const void *a, const void *b)
-{
+#include "../include/dc.h"
+#include "../include/rtgui_system.h"
+#include "../include/rtgui_server.h"
+#include "../include/widgets/window.h"
+#include "../include/widgets/title.h"
+
+#ifdef RT_USING_ULOG
+# define LOG_LVL                    LOG_LVL_DBG
+// # define LOG_LVL                   LOG_LVL_INFO
+# define LOG_TAG                    "GUI_WGT"
+# include "components/utilities/ulog/ulog.h"
+#else /* RT_USING_ULOG */
+# define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
+# define LOG_D                      LOG_E
+#endif /* RT_USING_ULOG */
+
+static int _int_compare(const void *a, const void *b) {
     return (*(const int *) a) - (*(const int *) b);
 }
 
@@ -1810,8 +1816,7 @@ extern struct rt_mutex cursor_mutex;
 extern void rtgui_mouse_show_cursor(void);
 extern void rtgui_mouse_hide_cursor(void);
 
-struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner)
-{
+struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
     struct rtgui_dc *dc;
     struct rtgui_widget *widget, *parent;
     struct rtgui_win *win;
@@ -1835,22 +1840,19 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner)
         return RT_NULL;
 
     /* increase drawing count */
-    if (win->drawing == 0)
-    {
+    if (win->drawing == 0) {
         memset(&(win->drawing_rect), 0x0, sizeof(struct rtgui_rect));
     }
     win->drawing ++;
 
     /* always drawing on the virtual mode */
-    if (rtgui_graphic_driver_is_vmode() == RT_FALSE)
-    {
+    if (rtgui_graphic_driver_is_vmode() == RT_FALSE) {
         /* set the initial visible as true */
         RTGUI_WIDGET_DC_SET_VISIBLE(owner);
 
         /* check the visible of widget */
         widget = owner;
-        while (widget != RT_NULL)
-        {
+        while (widget != RT_NULL) {
             if (RTGUI_WIDGET_IS_HIDE(widget))
             {
                 RTGUI_WIDGET_DC_SET_UNVISIBLE(owner);
@@ -1878,19 +1880,29 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner)
     }
     else if (win->drawing == 1 && rtgui_graphic_driver_is_vmode() == RT_FALSE)
     {
-#ifdef RTGUI_USING_MOUSE_CURSOR
-        rt_mutex_take(&cursor_mutex, RT_WAITING_FOREVER);
-        rtgui_mouse_hide_cursor();
-#endif
+        #ifdef RTGUI_USING_MOUSE_CURSOR
+            rt_mutex_take(&cursor_mutex, RT_WAITING_FOREVER);
+            rtgui_mouse_hide_cursor();
+        #endif
 
-        if (! RTGUI_IS_WINTITLE(win))
-        {
+        if (!RTGUI_IS_WIN_TITLE(win)) {
             /* send draw begin to server */
-            struct rtgui_event_update_begin eupdate;
-            RTGUI_EVENT_UPDATE_BEGIN_INIT(&(eupdate));
-            eupdate.rect = RTGUI_WIDGET(win)->extent;
+            rtgui_evt_generic_t *evt;
 
-            rtgui_server_post_event((struct rtgui_event *)&eupdate, sizeof(eupdate));
+            /* send RTGUI_EVENT_UPDATE_BEGIN */
+            evt = (rtgui_evt_generic_t *)rt_mp_alloc(
+                rtgui_event_pool, RT_WAITING_FOREVER);
+            if (evt) {
+                rt_err_t ret;
+
+                RTGUI_EVENT_UPDATE_BEGIN_INIT(&evt->update_begin);
+                evt->update_begin.rect = RTGUI_WIDGET(win)->extent;
+                ret = rtgui_server_post_event(evt);
+                if (ret) {
+                    rt_mp_free(evt);
+                    LOG_E("dc update err [%d]", ret);
+                }
+            }
         }
     }
 
@@ -1898,8 +1910,7 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner)
 }
 RTM_EXPORT(rtgui_dc_begin_drawing);
 
-void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update)
-{
+void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
     struct rtgui_widget *owner;
     struct rtgui_win *win;
 
@@ -1919,44 +1930,41 @@ void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update)
     /* decrease drawing counter */
     win->drawing--;
 
-    if (win->drawing == 0)
-    {
+    if (win->drawing == 0) {
         /* notify window to handle window update done */
-        if (RTGUI_OBJECT(win)->event_handler)
-        {
-            struct rtgui_event_win_update_end ewin_update;
+        if (RTGUI_OBJECT(win)->event_handler) {
+            rtgui_evt_generic_t *evt;
 
-            RTGUI_EVENT_WIN_UPDATE_END_INIT(&(ewin_update));
-            ewin_update.rect = win->drawing_rect;
-
-            RTGUI_OBJECT(win)->event_handler(RTGUI_OBJECT(win), (struct rtgui_event *)&ewin_update);
+            /* send RTGUI_EVENT_WIN_UPDATE_END */
+            evt = (rtgui_evt_generic_t *)rt_mp_alloc(
+                rtgui_event_pool, RT_WAITING_FOREVER);
+            if (evt) {
+                RTGUI_EVENT_WIN_UPDATE_END_INIT(&evt->win_update);
+                evt->win_update.rect = win->drawing_rect;
+                RTGUI_OBJECT(win)->event_handler(RTGUI_OBJECT(win), evt);
+            } else {
+                LOG_E("get mp err");
+            }
         }
 
-        if (rtgui_graphic_driver_is_vmode() == RT_FALSE && win->update == 0 && update)
-        {
-#ifdef RTGUI_USING_MOUSE_CURSOR
-            rt_mutex_release(&cursor_mutex);
-            /* show cursor */
-            rtgui_mouse_show_cursor();
-#endif
+        if (!rtgui_graphic_driver_is_vmode() && !win->update && update) {
+            #ifdef RTGUI_USING_MOUSE_CURSOR
+                rt_mutex_release(&cursor_mutex);
+                /* show cursor */
+                rtgui_mouse_show_cursor();
+            #endif
 
-            if (RTGUI_IS_WINTITLE(win))
-            {
-                /* update screen */
-                rtgui_graphic_driver_screen_update(rtgui_graphic_driver_get_default(),
-                                                   &(owner->extent));
-            }
-            else
-            {
+            /* update screen */
+            rtgui_graphic_driver_screen_update(
+                rtgui_graphic_driver_get_default(), &(owner->extent));
+
+            if (!RTGUI_IS_WIN_TITLE(win)) {
                 /* send to server for window update */
-                //struct rtgui_event_update_end eupdate;
+                //struct rtgui_evt_update_end eupdate;
                 //RTGUI_EVENT_UPDATE_END_INIT(&(eupdate));
                 //eupdate.rect = owner->extent;
 
-                //rtgui_server_post_event((struct rtgui_event *)&eupdate, sizeof(eupdate));
-
-                /* update screen */
-                rtgui_graphic_driver_screen_update(rtgui_graphic_driver_get_default(), &(owner->extent));
+                //rtgui_server_post_event((struct rtgui_evt *)&eupdate, sizeof(eupdate));
             }
         }
     }

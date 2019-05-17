@@ -24,15 +24,17 @@
 #ifndef __RTGUI_SYSTEM_H__
 #define __RTGUI_SYSTEM_H__
 
-#include <rtthread.h>
-#include <rtgui/rtgui.h>
+#include "include/rtthread.h"
+#include "./rtgui.h"
+#include "./event.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+union rtgui_evt_generic;
 struct rtgui_dc;
-struct rtgui_event;
+struct rtgui_evt;
 struct rtgui_widget;
 
 struct rtgui_timer;
@@ -61,7 +63,8 @@ struct rtgui_timer
 };
 typedef struct rtgui_timer rtgui_timer_t;
 
-rtgui_timer_t *rtgui_timer_create(rt_int32_t time, rt_int32_t flag, rtgui_timeout_func timeout, void *parameter);
+rtgui_timer_t *rtgui_timer_create(rt_int32_t time, rt_int32_t flag,
+    rtgui_timeout_func timeout, void *parameter);
 void rtgui_timer_destory(rtgui_timer_t *timer);
 
 void rtgui_timer_set_timeout(rtgui_timer_t *timer, rt_int32_t time);
@@ -69,7 +72,7 @@ void rtgui_timer_start(rtgui_timer_t *timer);
 void rtgui_timer_stop(rtgui_timer_t *timer);
 
 /* rtgui system initialization function */
-int rtgui_system_server_init(void);
+void rtgui_system_server_init(void);
 
 void *rtgui_malloc(rt_size_t size);
 void rtgui_free(void *ptr);
@@ -93,16 +96,16 @@ void rtgui_screen_unlock(void);
 int rtgui_screen_lock_freeze(void);
 void rtgui_screen_lock_thaw(int value);
 
-struct rtgui_event;
-rt_err_t rtgui_send(struct rtgui_app* app, struct rtgui_event *event, rt_size_t event_size);
-rt_err_t rtgui_send_urgent(struct rtgui_app* app, struct rtgui_event *event, rt_size_t event_size);
-rt_err_t rtgui_send_sync(struct rtgui_app* app, struct rtgui_event *event, rt_size_t event_size);
-rt_err_t rtgui_ack(struct rtgui_event *event, rt_int32_t status);
-rt_err_t rtgui_recv(struct rtgui_event *event, rt_size_t event_size, rt_int32_t timeout);
-rt_err_t rtgui_recv_filter(rt_uint32_t type, struct rtgui_event *event, rt_size_t event_size);
+rt_err_t rtgui_send(struct rtgui_app* app, union rtgui_evt_generic *evt,
+    rt_int32_t timeout);
+rt_err_t rtgui_recv(union rtgui_evt_generic **evt, rt_int32_t timeout);
+rt_err_t rtgui_send_sync(struct rtgui_app *des, struct rtgui_app *src,
+    union rtgui_evt_generic *evt);
+rt_err_t rtgui_ack(union rtgui_evt_generic *evt, rt_uint32_t val);
+rt_err_t rtgui_recv_filter(rt_uint32_t type, union rtgui_evt_generic *evt);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* __RTGUI_SYSTEM_H__ */

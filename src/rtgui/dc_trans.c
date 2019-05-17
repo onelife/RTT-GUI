@@ -22,10 +22,10 @@
  * 2014-03-15     Grissom      The first version
  */
 
-#include <rtgui/rtgui.h>
-#include <rtgui/rtgui_system.h>
-#include <rtgui/dc.h>
-#include <rtgui/dc_trans.h>
+#include "../include/rtgui.h"
+#include "../include/rtgui_system.h"
+#include "../include/dc.h"
+#include "../include/dc_trans.h"
 
 struct rtgui_dc_trans
 {

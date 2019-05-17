@@ -28,8 +28,8 @@
 extern "C" {
 #endif
 
-#include <rtservice.h>
-#include <rtgui/list.h>
+#include "include/rtservice.h"
+#include "./list.h"
 
 /* RTGUI server definitions */
 
@@ -56,7 +56,7 @@ struct rtgui_topwin
     /* event mask */
     rt_uint32_t mask;
 
-    struct rtgui_wintitle *title;
+    struct rtgui_win_title *title;
 
     /* the window id */
     struct rtgui_win *wid;
@@ -86,11 +86,11 @@ void rtgui_server_install_show_win_hook(void (*hk)(void));
 void rtgui_server_install_act_win_hook(void (*hk)(void));
 
 /* post an event to server */
-rt_err_t rtgui_server_post_event(struct rtgui_event *event, rt_size_t size);
-rt_err_t rtgui_server_post_event_sync(struct rtgui_event *event, rt_size_t size);
+rt_err_t rtgui_server_post_event(rtgui_evt_generic_t *evt);
+rt_err_t rtgui_server_post_event_sync(rtgui_evt_generic_t *evt);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* __RTGUI_SERVER_H__ */

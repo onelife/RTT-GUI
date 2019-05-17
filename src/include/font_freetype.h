@@ -25,9 +25,9 @@
 #ifndef __RTGUI_FONT_TTF_H__
 #define __RTGUI_FONT_TTF_H__
 
-#include <rtgui/dc.h>
-#include <rtgui/font.h>
-#include <rtgui/filerw.h>
+#include "./dc.h"
+#include "./font.h"
+#include "./filerw.h"
 
 #ifdef __cplusplus
 extern "C" {

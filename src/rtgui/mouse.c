@@ -22,10 +22,10 @@
  * 2009-10-16     Bernard      first version
  */
 
-#include <rtgui/widgets/mouse.h>
-#include <rtgui/region.h>
-#include <rtgui/driver.h>
-#include <rtgui/rtgui_system.h>
+#include "../include/widgets/mouse.h"
+#include "../include/region.h"
+#include "../include/driver.h"
+#include "../include/rtgui_system.h"
 
 struct rtgui_cursor
 {
@@ -213,67 +213,64 @@ void rtgui_mouse_fini(void)
     }
 }
 
-void rtgui_mouse_moveto(int x, int y)
-{
-#ifdef RTGUI_USING_MOUSE_CURSOR
-    rt_mutex_take(&cursor_mutex, RT_WAITING_FOREVER);
-#endif
+void rtgui_mouse_moveto(rt_uint32_t x, rt_uint32_t y) {
+    #ifdef RTGUI_USING_MOUSE_CURSOR
+        rt_mutex_take(&cursor_mutex, RT_WAITING_FOREVER);
+    #endif
 
-    if (x != _rtgui_cursor->cx ||
-            y != _rtgui_cursor->cy)
-    {
-#ifdef RTGUI_USING_WINMOVE
-        if (_rtgui_cursor->win_rect_show)
-        {
-            if (_rtgui_cursor->win_rect_has_saved == RT_TRUE)
-            {
-                rtgui_winrect_restore();
+    if ((x != _rtgui_cursor->cx) || (y != _rtgui_cursor->cy)) {
+        #ifdef RTGUI_USING_WINMOVE
+            if (_rtgui_cursor->win_rect_show) {
+                if (_rtgui_cursor->win_rect_has_saved == RT_TRUE) {
+                    rtgui_winrect_restore();
+                }
+
+                #ifdef RTGUI_USING_MOUSE_CURSOR
+                    rtgui_mouse_hide_cursor();
+                #endif
+
+                /* move winrect */
+                rtgui_rect_move(&(_rtgui_cursor->win_rect),
+                    x - _rtgui_cursor->cx, y - _rtgui_cursor->cy);
+                rtgui_winrect_save();
+
+                /* move current cursor */
+                _rtgui_cursor->cx = x;
+                _rtgui_cursor->cy = y;
+
+                /* show cursor */
+                #ifdef RTGUI_USING_MOUSE_CURSOR
+                    rtgui_mouse_show_cursor();
+                #endif
+                /* show winrect */
+                rtgui_winrect_show();
+            } else {
+        #endif /* RTGUI_USING_WINMOVE */
+
+        #ifdef RTGUI_USING_MOUSE_CURSOR
+            rtgui_mouse_hide_cursor();
+        #endif
+        /* move current cursor */
+        _rtgui_cursor->cx = x;
+        _rtgui_cursor->cy = y;
+
+        /* show cursor */
+        #ifdef RTGUI_USING_MOUSE_CURSOR
+            rtgui_mouse_show_cursor();
+        #endif
+
+        #ifdef RTGUI_USING_WINMOVE
             }
+        #endif
 
-#ifdef RTGUI_USING_MOUSE_CURSOR
-            rtgui_mouse_hide_cursor();
-#endif
-
-            /* move winrect */
-            rtgui_rect_move(&(_rtgui_cursor->win_rect), x - _rtgui_cursor->cx,
-                              y - _rtgui_cursor->cy);
-            rtgui_winrect_save();
-
-            /* move current cursor */
-            _rtgui_cursor->cx = x;
-            _rtgui_cursor->cy = y;
-
-#ifdef RTGUI_USING_MOUSE_CURSOR
-            /* show cursor */
-            rtgui_mouse_show_cursor();
-#endif
-            /* show winrect */
-            rtgui_winrect_show();
-        }
-        else
-#endif
-        {
-#ifdef RTGUI_USING_MOUSE_CURSOR
-            rtgui_mouse_hide_cursor();
-#endif
-            /* move current cursor */
-            _rtgui_cursor->cx = x;
-            _rtgui_cursor->cy = y;
-
-#ifdef RTGUI_USING_MOUSE_CURSOR
-            /* show cursor */
-            rtgui_mouse_show_cursor();
-#endif
-        }
-
-#ifdef RTGUI_USING_HW_CURSOR
-        rtgui_cursor_set_position(_rtgui_cursor->cx, _rtgui_cursor->cy);
-#endif
+        #ifdef RTGUI_USING_HW_CURSOR
+            rtgui_cursor_set_position(_rtgui_cursor->cx, _rtgui_cursor->cy);
+        #endif
     }
 
-#ifdef RTGUI_USING_MOUSE_CURSOR
-    rt_mutex_release(&cursor_mutex);
-#endif
+    #ifdef RTGUI_USING_MOUSE_CURSOR
+        rt_mutex_release(&cursor_mutex);
+    #endif
 }
 
 void rtgui_mouse_set_position(int x, int y)
@@ -322,17 +319,15 @@ void rtgui_mouse_show_cursor()
     }
 }
 
-void rtgui_mouse_hide_cursor()
-{
+void rtgui_mouse_hide_cursor(void) {
     if (_rtgui_cursor->show_cursor == RT_FALSE)
         return;
 
-    if (_rtgui_cursor->show_cursor_count == 1)
-    {
+    if (_rtgui_cursor->show_cursor_count == 1) {
         /* display the cursor coverage area */
         rtgui_cursor_restore();
     }
-    _rtgui_cursor->show_cursor_count --;
+    _rtgui_cursor->show_cursor_count--;
 }
 
 rt_bool_t rtgui_mouse_is_intersect(rtgui_rect_t *r)
@@ -445,27 +440,22 @@ void rtgui_winrect_set(struct rtgui_win *win)
     _rtgui_cursor->win = win;
 }
 
-rt_bool_t rtgui_winrect_moved_done(rtgui_rect_t *winrect, struct rtgui_win **win)
-{
+rt_bool_t rtgui_winrect_moved_done(rtgui_rect_t *winrect,
+    struct rtgui_win **win) {
     rt_bool_t moved = RT_FALSE;
 
     /* restore winrect */
-    if (_rtgui_cursor->win_rect_has_saved)
-    {
+    if (_rtgui_cursor->win_rect_has_saved) {
         rtgui_winrect_restore();
-
         moved = RT_TRUE;
     }
 
     /* clear win rect show */
     _rtgui_cursor->win_rect_show = RT_FALSE;
     _rtgui_cursor->win_rect_has_saved = RT_FALSE;
-
     /* return win rect */
-    if (winrect)
-        *winrect = _rtgui_cursor->win_rect;
-    if (win)
-        *win = _rtgui_cursor->win;
+    if (winrect) *winrect = _rtgui_cursor->win_rect;
+    if (win) *win = _rtgui_cursor->win;
 
     return moved;
 }

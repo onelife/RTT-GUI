@@ -21,6 +21,7 @@
  * Date           Author       Notes
  * 2009-10-04     Bernard      first version
  * 2010-05-03     Bernard      add win close function
+ * 2019-05-15     onelife      Refactor
  */
 #ifndef __RTGUI_WINDOW_H__
 #define __RTGUI_WINDOW_H__
@@ -29,11 +30,11 @@
 extern "C" {
 #endif
 
-#include <rtgui/rtgui.h>
-#include <rtgui/list.h>
-#include <rtgui/dc.h>
-#include <rtgui/widgets/widget.h>
-#include <rtgui/widgets/box.h>
+#include "../rtgui.h"
+#include "../list.h"
+#include "../dc.h"
+#include "./widget.h"
+#include "./box.h"
 
 DECLARE_CLASS_TYPE(win);
 /** Gets the type of a win */
@@ -85,8 +86,7 @@ enum rtgui_win_flag
     RTGUI_WIN_FLAG_CB_PRESSED  = 0x40,
 };
 
-struct rtgui_win
-{
+struct rtgui_win {
     /* inherit from container */
     rtgui_container_t parent;
 
@@ -122,12 +122,15 @@ struct rtgui_win
 
     /* window title */
     char *title;
-    struct rtgui_wintitle *_title_wgt;
+    struct rtgui_win_title *_title_wgt;
 
     /* call back */
-    rt_bool_t (*on_activate)(struct rtgui_object *widget, struct rtgui_event *event);
-    rt_bool_t (*on_deactivate)(struct rtgui_object *widget, struct rtgui_event *event);
-    rt_bool_t (*on_close)(struct rtgui_object *widget, struct rtgui_event *event);
+    rt_bool_t (*on_activate)(struct rtgui_obj *widget,
+        union rtgui_evt_generic *wvt);
+    rt_bool_t (*on_deactivate)(struct rtgui_obj *widget,
+        union rtgui_evt_generic *wvt);
+    rt_bool_t (*on_close)(struct rtgui_obj *widget,
+        union rtgui_evt_generic *evt);
     /* the key is sent to the focused widget by default. If the focused widget
      * and all of it's parents didn't handle the key event, it will be handled
      * by @func on_key
@@ -135,15 +138,16 @@ struct rtgui_win
      * If you want to handle key event on your own, it's better to overload
      * this function other than handle EVENT_KBD in event_handler.
      */
-    rt_bool_t (*on_key)(struct rtgui_object *widget, struct rtgui_event *event);
+    rt_bool_t (*on_key)(struct rtgui_obj *widget,
+        union rtgui_evt_generic *evt);
 
     /* reserved user data */
     void *user_data;
 
     /* Private data. */
-    rt_base_t (*_do_show)(struct rtgui_win *win);
+    rt_err_t (*_do_show)(struct rtgui_win *win);
 
-    /* app ref_count */
+    /* app ref_cnt */
     rt_uint16_t app_ref_count;
 
     /* win magic flag, magic value is 0xA5A55A5A */
@@ -156,11 +160,11 @@ rtgui_win_t *rtgui_mainwin_create(struct rtgui_win *parent_window, const char *t
 
 void rtgui_win_destroy(rtgui_win_t *win);
 
-int rtgui_win_init(struct rtgui_win *win, struct rtgui_win *parent_window,
+rt_err_t rtgui_win_init(struct rtgui_win *win, struct rtgui_win *parent_window,
                    const char *title,
                    rtgui_rect_t *rect,
                    rt_uint16_t style);
-int rtgui_win_fini(struct rtgui_win* win);
+rt_err_t rtgui_win_fini(struct rtgui_win* win);
 
 /** Close window.
  *
@@ -173,9 +177,9 @@ int rtgui_win_fini(struct rtgui_win* win);
  */
 rt_bool_t rtgui_win_close(struct rtgui_win *win);
 
-rt_base_t rtgui_win_show(struct rtgui_win *win, rt_bool_t is_modal);
-rt_base_t rtgui_win_do_show(struct rtgui_win *win);
-rt_base_t rtgui_win_enter_modal(struct rtgui_win *win);
+rt_err_t rtgui_win_show(struct rtgui_win *win, rt_bool_t is_modal);
+rt_err_t rtgui_win_do_show(struct rtgui_win *win);
+rt_err_t rtgui_win_enter_modal(struct rtgui_win *win);
 
 void rtgui_win_hide(rtgui_win_t *win);
 void rtgui_win_end_modal(rtgui_win_t *win, rtgui_modal_code_t modal_code);
@@ -188,12 +192,13 @@ void rtgui_win_move(struct rtgui_win *win, int x, int y);
 void rtgui_win_set_rect(rtgui_win_t *win, rtgui_rect_t *rect);
 void rtgui_win_update_clip(struct rtgui_win *win);
 
-void rtgui_win_set_onactivate(rtgui_win_t *win, rtgui_event_handler_ptr handler);
-void rtgui_win_set_ondeactivate(rtgui_win_t *win, rtgui_event_handler_ptr handler);
-void rtgui_win_set_onclose(rtgui_win_t *win, rtgui_event_handler_ptr handler);
-void rtgui_win_set_onkey(rtgui_win_t *win, rtgui_event_handler_ptr handler);
+void rtgui_win_set_onactivate(rtgui_win_t *win, rtgui_evt_hdl_p handler);
+void rtgui_win_set_ondeactivate(rtgui_win_t *win, rtgui_evt_hdl_p handler);
+void rtgui_win_set_onclose(rtgui_win_t *win, rtgui_evt_hdl_p handler);
+void rtgui_win_set_onkey(rtgui_win_t *win, rtgui_evt_hdl_p handler);
 
-rt_bool_t rtgui_win_event_handler(struct rtgui_object *win, struct rtgui_event *event);
+rt_bool_t rtgui_win_event_handler(struct rtgui_obj *win,
+    union rtgui_evt_generic *event);
 
 void rtgui_win_event_loop(rtgui_win_t *wnd);
 
@@ -205,11 +210,10 @@ struct rtgui_dc *rtgui_win_get_drawing(rtgui_win_t * win);
 struct rtgui_win* rtgui_win_get_topmost_shown(void);
 struct rtgui_win* rtgui_win_get_next_shown(void);
 
-void rtgui_theme_draw_win(struct rtgui_wintitle *wint);
+void rtgui_theme_draw_win(struct rtgui_win_title *wint);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
-
+#endif /* __RTGUI_WINDOW_H__ */

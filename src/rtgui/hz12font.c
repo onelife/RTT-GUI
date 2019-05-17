@@ -21,7 +21,7 @@
  * Date           Author       Notes
  * 2010-09-15     Bernard      first version
  */
-#include <rtgui/font.h>
+#include "../include/font.h"
 
 #if defined(GUIENGINE_USING_FONT12) && defined(GUIENGINE_USING_FONTHZ)
 #ifndef GUIENGINE_USING_HZ_FILE

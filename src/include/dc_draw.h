@@ -46,7 +46,7 @@
 #ifndef __DC_DRAW_H__
 #define __DC_DRAW_H__
 
-#include <rtgui/blit.h>
+#include "./blit.h"
 
 /* This code assumes that r, g, b, a are the source color,
  * and in the blend and add case, the RGB values are premultiplied by a.

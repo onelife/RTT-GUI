@@ -21,8 +21,8 @@
  * Date           Author       Notes
  * 2009-10-16     Grissiom      first version
  */
-#include <rtgui/rtgui.h>
-#include <rtgui/matrix.h>
+#include "../include/rtgui.h"
+#include "../include/matrix.h"
 
 /* Port from ejoy2d: https://github.com/cloudwu/ejoy2d/blob/master/LICENSE
  * Original License:

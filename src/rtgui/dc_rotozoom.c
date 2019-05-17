@@ -52,13 +52,14 @@ Andreas Schiffler -- aschiffler at ferzkopp dot net
 
 #include <stdlib.h>
 #include <string.h>
-#include <rtgui/rtgui.h>
-#include <rtgui/dc.h>
-#include <rtgui/dc_draw.h>
-#include <rtgui/color.h>
-#include <rtgui/rtgui_system.h>
-
 #include <math.h>
+
+#include "../include/rtgui.h"
+#include "../include/dc.h"
+#include "../include/dc_draw.h"
+#include "../include/color.h"
+#include "../include/rtgui_system.h"
+
 
 /* ---- Internally used structures */
 

@@ -21,8 +21,8 @@
  * Date           Author       Notes
  * 2010-09-15     Bernard      first version
  */
-#include <rtgui/dc.h>
-#include <rtgui/font.h>
+#include "../include/dc.h"
+#include "../include/font.h"
 
 #ifdef RTGUI_USING_HZ_BMP
 

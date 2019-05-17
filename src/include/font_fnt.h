@@ -25,8 +25,8 @@
 #ifndef __FONT_FNT_H__
 #define __FONT_FNT_H__
 
-#include <rtgui/font.h>
-#include <rtgui/dc.h>
+#include "./font.h"
+#include "./dc.h"
 
 #ifdef __cplusplus
 extern "C" {

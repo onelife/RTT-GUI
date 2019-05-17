@@ -24,11 +24,11 @@
 #ifndef __RTGUI_TOPWIN_H__
 #define __RTGUI_TOPWIN_H__
 
-#include <rtgui/rtgui.h>
-#include <rtgui/region.h>
-#include <rtgui/event.h>
-#include <rtgui/widgets/title.h>
-#include <rtgui/rtgui_server.h>
+#include "../rtgui.h"
+#include "../rtgui_server.h"
+#include "../region.h"
+#include "../event.h"
+#include "./title.h"
 
 /* add or remove a top win */
 rt_err_t rtgui_topwin_add(struct rtgui_event_win_create *event);
@@ -41,7 +41,7 @@ rt_err_t rtgui_topwin_show(struct rtgui_event_win *event);
 /* hide a window */
 rt_err_t rtgui_topwin_hide(struct rtgui_event_win *event);
 /* move a window */
-rt_err_t rtgui_topwin_move(struct rtgui_event_win_move *event);
+rt_err_t rtgui_topwin_move(rtgui_evt_generic_t *event);
 /* resize a window */
 void rtgui_topwin_resize(struct rtgui_win *wid, rtgui_rect_t *r);
 /* a window is entering modal mode */

@@ -21,8 +21,8 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
-#include <rtgui/region.h>
-#include <rtgui/rtgui_system.h>
+#include "../include/region.h"
+#include "../include/rtgui_system.h"
 
 /* #define good(reg) RT_ASSERT(rtgui_region16_valid(reg)) */
 #define good(reg)
@@ -102,33 +102,6 @@ static rtgui_region_status_t rtgui_break(rtgui_region_t *pReg);
  * reformatting. Carl Worth did further gratuitous reformatting while re-merging
  * the server and client region code into libpixregion.
  */
-
-/*  true iff two Boxes overlap */
-#define EXTENTCHECK(r1,r2) \
-      (!( ((r1)->x2 <= (r2)->x1)  || \
-          ((r1)->x1 >= (r2)->x2)  || \
-          ((r1)->y2 <= (r2)->y1)  || \
-          ((r1)->y1 >= (r2)->y2) ) )
-
-/* true iff (x,y) is in Box */
-#define INBOX(r,x,y) \
-      ( ((r)->x2 > (x)) && \
-        ((r)->x1 <= (x)) && \
-        ((r)->y2 > (y)) && \
-        ((r)->y1 <= (y)) )
-
-/* true iff Box r1 contains Box r2 */
-#define SUBSUMES(r1,r2) \
-      ( ((r1)->x1 <= (r2)->x1) && \
-        ((r1)->x2 >= (r2)->x2) && \
-        ((r1)->y1 <= (r2)->y1) && \
-        ((r1)->y2 >= (r2)->y2) )
-/* true iff box r1 and box r2 constitute cross */
-#define CROSS(r1,r2) \
-      ( ((r1)->x1 <= (r2)->x1) && \
-        ((r1)->x2 >= (r2)->x2) && \
-        ((r1)->y1 >= (r2)->y1) && \
-        ((r1)->y2 <= (r2)->y2) )
 
 #define allocData(n) rtgui_malloc(PIXREGION_SZOF(n))
 #define freeData(reg) if ((reg)->data && (reg)->data->size) rtgui_free((reg)->data)
@@ -309,19 +282,18 @@ RTM_EXPORT(rtgui_region_copy);
  */
 rt_inline int
 rtgui_coalesce(
-    rtgui_region_t *region,         /* Region to coalesce            */
-    int             prevStart,      /* Index of start of previous band   */
-    int             curStart)       /* Index of start of current band    */
-{
-    rtgui_rect_t   *pPrevBox;       /* Current box in previous band      */
-    rtgui_rect_t   *pCurBox;        /* Current box in current band       */
-    int     numRects;   /* Number rectangles in both bands   */
-    int y2;     /* Bottom of current band        */
+    rtgui_region_t *region,         /* Region to coalesce */
+    int prevStart,                  /* Index of start of previous band */
+    int curStart) {                 /* Index of start of current band */
+    rtgui_rect_t *pPrevBox;         /* Current box in previous band */
+    rtgui_rect_t *pCurBox;          /* Current box in current band */
+    rt_uint32_t numRects;           /* Number rectangles in both bands */
+    int y2;                         /* Bottom of current band */
     /*
      * Figure out how many rectangles are in the band.
      */
     numRects = curStart - prevStart;
-    RT_ASSERT(numRects == region->data->numRects - curStart);
+    RT_ASSERT(numRects == (region->data->numRects - curStart));
 
     if (!numRects) return curStart;
 
@@ -341,17 +313,14 @@ rtgui_coalesce(
      */
     y2 = pCurBox->y2;
 
-    do
-    {
-        if ((pPrevBox->x1 != pCurBox->x1) || (pPrevBox->x2 != pCurBox->x2))
-        {
+    do {
+        if ((pPrevBox->x1 != pCurBox->x1) || (pPrevBox->x2 != pCurBox->x2)) {
             return (curStart);
         }
         pPrevBox++;
         pCurBox++;
         numRects--;
-    }
-    while (numRects);
+    } while (numRects);
 
     /*
      * The bands may be merged, so set the bottom y of each box
@@ -359,24 +328,22 @@ rtgui_coalesce(
      */
     numRects = curStart - prevStart;
     region->data->numRects -= numRects;
-    do
-    {
+    do {
         pPrevBox--;
         pPrevBox->y2 = y2;
         numRects--;
-    }
-    while (numRects);
+    } while (numRects);
     return prevStart;
 }
 
 /* Quicky macro to avoid trivial reject procedure calls to rtgui_coalesce */
 
-#define Coalesce(newReg, prevBand, curBand)             \
-    if (curBand - prevBand == newReg->data->numRects - curBand) {   \
-    prevBand = rtgui_coalesce(newReg, prevBand, curBand);       \
-    } else {                                \
-    prevBand = curBand;                     \
-    }
+#define Coalesce(newReg, prevBand, curBand) \
+if (curBand - prevBand == newReg->data->numRects - curBand) { \
+    prevBand = rtgui_coalesce(newReg, prevBand, curBand); \
+} else { \
+    prevBand = curBand; \
+}
 
 /*-
  *-----------------------------------------------------------------------
@@ -401,8 +368,7 @@ rtgui_region_appendNonO(
     rtgui_rect_t *r,
     rtgui_rect_t *rEnd,
     int     y1,
-    int     y2)
-{
+    int     y2) {
     rtgui_rect_t   *pNextRect;
     int newRects;
 
@@ -415,13 +381,11 @@ rtgui_region_appendNonO(
     RECTALLOC(region, newRects);
     pNextRect = PIXREGION_TOP(region);
     region->data->numRects += newRects;
-    do
-    {
+    do {
         RT_ASSERT(r->x1 < r->x2);
         ADDRECT(pNextRect, r->x1, y1, r->x2, y2);
         r++;
-    }
-    while (r != rEnd);
+    } while (r != rEnd);
 
     return RTGUI_REGION_STATUS_SUCCESS;
 }
@@ -430,8 +394,8 @@ rtgui_region_appendNonO(
 {                                           \
     ry1 = r->y1;                            \
     rBandEnd = r+1;                         \
-    while ((rBandEnd != rEnd) && (rBandEnd->y1 == ry1)) {   \
-    rBandEnd++;                             \
+    while ((rBandEnd != rEnd) && (rBandEnd->y1 == ry1)) { \
+        rBandEnd++;                         \
     }                                       \
 }
 
@@ -515,7 +479,7 @@ rtgui_op(
     short       bot;            /* Bottom of non-overlapping band*/
     int    r1y1;            /* Temps for r1->y1 and r2->y1   */
     int    r2y1;
-    int         newSize;
+    rt_uint32_t newSize;
     int         numRects;
 
     /*
@@ -2059,8 +2023,8 @@ void rtgui_region_dump(rtgui_region_t *region)
 }
 RTM_EXPORT(rtgui_region_dump);
 
-#include <rtgui/dc.h>
-#include <rtgui/color.h>
+#include "../include/dc.h"
+#include "../include/color.h"
 void rtgui_region_draw_clip(rtgui_region_t *region, struct rtgui_dc *dc)
 {
     int i;
@@ -2213,11 +2177,8 @@ void rtgui_rect_union(rtgui_rect_t *src, rtgui_rect_t *dest)
 }
 RTM_EXPORT(rtgui_rect_union);
 
-int rtgui_rect_contains_point(const rtgui_rect_t *rect, int x, int y)
-{
-    if (INBOX(rect, x, y)) return RT_EOK;
-
-    return -RT_ERROR;
+rt_bool_t rtgui_rect_contains_point(const rtgui_rect_t *rect, int x, int y) {
+    return INBOX(rect, x, y);
 }
 RTM_EXPORT(rtgui_rect_contains_point);
 
@@ -2235,32 +2196,26 @@ int  rtgui_rect_contains_rect(const rtgui_rect_t *rect1, const rtgui_rect_t *rec
 }
 RTM_EXPORT(rtgui_rect_contains_rect);
 
-int rtgui_rect_is_intersect(const rtgui_rect_t *rect1, const rtgui_rect_t *rect2)
-{
-    if (INBOX(rect1, rect2->x1, rect2->y1) ||
-            INBOX(rect1, rect2->x1, rect2->y2) ||
-            INBOX(rect1, rect2->x2, rect2->y1) ||
-            INBOX(rect1, rect2->x2, rect2->y2))
-    {
-        return RT_EOK;
+rt_bool_t rtgui_rect_is_intersect(const rtgui_rect_t *rect1,
+    const rtgui_rect_t *rect2) {
+    if (
+        INBOX(rect1, rect2->x1, rect2->y1) || \
+        INBOX(rect1, rect2->x1, rect2->y2) || \
+        INBOX(rect1, rect2->x2, rect2->y1) || \
+        INBOX(rect1, rect2->x2, rect2->y2)) {
+        return RT_TRUE;
+    } else if (
+        INBOX(rect2, rect1->x1, rect1->y1) || \
+        INBOX(rect2, rect1->x1, rect1->y2) || \
+        INBOX(rect2, rect1->x2, rect1->y1) || \
+        INBOX(rect2, rect1->x2, rect1->y2)) {
+        return RT_TRUE;
+    } else if (CROSS(rect1, rect2)) {
+        return RT_TRUE;
+    } else if (CROSS(rect2, rect1)) {
+        return RT_TRUE;
     }
-    else if (INBOX(rect2, rect1->x1, rect1->y1) ||
-             INBOX(rect2, rect1->x1, rect1->y2) ||
-             INBOX(rect2, rect1->x2, rect1->y1) ||
-             INBOX(rect2, rect1->x2, rect1->y2))
-    {
-        return RT_EOK;
-    }
-    else if (CROSS(rect1, rect2))
-    {
-        return RT_EOK;
-    }
-    else if (CROSS(rect2, rect1))
-    {
-        return RT_EOK;
-    }
-
-    return -RT_ERROR;
+    return RT_FALSE;
 }
 RTM_EXPORT(rtgui_rect_is_intersect);
 

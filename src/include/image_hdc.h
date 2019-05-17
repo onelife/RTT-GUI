@@ -24,7 +24,7 @@
 #ifndef __RTGUI_IMAGE_HDC_H__
 #define __RTGUI_IMAGE_HDC_H__
 
-#include <rtgui/image.h>
+#include "./image.h"
 
 struct rtgui_image_hdcmm
 {

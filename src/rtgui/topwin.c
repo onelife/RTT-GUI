@@ -21,18 +21,31 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  * 2012-02-25     Grissiom     rewrite topwin implementation
+ * 2019-05-15     onelife      Refactor
  */
-#include <rtgui/widgets/topwin.h>
-#include <rtgui/widgets/mouse.h>
 
-#include <rtservice.h>
-#include <rtgui/event.h>
-#include <rtgui/image.h>
+#include "../include/event.h"
+#include "../include/widgets/topwin.h"
+#include "../include/widgets/mouse.h"
+
+#include "include/rtservice.h"
+#include "../include/image.h"
 //#include <rtgui/rtgui_theme.h>
-#include <rtgui/rtgui_system.h>
-#include <rtgui/rtgui_app.h>
-#include <rtgui/widgets/window.h>
-#include <rtgui/widgets/container.h>
+#include "../include/rtgui_system.h"
+#include "../include/rtgui_app.h"
+#include "../include/widgets/window.h"
+#include "../include/widgets/container.h"
+
+#ifdef RT_USING_ULOG
+# define LOG_LVL                    LOG_LVL_DBG
+// # define LOG_LVL                   LOG_LVL_INFO
+# define LOG_TAG                    "GUI_TOP"
+# include "components/utilities/ulog/ulog.h"
+#else /* RT_USING_ULOG */
+# define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
+# define LOG_W                      LOG_E
+# define LOG_D                      LOG_E
+#endif /* RT_USING_ULOG */
 
 /*
  * windows tree in the server side.
@@ -69,15 +82,13 @@ static void rtgui_topwin_update_clip(void);
 static void rtgui_topwin_redraw(struct rtgui_rect *rect);
 static void _rtgui_topwin_activate_next(enum rtgui_topwin_flag);
 
-void rtgui_topwin_init(void)
-{
+void rtgui_topwin_init(void) {
     /* initialize semaphore */
     rt_sem_init(&_rtgui_topwin_lock, "wintree", 1, RT_IPC_FLAG_FIFO);
 }
 
-static struct rtgui_topwin *rtgui_topwin_search_in_list(struct rtgui_win *window,
-        struct rt_list_node *list)
-{
+static struct rtgui_topwin *rtgui_topwin_search_in_list(
+    struct rtgui_win *window, struct rt_list_node *list) {
     /* TODO: use a cache to speed up the search. */
     struct rt_list_node *node;
     struct rtgui_topwin *topwin;
@@ -85,120 +96,129 @@ static struct rtgui_topwin *rtgui_topwin_search_in_list(struct rtgui_win *window
     /* the action is tend to operate on the top most window. So we search in a
      * depth first order.
      */
-    rt_list_foreach(node, list, next)
-    {
+    rt_list_foreach(node, list, next) {
         topwin = rt_list_entry(node, struct rtgui_topwin, list);
-
         /* is this node? */
-        if (topwin->wid == window)
-        {
-            return topwin;
-        }
+        if (topwin->wid == window) return topwin;
 
+        LOG_I("topwin->child_list %p", &topwin->child_list);
         topwin = rtgui_topwin_search_in_list(window, &topwin->child_list);
-        if (topwin != RT_NULL)
-            return topwin;
+        if (topwin != RT_NULL) return topwin;
     }
 
     return RT_NULL;
 }
 
 /* add a window to window list[hide] */
-rt_err_t rtgui_topwin_add(struct rtgui_event_win_create *event)
-{
+rt_err_t rtgui_topwin_add(struct rtgui_event_win_create *event) {
     struct rtgui_topwin *topwin;
+    rt_err_t ret;
 
-    topwin = rtgui_malloc(sizeof(struct rtgui_topwin));
-    if (topwin == RT_NULL)
-        return -RT_ERROR;
-
-    topwin->wid    = event->wid;
-    if (event->wid->_title_wgt)
-        topwin->extent = RTGUI_WIDGET(event->wid->_title_wgt)->extent;
-    else
-        topwin->extent = RTGUI_WIDGET(event->wid)->extent;
-    topwin->app    = event->parent.sender;
-
-    if (event->parent_window == RT_NULL)
-    {
-        topwin->parent = RT_NULL;
-        rt_list_insert_before(&_rtgui_topwin_list, &topwin->list);
-    }
-    else
-    {
-        topwin->parent = rtgui_topwin_search_in_list(event->parent_window, &_rtgui_topwin_list);
-        if (topwin->parent == RT_NULL)
-        {
-            /* parent does not exist. Orphan window? */
-            rtgui_free(topwin);
-            return -RT_ERROR;
+    do {
+        topwin = rtgui_malloc(sizeof(struct rtgui_topwin));
+        if (topwin == RT_NULL) {
+            LOG_E("create topwin failed");
+            ret = -RT_ERROR;
+            break;
         }
-        rt_list_insert_before(&topwin->parent->child_list, &topwin->list);
+
+        topwin->wid = event->wid;
+        if (event->wid->_title_wgt) {
+            topwin->extent = RTGUI_WIDGET(event->wid->_title_wgt)->extent;
+        } else {
+            topwin->extent = RTGUI_WIDGET(event->wid)->extent;
+        }
+        topwin->app = event->parent.sender;
+        LOG_D("insert0 [%p] (%s)", event->wid, event->parent.sender->name);
+
+        if (RT_NULL == event->parent_window) {
+            LOG_D("insert as top [%p] (%s)", topwin->wid, topwin->app->name);
+            topwin->parent = RT_NULL;
+            rt_list_insert_before(&_rtgui_topwin_list, &topwin->list);
+        } else {
+            topwin->parent = rtgui_topwin_search_in_list(
+                event->parent_window, &_rtgui_topwin_list);
+            if (RT_NULL == topwin->parent) {
+                /* parent does not exist. Orphan window? */
+                ret = -RT_ERROR;
+                break;
+            }
+            LOG_D("insert as child [%p] (%s)", topwin->wid, topwin->app->name);
+            rt_list_insert_before(&topwin->parent->child_list, &topwin->list);
+        }
+
+        rt_list_init(&topwin->child_list);
+        topwin->flag = WINTITLE_INIT;
+        if (event->parent.user & RTGUI_WIN_STYLE_NO_FOCUS) {
+            topwin->flag |= WINTITLE_NOFOCUS;
+        }
+        if (event->parent.user & RTGUI_WIN_STYLE_ONTOP) {
+            topwin->flag |= WINTITLE_ONTOP;
+        }
+        if (event->parent.user & RTGUI_WIN_STYLE_ONBTM) {
+            topwin->flag |= WINTITLE_ONBTM;
+        }
+        topwin->title = RT_NULL;
+        rtgui_list_init(&topwin->monitor_list);
+
+        ret = RT_EOK;
+    } while (0);
+
+    if (RT_EOK != ret) {
+        rtgui_free(topwin);
     }
 
-    rt_list_init(&topwin->child_list);
-
-    topwin->flag = WINTITLE_INIT;
-    if (event->parent.user & RTGUI_WIN_STYLE_NO_FOCUS)
-        topwin->flag |= WINTITLE_NOFOCUS;
-    if (event->parent.user & RTGUI_WIN_STYLE_ONTOP)
-        topwin->flag |= WINTITLE_ONTOP;
-    if (event->parent.user & RTGUI_WIN_STYLE_ONBTM)
-        topwin->flag |= WINTITLE_ONBTM;
-
-    topwin->title = RT_NULL;
-
-    rtgui_list_init(&topwin->monitor_list);
-
-    return RT_EOK;
+    return ret;
 }
 
-static struct rtgui_topwin *_rtgui_topwin_get_root_win(struct rtgui_topwin *topwin)
-{
-    struct rtgui_topwin *topparent;
+static struct rtgui_topwin *_rtgui_topwin_get_root_win(
+    struct rtgui_topwin *topwin) {
+    struct rtgui_topwin *parent;
 
     RT_ASSERT(topwin != RT_NULL);
 
-    topparent = topwin;
-    while (topparent && !IS_ROOT_WIN(topparent))
-        topparent = topparent->parent;
-    return topparent;
+    parent = topwin;
+    while (parent && !IS_ROOT_WIN(parent)) {
+        parent = parent->parent;
+    }
+    LOG_D("root %s", parent->wid->title);
+    return parent;
 }
 
-static struct rtgui_topwin *_rtgui_topwin_get_topmost_child_shown(struct rtgui_topwin *topwin)
-{
+static struct rtgui_topwin *_rtgui_topwin_get_topmost_child_shown(
+    struct rtgui_topwin *topwin) {
     RT_ASSERT(topwin != RT_NULL);
 
-    while (!(rt_list_isempty(&topwin->child_list)) &&
-            get_topwin_from_list(topwin->child_list.next)->flag & WINTITLE_SHOWN)
-    {
+    while (!(rt_list_isempty(&topwin->child_list)) && \
+           (get_topwin_from_list(topwin->child_list.next)->flag & \
+            WINTITLE_SHOWN)) {
         topwin = get_topwin_from_list(topwin->child_list.next);
     }
     return topwin;
 }
 
-static rt_bool_t _rtgui_topwin_in_layer(struct rtgui_topwin *topwin, enum rtgui_topwin_flag flag)
-{
-    return (topwin->flag & (WINTITLE_ONTOP | WINTITLE_ONBTM))
-           == (flag & (WINTITLE_ONTOP | WINTITLE_ONBTM));
+static rt_bool_t _rtgui_topwin_in_layer(struct rtgui_topwin *topwin,
+    enum rtgui_topwin_flag flag) {
+    return ((WINTITLE_ONTOP | WINTITLE_ONBTM) & topwin->flag) == \
+           ((WINTITLE_ONTOP | WINTITLE_ONBTM) & flag);
 }
 
 /* find the topmost window shown in the layer set by flag. The flag has many
  * other infomations but we only use the ONTOP/ONBTM */
-struct rtgui_topwin *rtgui_topwin_get_topmost_window_shown(enum rtgui_topwin_flag flag)
-{
+struct rtgui_topwin *rtgui_topwin_get_topmost_window_shown(
+    enum rtgui_topwin_flag flag) {
     struct rt_list_node *node;
 
-    rt_list_foreach(node, &_rtgui_topwin_list, next)
-    {
+    rt_list_foreach(node, &_rtgui_topwin_list, next) {
         struct rtgui_topwin *topwin = get_topwin_from_list(node);
 
         /* reach the hidden region no window shown in current layer */
-        if (!(topwin->flag & WINTITLE_SHOWN))
+        if (!(topwin->flag & WINTITLE_SHOWN)) {
             return RT_NULL;
-
-        if (_rtgui_topwin_in_layer(topwin, flag))
+        }
+        if (_rtgui_topwin_in_layer(topwin, flag)) {
             return _rtgui_topwin_get_topmost_child_shown(topwin);
+        }
     }
     /* no window in current layer is shown */
     return RT_NULL;
@@ -271,16 +291,13 @@ struct rtgui_win* rtgui_win_get_next_shown(void)
 
 /* a hidden parent will hide it's children. Top level window can be shown at
  * any time. */
-static rt_bool_t _rtgui_topwin_could_show(struct rtgui_topwin *topwin)
-{
+static rt_bool_t _rtgui_topwin_could_show(struct rtgui_topwin *topwin) {
     struct rtgui_topwin *parent;
 
     RT_ASSERT(topwin != RT_NULL);
 
-    for (parent = topwin->parent; parent != RT_NULL; parent = parent->parent)
-    {
-        if (!(parent->flag & WINTITLE_SHOWN))
-            return RT_FALSE;
+    for (parent = topwin->parent; parent != RT_NULL; parent = parent->parent) {
+        if (!(parent->flag & WINTITLE_SHOWN)) return RT_FALSE;
     }
     return RT_TRUE;
 }
@@ -370,57 +387,77 @@ rt_err_t rtgui_topwin_remove(struct rtgui_win *wid)
 /* neither deactivate the old focus nor change _rtgui_topwin_list.
  * Suitable to be called when the first item is the window to be activated
  * already. */
-static void _rtgui_topwin_only_activate(struct rtgui_topwin *topwin)
-{
-    struct rtgui_event_win event;
+static void _rtgui_topwin_only_activate(struct rtgui_topwin *topwin) {
+    rtgui_evt_generic_t *evt;
 
     RT_ASSERT(topwin != RT_NULL);
+    if (topwin->flag & WINTITLE_NOFOCUS) return;
 
-    if (topwin->flag & WINTITLE_NOFOCUS)
+    /* send RTGUI_EVENT_WIN_ACTIVATE */
+    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
+        rtgui_event_pool, RT_WAITING_FOREVER);
+    if (evt) {
+        rt_err_t ret;
+
+        RTGUI_EVENT_WIN_ACTIVATE_INIT(&evt->win_activate);
+        evt->win_activate.wid = topwin->wid;
+        ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
+        if (ret) {
+            LOG_E("_active %s err [%d]", topwin->wid->title, ret);
+            return;
+        }
+    } else {
+        LOG_E("get mp err");
         return;
-
-    /* activate the raised window */
-    RTGUI_EVENT_WIN_ACTIVATE_INIT(&event);
+    }
 
     topwin->flag |= WINTITLE_ACTIVATE;
-
-    event.wid = topwin->wid;
-    rtgui_send(topwin->app, &(event.parent), sizeof(struct rtgui_event_win));
+    LOG_D("_active %s", topwin->wid->title);
 }
 
 /* activate next window in the same layer as flag. The flag has many other
  * infomations but we only use the ONTOP/ONBTM */
-static void _rtgui_topwin_activate_next(enum rtgui_topwin_flag flag)
-{
+static void _rtgui_topwin_activate_next(enum rtgui_topwin_flag flag) {
     struct rtgui_topwin *topwin;
 
     topwin = rtgui_topwin_get_topmost_window_shown(flag);
-    if (topwin == RT_NULL)
-        return;
+    if (!topwin) return;
 
     _rtgui_topwin_only_activate(topwin);
 }
 
 /* this function does not update the clip(to avoid doubel clipping). So if the
  * tree has changed, make sure it has already updated outside. */
-static void _rtgui_topwin_deactivate(struct rtgui_topwin *topwin)
-{
-    struct rtgui_event_win event;
+static void _rtgui_topwin_deactivate(struct rtgui_topwin *topwin) {
+    rtgui_evt_generic_t *evt;
 
     RT_ASSERT(topwin != RT_NULL);
     RT_ASSERT(topwin->app != RT_NULL);
 
-    RTGUI_EVENT_WIN_DEACTIVATE_INIT(&event);
-    event.wid = topwin->wid;
-    rtgui_send(topwin->app,
-               &event.parent, sizeof(struct rtgui_event_win));
+    /* send RTGUI_EVENT_WIN_DEACTIVATE */
+    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
+        rtgui_event_pool, RT_WAITING_FOREVER);
+    if (evt) {
+        rt_err_t ret;
+        RTGUI_EVENT_WIN_DEACTIVATE_INIT(&evt->win_deactivate);
+        evt->win_deactivate.wid = topwin->wid;
+        ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
+        if (ret) {
+            LOG_E("deactive %s err [%d]", topwin->wid->title, ret);
+            return;
+        }
+    } else {
+        LOG_E("get mp err");
+        return;
+    }
 
     topwin->flag &= ~WINTITLE_ACTIVATE;
+    LOG_E("deactive %s", topwin->wid->title);
 }
 
 /* Return 1 on the tree is truely moved. If the tree is already in position,
  * return 0. */
-static int _rtgui_topwin_move_whole_tree2top(struct rtgui_topwin *topwin)
+static rt_uint32_t _rtgui_topwin_move_whole_tree2top(struct rtgui_topwin *topwin)
 {
     struct rtgui_topwin *topparent;
 
@@ -493,16 +530,14 @@ static void _rtgui_topwin_raise_in_sibling(struct rtgui_topwin *topwin)
 
 /* it will do 2 things. One is moving the whole tree(the root of the tree) to
  * the front and the other is moving topwin to the front of it's siblings. */
-static int _rtgui_topwin_raise_tree_from_root(struct rtgui_topwin *topwin)
-{
-    int moved;
+static rt_uint32_t _rtgui_topwin_raise_tree_from_root(struct rtgui_topwin *topwin) {
+    rt_uint32_t moved;
 
     RT_ASSERT(topwin != RT_NULL);
 
     moved = _rtgui_topwin_move_whole_tree2top(topwin);
     /* root win is aleady moved by _rtgui_topwin_move_whole_tree2top */
-    if (!IS_ROOT_WIN(topwin))
-        _rtgui_topwin_raise_in_sibling(topwin);
+    if (!IS_ROOT_WIN(topwin)) _rtgui_topwin_raise_in_sibling(topwin);
 
     return moved;
 }
@@ -525,79 +560,104 @@ rt_err_t rtgui_topwin_activate(struct rtgui_event_win_activate *event)
     return rtgui_topwin_activate_topwin(topwin);
 }
 
-static void _rtgui_topwin_draw_tree(struct rtgui_topwin *topwin, struct rtgui_event_paint *epaint)
-{
+static void _rtgui_topwin_draw_tree(struct rtgui_topwin *topwin,
+    rtgui_evt_generic_t *evt) {
     struct rt_list_node *node;
 
-    rt_list_foreach(node, &topwin->child_list, next)
-    {
-        if (!(get_topwin_from_list(node)->flag & WINTITLE_SHOWN))
+    rt_list_foreach(node, &topwin->child_list, next) {
+        if (!(get_topwin_from_list(node)->flag & WINTITLE_SHOWN)) {
             break;
-        _rtgui_topwin_draw_tree(get_topwin_from_list(node), epaint);
+        }
+        _rtgui_topwin_draw_tree(get_topwin_from_list(node), evt);
     }
 
-    epaint->wid = topwin->wid;
-    rtgui_send(topwin->app, &(epaint->parent), sizeof(*epaint));
+    evt->paint.wid = topwin->wid;
+    rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
+    LOG_D("draw %s", topwin->wid->title);
 }
 
-rt_err_t rtgui_topwin_activate_topwin(struct rtgui_topwin *topwin)
-{
-    int tpmoved;
-    struct rtgui_topwin *old_focus_topwin;
-    struct rtgui_event_paint epaint;
+rt_err_t rtgui_topwin_activate_topwin(struct rtgui_topwin *topwin) {
+    rt_err_t ret;
 
-    RT_ASSERT(topwin != RT_NULL);
+    do {
+        rtgui_evt_generic_t *evt;
+        rt_uint32_t moved;
+        struct rtgui_topwin *last_topwin;
 
-    RTGUI_EVENT_PAINT_INIT(&epaint);
+        if (!topwin || !(topwin->flag & WINTITLE_SHOWN)) {
+            LOG_E("can't show");
+            ret = -RT_ERROR;
+            break;
+        }
 
-    if (!(topwin->flag & WINTITLE_SHOWN))
-        return -RT_ERROR;
+        /* send RTGUI_EVENT_PAINT */
+        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
+            rtgui_event_pool, RT_WAITING_FOREVER);
+        if (!evt) {
+            LOG_E("get mp err");
+            ret = -RT_ENOMEM;
+            break;
+        }
 
-    if (topwin->flag & WINTITLE_NOFOCUS)
-    {
-        /* just raise and show, no other effects.  Active window is the one
-         * which will receive kbd events. So a no-focus window can only be
-         * "raised" but not "activated".
-         */
-        tpmoved = _rtgui_topwin_raise_tree_from_root(topwin);
+        RTGUI_EVENT_PAINT_INIT(&evt->paint);
+        evt->win_activate.wid = topwin->wid;
+        ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
+        if (ret) {
+            LOG_E("active %s err [%d]", topwin->wid->title, ret);
+            break;
+        }
+
+        if (topwin->flag & WINTITLE_NOFOCUS) {
+            /* just raise and show, no other effects. Active window is the one
+             * which will receive kbd events. So a no-focus window can only be
+             * "raised" but not "activated".
+             */
+            moved = _rtgui_topwin_raise_tree_from_root(topwin);
+            rtgui_topwin_update_clip();
+            /* send RTGUI_EVENT_PAINT */
+            if (moved) {
+                _rtgui_topwin_draw_tree(
+                    _rtgui_topwin_get_root_win(topwin), evt);
+            } else {
+                _rtgui_topwin_draw_tree(topwin, evt);
+            }
+            ret = RT_EOK;
+            break;
+        }
+
+        if (topwin->flag & WINTITLE_ACTIVATE) {
+            ret = RT_EOK;
+            break;
+        }
+
+        last_topwin = rtgui_topwin_get_focus();
+        /* if topwin has the focus, it should have WINTITLE_ACTIVATE set and
+         * returned above. */
+        RT_ASSERT(last_topwin != topwin);
+
+        moved = _rtgui_topwin_raise_tree_from_root(topwin);
+        /* clip before active the window, so we could get right boarder region. */
         rtgui_topwin_update_clip();
-        if (tpmoved)
-            _rtgui_topwin_draw_tree(_rtgui_topwin_get_root_win(topwin),
-                                    &epaint);
-        else
-            _rtgui_topwin_draw_tree(topwin, &epaint);
 
-        return RT_EOK;
-    }
+        if (last_topwin) {
+            /* deactivate the old focus window firstly, otherwise it will make the new
+             * window invisible. */
+            /* send RTGUI_EVENT_WIN_DEACTIVATE */
+            _rtgui_topwin_deactivate(last_topwin);
+        }
+        _rtgui_topwin_only_activate(topwin);
 
-    if (topwin->flag & WINTITLE_ACTIVATE)
-        return RT_EOK;
+        /* send RTGUI_EVENT_PAINT */
+        if (moved) {
+            _rtgui_topwin_draw_tree(
+                _rtgui_topwin_get_root_win(topwin), evt);
+        } else {
+            _rtgui_topwin_draw_tree(topwin, evt);
+        }
+    } while (0);
 
-    old_focus_topwin = rtgui_topwin_get_focus();
-    /* if topwin has the focus, it should have WINTITLE_ACTIVATE set and
-     * returned above. */
-    RT_ASSERT(old_focus_topwin != topwin);
-
-    tpmoved = _rtgui_topwin_raise_tree_from_root(topwin);
-    /* clip before active the window, so we could get right boarder region. */
-    rtgui_topwin_update_clip();
-
-    if (old_focus_topwin != RT_NULL)
-    {
-        /* deactivate the old focus window firstly, otherwise it will make the new
-         * window invisible. */
-        _rtgui_topwin_deactivate(old_focus_topwin);
-    }
-
-    _rtgui_topwin_only_activate(topwin);
-
-    if (tpmoved)
-        _rtgui_topwin_draw_tree(_rtgui_topwin_get_root_win(topwin),
-                                &epaint);
-    else
-        _rtgui_topwin_draw_tree(topwin, &epaint);
-
-    return RT_EOK;
+    LOG_D("active %s", topwin->wid->title);
+    return ret;
 }
 
 /* map func to the topwin tree in preorder.
@@ -605,8 +665,8 @@ rt_err_t rtgui_topwin_activate_topwin(struct rtgui_topwin *topwin)
  * Remember that we are in a embedded system so write the @param func memory
  * efficiently.
  */
-rt_inline void _rtgui_topwin_preorder_map(struct rtgui_topwin *topwin, void (*func)(struct rtgui_topwin *))
-{
+rt_inline void _rtgui_topwin_preorder_map(struct rtgui_topwin *topwin,
+    void (*func)(struct rtgui_topwin *)) {
     struct rt_list_node *child;
 
     RT_ASSERT(topwin != RT_NULL);
@@ -624,56 +684,46 @@ rt_inline void _rtgui_topwin_mark_hidden(struct rtgui_topwin *topwin)
     RTGUI_WIDGET_HIDE(topwin->wid);
 }
 
-rt_inline void _rtgui_topwin_mark_shown(struct rtgui_topwin *topwin)
-{
-    if (topwin->flag & WINTITLE_SHOWN)
-        return;
-
+rt_inline void _rtgui_topwin_mark_shown(struct rtgui_topwin *topwin) {
+    if (topwin->flag & WINTITLE_SHOWN) return;
     topwin->flag |= WINTITLE_SHOWN;
 
-    if (RTGUI_WIDGET_IS_HIDE(topwin->wid))
-    {
+    LOG_D("mark show %s", topwin->wid->title);
+    if (RTGUI_WIDGET_IS_HIDE(topwin->wid)) {
         rtgui_widget_show(RTGUI_WIDGET(topwin->wid));
     }
 }
 
-rt_err_t rtgui_topwin_show(struct rtgui_event_win *event)
-{
+rt_err_t rtgui_topwin_show(struct rtgui_event_win *evt) {
     struct rtgui_topwin *topwin;
-    struct rtgui_win *wid = event->wid;
+    struct rtgui_win *wid = evt->wid;
 
+    LOG_D("search topwin %s [%p] (%s)", wid->title, wid, wid->app->name);
     topwin = rtgui_topwin_search_in_list(wid, &_rtgui_topwin_list);
     /* no such a window recorded */
-    if (topwin == RT_NULL)
+    if (RT_NULL == topwin) {
+        LOG_E("no topwin");
         return -RT_ERROR;
+    }
 
     /* child windows could only be shown iif the parent is shown */
-    if (!_rtgui_topwin_could_show(topwin))
-    {
+    if (!_rtgui_topwin_could_show(topwin)) {
+        LOG_E("can't show");
         return -RT_ERROR;
     }
 
     _rtgui_topwin_preorder_map(topwin, _rtgui_topwin_mark_shown);
-    rtgui_topwin_activate_topwin(topwin);
-
-    return RT_EOK;
+    return rtgui_topwin_activate_topwin(topwin);
 }
 
-static void _rtgui_topwin_clear_modal_tree(struct rtgui_topwin *topwin)
-{
-    struct rt_list_node *node;
+static void _rtgui_topwin_clear_modal_tree(struct rtgui_topwin *topwin) {
+    while (!IS_ROOT_WIN(topwin)) {
+        struct rt_list_node *node;
 
-    RT_ASSERT(topwin != RT_NULL);
-    RT_ASSERT(topwin->parent != RT_NULL);
-
-    while (!IS_ROOT_WIN(topwin))
-    {
-        rt_list_foreach(node, &topwin->parent->child_list, next)
-        {
+        rt_list_foreach(node, &topwin->parent->child_list, next) {
             get_topwin_from_list(node)->flag &= ~WINTITLE_MODALED;
             get_topwin_from_list(node)->wid->flag &= ~RTGUI_WIN_FLAG_UNDER_MODAL;
-            if (get_topwin_from_list(node)->flag & WINTITLE_MODALING)
-            {
+            if (get_topwin_from_list(node)->flag & WINTITLE_MODALING) {
                 goto _out;
             }
         }
@@ -686,17 +736,16 @@ _out:
 }
 
 /* hide a window */
-rt_err_t rtgui_topwin_hide(struct rtgui_event_win *event)
-{
+rt_err_t rtgui_topwin_hide(struct rtgui_event_win *evt) {
     struct rtgui_topwin *topwin;
-    struct rtgui_topwin *old_focus_topwin;
+    struct rtgui_topwin *last_topwin;
     struct rtgui_win    *wid;
     struct rt_list_node *containing_list;
 
-    if (!event)
+    if (!evt)
         return -RT_ERROR;
 
-    wid = event->wid;
+    wid = evt->wid;
     /* find in show list */
     topwin = rtgui_topwin_search_in_list(wid, &_rtgui_topwin_list);
     if (topwin == RT_NULL)
@@ -708,7 +757,7 @@ rt_err_t rtgui_topwin_hide(struct rtgui_event_win *event)
         return RT_EOK;
     }
 
-    old_focus_topwin = rtgui_topwin_get_focus();
+    last_topwin = rtgui_topwin_get_focus();
 
     _rtgui_topwin_preorder_map(topwin, _rtgui_topwin_mark_hidden);
 
@@ -729,7 +778,7 @@ rt_err_t rtgui_topwin_hide(struct rtgui_event_win *event)
         _rtgui_topwin_clear_modal_tree(topwin);
     }
 
-    if (old_focus_topwin == topwin)
+    if (last_topwin == topwin)
     {
         _rtgui_topwin_activate_next(topwin->flag);
     }
@@ -743,58 +792,67 @@ rt_err_t rtgui_topwin_hide(struct rtgui_event_win *event)
 }
 
 /* move top window */
-rt_err_t rtgui_topwin_move(struct rtgui_event_win_move *event)
-{
-    struct rtgui_topwin *topwin;
-    int dx, dy;
-    rtgui_rect_t old_rect; /* the old topwin coverage area */
-    struct rtgui_list_node *node;
+rt_err_t rtgui_topwin_move(rtgui_evt_generic_t *evt) {
+    rt_err_t ret;
 
-    /* find in show list */
-    topwin = rtgui_topwin_search_in_list(event->wid, &_rtgui_topwin_list);
-    if (topwin == RT_NULL ||
-            !(topwin->flag & WINTITLE_SHOWN))
-    {
-        return -RT_ERROR;
-    }
+    do {
+        struct rtgui_topwin *topwin;
+        rt_int16_t dx, dy;
+        rtgui_rect_t last_rect;
+        struct rt_list_node *node;
 
-    /* get the delta move x, y */
-    dx = event->x - topwin->extent.x1;
-    dy = event->y - topwin->extent.y1;
+        /* find in show list */
+        topwin = rtgui_topwin_search_in_list(
+            evt->win_move.wid, &_rtgui_topwin_list);
+        if (!topwin || !(topwin->flag & WINTITLE_SHOWN)) {
+            LOG_E("can't show");
+            ret = -RT_ERROR;
+            break;
+        }
 
-    old_rect = topwin->extent;
-    /* move window rect */
-    rtgui_rect_move(&(topwin->extent), dx, dy);
+        /* get the delta move x, y */
+        dx = evt->win_move.x - topwin->extent.x1;
+        dy = evt->win_move.y - topwin->extent.y1;
+        last_rect = topwin->extent;
+        /* move window rect */
+        rtgui_rect_move(&(topwin->extent), dx, dy);
 
-    /* move the monitor rect list */
-    rtgui_list_foreach(node, &(topwin->monitor_list))
-    {
-        struct rtgui_mouse_monitor *monitor = rtgui_list_entry(node,
-                                              struct rtgui_mouse_monitor,
-                                              list);
-        rtgui_rect_move(&(monitor->rect), dx, dy);
-    }
+        /* move the monitor rect list */
+        rtgui_list_foreach(node, &(topwin->monitor_list)) {
+            struct rtgui_mouse_monitor *monitor;
+            monitor = rtgui_list_entry(node, struct rtgui_mouse_monitor, list);
+            rtgui_rect_move(&(monitor->rect), dx, dy);
+        }
 
-    /* update windows clip info */
-    rtgui_topwin_update_clip();
+        /* update windows clip info */
+        rtgui_topwin_update_clip();
+        /* update last window coverage area */
+        rtgui_topwin_redraw(&last_rect);
 
-    /* update old window coverage area */
-    rtgui_topwin_redraw(&old_rect);
+        if (!rtgui_rect_is_intersect(&last_rect, &(topwin->extent))) {
+            /* last rect is not intersect with moved rect, re-paint window */
+            rtgui_evt_generic_t *evt;
 
-    if (rtgui_rect_is_intersect(&old_rect, &(topwin->extent)) != RT_EOK)
-    {
-        /*
-         * the old rect is not intersect with moved rect,
-         * re-paint window
-         */
-        struct rtgui_event_paint epaint;
-        RTGUI_EVENT_PAINT_INIT(&epaint);
-        epaint.wid = topwin->wid;
+            /* send RTGUI_EVENT_PAINT */
+            evt = (rtgui_evt_generic_t *)rt_mp_alloc(
+                rtgui_event_pool, RT_WAITING_FOREVER);
+            if (evt) {
+                RTGUI_EVENT_PAINT_INIT(&evt->paint);
+                evt->paint.wid = topwin->wid;
+                ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
+                if (ret) {
+                    LOG_E("paint %s err [%d]", topwin->wid->title, ret);
+                    break;
+                }
+            } else {
+                LOG_E("get mp err");
+                ret = -RT_ENOMEM;
+                break;
+            }
+        }
+    } while (0);
 
-        rtgui_send(topwin->app, &(epaint.parent), sizeof(epaint));
-    }
-
-    return RT_EOK;
+    return ret;
 }
 
 /*
@@ -919,120 +977,130 @@ rt_inline void _rtgui_topwin_clip_to_region(struct rtgui_topwin *topwin,
     rtgui_region_intersect(&topwin->wid->outer_clip, &topwin->wid->outer_clip, region);
 }
 
-static void rtgui_topwin_update_clip(void)
-{
-    struct rtgui_topwin *top;
-    struct rtgui_event_clip_info eclip;
+static void rtgui_topwin_update_clip(void) {
+    struct rtgui_topwin *topwin;
+    rtgui_evt_generic_t *evt;
+    rt_err_t ret;
+    struct rtgui_event_clip_info *e_clip;
     /* Note that the region is a "female die", that means it's the region you
      * can paint to, not the region covered by others.
      */
     struct rtgui_region region_available;
 
-    if (rt_list_isempty(&_rtgui_topwin_list) ||
-            !(get_topwin_from_list(_rtgui_topwin_list.next)->flag & WINTITLE_SHOWN))
+    if (rt_list_isempty(&_rtgui_topwin_list) || \
+        !(get_topwin_from_list(_rtgui_topwin_list.next)->flag & \
+          WINTITLE_SHOWN)) {
+        LOG_E("can't show");
         return;
+    }
 
-    RTGUI_EVENT_CLIP_INFO_INIT(&eclip);
-
-    rtgui_region_init_rect(&region_available, 0, 0,
-                           rtgui_graphic_driver_get_default()->width,
-                           rtgui_graphic_driver_get_default()->height);
+    rtgui_region_init_rect(
+        &region_available, 0, 0,
+        rtgui_graphic_driver_get_default()->width,
+        rtgui_graphic_driver_get_default()->height);
 
     /* from top to bottom. */
-    top = rtgui_topwin_get_topmost_window_shown(WINTITLE_ONTOP);
+    topwin = rtgui_topwin_get_topmost_window_shown(WINTITLE_ONTOP);
     /* 0 is normal layer */
-    if (top == RT_NULL)
-        top = rtgui_topwin_get_topmost_window_shown(WINTITLE_INIT);
-    if (top == RT_NULL)
-        top = rtgui_topwin_get_topmost_window_shown(WINTITLE_ONBTM);
+    if (!topwin) {
+        topwin = rtgui_topwin_get_topmost_window_shown(WINTITLE_INIT);
+    }
+    if (!topwin) {
+        topwin = rtgui_topwin_get_topmost_window_shown(WINTITLE_ONBTM);
+    }
 
-    while (top != RT_NULL)
-    {
+    /* send RTGUI_EVENT_CLIP_INFO */
+    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
+        rtgui_event_pool, RT_WAITING_FOREVER);
+    if (!evt) {
+        LOG_E("get mp err");
+        return;
+    }
+    RTGUI_EVENT_CLIP_INFO_INIT(&evt->clip_info);
+
+    while (topwin) {
+        LOG_D("topwin %s (%s)", topwin->wid->title, topwin->wid->app->name);
+        evt->clip_info.wid = topwin->wid;
+
         /* clip the topwin */
-        _rtgui_topwin_clip_to_region(top, &region_available);
-
+        _rtgui_topwin_clip_to_region(topwin, &region_available);
         /* update available region */
-        rtgui_region_subtract_rect(&region_available, &region_available, &top->extent);
+        rtgui_region_subtract_rect(
+            &region_available, &region_available, &topwin->extent);
 
-        /* send clip event to destination window */
-        eclip.wid = top->wid;
-        rtgui_send(top->app, &(eclip.parent), sizeof(struct rtgui_event_clip_info));
+        ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
+        if (ret) {
+            LOG_E("active %s err [%d]", topwin->wid->title, ret);
+            return;
+        }
 
-        top = _rtgui_topwin_get_next_shown(top);
+        topwin = _rtgui_topwin_get_next_shown(topwin);
     }
 
     rtgui_region_fini(&region_available);
 }
 
 static void _rtgui_topwin_redraw_tree(struct rt_list_node *list,
-                                      struct rtgui_rect *rect,
-                                      struct rtgui_event_paint *epaint)
-{
+    struct rtgui_rect *rect, struct rtgui_event_paint *e_paint) {
     struct rt_list_node *node;
 
     RT_ASSERT(list != RT_NULL);
     RT_ASSERT(rect != RT_NULL);
-    RT_ASSERT(epaint != RT_NULL);
+    RT_ASSERT(e_paint != RT_NULL);
 
     /* skip the hidden windows */
-    rt_list_foreach(node, list, prev)
-    {
-        if (get_topwin_from_list(node)->flag & WINTITLE_SHOWN)
-            break;
+    rt_list_foreach(node, list, prev) {
+        if (get_topwin_from_list(node)->flag & WINTITLE_SHOWN) break;
     }
 
-    for (; node != list; node = node->prev)
-    {
+    for (; node != list; node = node->prev) {
         struct rtgui_topwin *topwin;
 
         topwin = get_topwin_from_list(node);
 
         //FIXME: intersect with clip?
-        if (rtgui_rect_is_intersect(rect, &(topwin->extent)) == RT_EOK)
-        {
-            epaint->wid = topwin->wid;
+        if (!rtgui_rect_is_intersect(rect, &(topwin->extent))) {
+            e_paint->wid = topwin->wid;
             // < XY do !!! >
-            //rtgui_send(topwin->app, &(epaint->parent), sizeof(*epaint));
+            //rtgui_send(topwin->app, &(e_paint->parent), sizeof(*e_paint));
         }
 
-        _rtgui_topwin_redraw_tree(&topwin->child_list, rect, epaint);
+        _rtgui_topwin_redraw_tree(&topwin->child_list, rect, e_paint);
     }
 }
 
-static void rtgui_topwin_redraw(struct rtgui_rect *rect)
-{
-    struct rtgui_event_paint epaint;
-    RTGUI_EVENT_PAINT_INIT(&epaint);
-    epaint.wid = RT_NULL;
+static void rtgui_topwin_redraw(struct rtgui_rect *rect) {
+    struct rtgui_event_paint *e_paint;
 
-    _rtgui_topwin_redraw_tree(&_rtgui_topwin_list, rect, &epaint);
+    e_paint = rtgui_malloc(sizeof(struct rtgui_event_paint));
+    if (!e_paint) {
+        LOG_E("redraw mem err");
+        return;
+    }
+    RTGUI_EVENT_PAINT_INIT(e_paint);
+    e_paint->wid = RT_NULL;
+
+    _rtgui_topwin_redraw_tree(&_rtgui_topwin_list, rect, e_paint);
 }
 
 /* a window enter modal mode will modal all the sibling window and parent
  * window all along to the root window. If a root window modals, there is
  * nothing to do here.*/
-rt_err_t rtgui_topwin_modal_enter(struct rtgui_event_win_modal_enter *event)
-{
+rt_err_t rtgui_topwin_modal_enter(struct rtgui_event_win_modal_enter *event) {
     struct rtgui_topwin *topwin, *parent_top;
     struct rt_list_node *node;
 
     topwin = rtgui_topwin_search_in_list(event->wid, &_rtgui_topwin_list);
-
-    if (topwin == RT_NULL)
-        return -RT_ERROR;
-
-    if (IS_ROOT_WIN(topwin))
-        return RT_EOK;
+    if (topwin == RT_NULL) return -RT_ERROR;
+    if (IS_ROOT_WIN(topwin)) return RT_EOK;
 
     parent_top = topwin->parent;
 
     /* modal window should be on top already */
     RT_ASSERT(get_topwin_from_list(parent_top->child_list.next) == topwin);
 
-    do
-    {
-        rt_list_foreach(node, &parent_top->child_list, next)
-        {
+    do {
+        rt_list_foreach(node, &parent_top->child_list, next) {
             get_topwin_from_list(node)->flag |= WINTITLE_MODALED;
             get_topwin_from_list(node)->wid->flag |= RTGUI_WIN_FLAG_UNDER_MODAL;
         }
@@ -1040,8 +1108,7 @@ rt_err_t rtgui_topwin_modal_enter(struct rtgui_event_win_modal_enter *event)
         parent_top->flag |= WINTITLE_MODALED;
         parent_top->wid->flag |= RTGUI_WIN_FLAG_UNDER_MODAL;
         parent_top = parent_top->parent;
-    }
-    while (parent_top);
+    } while (parent_top);
 
     topwin->flag &= ~WINTITLE_MODALED;
     topwin->wid->flag &= ~RTGUI_WIN_FLAG_UNDER_MODAL;
@@ -1050,24 +1117,22 @@ rt_err_t rtgui_topwin_modal_enter(struct rtgui_event_win_modal_enter *event)
     return RT_EOK;
 }
 
-void rtgui_topwin_append_monitor_rect(struct rtgui_win *wid, rtgui_rect_t *rect)
-{
+void rtgui_topwin_append_monitor_rect(struct rtgui_win *wid,
+    rtgui_rect_t *rect) {
     struct rtgui_topwin *win;
 
     /* parameters check */
-    if (wid == RT_NULL || rect == RT_NULL) return;
+    if (!wid || !rect) return;
 
     /* find topwin */
     win = rtgui_topwin_search_in_list(wid, &_rtgui_topwin_list);
-    if (win == RT_NULL)
-        return;
-
+    if (!win) return;
     /* append rect to top window monitor rect list */
     rtgui_mouse_monitor_append(&(win->monitor_list), rect);
 }
 
-void rtgui_topwin_remove_monitor_rect(struct rtgui_win *wid, rtgui_rect_t *rect)
-{
+void rtgui_topwin_remove_monitor_rect(struct rtgui_win *wid,
+    rtgui_rect_t *rect) {
     struct rtgui_topwin *win;
 
     /* parameters check */
@@ -1083,107 +1148,91 @@ void rtgui_topwin_remove_monitor_rect(struct rtgui_win *wid, rtgui_rect_t *rect)
     rtgui_mouse_monitor_remove(&(win->monitor_list), rect);
 }
 
-static struct rtgui_object* _get_obj_in_topwin(struct rtgui_topwin *topwin,
-        struct rtgui_app *app,
-        rt_uint32_t id)
-{
-    struct rtgui_object *object;
+static struct rtgui_obj* _get_obj_in_topwin(struct rtgui_topwin *topwin,
+    struct rtgui_app *app, rt_uint32_t id) {
+    struct rtgui_obj *object;
     struct rt_list_node *node;
 
     object = RTGUI_OBJECT(topwin->wid);
-    if (object->id == id)
-        return object;
+    if (object->id == id) return object;
 
     object = rtgui_container_get_object(RTGUI_CONTAINER(object), id);
-    if (object)
-        return object;
+    if (object) return object;
 
-    rt_list_foreach(node, &topwin->child_list, next)
-    {
+    rt_list_foreach(node, &topwin->child_list, next) {
         struct rtgui_topwin *topwin;
 
         topwin = get_topwin_from_list(node);
-        if (topwin->app != app)
-            continue;
+        if (topwin->app != app) continue;
 
         object = _get_obj_in_topwin(topwin, app, id);
-        if (object)
-            return object;
+        if (object) return object;
     }
 
     return RT_NULL;
 }
 
-struct rtgui_object* rtgui_get_object(struct rtgui_app *app, rt_uint32_t id)
-{
-    struct rtgui_object *object;
+struct rtgui_obj* rtgui_get_object(struct rtgui_app *app, rt_uint32_t id) {
+    struct rtgui_obj *obj;
     struct rt_list_node *node;
 
-    object = RTGUI_OBJECT(app);
-    if (object->id == id)
-        return object;
+    obj = RTGUI_OBJECT(app);
+    if (obj->id == id) return obj;
 
-    rt_list_foreach(node, &_rtgui_topwin_list, next)
-    {
+    rt_list_foreach(node, &_rtgui_topwin_list, next) {
         struct rtgui_topwin *topwin;
 
         topwin = get_topwin_from_list(node);
-        if (topwin->app != app)
-            continue;
+        if (topwin->app != app) continue;
 
-        object = _get_obj_in_topwin(topwin, app, id);
-        if (object)
-            return object;
+        obj = _get_obj_in_topwin(topwin, app, id);
+        if (obj) return obj;
     }
     return RT_NULL;
 }
 RTM_EXPORT(rtgui_get_object);
 
-struct rtgui_object* rtgui_get_self_object(rt_uint32_t id)
-{
+struct rtgui_obj* rtgui_get_self_object(rt_uint32_t id) {
     return rtgui_get_object(rtgui_app_self(), id);
 }
 RTM_EXPORT(rtgui_get_self_object);
 
-static void _rtgui_topwin_dump(struct rtgui_topwin *topwin)
-{
+static void _rtgui_topwin_dump(struct rtgui_topwin *topwin) {
     rt_kprintf("0x%p:%s,0x%x,%c%c",
-               topwin, topwin->wid->title, topwin->flag,
-               topwin->flag & WINTITLE_SHOWN ? 'S' : 'H',
-               topwin->flag & WINTITLE_MODALED ? 'm' :
-               topwin->flag & WINTITLE_MODALING ? 'M' : ' ');
+        topwin, topwin->wid->title, topwin->flag,
+        topwin->flag & WINTITLE_SHOWN ? 'S' : 'H',
+        topwin->flag & WINTITLE_MODALED ? 'm' :
+        topwin->flag & WINTITLE_MODALING ? 'M' : ' ');
 }
 
-static void _rtgui_topwin_dump_tree(struct rtgui_topwin *topwin)
-{
+static void _rtgui_topwin_dump_tree(struct rtgui_topwin *topwin) {
     struct rt_list_node *node;
 
     _rtgui_topwin_dump(topwin);
 
     rt_kprintf("(");
-    rt_list_foreach(node, &topwin->child_list, next)
-    {
+    rt_list_foreach(node, &topwin->child_list, next) {
         _rtgui_topwin_dump_tree(get_topwin_from_list(node));
     }
     rt_kprintf(")");
 }
 
-void rtgui_topwin_dump_tree(void)
-{
+static void rtgui_topwin_dump_tree(void) {
     struct rt_list_node *node;
 
-    rt_list_foreach(node, &_rtgui_topwin_list, next)
-    {
+    rt_list_foreach(node, &_rtgui_topwin_list, next) {
         _rtgui_topwin_dump_tree(get_topwin_from_list(node));
         rt_kprintf("\n");
     }
 }
 
+
 #ifdef RT_USING_FINSH
-#include <finsh.h>
-void dump_tree()
-{
+#include "components/finsh/finsh.h"
+
+void dump_tree() {
     rtgui_topwin_dump_tree();
 }
 FINSH_FUNCTION_EXPORT(dump_tree, dump rtgui topwin tree)
-#endif
+
+#endif /* RT_USING_FINSH */

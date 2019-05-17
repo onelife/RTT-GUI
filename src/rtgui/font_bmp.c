@@ -21,8 +21,8 @@
  * Date           Author       Notes
  * 2010-09-15     Bernard      first version
  */
-#include <rtgui/font.h>
-#include <rtgui/dc.h>
+#include "../include/font.h"
+#include "../include/dc.h"
 
 /* bitmap font private data */
 

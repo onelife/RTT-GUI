@@ -24,9 +24,9 @@
 #ifndef __RTGUI_IMAGE_H__
 #define __RTGUI_IMAGE_H__
 
-#include <rtgui/dc.h>
-#include <rtgui/filerw.h>
-#include <rtgui/region.h>
+#include "./dc.h"
+#include "./filerw.h"
+#include "./region.h"
 
 #ifdef __cplusplus
 extern "C" {

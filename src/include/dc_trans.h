@@ -25,8 +25,8 @@
 #ifndef __RTGUI_DC_TRANS_H__
 #define __RTGUI_DC_TRANS_H__
 
-#include <rtgui/dc.h>
-#include <rtgui/matrix.h>
+#include "./dc.h"
+#include "./matrix.h"
 
 struct rtgui_dc_trans;
 

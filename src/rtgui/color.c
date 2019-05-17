@@ -21,8 +21,8 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
-#include <rtgui/color.h>
-#include <rtconfig.h>
+#include "rtconfig.h"
+#include "../include/color.h"
 
 const rtgui_color_t red     = RTGUI_RGB(0xff, 0x00, 0x00);
 const rtgui_color_t green   = RTGUI_RGB(0x00, 0xff, 0x00);
@@ -34,7 +34,7 @@ const rtgui_color_t high_light  = RTGUI_RGB(0xfc, 0xfc, 0xfc);
 const rtgui_color_t dark_grey   = RTGUI_RGB(0x7f, 0x7f, 0x7f);
 const rtgui_color_t light_grey  = RTGUI_RGB(0xc0, 0xc0, 0xc0);
 
-const static rt_uint8_t pixel_bits_table[] =
+static const rt_uint8_t pixel_bits_table[] =
 {
     1, /* mono */
     2, /* 4 level for gray */

@@ -21,8 +21,8 @@
  * Date           Author       Notes
  * 2010-09-15     Bernard      first version
  */
-#include <rtgui/rtgui_system.h>
-#include <rtgui/image_container.h>
+#include "../include/rtgui_system.h"
+#include "../include/image_container.h"
 
 /*
  * ImageContainer is a Image pool to manage image resource in the system.
@@ -124,26 +124,26 @@ unsigned int direct_hash(const void *v)
     return (unsigned int)(((rt_ubase_t)v) & 0xFFFFFFFF);
 }
 
-rtgui_hash_table_t *hash_table_create(rtgui_hash_func_t hash_func, rtgui_equal_func_t key_equal_func)
-{
+rtgui_hash_table_t *hash_table_create(rtgui_hash_func_t hash_func,
+    rtgui_equal_func_t key_equal_func) {
     rtgui_hash_table_t *hash_table;
 
-    hash_table = (rtgui_hash_table_t *) rtgui_malloc(sizeof(rtgui_hash_table_t));
-    if (hash_table != RT_NULL)
-    {
-        hash_table->size               = HASH_TABLE_MIN_SIZE;
-        hash_table->nnodes             = 0;
-        hash_table->hash_func          = hash_func ? hash_func : direct_hash;
-        hash_table->key_equal_func     = key_equal_func;
-        hash_table->nodes              = (rtgui_hash_node_t **)rtgui_malloc(sizeof(rtgui_hash_node_t *) * hash_table->size);
-        if (hash_table->nodes == RT_NULL)
-        {
+    hash_table = (rtgui_hash_table_t *)rtgui_malloc(sizeof(rtgui_hash_table_t));
+    if (RT_NULL != hash_table) {
+        hash_table->size            = HASH_TABLE_MIN_SIZE;
+        hash_table->nnodes          = 0;
+        hash_table->hash_func       = hash_func ? hash_func : direct_hash;
+        hash_table->key_equal_func  = key_equal_func;
+        hash_table->nodes           = (rtgui_hash_node_t **)rtgui_malloc(
+            sizeof(rtgui_hash_node_t *) * hash_table->size);
+        if (RT_NULL == hash_table->nodes) {
             /* no memory yet */
             rtgui_free(hash_table);
             return RT_NULL;
         }
 
-        rt_memset(hash_table->nodes, 0, sizeof(rtgui_hash_node_t *) * hash_table->size);
+        rt_memset(hash_table->nodes, 0,
+            sizeof(rtgui_hash_node_t *) * hash_table->size);
     }
 
     return hash_table;
@@ -360,24 +360,21 @@ unsigned int string_hash_func(const void *self)
     return h ;
 }
 
-rt_bool_t string_equal_func(const void *a, const void *b)
-{
+rt_bool_t string_equal_func(const void *a, const void *b) {
     const char *str1, *str2;
 
     str1 = (const char *)a;
     str2 = (const char *)b;
 
-    if (strcmp(str1, str2) == 0) return RT_TRUE;
+    if (0 == strcmp(str1, str2)) return RT_TRUE;
     return RT_FALSE;
 }
 
 static rtgui_hash_table_t *image_hash_table;
 static struct rt_mutex _image_hash_lock;
 
-void rtgui_system_image_container_init(void)
-{
+void rtgui_system_image_container_init(void) {
     rt_mutex_init(&_image_hash_lock, "image", RT_IPC_FLAG_FIFO);
-
     /* create image hash table */
     image_hash_table = hash_table_create(string_hash_func, string_equal_func);
     RT_ASSERT(image_hash_table != RT_NULL);

@@ -25,8 +25,8 @@
 /*
 * rockbox fnt font engine
 */
-#include <rtgui/font_fnt.h>
-#include <rtgui/rtgui_system.h>
+#include "../include/font_fnt.h"
+#include "../include/rtgui_system.h"
 
 #ifdef _WIN32_NATIVE
 #include <fcntl.h>
@@ -39,7 +39,7 @@
 #define write   _write
 #define unlink  _unlink
 #else
-#include <dfs_posix.h>
+#include "components/dfs/include/dfs_posix.h"
 #endif
 
 static void rtgui_fnt_font_draw_text(struct rtgui_font *font, struct rtgui_dc *dc, const char *text, rt_ubase_t len, struct rtgui_rect *rect);
@@ -400,7 +400,7 @@ struct rtgui_font *rtgui_asc_fnt_font_create(const char* filename, const char* f
 }
 
 #ifdef GUIENG_USING_FNT_FILE
-#include <dfs_posix.h>
+# include "components/dfs/include/dfs_posix.h"
 
 rt_inline int readbyte(int fd, unsigned char *cp)
 {

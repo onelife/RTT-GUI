@@ -21,7 +21,7 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
-#include <rtgui/font.h>
+#include "../include/font.h"
 
 #ifdef GUIENGINE_USING_FONT16
 const unsigned char asc16_font[] =

@@ -28,10 +28,10 @@
 extern "C" {
 #endif
 
-#include <rtgui/rtgui.h>
-#include <rtgui/font.h>
-#include <rtgui/driver.h>
-#include <rtgui/widgets/widget.h>
+#include "./rtgui.h"
+#include "./font.h"
+#include "./driver.h"
+#include "./widgets/widget.h"
 
 #define RTGUI_DC(dc)        ((struct rtgui_dc*)(dc))
 

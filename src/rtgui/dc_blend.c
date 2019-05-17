@@ -71,13 +71,13 @@
   Andreas Schiffler -- aschiffler at ferzkopp dot net
 */
 
-#include <rtgui/dc.h>
-#include <rtgui/dc_draw.h>
-#include <rtgui/color.h>
+#include <stdlib.h>
+#include <math.h>
 #include <string.h>
 
-#include <math.h>
-#include <stdlib.h>
+#include "../include/dc.h"
+#include "../include/dc_draw.h"
+#include "../include/color.h"
 
 #define hw_driver               (rtgui_graphic_driver_get_default())
 #define _int_swap(x, y)         do {x ^= y; y ^= x; x ^= y;} while (0)

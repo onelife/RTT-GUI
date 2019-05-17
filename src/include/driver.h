@@ -24,8 +24,8 @@
 #ifndef __RTGUI_DRIVER_H__
 #define __RTGUI_DRIVER_H__
 
-#include <rtgui/list.h>
-#include <rtgui/color.h>
+#include "./list.h"
+#include "./color.h"
 
 /* graphic driver operations */
 struct rtgui_graphic_driver_ops

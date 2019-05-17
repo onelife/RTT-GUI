@@ -23,17 +23,17 @@
  *  features. The new decoder uses configurable fixed size working buffer and
  *  provides scaledown function.
  */
-#include <rtthread.h>
-#include <rtgui/dc.h>
-#include <rtgui/image.h>
-#include <rtgui/rtgui_system.h>
-#include <rtgui/image_bmp.h>
-#include <rtgui/blit.h>
-
 #include <math.h>
 
+#include "include/rtthread.h"
+#include "../include/dc.h"
+#include "../include/image.h"
+#include "../include/rtgui_system.h"
+#include "../include/image_bmp.h"
+#include "../include/blit.h"
+
 #ifdef GUIENGINE_USING_DFS_FILERW
-#include <dfs_posix.h>
+#include "components/dfs/include/dfs_posix.h"
 #endif
 
 #ifdef GUIENGINE_IMAGE_BMP
@@ -982,7 +982,7 @@ void screenshot(const char *filename)
     rtgui_filerw_close(file);
 }
 #ifdef RT_USING_FINSH
-#include <finsh.h>
+#include "components/finsh/finsh.h"
 FINSH_FUNCTION_EXPORT(screenshot, usage: screenshot(filename));
 #endif
 #endif

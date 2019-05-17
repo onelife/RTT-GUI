@@ -24,7 +24,7 @@
 #ifndef __RTGUI_LIST_H__
 #define __RTGUI_LIST_H__
 
-#include <rtgui/rtgui.h>
+#include "./rtgui.h"
 
 struct rtgui_list_node
 {

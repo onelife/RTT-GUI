@@ -24,25 +24,25 @@
 /*
  * Cached HZ font engine
  */
-#include <rtgui/dc.h>
-#include <rtgui/font.h>
-#include <rtgui/tree.h>
-#include <rtgui/rtgui_system.h>
-#include "rtgui/gb2312.h"
+#include "../include/dc.h"
+#include "../include/font.h"
+#include "../include/tree.h"
+#include "../include/rtgui_system.h"
+#include "../include/gb2312.h"
 
 #ifdef GUIENGINE_USING_HZ_FILE
-#ifdef _WIN32_NATIVE
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <io.h>
-#define open    _open
-#define close   _close
-#define read    _read
-#define write   _write
-#define unlink  _unlink
-#else
-#include <dfs_posix.h>
+# ifdef _WIN32_NATIVE
+#  include <fcntl.h>
+#  include <sys/types.h>
+#  include <sys/stat.h>
+#  include <io.h>
+#  define open    _open
+#  define close   _close
+#  define read    _read
+#  define write   _write
+#  define unlink  _unlink
+# else
+#  include "components/dfs/include/dfs_posix.h"
 #endif
 
 #define HZ_CACHE_MAX    64

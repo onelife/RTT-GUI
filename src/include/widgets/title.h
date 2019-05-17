@@ -20,29 +20,36 @@
  * Change Logs:
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
+ * 2019-05-15     onelife      Refactor
  */
+
 #ifndef __RTGUI_TITLE__
 #define __RTGUI_TITLE__
 
-#include <rtgui/widgets/widget.h>
+/* Includes ------------------------------------------------------------------*/
+#include "./widget.h"
 
-DECLARE_CLASS_TYPE(wintitle);
+/* Exported defines ----------------------------------------------------------*/
+DECLARE_CLASS_TYPE(win_title);
 /** Gets the type of a title */
-#define RTGUI_WINTITLE_TYPE       (RTGUI_TYPE(wintitle))
-/** Casts the object to an rtgui_wintitle */
-#define RTGUI_WINTITLE(obj)       (RTGUI_OBJECT_CAST((obj), RTGUI_WINTITLE_TYPE, rtgui_wintitle_t))
-/** Checks if the object is an rtgui_wintitle */
-#define RTGUI_IS_WINTITLE(obj)    (RTGUI_OBJECT_CHECK_TYPE((obj), RTGUI_WINTITLE_TYPE))
+#define RTGUI_WIN_TITLE_TYPE        (RTGUI_TYPE(win_title))
+/** Casts the object to an rtgui_win_title */
+#define RTGUI_WIN_TITLE(obj)        \
+    (RTGUI_OBJECT_CAST((obj), RTGUI_WIN_TITLE_TYPE, rtgui_win_title_t))
+/** Checks if the object is an rtgui_win_title */
+#define RTGUI_IS_WIN_TITLE(obj)     \
+    (RTGUI_OBJECT_CHECK_TYPE((obj), RTGUI_WIN_TITLE_TYPE))
 
-struct rtgui_wintitle
-{
+/* Exported types ------------------------------------------------------------*/
+typedef struct rtgui_win_title {
     struct rtgui_widget parent;
-};
-typedef struct rtgui_wintitle rtgui_wintitle_t;
+} rtgui_win_title_t;
 
-rtgui_wintitle_t *rtgui_wintitle_create(struct rtgui_win *window);
-void rtgui_wintitle_destroy(rtgui_wintitle_t *wintitle);
+/* Exported constants --------------------------------------------------------*/
+/* Exported functions ------------------------------------------------------- */
+rtgui_win_title_t *rtgui_win_title_create(struct rtgui_win *window);
+void rtgui_win_title_destroy(rtgui_win_title_t *win_t);
+rt_bool_t rtgui_win_tile_event_handler(struct rtgui_obj *obj,
+    rtgui_evt_generic_t *evt);
 
-rt_bool_t rtgui_wintile_event_handler(struct rtgui_object *object, rtgui_event_t *event);
-
-#endif
+#endif /* __RTGUI_TITLE__ */

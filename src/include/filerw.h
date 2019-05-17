@@ -36,11 +36,11 @@ extern "C" {
 #include <sys/stat.h>
 #include <io.h>
 #else
-#include <dfs_posix.h>
+# include "components/dfs/include/dfs_posix.h"
 #endif
 #endif
 
-#include <rtgui/rtgui.h>
+#include "./rtgui.h"
 
 #define RTGUI_FILE_SEEK_SET 0
 #define RTGUI_FILE_SEEK_CUR 1

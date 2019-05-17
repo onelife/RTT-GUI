@@ -22,11 +22,11 @@
  * 2010-09-15     Bernard      first version
  */
 
-#include <rtthread.h>
-#include <rtgui/rtgui_system.h>
-#include <rtgui/blit.h>
-#include <rtgui/driver.h>
-#include <rtgui/image.h>
+#include "include/rtthread.h"
+#include "../include/rtgui_system.h"
+#include "../include/blit.h"
+#include "../include/driver.h"
+#include "../include/image.h"
 
 #ifdef GUIENGINE_IMAGE_PNG
 #include "png.h"

@@ -24,9 +24,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <rtgui/filerw.h>
-#include <rtgui/rtgui_system.h>
-#include <rtgui/image.h>
+#include "../include/filerw.h"
+#include "../include/rtgui_system.h"
+#include "../include/image.h"
 
 #ifdef GUIENGINE_IMAGE_XPM
 #define XPM_MAGIC_LEN       9

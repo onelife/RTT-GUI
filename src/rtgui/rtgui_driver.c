@@ -1,5 +1,5 @@
 /*
- * File      : driver.c
+ * File      : drv.c
  * This file is part of RT-Thread GUI Engine
  * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
  *
@@ -21,27 +21,43 @@
  * Date           Author       Notes
  * 2009-10-04     Bernard      first version
  */
-#include <rtthread.h>
-#include <rtgui/driver.h>
-#include <rtgui/region.h>
-#include <rtgui/rtgui_system.h>
 #include <string.h>
 
-extern const struct rtgui_graphic_driver_ops *rtgui_pixel_device_get_ops(int pixel_format);
-extern const struct rtgui_graphic_driver_ops *rtgui_framebuffer_get_ops(int pixel_format);
+#include "include/rtthread.h"
+
+#include "../include/driver.h"
+#include "../include/region.h"
+#include "../include/rtgui_system.h"
+
+#ifdef RT_USING_ULOG
+# define LOG_LVL                    LOG_LVL_DBG
+// # define LOG_LVL                   LOG_LVL_INFO
+# define LOG_TAG                    "GUI_DRV"
+# include "components/utilities/ulog/ulog.h"
+#else /* RT_USING_ULOG */
+# define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
+# define LOG_D                      LOG_E
+#endif /* RT_USING_ULOG */
+
+
+const struct rtgui_graphic_driver_ops *rtgui_pixel_device_get_ops(
+    int pixel_format);
+const struct rtgui_graphic_driver_ops *rtgui_framebuffer_get_ops(
+    int pixel_format);
 
 static struct rtgui_graphic_driver _driver;
 static struct rtgui_graphic_driver *_current_driver = &_driver;
 
 #ifdef GUIENGIN_USING_VFRAMEBUFFER
-#ifndef RTGUI_VFB_PIXEL_FMT
-#define RTGUI_VFB_PIXEL_FMT     RTGRAPHIC_PIXEL_FORMAT_RGB565
-#endif
+# include "../include/dc.h"
 
-#include <rtgui/dc.h>
+# ifndef RTGUI_VFB_PIXEL_FMT
+#  define RTGUI_VFB_PIXEL_FMT       RTGRAPHIC_PIXEL_FORMAT_RGB565
+# endif
+
 static struct rtgui_graphic_driver _vfb_driver = {0};
-static void _graphic_driver_vmode_init(void)
-{
+
+static void _graphic_driver_vmode_init(void) {
     if (_vfb_driver.width != _driver.width || _vfb_driver.height != _driver.height)
     {
         if (_vfb_driver.framebuffer != RT_NULL) rtgui_free((void*)_vfb_driver.framebuffer);
@@ -83,7 +99,7 @@ rt_bool_t rtgui_graphic_driver_is_vmode(void)
 RTM_EXPORT(rtgui_graphic_driver_is_vmode);
 
 struct rtgui_dc*
-rtgui_graphic_driver_get_rect_buffer(const struct rtgui_graphic_driver *driver,
+rtgui_graphic_driver_get_rect_buffer(const struct rtgui_graphic_driver *drv,
                                      struct rtgui_rect *r)
 {
     int w, h;
@@ -92,33 +108,33 @@ rtgui_graphic_driver_get_rect_buffer(const struct rtgui_graphic_driver *driver,
     struct rtgui_rect src, rect;
 
     /* use virtual framebuffer in default */
-    if (driver == RT_NULL) driver = _current_driver;
+    if (drv == RT_NULL) drv = _current_driver;
 
     if (r == RT_NULL)
     {
-        rtgui_graphic_driver_get_rect(driver, &rect);
+        rtgui_graphic_driver_get_rect(drv, &rect);
     }
     else
     {
-        rtgui_graphic_driver_get_rect(driver, &src);
+        rtgui_graphic_driver_get_rect(drv, &src);
         rect = *r;
         rtgui_rect_intersect(&src, &rect);
     }
 
     w = rtgui_rect_width (rect);
     h = rtgui_rect_height(rect);
-    if (!(w && h) || driver->framebuffer == RT_NULL)
+    if (!(w && h) || drv->framebuffer == RT_NULL)
         return RT_NULL;
 
     /* create buffer DC */
-    buffer = (struct rtgui_dc_buffer*)rtgui_dc_buffer_create_pixformat(driver->pixel_format, w, h);
+    buffer = (struct rtgui_dc_buffer*)rtgui_dc_buffer_create_pixformat(drv->pixel_format, w, h);
     if (buffer == RT_NULL)
         return (struct rtgui_dc*)buffer;
 
     /* get source pixel */
-    pixel = (rt_uint8_t*)driver->framebuffer
-            + rect.y1 * driver->pitch
-            + rect.x1 * rtgui_color_get_bpp(driver->pixel_format);
+    pixel = (rt_uint8_t*)drv->framebuffer
+            + rect.y1 * drv->pitch
+            + rect.x1 * rtgui_color_get_bpp(drv->pixel_format);
 
     dst = buffer->pixel;
 
@@ -127,38 +143,37 @@ rtgui_graphic_driver_get_rect_buffer(const struct rtgui_graphic_driver *driver,
         memcpy(dst, pixel, buffer->pitch);
 
         dst += buffer->pitch;
-        pixel += driver->pitch;
+        pixel += drv->pitch;
     }
 
     return (struct rtgui_dc*)buffer;
 }
 RTM_EXPORT(rtgui_graphic_driver_get_rect_buffer);
-#else
+#else /* GUIENGIN_USING_VFRAMEBUFFER */
 rt_bool_t rtgui_graphic_driver_is_vmode(void)
 {
     return RT_FALSE;
 }
 RTM_EXPORT(rtgui_graphic_driver_is_vmode);
-#endif
+#endif /* GUIENGIN_USING_VFRAMEBUFFER */
 
-/* get default driver */
+/* get default drv */
 struct rtgui_graphic_driver *rtgui_graphic_driver_get_default(void)
 {
     return _current_driver;
 }
 RTM_EXPORT(rtgui_graphic_driver_get_default);
 
-void rtgui_graphic_driver_get_rect(const struct rtgui_graphic_driver *driver, rtgui_rect_t *rect)
-{
+void rtgui_graphic_driver_get_rect(const struct rtgui_graphic_driver *drv,
+    rtgui_rect_t *rect) {
     RT_ASSERT(rect != RT_NULL);
 
-    /* use default driver */
-    if (driver == RT_NULL)
-        driver = _current_driver;
+    /* use default drv */
+    if (RT_NULL == drv) drv = _current_driver;
 
     rect->x1 = rect->y1 = 0;
-    rect->x2 = driver->width;
-    rect->y2 = driver->height;
+    rect->x2 = drv->width;
+    rect->y2 = drv->height;
 }
 RTM_EXPORT(rtgui_graphic_driver_get_rect);
 
@@ -198,7 +213,7 @@ rt_err_t rtgui_graphic_set_device(rt_device_t device)
         }
     }
 
-    /* initialize framebuffer driver */
+    /* initialize framebuffer drv */
     _driver.device = device;
     _driver.pixel_format = info.pixel_format;
     _driver.bits_per_pixel = info.bits_per_pixel;
@@ -239,28 +254,26 @@ rt_err_t rtgui_graphic_set_device(rt_device_t device)
 RTM_EXPORT(rtgui_graphic_set_device);
 
 /* screen update */
-void rtgui_graphic_driver_screen_update(const struct rtgui_graphic_driver *driver, rtgui_rect_t *rect)
-{
-    if (driver->device != RT_NULL)
-    {
+void rtgui_graphic_driver_screen_update(
+    const struct rtgui_graphic_driver *drv, rtgui_rect_t *rect) {
+    if (drv->device)  {
         struct rt_device_rect_info rect_info;
 
-        if (rect->x1 >= driver->width || rect->y1 >= driver->height)
+        if (rect->x1 >= drv->width || rect->y1 >= drv->height)
             return;
-        
         if (rect->x2 <= 0 || rect->y2 <= 0)
             return;
-    
+
         rect_info.x = rect->x1 > 0 ? rect->x1 : 0;
         rect_info.y = rect->y1 > 0 ? rect->y1 : 0;
-        
-        rect_info.width = rect->x2 > driver->width ? driver->width : rect->x2;
-        rect_info.height = rect->y2 > driver->height ? driver->height : rect->y2;
-        
+
+        rect_info.width = rect->x2 > drv->width ? drv->width : rect->x2;
+        rect_info.height = rect->y2 > drv->height ? drv->height : rect->y2;
+
         rect_info.width -= rect_info.x;
         rect_info.height -= rect_info.y;
 
-        rt_device_control(driver->device, RTGRAPHIC_CTRL_RECT_UPDATE, &rect_info);
+        rt_device_control(drv->device, RTGRAPHIC_CTRL_RECT_UPDATE, &rect_info);
     }
 }
 RTM_EXPORT(rtgui_graphic_driver_screen_update);
@@ -274,16 +287,16 @@ void rtgui_graphic_driver_set_framebuffer(void *fb)
 }
 
 /* get video frame buffer */
-rt_uint8_t *rtgui_graphic_driver_get_framebuffer(const struct rtgui_graphic_driver *driver)
+rt_uint8_t *rtgui_graphic_driver_get_framebuffer(const struct rtgui_graphic_driver *drv)
 {
-    if (driver == RT_NULL) driver = _current_driver;
+    if (drv == RT_NULL) drv = _current_driver;
 
-    return (rt_uint8_t *)driver->framebuffer;
+    return (rt_uint8_t *)drv->framebuffer;
 }
 RTM_EXPORT(rtgui_graphic_driver_get_framebuffer);
 
 /*
- * FrameBuffer type driver
+ * FrameBuffer type drv
  */
 #define GET_PIXEL(dst, x, y, type)  \
     (type *)((rt_uint8_t*)((dst)->framebuffer) + (y) * (dst)->pitch + (x) * _UI_BITBYTES((dst)->bits_per_pixel))
@@ -685,7 +698,7 @@ const struct rtgui_graphic_driver_ops *rtgui_framebuffer_get_ops(int pixel_forma
 }
 
 /*
- * Pixel type driver
+ * Pixel type drv
  */
 #define gfx_device      (rtgui_graphic_get_device()->device)
 #define gfx_device_ops  rt_graphix_ops(gfx_device)

@@ -23,8 +23,8 @@
  * 2013-08-31     Bernard      use FNT font as default
  */
 
-#include <rtgui/font.h>
-#include <rtgui/font_fnt.h>
+#include "../include/font.h"
+#include "../include/font_fnt.h"
 
 #ifdef GUIENGINE_USING_FONT12
 

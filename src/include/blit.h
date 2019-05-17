@@ -46,8 +46,8 @@
 #ifndef __RTGUI_BLIT_H__
 #define __RTGUI_BLIT_H__
 
-#include <rtgui/rtgui.h>
-#include <rtgui/dc.h>
+#include "./rtgui.h"
+#include "./dc.h"
 
 #ifdef __cplusplus
 extern "C" {

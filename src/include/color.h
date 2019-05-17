@@ -25,7 +25,7 @@
 #ifndef __RTGUI_COLOR_H__
 #define __RTGUI_COLOR_H__
 
-#include <rtgui/rtgui.h>
+#include "./rtgui.h"
 
 #ifdef __cplusplus
 extern "C" {

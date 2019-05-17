@@ -23,14 +23,14 @@
  * 2012-01-24     onelife      add TJpgDec (Tiny JPEG Decompressor) support
  * 2012-08-29     amsl         add Image zoom interface.
  */
-#include <rtthread.h>
-#include <rtgui/image.h>
-
-#include <rtgui/image_hdc.h>
-#include <rtgui/rtgui_system.h>
-#include <rtgui/image_container.h>
-
 #include <string.h>
+
+#include "include/rtthread.h"
+#include "../include/image.h"
+#include "../include/image_hdc.h"
+#include "../include/rtgui_system.h"
+#include "../include/image_container.h"
+
 #ifdef _WIN32
 #define strncasecmp  strnicmp
 #endif
@@ -40,7 +40,7 @@ extern void rtgui_image_xpm_init(void);
 #endif
 
 #ifdef GUIENGINE_IMAGE_BMP
-#include <rtgui/image_bmp.h>
+#include "include/image_bmp.h"
 #endif
 
 #if (defined(GUIENGINE_IMAGE_JPEG) || defined(GUIENGINE_IMAGE_TJPGD))
@@ -53,33 +53,32 @@ extern void rtgui_image_png_init(void);
 static rtgui_list_t _rtgui_system_image_list = {RT_NULL};
 
 /* initialize rtgui image system */
-void rtgui_system_image_init(void)
-{
-#ifdef GUIENGINE_USING_HDC
-    /* always support HDC image */
-    rtgui_image_hdc_init();
-#endif
-    
-#ifdef GUIENGINE_IMAGE_XPM
-    rtgui_image_xpm_init();
-#endif
+void rtgui_system_image_init(void) {
+    #ifdef GUIENGINE_USING_HDC
+        /* always support HDC image */
+        rtgui_image_hdc_init();
+    #endif
 
-#ifdef GUIENGINE_IMAGE_BMP
-    rtgui_image_bmp_init();
-#endif
+    #ifdef GUIENGINE_IMAGE_XPM
+        rtgui_image_xpm_init();
+    #endif
 
-#if (defined(GUIENGINE_IMAGE_JPEG) || defined(GUIENGINE_IMAGE_TJPGD))
-    rtgui_image_jpeg_init();
-#endif
+    #ifdef GUIENGINE_IMAGE_BMP
+        rtgui_image_bmp_init();
+    #endif
 
-#if defined(GUIENGINE_IMAGE_PNG) || defined(GUIENGINE_IMAGE_LODEPNG)
-    rtgui_image_png_init();
-#endif
+    #if (defined(GUIENGINE_IMAGE_JPEG) || defined(GUIENGINE_IMAGE_TJPGD))
+        rtgui_image_jpeg_init();
+    #endif
 
-#ifdef GUIENGINE_IMAGE_CONTAINER
-    /* initialize image container */
-    rtgui_system_image_container_init();
-#endif
+    #if defined(GUIENGINE_IMAGE_PNG) || defined(GUIENGINE_IMAGE_LODEPNG)
+        rtgui_image_png_init();
+    #endif
+
+    #ifdef GUIENGINE_IMAGE_CONTAINER
+        /* initialize image container */
+        rtgui_system_image_container_init();
+    #endif
 }
 
 static struct rtgui_image_engine *rtgui_image_get_engine(const char *type)

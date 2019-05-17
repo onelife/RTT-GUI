@@ -24,9 +24,9 @@
 #ifndef __RTGUI_MOUSE_H__
 #define __RTGUI_MOUSE_H__
 
-#include <rtgui/rtgui.h>
-#include <rtgui/image.h>
-#include <rtgui/widgets/window.h>
+#include "../rtgui.h"
+#include "../image.h"
+#include "./window.h"
 
 struct rtgui_mouse_monitor
 {
@@ -40,7 +40,7 @@ typedef struct rtgui_mouse_monitor rtgui_mouse_monitor_t;
 
 void rtgui_mouse_init(void);
 void rtgui_mouse_fini(void);
-void rtgui_mouse_moveto(int x, int y);
+void rtgui_mouse_moveto(rt_uint32_t x, rt_uint32_t y);
 /* set cursor position */
 void rtgui_mouse_set_position(int x, int y);
 
@@ -56,7 +56,8 @@ rt_bool_t rtgui_mouse_is_intersect(rtgui_rect_t *r);
 #ifdef RTGUI_USING_WINMOVE
 rt_bool_t rtgui_winrect_is_moved(void);
 void rtgui_winrect_set(struct rtgui_win *win);
-rt_bool_t rtgui_winrect_moved_done(rtgui_rect_t *winrect, struct rtgui_win **win);
+rt_bool_t rtgui_winrect_moved_done(rtgui_rect_t *winrect,
+    struct rtgui_win **win);
 #endif
 
 void rtgui_mouse_monitor_append(rtgui_list_t *head, rtgui_rect_t *rect);
