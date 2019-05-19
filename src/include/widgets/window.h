@@ -35,13 +35,14 @@ extern "C" {
 #include "./widget.h"
 #include "./box.h"
 
-DECLARE_CLASS_TYPE(win);
+RTGUI_CLASS_PROTOTYPE(win);
 /** Gets the type of a win */
-#define RTGUI_WIN_TYPE       (RTGUI_TYPE(win))
+#define _WIN_METADATA                       CLASS_METADATA(win)
 /** Casts the object to an rtgui_win */
-#define RTGUI_WIN(obj)       (RTGUI_OBJECT_CAST((obj), RTGUI_WIN_TYPE, rtgui_win_t))
+#define TO_WIN(obj)                         \
+    RTGUI_CAST(obj, _WIN_METADATA, rtgui_win_t)
 /** Checks if the object is an rtgui_win */
-#define RTGUI_IS_WIN(obj)    (RTGUI_OBJECT_CHECK_TYPE((obj), RTGUI_WIN_TYPE))
+#define IS_WIN(obj)                         IS_INSTANCE((obj), _WIN_METADATA)
 
 #define RTGUI_WIN_STYLE_NO_FOCUS            0x0001  /* non-focused window            */
 #define RTGUI_WIN_STYLE_NO_TITLE            0x0002  /* no title window               */

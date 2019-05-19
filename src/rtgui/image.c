@@ -23,9 +23,9 @@
  * 2012-01-24     onelife      add TJpgDec (Tiny JPEG Decompressor) support
  * 2012-08-29     amsl         add Image zoom interface.
  */
-#include <string.h>
 
 #include "include/rtthread.h"
+
 #include "../include/image.h"
 #include "../include/image_hdc.h"
 #include "../include/rtgui_system.h"

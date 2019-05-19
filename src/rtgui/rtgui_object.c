@@ -35,77 +35,9 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
+static void _object_constructor(void *obj);
+static void _object_destructor(void *obj);
 
-static void _rtgui_object_constructor(rtgui_obj_t *object) {
-    if (!object)
-        return;
-
-    object->flag = RTGUI_OBJECT_FLAG_VALID;
-    object->id   = (rt_ubase_t)object;
-}
-
-/* Destroys the object */
-static void _rtgui_object_destructor(rtgui_obj_t *object) {
-    /* Any valid objest should both have valid flag _and_ valid type. Only use
-     * flag is not enough because the chunk of memory may be reallocted to other
-     * object and thus the flag will become valid. */
-    object->flag = RTGUI_OBJECT_FLAG_NONE;
-    object->type = RT_NULL;
-}
-
-DEFINE_CLASS_TYPE(
-    object, "object",
-    RT_NULL,
-    _rtgui_object_constructor,
-    _rtgui_object_destructor,
-    sizeof(rtgui_obj_t));
-RTM_EXPORT(_rtgui_object);
-
-void rtgui_type_object_construct(const rtgui_type_t *type,
-    rtgui_obj_t *obj) {
-    /* construct from parent to children */
-    if (RT_NULL != type->parent) {
-        rtgui_type_object_construct(type->parent, obj);
-    }
-
-    if (type->constructor) {
-        type->constructor(obj);
-    }
-}
-
-void rtgui_type_destructors_call(const rtgui_type_t *type,
-    rtgui_obj_t *object) {
-    /* destruct from children to parent */
-    if (type->destructor) {
-        type->destructor(object);
-    }
-
-    if (type->parent) {
-        rtgui_type_destructors_call(type->parent, object);
-    }
-}
-
-rt_bool_t rtgui_type_inherits_from(const rtgui_type_t *type,
-    const rtgui_type_t *parent) {
-    const rtgui_type_t *t;
-
-    t = type;
-    while (t)     {
-        if (t == parent) return RT_TRUE;
-        t = t->parent;
-    }
-    return RT_FALSE;
-}
-
-const rtgui_type_t *rtgui_type_parent_type_get(const rtgui_type_t *type) {
-    return type->parent;
-}
-
-const char *rtgui_type_name_get(const rtgui_type_t *type) {
-    if (!type) return RT_NULL;
-
-    return type->name;
-}
 
 #ifdef RTGUI_OBJECT_TRACE
     struct rtgui_obj_info {
@@ -116,110 +48,149 @@ const char *rtgui_type_name_get(const rtgui_type_t *type) {
     struct rtgui_obj_info obj_info = {0, 0, 0};
 #endif
 
-/**
- * @brief Creates a new object: it calls the corresponding constructors
- * (from the constructor of the base class to the constructor of the more
- * derived class) and then sets the values of the given properties
- *
- * @param type the type of object to create
- * @return the created object
- */
-rtgui_obj_t *rtgui_object_create(const rtgui_type_t *type) {
-    rtgui_obj_t *new_obj;
+RTGUI_CLASS(
+    object,
+    RT_NULL,
+    _object_constructor,
+    _object_destructor,
+    sizeof(rtgui_obj_t));
+RTM_EXPORT(_rtgui_object);
 
-    if (!type) return RT_NULL;
 
-    new_obj = rtgui_malloc(type->size);
-    if (!new_obj) {
-        LOG_E("create %s mem err", type->name);
+static void _object_constructor(void *_obj) {
+    rtgui_obj_t *obj = _obj;
+
+    if (!obj) return;
+    obj->_super = RT_NULL;
+    obj->cls = RT_NULL;
+    obj->evt_hdl = RT_NULL;
+    obj->flag = RTGUI_OBJECT_FLAG_VALID;
+    obj->id = (rt_ubase_t)obj;
+}
+
+static void _object_destructor(void *_obj) {
+    rtgui_obj_t *obj = _obj;
+
+    /* Any valid objest should both have valid flag _and_ valid cls. Only use
+     * flag is not enough because the chunk of memory may be reallocted to other
+     * object and thus the flag will become valid. */
+    obj->cls = RT_NULL;
+    obj->flag = RTGUI_OBJECT_FLAG_NONE;
+    obj->evt_hdl = RT_NULL;
+}
+
+
+static void _construct_instance(const rtgui_type_t *cls, void *obj) {
+    /* call super constructor first */
+    if (cls->_super) _construct_instance(cls->_super, obj);
+    if (cls->constructor) cls->constructor(obj);
+}
+
+static void _deconstruct_instance(const rtgui_type_t *cls, void *obj) {
+    /* call self destructor first */
+    if (cls->destructor) cls->destructor(obj);
+    if (cls->_super) _deconstruct_instance(cls->_super, obj);
+}
+
+void *rtgui_create_instance(const rtgui_type_t *cls) {
+    rtgui_obj_t *_new;
+
+    _new = rtgui_malloc(cls->size);
+    if (!_new) {
+        LOG_E("create ins %s err", cls->name);
         return RT_NULL;
     }
 
-    new_obj->type = type;
-    rtgui_type_object_construct(type, new_obj);
-    LOG_D("create %s", type->name);
+    _new->cls = cls;
+    _construct_instance(cls, _new);
+    LOG_D("create ins %s", cls->name);
 
     #ifdef RTGUI_OBJECT_TRACE
         obj_info.objs_num++;
-        obj_info.alloc_size += type->size;
+        obj_info.alloc_size += cls->size;
         if (obj_info.alloc_size > obj_info.max_alloc) {
             obj_info.max_alloc = obj_info.alloc_size;
         }
     #endif
 
-    return new_obj;
+    return _new;
 }
-RTM_EXPORT(rtgui_object_create);
 
-/**
- * @brief Destroys the object.
- *
- * The object destructors will be called in inherited type order.
- *
- * @param obj the object to destroy
- */
-void rtgui_object_destroy(rtgui_obj_t *obj) {
-    if (!obj || (obj->flag & RTGUI_OBJECT_FLAG_STATIC)) return;
+void rtgui_delete_instance(void *_obj) {
+    rtgui_obj_t *obj = _obj;
+
+    // if (!obj || (obj->flag & RTGUI_OBJECT_FLAG_STATIC)) return;
 
     #ifdef RTGUI_OBJECT_TRACE
-        obj_info.objs_num --;
-        obj_info.alloc_size -= obj->type->size;
+        obj_info.objs_num--;
+        obj_info.alloc_size -= obj->cls->size;
     #endif
-    RT_ASSERT(obj->type != RT_NULL);
-    LOG_D("destroy %d", obj->type);
 
-    /* call destructor */
-    rtgui_type_destructors_call(obj->type, obj);
-
-    /* release object */
+    LOG_D("delete ins %d", obj->cls->name);
+    _deconstruct_instance(obj->cls, obj);
     rtgui_free(obj);
 }
-RTM_EXPORT(rtgui_object_destroy);
+
+rt_bool_t rtgui_is_subclass_of(const rtgui_type_t *cls,
+    const rtgui_type_t *_super) {
+    while (cls) {
+        if (cls == _super) return RT_TRUE;
+        cls = cls->_super;
+    }
+    return RT_FALSE;
+}
+
+const rtgui_type_t *rtgui_class_of(void *_obj) {
+    rtgui_obj_t *obj = _obj;
+    return obj->cls;
+}
+
 
 /**
- * @brief Checks if the object can be cast to the specified type.
+ * @brief Checks if the object can be cast to the specified cls.
  *
- * If the object doesn't inherit from the specified type, a warning
+ * If the object doesn't inherit from the specified cls, a warning
  * is displayed in the console but the object is returned anyway.
  *
  * @param object the object to cast
- * @param type the type to which we cast the object
+ * @param cls the cls to which we cast the object
  * @return Returns the object
  */
-rtgui_obj_t *rtgui_object_check_cast(rtgui_obj_t *obj,
-    const rtgui_type_t *type, const char *func, int line) {
+void *rtgui_object_cast_check(void *_obj, const rtgui_type_t *cls,
+    const char *func, int line) {
+    rtgui_obj_t *obj = _obj;
+
     if (!obj) return RT_NULL;
 
-    if (!rtgui_type_inherits_from(obj->type, type)) {
+    if (!rtgui_is_subclass_of(obj->cls, cls)) {
         LOG_E("%s[%d] Invalid cast from \"%s\" to \"%s\"", func, line,
-            rtgui_type_name_get(obj->type), rtgui_type_name_get(type));
+            obj->cls->name, cls->name);
     }
-
-    return obj;
+    return _obj;
 }
-RTM_EXPORT(rtgui_object_check_cast);
+RTM_EXPORT(rtgui_object_cast_check);
 
 
 /**
- * @brief Gets the type of the object
+ * @brief Gets the cls of the object
  *
  * @param object an object
- * @return the type of the object (RT_NULL on failure)
+ * @return the cls of the object (RT_NULL on failure)
  */
-const rtgui_type_t *rtgui_object_object_type_get(rtgui_obj_t *obj) {
+const rtgui_type_t *rtgui_object_type_get(void *_obj) {
+    rtgui_obj_t *obj = _obj;
+
     if (!obj) return RT_NULL;
-
-    return obj->type;
+    return obj->cls;
 }
-RTM_EXPORT(rtgui_object_object_type_get);
+RTM_EXPORT(rtgui_object_type_get);
 
-void rtgui_object_set_event_handler(rtgui_obj_t *obj,
-    rtgui_evt_hdl_t hdr) {
-    RT_ASSERT(obj != RT_NULL);
+void rtgui_object_event_handler_set(void *_obj, rtgui_evt_hdl_t hdl) {
+    rtgui_obj_t *obj = _obj;
 
-    obj->event_handler = hdr;
+    obj->evt_hdl = hdl;
 }
-RTM_EXPORT(rtgui_object_set_event_handler);
+RTM_EXPORT(rtgui_object_event_handler_set);
 
 rt_bool_t rtgui_object_event_handler(rtgui_obj_t *obj,
     rtgui_evt_generic_t *evt) {
@@ -230,17 +201,17 @@ rt_bool_t rtgui_object_event_handler(rtgui_obj_t *obj,
 }
 RTM_EXPORT(rtgui_object_event_handler);
 
-void rtgui_object_set_id(rtgui_obj_t *obj, rt_uint32_t id) {
-    #ifdef RTGUI_USING_ID_CHECK
-        rtgui_obj_t *_obj = rtgui_get_self_object(id);
-        RT_ASSERT(!_obj);
-    #endif
+// void rtgui_object_set_id(rtgui_obj_t *obj, rt_uint32_t id) {
+//     #ifdef RTGUI_USING_ID_CHECK
+//         rtgui_obj_t *_obj = rtgui_get_self_object(id);
+//         RT_ASSERT(!_obj);
+//     #endif
 
-    obj->id = id;
-}
-RTM_EXPORT(rtgui_object_set_id);
+//     obj->id = id;
+// }
+// RTM_EXPORT(rtgui_object_set_id);
 
-rt_uint32_t rtgui_object_get_id(rtgui_obj_t *obj) {
-    return obj->id;
-}
-RTM_EXPORT(rtgui_object_get_id);
+// rt_uint32_t rtgui_object_get_id(rtgui_obj_t *obj) {
+//     return obj->id;
+// }
+// RTM_EXPORT(rtgui_object_get_id);

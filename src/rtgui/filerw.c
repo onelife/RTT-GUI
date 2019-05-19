@@ -30,7 +30,7 @@
 struct rtgui_filerw_stdio
 {
     /* inherit from rtgui_filerw */
-    struct rtgui_filerw parent;
+    struct rtgui_filerw _super;
 
     int fd;
     rt_bool_t eof;
@@ -110,7 +110,7 @@ static int stdio_close(struct rtgui_filerw *context)
 struct rtgui_filerw_mem
 {
     /* inherit from rtgui_filerw */
-    struct rtgui_filerw parent;
+    struct rtgui_filerw _super;
 
     const rt_uint8_t *mem_base, *mem_position, *mem_end;
 };
@@ -166,7 +166,7 @@ static int mem_read(struct rtgui_filerw *context, void *ptr, rt_size_t size, rt_
     if (total_bytes > mem_available)
         total_bytes = mem_available;
 
-    memcpy(ptr, mem->mem_position, total_bytes);
+    rt_memcpy(ptr, mem->mem_position, total_bytes);
     mem->mem_position += total_bytes;
 
     return (total_bytes / size);
@@ -209,7 +209,7 @@ const rt_uint8_t *rtgui_filerw_mem_getdata(struct rtgui_filerw *context)
     struct rtgui_filerw_mem *mem = (struct rtgui_filerw_mem *)context;
 
     /* check whether it's a memory filerw */
-    if (mem->parent.read != mem_read) return RT_NULL;
+    if (mem->_super.read != mem_read) return RT_NULL;
 
     return mem->mem_base;
 }
@@ -266,16 +266,16 @@ struct rtgui_filerw *rtgui_filerw_create_file(const char *filename, const char *
         rw = (struct rtgui_filerw_stdio *) rtgui_malloc(sizeof(struct rtgui_filerw_stdio));
         if (rw != RT_NULL)
         {
-            rw->parent.seek  = stdio_seek;
-            rw->parent.read  = stdio_read;
-            rw->parent.write = stdio_write;
-            rw->parent.tell  = stdio_tell;
-            rw->parent.close = stdio_close;
-            rw->parent.eof   = stdio_eof;
+            rw->_super.seek  = stdio_seek;
+            rw->_super.read  = stdio_read;
+            rw->_super.write = stdio_write;
+            rw->_super.tell  = stdio_tell;
+            rw->_super.close = stdio_close;
+            rw->_super.eof   = stdio_eof;
 
             rw->fd  = fd;
             rw->eof = RT_FALSE;
-            return &(rw->parent);
+            return &(rw->_super);
         }
 
         close(fd);
@@ -312,19 +312,19 @@ struct rtgui_filerw *rtgui_filerw_create_mem(const rt_uint8_t *mem, rt_size_t si
     rw = (struct rtgui_filerw_mem *) rtgui_malloc(sizeof(struct rtgui_filerw_mem));
     if (rw != RT_NULL)
     {
-        rw->parent.seek  = mem_seek;
-        rw->parent.read  = mem_read;
-        rw->parent.write = mem_write;
-        rw->parent.tell  = mem_tell;
-        rw->parent.eof   = mem_eof;
-        rw->parent.close = mem_close;
+        rw->_super.seek  = mem_seek;
+        rw->_super.read  = mem_read;
+        rw->_super.write = mem_write;
+        rw->_super.tell  = mem_tell;
+        rw->_super.eof   = mem_eof;
+        rw->_super.close = mem_close;
 
         rw->mem_base = mem;
         rw->mem_position = mem;
         rw->mem_end = mem + size;
     }
 
-    return &(rw->parent);
+    return &(rw->_super);
 }
 
 int rtgui_filerw_seek(struct rtgui_filerw *context, rt_off_t offset, int whence)

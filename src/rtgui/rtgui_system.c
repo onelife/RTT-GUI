@@ -100,8 +100,8 @@ static void rtgui_time_out(void *param) {
             event_timer must not init as RTGUI_EVENT_TIMER_INIT, due to
             not in thread context
         */
-        evt->timer.parent.type = RTGUI_EVENT_TIMER;
-        evt->timer.parent.sender = RT_NULL;
+        evt->timer._super.type = RTGUI_EVENT_TIMER;
+        evt->timer._super.sender = RT_NULL;
         evt->timer.timer = timer;
         ret = rtgui_send(timer->app, evt, RT_WAITING_NO);
         if (ret) {
@@ -330,7 +330,7 @@ void *rtgui_realloc(void *ptr, rt_size_t size) {
     #ifdef RTGUI_MEM_TRACE
         new_ptr = rtgui_malloc(size);
         if ((RT_NULL != new_ptr) && (RT_NULL != ptr)) {
-            memcpy(new_ptr, ptr, size);
+            rt_memcpy(new_ptr, ptr, size);
             rtgui_free(ptr);
         }
     #else
@@ -375,7 +375,7 @@ FINSH_FUNCTION_EXPORT(list_guimem, display memory information);
 /* RTGUI Event Dump                                                     */
 /************************************************************************/
 #ifdef RTGUI_EVENT_DEBUG
-    static void rtgui_event_dump(struct rtgui_app* app,
+    static void rtgui_event_dump(rtgui_app_t* app,
         rtgui_evt_generic_t *evt) {
         char *sender;
 
@@ -431,10 +431,10 @@ FINSH_FUNCTION_EXPORT(list_guimem, display memory information);
         case RTGUI_EVENT_WIN_CREATE:
             rt_kprintf("<win> %s @%p (x1:%03d, y1:%03d, x2:%03d, y2:%03d)",
                 evt->win_create.wid->title, evt->win_create.wid,
-                RTGUI_WIDGET(evt->win_create.wid)->extent.x1,
-                RTGUI_WIDGET(evt->win_create.wid)->extent.y1,
-                RTGUI_WIDGET(evt->win_create.wid)->extent.x2,
-                RTGUI_WIDGET(evt->win_create.wid)->extent.y2);
+                TO_WIDGET(evt->win_create.wid)->extent.x1,
+                TO_WIDGET(evt->win_create.wid)->extent.y1,
+                TO_WIDGET(evt->win_create.wid)->extent.x2,
+                TO_WIDGET(evt->win_create.wid)->extent.y2);
             break;
 
         case RTGUI_EVENT_UPDATE_END:
@@ -466,10 +466,10 @@ FINSH_FUNCTION_EXPORT(list_guimem, display memory information);
             if (evt->win_resize.wid) {
                 rt_kprintf("<win> %s resize (x1:%d, y1:%d, x2:%d, y2:%d)",
                     evt->win_resize.wid->title,
-                    RTGUI_WIDGET(evt->win_resize.wid)->extent.x1,
-                    RTGUI_WIDGET(evt->win_resize.wid)->extent.y1,
-                    RTGUI_WIDGET(evt->win_resize.wid)->extent.x2,
-                    RTGUI_WIDGET(evt->win_resize.wid)->extent.y2);
+                    TO_WIDGET(evt->win_resize.wid)->extent.x1,
+                    TO_WIDGET(evt->win_resize.wid)->extent.y1,
+                    TO_WIDGET(evt->win_resize.wid)->extent.x2,
+                    TO_WIDGET(evt->win_resize.wid)->extent.y2);
             }
             break;
 
@@ -585,7 +585,7 @@ rt_err_t rtgui_recv_filter(rt_uint32_t type, rtgui_evt_generic_t *evt) {
     do {
         rtgui_evt_generic_t *_evt;
         rt_thread_t self = rt_thread_self();
-        struct rtgui_app *app = (struct rtgui_app *)(self->user_data);
+        rtgui_app_t *app = (rtgui_app_t *)(self->user_data);
 
         if (!app) {
             LOG_E("%s without app", self->name);
@@ -602,8 +602,8 @@ rt_err_t rtgui_recv_filter(rt_uint32_t type, rtgui_evt_generic_t *evt) {
             evt = _evt;
             break;
         } else {
-            if (RTGUI_OBJECT(app)->event_handler) {
-                RTGUI_OBJECT(app)->event_handler(RTGUI_OBJECT(app), _evt);
+            if (TO_OBJECT(app)->evt_hdl) {
+                TO_OBJECT(app)->evt_hdl(TO_OBJECT(app), _evt);
             }
         }
     } while (0);

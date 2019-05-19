@@ -43,28 +43,30 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-static void _rtgui_win_constructor(rtgui_win_t *win);
-static void _rtgui_win_destructor(rtgui_win_t *win);
+static void _rtgui_win_constructor(void *obj);
+static void _rtgui_win_destructor(void *obj);
 static rt_bool_t _rtgui_win_deal_close(rtgui_win_t *win,
     rtgui_evt_generic_t *evt, rt_bool_t force);
 
-DEFINE_CLASS_TYPE(
-    win, "win",
-    RTGUI_PARENT_TYPE(container),
+
+RTGUI_CLASS(
+    win,
+    CLASS_METADATA(container),
     _rtgui_win_constructor,
     _rtgui_win_destructor,
     sizeof(rtgui_win_t));
 
 
-static void _rtgui_win_constructor(rtgui_win_t *win) {
+static void _rtgui_win_constructor(void *obj) {
+    rtgui_win_t *win = obj;
     /* set toplevel to self */
-    RTGUI_WIDGET(win)->toplevel = win;
+    TO_WIDGET(win)->toplevel = win;
 
     /* init win property */
     win->update = 0;
     win->drawing = 0;
 
-    RTGUI_WIDGET(win)->flag |= RTGUI_WIDGET_FLAG_FOCUSABLE;
+    TO_WIDGET(win)->flag |= RTGUI_WIDGET_FLAG_FOCUSABLE;
     win->parent_window = RT_NULL;
     win->app = rtgui_app_self();
     /* init window attribute */
@@ -88,7 +90,7 @@ static void _rtgui_win_constructor(rtgui_win_t *win) {
 
     win->flag  = RTGUI_WIN_FLAG_INIT;
 
-    rtgui_object_set_event_handler(RTGUI_OBJECT(win), rtgui_win_event_handler);
+    SET_EVENT_HANDLER(TO_OBJECT(win), rtgui_win_event_handler);
 
     /* init user data */
     win->user_data = 0;
@@ -96,7 +98,8 @@ static void _rtgui_win_constructor(rtgui_win_t *win) {
     win->_do_show = rtgui_win_do_show;
 }
 
-static void _rtgui_win_destructor(rtgui_win_t *win) {
+static void _rtgui_win_destructor(void *obj) {
+    rtgui_win_t *win = obj;
     if (win->flag & RTGUI_WIN_FLAG_CONNECTED) {
         rtgui_evt_generic_t *evt;
         rt_err_t ret;
@@ -121,7 +124,7 @@ static void _rtgui_win_destructor(rtgui_win_t *win) {
 
     /* release field */
     if (win->_title_wgt) {
-        rtgui_widget_destroy(RTGUI_WIDGET(win->_title_wgt));
+        rtgui_widget_destroy(TO_WIDGET(win->_title_wgt));
         win->_title_wgt = RT_NULL;
     }
     if (RT_NULL != win->title) {
@@ -146,7 +149,7 @@ static rt_bool_t _rtgui_win_create_in_server(rtgui_win_t *win) {
         RTGUI_EVENT_WIN_CREATE_INIT(&evt->win_create);
         evt->win_create.parent_window = win->parent_window;
         evt->win_create.wid = win;
-        evt->win_create.parent.user = win->style;
+        evt->win_create._super.user = win->style;
         ret = rtgui_server_post_event_sync(evt);
         if (ret) {
             rt_mp_free(evt);
@@ -169,7 +172,7 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent_window,
     if (!win) return -RT_ERROR;
 
     do {
-    /* set parent window */
+    /* set _super window */
         win->parent_window = parent_window;
         /* set title, rect and style */
         if (title) {
@@ -178,7 +181,7 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent_window,
             win->title = RT_NULL;
         }
 
-        rtgui_widget_set_rect(RTGUI_WIDGET(win), rect);
+        rtgui_widget_set_rect(TO_WIDGET(win), rect);
         win->style = style;
 
         if (!((style & RTGUI_WIN_STYLE_NO_TITLE) && \
@@ -198,15 +201,15 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent_window,
             if (!(style & RTGUI_WIN_STYLE_NO_TITLE)) {
                 trect.y1 -= WINTITLE_HEIGHT;
             }
-            rtgui_widget_set_rect(RTGUI_WIDGET(win->_title_wgt), &trect);
+            rtgui_widget_set_rect(TO_WIDGET(win->_title_wgt), &trect);
             /* Update the clip of the wintitle manually. */
             rtgui_region_subtract_rect(
-                &(RTGUI_WIDGET(win->_title_wgt)->clip),
-                &(RTGUI_WIDGET(win->_title_wgt)->clip),
-                &(RTGUI_WIDGET(win)->extent));
+                &(TO_WIDGET(win->_title_wgt)->clip),
+                &(TO_WIDGET(win->_title_wgt)->clip),
+                &(TO_WIDGET(win)->extent));
 
             /* The window title is always un-hidden for simplicity. */
-            rtgui_widget_show(RTGUI_WIDGET(win->_title_wgt));
+            rtgui_widget_show(TO_WIDGET(win->_title_wgt));
             rtgui_region_init_with_extents(&win->outer_clip, &trect);
             win->outer_extent = trect;
         } else {
@@ -270,7 +273,7 @@ rtgui_win_t *rtgui_win_create(rtgui_win_t *parent_win, const char *title,
     rtgui_win_t *win;
 
     /* allocate win memory */
-    win = RTGUI_WIN(rtgui_widget_create(RTGUI_WIN_TYPE));
+    win = TO_WIN(RTGUI_CREATE_INSTANCE(win));
     if (RT_NULL == win) {
         LOG_E("create %s failed", title);
         return RT_NULL;
@@ -278,7 +281,7 @@ rtgui_win_t *rtgui_win_create(rtgui_win_t *parent_win, const char *title,
 
     if (RT_EOK != rtgui_win_init(win, parent_win, title, rect, style)) {
         LOG_E("init %s failed", title);
-        rtgui_widget_destroy(RTGUI_WIDGET(win));
+        rtgui_widget_destroy(TO_WIDGET(win));
         return RT_NULL;
     }
 
@@ -299,7 +302,7 @@ RTM_EXPORT(rtgui_mainwin_create);
 static rt_bool_t _rtgui_win_deal_close(rtgui_win_t *win,
     rtgui_evt_generic_t *evt, rt_bool_t force) {
     if (win->on_close) {
-        if (!(win->on_close(RTGUI_OBJECT(win), evt)) && !force) {
+        if (!(win->on_close(TO_OBJECT(win), evt)) && !force) {
             return RT_FALSE;
         }
     }
@@ -351,7 +354,7 @@ void rtgui_win_destroy(rtgui_win_t *win) {
         win->style |= RTGUI_WIN_STYLE_DESTROY_ON_CLOSE;
         rtgui_win_end_modal(win, RTGUI_MODAL_CANCEL);
     } else {
-        rtgui_widget_destroy(RTGUI_WIDGET(win));
+        rtgui_widget_destroy(TO_WIDGET(win));
     }
 }
 RTM_EXPORT(rtgui_win_destroy);
@@ -428,7 +431,7 @@ rt_err_t rtgui_win_do_show(rtgui_win_t *win) {
             }
         }
         /* set window unhidden before notify the server */
-        rtgui_widget_show(RTGUI_WIDGET(win));
+        rtgui_widget_show(TO_WIDGET(win));
 
         /* send RTGUI_EVENT_WIN_SHOW */
         evt = (rtgui_evt_generic_t *)rt_mp_alloc(
@@ -444,14 +447,14 @@ rt_err_t rtgui_win_do_show(rtgui_win_t *win) {
         ret = rtgui_server_post_event_sync(evt);
         if (ret) {
             rt_mp_free(evt);
-            /* It could not be shown if a parent window is hidden. */
-            rtgui_widget_hide(RTGUI_WIDGET(win));
+            /* It could not be shown if a _super window is hidden. */
+            rtgui_widget_hide(TO_WIDGET(win));
             LOG_E("show %s err [%d]", win->title, ret);
             break;
         }
 
         if (!win->focused_widget) {
-            rtgui_widget_focus(RTGUI_WIDGET(win));
+            rtgui_widget_focus(TO_WIDGET(win));
         }
         /* set main window */
         if (!win->app->main_object) {
@@ -526,7 +529,7 @@ void rtgui_win_hide(rtgui_win_t *win) {
         return;
     }
 
-    rtgui_widget_hide(RTGUI_WIDGET(win));
+    rtgui_widget_hide(TO_WIDGET(win));
     win->flag &= ~RTGUI_WIN_FLAG_ACTIVATE;
 }
 RTM_EXPORT(rtgui_win_hide);
@@ -570,15 +573,15 @@ void rtgui_win_move(rtgui_win_t *win, int x, int y) {
     if (RT_NULL == win) return;
 
     if (win->_title_wgt) {
-        wgt = RTGUI_WIDGET(win->_title_wgt);
+        wgt = TO_WIDGET(win->_title_wgt);
         dx = x - wgt->extent.x1;
         dy = y - wgt->extent.y1;
         rtgui_widget_move_to_logic(wgt, dx, dy);
 
-        wgt = RTGUI_WIDGET(win);
+        wgt = TO_WIDGET(win);
         rtgui_widget_move_to_logic(wgt, dx, dy);
     } else {
-        wgt = RTGUI_WIDGET(win);
+        wgt = TO_WIDGET(win);
         dx = x - wgt->extent.x1;
         dy = y - wgt->extent.y1;
         rtgui_widget_move_to_logic(wgt, dx, dy);
@@ -589,7 +592,7 @@ void rtgui_win_move(rtgui_win_t *win, int x, int y) {
         rtgui_evt_generic_t *evt;
         rt_err_t ret;
 
-        rtgui_widget_hide(RTGUI_WIDGET(win));
+        rtgui_widget_hide(TO_WIDGET(win));
 
         /* send RTGUI_EVENT_WIN_MOVE */
         evt = (rtgui_evt_generic_t *)rt_mp_alloc(
@@ -610,7 +613,7 @@ void rtgui_win_move(rtgui_win_t *win, int x, int y) {
             return;
         }
     }
-    rtgui_widget_show(RTGUI_WIDGET(win));
+    rtgui_widget_show(TO_WIDGET(win));
 }
 RTM_EXPORT(rtgui_win_move);
 
@@ -623,11 +626,11 @@ static rt_bool_t rtgui_win_ondraw(rtgui_win_t *win) {
     if (!evt) return RT_FALSE;
 
     /* begin drawing */
-    dc = rtgui_dc_begin_drawing(RTGUI_WIDGET(win));
+    dc = rtgui_dc_begin_drawing(TO_WIDGET(win));
     if (RT_NULL == dc) return RT_FALSE;
 
     /* get window rect */
-    rtgui_widget_get_rect(RTGUI_WIDGET(win), &rect);
+    rtgui_widget_get_rect(TO_WIDGET(win), &rect);
     /* fill area */
     rtgui_dc_fill_rect(dc, &rect);
 
@@ -637,7 +640,7 @@ static rt_bool_t rtgui_win_ondraw(rtgui_win_t *win) {
     RTGUI_EVENT_PAINT_INIT(&evt->paint);
     evt->paint.wid = RT_NULL;
 
-    rtgui_container_dispatch_event(RTGUI_CONTAINER(win), evt);
+    rtgui_container_dispatch_event(TO_CONTAINER(win), evt);
 
     rtgui_dc_end_drawing(dc, 1);
 
@@ -655,26 +658,26 @@ void rtgui_win_update_clip(rtgui_win_t *win) {
 
     if (win->_title_wgt) {
         /* Reset the inner clip of title. */
-        RTGUI_WIDGET(win->_title_wgt)->extent = win->outer_extent;
+        TO_WIDGET(win->_title_wgt)->extent = win->outer_extent;
         rtgui_region_copy(
-            &RTGUI_WIDGET(win->_title_wgt)->clip,
+            &TO_WIDGET(win->_title_wgt)->clip,
             &win->outer_clip);
         rtgui_region_subtract_rect(
-            &RTGUI_WIDGET(win->_title_wgt)->clip,
-            &RTGUI_WIDGET(win->_title_wgt)->clip,
-            &RTGUI_WIDGET(win)->extent);
+            &TO_WIDGET(win->_title_wgt)->clip,
+            &TO_WIDGET(win->_title_wgt)->clip,
+            &TO_WIDGET(win)->extent);
         /* Reset the inner clip of window. */
         rtgui_region_intersect_rect(
-            &RTGUI_WIDGET(win)->clip,
+            &TO_WIDGET(win)->clip,
             &win->outer_clip,
-            &RTGUI_WIDGET(win)->extent);
+            &TO_WIDGET(win)->extent);
     } else {
-        RTGUI_WIDGET(win)->extent = win->outer_extent;
-        rtgui_region_copy(&RTGUI_WIDGET(win)->clip, &win->outer_clip);
+        TO_WIDGET(win)->extent = win->outer_extent;
+        rtgui_region_copy(&TO_WIDGET(win)->clip, &win->outer_clip);
     }
 
     /* update the clip info of each child */
-    cnt = RTGUI_CONTAINER(win);
+    cnt = TO_CONTAINER(win);
     rtgui_list_foreach(node, &(cnt->children)) {
         rtgui_widget_t *child = rtgui_list_entry(node, rtgui_widget_t, sibling);
 
@@ -696,25 +699,25 @@ static rt_bool_t _win_handle_mouse_btn(rtgui_win_t *win,
      */
     if (win->last_mevent_widget && \
         (evt->mouse.button & RTGUI_MOUSE_BUTTON_UP)) {
-        if (RTGUI_OBJECT(win->last_mevent_widget)->event_handler(
-                RTGUI_OBJECT(win->last_mevent_widget), evt)) {
+        if (TO_OBJECT(win->last_mevent_widget)->evt_hdl(
+                TO_OBJECT(win->last_mevent_widget), evt)) {
             /* clean last mouse event handled widget */
             win->last_mevent_widget = RT_NULL;
             return RT_TRUE;
         }
     }
 
-    /** if a widget will destroy the window in the event_handler(or in
+    /** if a widget will destroy the window in the evt_hdl(or in
      * on_* callbacks), it should return RT_TRUE. Otherwise, it will
      * crash the application.
      *
      * TODO: add it in the doc
      */
-    return rtgui_container_dispatch_mouse_event(RTGUI_CONTAINER(win), evt);
+    return rtgui_container_dispatch_mouse_event(TO_CONTAINER(win), evt);
 }
 
 rt_bool_t rtgui_win_event_handler(rtgui_obj_t *obj, rtgui_evt_generic_t *evt) {
-    rtgui_win_t *win = RTGUI_WIN(obj);
+    rtgui_win_t *win = TO_WIN(obj);
     rt_bool_t done = RT_TRUE;
 
     LOG_D("win rx %x from %s", evt->base.type, evt->base.sender->mb->parent.parent.name);
@@ -750,10 +753,10 @@ rt_bool_t rtgui_win_event_handler(rtgui_obj_t *obj, rtgui_evt_generic_t *evt) {
          * the title if there is one. If you want to update the content of the
          * window, do it in the on_activate callback.*/
         if (win->_title_wgt) {
-            rtgui_widget_update(RTGUI_WIDGET(win->_title_wgt));
+            rtgui_widget_update(TO_WIDGET(win->_title_wgt));
         }
         if (win->on_activate) {
-            win->on_activate(RTGUI_OBJECT(obj), evt);
+            win->on_activate(TO_OBJECT(obj), evt);
         }
         break;
 
@@ -762,10 +765,10 @@ rt_bool_t rtgui_win_event_handler(rtgui_obj_t *obj, rtgui_evt_generic_t *evt) {
         /* No paint event follow the deactive event. So we have to update
          * the title manually to reflect the change. */
         if (win->_title_wgt) {
-            rtgui_widget_update(RTGUI_WIDGET(win->_title_wgt));
+            rtgui_widget_update(TO_WIDGET(win->_title_wgt));
         }
         if (win->on_deactivate) {
-            win->on_deactivate(RTGUI_OBJECT(obj), evt);
+            win->on_deactivate(TO_OBJECT(obj), evt);
         }
         break;
 
@@ -779,7 +782,7 @@ rt_bool_t rtgui_win_event_handler(rtgui_obj_t *obj, rtgui_evt_generic_t *evt) {
 
     case RTGUI_EVENT_PAINT:
         if (win->_title_wgt) {
-            rtgui_widget_update(RTGUI_WIDGET(win->_title_wgt));
+            rtgui_widget_update(TO_WIDGET(win->_title_wgt));
         }
         (void)rtgui_win_ondraw(win);
         break;
@@ -793,19 +796,19 @@ rt_bool_t rtgui_win_event_handler(rtgui_obj_t *obj, rtgui_evt_generic_t *evt) {
 
     case RTGUI_EVENT_MOUSE_BUTTON:
         if (!rtgui_rect_contains_point(
-            &RTGUI_WIDGET(win)->extent, evt->mouse.x, evt->mouse.y)) {
+            &TO_WIDGET(win)->extent, evt->mouse.x, evt->mouse.y)) {
             done = _win_handle_mouse_btn(win, evt);
             break;
         }
         if (win->_title_wgt) {
-            rtgui_obj_t *tobj = RTGUI_OBJECT(win->_title_wgt);
-            done =  tobj->event_handler(tobj, evt);
+            rtgui_obj_t *tobj = TO_OBJECT(win->_title_wgt);
+            done =  tobj->evt_hdl(tobj, evt);
             break;
         }
         break;
 
     case RTGUI_EVENT_MOUSE_MOTION:
-        done = rtgui_container_dispatch_mouse_event(RTGUI_CONTAINER(win), evt);
+        done = rtgui_container_dispatch_mouse_event(TO_CONTAINER(win), evt);
         break;
 
     case RTGUI_EVENT_KBD:
@@ -818,9 +821,9 @@ rt_bool_t rtgui_win_event_handler(rtgui_obj_t *obj, rtgui_evt_generic_t *evt) {
             win->flag |= RTGUI_WIN_FLAG_HANDLE_KEY;
             /* dispatch the key event */
             while (wgt) {
-                if (RTGUI_OBJECT(wgt)->event_handler) {
-                    done = RTGUI_OBJECT(wgt)->event_handler(
-                        RTGUI_OBJECT(wgt), evt);
+                if (TO_OBJECT(wgt)->evt_hdl) {
+                    done = TO_OBJECT(wgt)->evt_hdl(
+                        TO_OBJECT(wgt), evt);
                     if (done) break;
                 }
                 wgt = wgt->parent;
@@ -828,13 +831,13 @@ rt_bool_t rtgui_win_event_handler(rtgui_obj_t *obj, rtgui_evt_generic_t *evt) {
             win->flag &= ~RTGUI_WIN_FLAG_HANDLE_KEY;
         } else if (!win->on_key) {
             /* in key handling mode(it may reach here in
-             * win->focused_widget->event_handler call) */
-            done = win->on_key(RTGUI_OBJECT(win), evt);
+             * win->focused_widget->evt_hdl call) */
+            done = win->on_key(TO_OBJECT(win), evt);
         }
         break;
 
     case RTGUI_EVENT_COMMAND:
-        done = rtgui_container_dispatch_event(RTGUI_CONTAINER(obj), evt);
+        done = rtgui_container_dispatch_event(TO_CONTAINER(obj), evt);
         break;
 
     default:
@@ -855,7 +858,7 @@ RTM_EXPORT(rtgui_win_event_handler);
 
 void rtgui_win_set_rect(rtgui_win_t *win, rtgui_rect_t *rect) {
     if (!win || !rect) return;
-    RTGUI_WIDGET(win)->extent = *rect;
+    TO_WIDGET(win)->extent = *rect;
 
     if (win->flag & RTGUI_WIN_FLAG_CONNECTED) {
         rtgui_evt_generic_t *evt;
@@ -964,26 +967,26 @@ struct rtgui_dc *rtgui_win_get_drawing(rtgui_win_t * win) {
 
         /* remove clip */
         rtgui_region_reset(&win->outer_clip,
-                           &RTGUI_WIDGET(win)->extent);
+                           &TO_WIDGET(win)->extent);
         rtgui_region_intersect(&win->outer_clip,
                                &win->outer_clip,
                                &region);
         rtgui_win_update_clip(win);
         /* use virtual framebuffer */
-        rtgui_widget_update(RTGUI_WIDGET(win));
+        rtgui_widget_update(TO_WIDGET(win));
 
         /* get the extent of widget */
-        rtgui_widget_get_extent(RTGUI_WIDGET(win), &rect);
+        rtgui_widget_get_extent(TO_WIDGET(win), &rect);
 
         dc = rtgui_graphic_driver_get_rect_buffer(RT_NULL, &rect);
 
         rtgui_graphic_driver_vmode_exit();
 
         /* restore the clip information of window */
-        rtgui_region_reset(&RTGUI_WIDGET(win)->clip,
-                           &RTGUI_WIDGET(win)->extent);
-        rtgui_region_intersect(&(RTGUI_WIDGET(win)->clip),
-                               &(RTGUI_WIDGET(win)->clip),
+        rtgui_region_reset(&TO_WIDGET(win)->clip,
+                           &TO_WIDGET(win)->extent);
+        rtgui_region_intersect(&(TO_WIDGET(win)->clip),
+                               &(TO_WIDGET(win)->clip),
                                &clip_region);
         rtgui_region_fini(&region);
         rtgui_region_fini(&clip_region);
@@ -1041,21 +1044,21 @@ void rtgui_theme_draw_win(struct rtgui_win_title *win_t) {
         rtgui_rect_t box_rect = {0, 0, WINTITLE_CB_WIDTH, WINTITLE_CB_HEIGHT};
         rt_uint16_t index, r, g, b, delta;
 
-        win = RTGUI_WIDGET(win_t)->toplevel;
+        win = TO_WIDGET(win_t)->toplevel;
         if (!win->_title_wgt) {
             LOG_E("no title");
             break;
         }
 
         /* begin drawing */
-        dc = rtgui_dc_begin_drawing(RTGUI_WIDGET(win->_title_wgt));
+        dc = rtgui_dc_begin_drawing(TO_WIDGET(win->_title_wgt));
         if (!dc) {
             LOG_E("no dc");
             break;
         }
 
         /* get rect */
-        rtgui_widget_get_rect(RTGUI_WIDGET(win->_title_wgt), &rect);
+        rtgui_widget_get_rect(TO_WIDGET(win->_title_wgt), &rect);
 
         /* draw border */
         LOG_D("draw border");

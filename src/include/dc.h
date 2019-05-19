@@ -90,7 +90,7 @@ struct rtgui_dc
  */
 struct rtgui_dc_hw
 {
-    struct rtgui_dc parent;
+    struct rtgui_dc _super;
     rtgui_widget_t *owner;
     const struct rtgui_graphic_driver *hw_driver;
 };
@@ -102,7 +102,7 @@ struct rtgui_dc_hw
  */
 struct rtgui_dc_buffer
 {
-    struct rtgui_dc parent;
+    struct rtgui_dc _super;
 
     /* graphic context */
     rtgui_gc_t gc;

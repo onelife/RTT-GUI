@@ -100,12 +100,12 @@ int rtgui_matrix_inverse(const struct rtgui_matrix *mm, struct rtgui_matrix *mo)
     if (t == 0)
         return 1;
 
-    o[0] = _rtgui_matrix_round_div6432((int64_t)m[3] * (RTGUI_MATRIX_FRAC * RTGUI_MATRIX_FRAC), t);
-    o[1] = _rtgui_matrix_round_div6432(-(int64_t)m[1] * (RTGUI_MATRIX_FRAC * RTGUI_MATRIX_FRAC), t);
-    o[2] = _rtgui_matrix_round_div6432(-(int64_t)m[2] * (RTGUI_MATRIX_FRAC * RTGUI_MATRIX_FRAC), t);
-    o[3] = _rtgui_matrix_round_div6432((int64_t)m[0] * (RTGUI_MATRIX_FRAC * RTGUI_MATRIX_FRAC), t);
-    o[4] = _rtgui_matrix_round_div6432(-((int64_t)m[4] * o[0] + (int64_t)m[5] * o[2]), RTGUI_MATRIX_FRAC);
-    o[5] = _rtgui_matrix_round_div6432(-((int64_t)m[4] * o[1] + (int64_t)m[5] * o[3]), RTGUI_MATRIX_FRAC);
+    o[0] = _rtgui_matrix_round_div6432((rt_int64_t)m[3] * (RTGUI_MATRIX_FRAC * RTGUI_MATRIX_FRAC), t);
+    o[1] = _rtgui_matrix_round_div6432(-(rt_int64_t)m[1] * (RTGUI_MATRIX_FRAC * RTGUI_MATRIX_FRAC), t);
+    o[2] = _rtgui_matrix_round_div6432(-(rt_int64_t)m[2] * (RTGUI_MATRIX_FRAC * RTGUI_MATRIX_FRAC), t);
+    o[3] = _rtgui_matrix_round_div6432((rt_int64_t)m[0] * (RTGUI_MATRIX_FRAC * RTGUI_MATRIX_FRAC), t);
+    o[4] = _rtgui_matrix_round_div6432(-((rt_int64_t)m[4] * o[0] + (rt_int64_t)m[5] * o[2]), RTGUI_MATRIX_FRAC);
+    o[5] = _rtgui_matrix_round_div6432(-((rt_int64_t)m[4] * o[1] + (rt_int64_t)m[5] * o[3]), RTGUI_MATRIX_FRAC);
 
     return 0;
 }

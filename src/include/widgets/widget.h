@@ -44,14 +44,14 @@ extern "C" {
 #define RTGUI_WIDGET_FLAG_IN_ANIM       0x0200
 
 /* rtgui widget attribute */
-#define RTGUI_WIDGET_FOREGROUND(w)      (RTGUI_WIDGET(w)->gc.foreground)
-#define RTGUI_WIDGET_BACKGROUND(w)      (RTGUI_WIDGET(w)->gc.background)
-#define RTGUI_WIDGET_TEXTALIGN(w)       (RTGUI_WIDGET(w)->gc.textalign)
-#define RTGUI_WIDGET_FONT(w)            (RTGUI_WIDGET(w)->gc.font)
-#define RTGUI_WIDGET_FLAG(w)            (RTGUI_WIDGET(w)->flag)
-#define RTGUI_WIDGET_ALIGN(w)           (RTGUI_WIDGET(w)->align)
-#define RTGUI_WIDGET_BORDER(w)          (RTGUI_WIDGET(w)->border)
-#define RTGUI_WIDGET_BORDER_STYLE(w)    (RTGUI_WIDGET(w)->border_style)
+#define RTGUI_WIDGET_FOREGROUND(w)      (TO_WIDGET(w)->gc.foreground)
+#define RTGUI_WIDGET_BACKGROUND(w)      (TO_WIDGET(w)->gc.background)
+#define RTGUI_WIDGET_TEXTALIGN(w)       (TO_WIDGET(w)->gc.textalign)
+#define RTGUI_WIDGET_FONT(w)            (TO_WIDGET(w)->gc.font)
+#define RTGUI_WIDGET_FLAG(w)            (TO_WIDGET(w)->flag)
+#define RTGUI_WIDGET_ALIGN(w)           (TO_WIDGET(w)->align)
+#define RTGUI_WIDGET_BORDER(w)          (TO_WIDGET(w)->border)
+#define RTGUI_WIDGET_BORDER_STYLE(w)    (TO_WIDGET(w)->border_style)
 
 #define RTGUI_WIDGET_UNHIDE(w)          RTGUI_WIDGET_FLAG(w) |= RTGUI_WIDGET_FLAG_SHOWN
 #define RTGUI_WIDGET_HIDE(w)            RTGUI_WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_SHOWN
@@ -73,16 +73,17 @@ extern "C" {
 #define RTGUI_WIDGET_DC_SET_UNVISIBLE(w) (RTGUI_WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_DC_VISIBLE)
 #define RTGUI_WIDGET_DC(w)              ((struct rtgui_dc*)&((w)->dc_type))
 
-DECLARE_CLASS_TYPE(widget);
+RTGUI_CLASS_PROTOTYPE(widget);
 
 /** Gets the type of a widget */
-#define RTGUI_WIDGET_TYPE       (RTGUI_TYPE(widget))
+#define _WIDGET_METADATA                    CLASS_METADATA(widget)
 /** Casts the object to a rtgui_widget */
-#define RTGUI_WIDGET(obj)       (RTGUI_OBJECT_CAST((obj), RTGUI_WIDGET_TYPE, rtgui_widget_t))
+#define TO_WIDGET(obj)                      \
+    RTGUI_CAST(obj, _WIDGET_METADATA, rtgui_widget_t)
 /** Check if the object is a rtgui_widget */
-#define RTGUI_IS_WIDGET(obj)    (RTGUI_OBJECT_CHECK_TYPE((obj), RTGUI_WIDGET_TYPE))
+#define IS_WIDGET(obj)                      IS_INSTANCE(obj, _WIDGET_METADATA)
 
-rtgui_widget_t *rtgui_widget_create(const rtgui_type_t *widget_type);
+// rtgui_widget_t *rtgui_widget_create(const rtgui_type_t *widget_type);
 void rtgui_widget_destroy(rtgui_widget_t *widget);
 
 rt_bool_t rtgui_widget_event_handler(rtgui_obj_t *object,
@@ -107,7 +108,7 @@ void rtgui_widget_set_minsize(rtgui_widget_t *widget, int width, int height);
 void rtgui_widget_set_minwidth(rtgui_widget_t *widget, int width);
 void rtgui_widget_set_minheight(rtgui_widget_t *widget, int height);
 
-void rtgui_widget_set_parent(rtgui_widget_t *widget, rtgui_widget_t *parent);
+void rtgui_widget_set_parent(rtgui_widget_t *widget, rtgui_widget_t *_super);
 
 /* get the physical position of a logic point on widget */
 void rtgui_widget_point_to_device(rtgui_widget_t *widget, rtgui_point_t *point);
@@ -142,7 +143,7 @@ rt_bool_t rtgui_widget_onhide(rtgui_obj_t *object,
 void rtgui_widget_update(rtgui_widget_t *widget);
 rt_bool_t rtgui_widget_onpaint(rtgui_obj_t *object, rtgui_evt_base_t *event);
 
-/* get parent color */
+/* get _super color */
 rtgui_color_t rtgui_widget_get_parent_foreground(rtgui_widget_t *widget);
 rtgui_color_t rtgui_widget_get_parent_background(rtgui_widget_t *widget);
 

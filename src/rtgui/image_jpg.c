@@ -27,8 +27,8 @@
 #include "../include/image.h"
 
 #ifdef GUIENGINE_IMAGE_JPEG
-#include <stdio.h>
-#include <stdlib.h>
+// #include <stdio.h>
+// #include <stdlib.h>
 #include "jpeglib.h"
 
 #include "../include/rtgui_system.h"
@@ -704,7 +704,7 @@ static UINT tjpgd_out_func(JDEC *jdec, void *bitmap, JRECT *rect)
         /* Left-top of destination rectangular */
         for (h = rect->top; h <= rect->bottom; h++)
         {
-            memcpy(dst, src, rectWidth);
+            rt_memcpy(dst, src, rectWidth);
             src += rectWidth;
             dst += imageWidth;           /* Next line */
         }

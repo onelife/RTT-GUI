@@ -65,12 +65,12 @@ struct rtgui_dc *rtgui_dc_hw_create(rtgui_widget_t *owner)
     dc = (struct rtgui_dc_hw *) rtgui_malloc(sizeof(struct rtgui_dc_hw));
     if (dc)
     {
-        dc->parent.type = RTGUI_DC_HW;
-        dc->parent.engine = &dc_hw_engine;
+        dc->_super.type = RTGUI_DC_HW;
+        dc->_super.engine = &dc_hw_engine;
         dc->owner = owner;
         dc->hw_driver = rtgui_graphic_driver_get_default();
 
-        return &(dc->parent);
+        return &(dc->_super);
     }
 
     return RT_NULL;

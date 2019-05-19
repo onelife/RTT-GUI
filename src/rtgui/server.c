@@ -44,8 +44,8 @@
 #endif /* RT_USING_ULOG */
 
 
-static struct rtgui_app *rtgui_srv_app = RT_NULL;
-static struct rtgui_app *rtgui_wm_app = RT_NULL;
+static rtgui_app_t *rtgui_srv_app = RT_NULL;
+static rtgui_app_t *rtgui_wm_app = RT_NULL;
 static void (*_show_win_hook)(void) = RT_NULL;
 static void (*_act_win_hook)(void) = RT_NULL;
 
@@ -356,8 +356,7 @@ static void rtgui_server_entry(void *pram) {
         LOG_E("create srv err");
         return;
     }
-    rtgui_object_set_event_handler(
-        RTGUI_OBJECT(rtgui_srv_app), rtgui_server_event_handler);
+    SET_EVENT_HANDLER(TO_OBJECT(rtgui_srv_app), rtgui_server_event_handler);
 
     /* init mouse and show */
     rtgui_mouse_init();
@@ -389,7 +388,7 @@ rt_err_t rtgui_server_post_event_sync(rtgui_evt_generic_t *evt) {
     }
 }
 
-struct rtgui_app* rtgui_get_server(void) {
+rtgui_app_t* rtgui_get_server(void) {
     return rtgui_srv_app;
 }
 RTM_EXPORT(rtgui_get_server);

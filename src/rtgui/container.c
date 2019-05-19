@@ -40,31 +40,39 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-static void _rtgui_container_constructor(rtgui_container_t *cntr) {
+
+static void _container_constructor(void *obj);
+static void _container_destructor(void *obj);
+
+
+RTGUI_CLASS(
+    container,
+    CLASS_METADATA(widget),
+    _container_constructor,
+    _container_destructor,
+    sizeof(struct rtgui_container));
+RTM_EXPORT(_rtgui_container);
+
+
+static void _container_constructor(void *obj) {
+    rtgui_container_t *cntr = obj;
     /* init cntr */
-    rtgui_object_set_event_handler(
-        RTGUI_OBJECT(cntr), rtgui_container_event_handler);
+    SET_EVENT_HANDLER(TO_OBJECT(cntr), rtgui_container_event_handler);
 
     rtgui_list_init(&(cntr->children));
     cntr->layout_box = RT_NULL;
 
-    RTGUI_WIDGET(cntr)->flag |= RTGUI_WIDGET_FLAG_FOCUSABLE;
+    TO_WIDGET(cntr)->flag |= RTGUI_WIDGET_FLAG_FOCUSABLE;
 }
 
-static void _rtgui_container_destructor(rtgui_container_t *cntr) {
+static void _container_destructor(void *obj) {
+    rtgui_container_t *cntr = obj;
     rtgui_container_destroy_children(cntr);
 
     if (cntr->layout_box) {
-        rtgui_object_destroy(RTGUI_OBJECT(cntr->layout_box));
+        RTGUI_DELETE_INSTANCE(cntr->layout_box);
     }
 }
-
-DEFINE_CLASS_TYPE(container, "container",
-                  RTGUI_PARENT_TYPE(widget),
-                  _rtgui_container_constructor,
-                  _rtgui_container_destructor,
-                  sizeof(struct rtgui_container));
-RTM_EXPORT(_rtgui_container);
 
 rt_bool_t rtgui_container_dispatch_event(rtgui_container_t *cntr,
     rtgui_evt_generic_t *evt) {
@@ -75,7 +83,7 @@ rt_bool_t rtgui_container_dispatch_event(rtgui_container_t *cntr,
         struct rtgui_list_node *node;
         rtgui_evt_type_t mask;
 
-        if (!(cntr->parent.flag & RTGUI_WIDGET_FLAG_SHOWN)) {
+        if (!(cntr->_super.flag & RTGUI_WIDGET_FLAG_SHOWN)) {
             done = RT_TRUE;
             break;
         }
@@ -85,7 +93,7 @@ rt_bool_t rtgui_container_dispatch_event(rtgui_container_t *cntr,
             rtgui_widget_t *wgt = \
                 rtgui_list_entry(node, struct rtgui_widget, sibling);
 
-            if (mask && !EXTENTCHECK(&cntr->parent.extent, &wgt->extent)) {
+            if (mask && !EXTENTCHECK(&cntr->_super.extent, &wgt->extent)) {
             // if ((wgt->extent.x1 > _wgt->extent.x2) || \
             //     (wgt->extent.x2 < _wgt->extent.x1) || \
             //     (wgt->extent.y1 > _wgt->extent.y2) || \
@@ -93,9 +101,9 @@ rt_bool_t rtgui_container_dispatch_event(rtgui_container_t *cntr,
                 evt->base.type &= ~mask;
             }
 
-            if (RTGUI_OBJECT(wgt)->event_handler) {
-                done = RTGUI_OBJECT(wgt)->event_handler(
-                    RTGUI_OBJECT(wgt), evt);
+            if (TO_OBJECT(wgt)->evt_hdl) {
+                done = TO_OBJECT(wgt)->evt_hdl(
+                    TO_OBJECT(wgt), evt);
                 if (done) break;
             }
         }
@@ -115,8 +123,8 @@ rt_bool_t rtgui_container_broadcast_event(struct rtgui_container *cntr,
         struct rtgui_widget *wgt = \
             rtgui_list_entry(node, struct rtgui_widget, sibling);
 
-        if (RTGUI_OBJECT(wgt)->event_handler) {
-            return RTGUI_OBJECT(wgt)->event_handler(RTGUI_OBJECT(wgt), evt);
+        if (TO_OBJECT(wgt)->evt_hdl) {
+            return TO_OBJECT(wgt)->evt_hdl(TO_OBJECT(wgt), evt);
         }
     }
 
@@ -130,7 +138,7 @@ rt_bool_t rtgui_container_dispatch_mouse_event(rtgui_container_t *cntr,
     struct rtgui_list_node *node;
     rt_bool_t done;
 
-    last_focus = RTGUI_WIDGET(cntr)->toplevel->focused_widget;
+    last_focus = TO_WIDGET(cntr)->toplevel->focused_widget;
     done = RT_FALSE;
 
     rtgui_list_foreach(node, &(cntr->children)) {
@@ -142,8 +150,8 @@ rt_bool_t rtgui_container_dispatch_mouse_event(rtgui_container_t *cntr,
             if ((last_focus != wgt) && RTGUI_WIDGET_IS_FOCUSABLE(wgt)) {
                 rtgui_widget_focus(wgt);
             }
-            if (RTGUI_OBJECT(wgt)->event_handler) {
-                done = RTGUI_OBJECT(wgt)->event_handler(RTGUI_OBJECT(wgt), evt);
+            if (TO_OBJECT(wgt)->evt_hdl) {
+                done = TO_OBJECT(wgt)->evt_hdl(TO_OBJECT(wgt), evt);
                 if (done) break;
             }
         }
@@ -160,8 +168,8 @@ rt_bool_t rtgui_container_event_handler(rtgui_obj_t *obj,
     rt_bool_t done;
 
     if (!obj || !evt) return RT_FALSE;
-    cntr = RTGUI_CONTAINER(obj);
-    wgt = RTGUI_WIDGET(obj);
+    cntr = TO_CONTAINER(obj);
+    wgt = TO_WIDGET(obj);
     done = RT_FALSE;
 
     LOG_D("cntr rx %x from %s", evt->base.type, evt->base.sender->mb->parent.parent.name);
@@ -208,7 +216,7 @@ rt_bool_t rtgui_container_event_handler(rtgui_obj_t *obj,
         break;
 
     case RTGUI_EVENT_UPDATE_TOPLVL:
-        /* call parent handler */
+        /* call _super handler */
         (void)rtgui_widget_onupdate_toplvl(obj, evt);
         /* update the children */
         done = rtgui_container_broadcast_event(cntr, evt);
@@ -221,7 +229,7 @@ rt_bool_t rtgui_container_event_handler(rtgui_obj_t *obj,
         break;
 
     default:
-        /* call parent wgt event handler */
+        /* call _super wgt event handler */
         done = rtgui_widget_event_handler(obj, evt);
         break;
     }
@@ -238,18 +246,8 @@ rt_bool_t rtgui_container_event_handler(rtgui_obj_t *obj,
 }
 RTM_EXPORT(rtgui_container_event_handler);
 
-rtgui_container_t *rtgui_container_create(void)
-{
-    struct rtgui_container *cntr;
-
-    /* allocate cntr */
-    cntr = (struct rtgui_container *) rtgui_widget_create(RTGUI_CONTAINER_TYPE);
-    return cntr;
-}
-RTM_EXPORT(rtgui_container_create);
-
 void rtgui_container_destroy(rtgui_container_t *cntr) {
-    rtgui_widget_destroy(RTGUI_WIDGET(cntr));
+    rtgui_widget_destroy(TO_WIDGET(cntr));
 }
 RTM_EXPORT(rtgui_container_destroy);
 
@@ -264,15 +262,15 @@ void rtgui_container_add_child(rtgui_container_t *cntr,
     RT_ASSERT(child != RT_NULL);
     RT_ASSERT(child->parent == RT_NULL);
 
-    if (child->parent == RTGUI_WIDGET(cntr)) return;
+    if (child->parent == TO_WIDGET(cntr)) return;
 
     /* set parent and toplevel wgt */
-    child->parent = RTGUI_WIDGET(cntr);
+    child->parent = TO_WIDGET(cntr);
     /* put wgt to parent's children list */
     rtgui_list_append(&(cntr->children), &(child->sibling));
 
     /* update children toplevel */
-    if (RTGUI_WIDGET(cntr)->toplevel) {
+    if (TO_WIDGET(cntr)->toplevel) {
         rtgui_evt_generic_t *evt;
         rtgui_win_t *top;
 
@@ -283,15 +281,15 @@ void rtgui_container_add_child(rtgui_container_t *cntr,
             return;
         }
         RTGUI_EVENT_UPDATE_TOPLVL_INIT(&evt->update_toplvl);
-        evt->update_toplvl.toplvl = RTGUI_WIDGET(cntr)->toplevel;
-        rtgui_object_handle(RTGUI_OBJECT(cntr), evt);
+        evt->update_toplvl.toplvl = TO_WIDGET(cntr)->toplevel;
+        rtgui_object_handle(TO_OBJECT(cntr), evt);
         rtgui_free(evt);
 
         /* update window clip */
-        top = RTGUI_WIDGET(cntr)->toplevel;
+        top = TO_WIDGET(cntr)->toplevel;
         if ((top->flag & RTGUI_WIN_FLAG_CONNECTED) && \
-            (RTGUI_WIDGET(top)->flag & RTGUI_WIDGET_FLAG_SHOWN)) {
-            rtgui_win_update_clip(RTGUI_WIN(RTGUI_WIDGET(cntr)->toplevel));
+            (TO_WIDGET(top)->flag & RTGUI_WIDGET_FLAG_SHOWN)) {
+            rtgui_win_update_clip(TO_WIN(TO_WIDGET(cntr)->toplevel));
         }
     }
 }
@@ -309,8 +307,8 @@ void rtgui_container_remove_child(rtgui_container_t *cntr,
     child->toplevel = RT_NULL;
 
     /* update window clip */
-    if (RTGUI_WIDGET(cntr)->toplevel) {
-        rtgui_win_update_clip(RTGUI_WIN(RTGUI_WIDGET(cntr)->toplevel));
+    if (TO_WIDGET(cntr)->toplevel) {
+        rtgui_win_update_clip(TO_WIN(TO_WIDGET(cntr)->toplevel));
     }
 }
 RTM_EXPORT(rtgui_container_remove_child);
@@ -328,13 +326,13 @@ void rtgui_container_destroy_children(rtgui_container_t *cntr)
     {
         rtgui_widget_t *child = rtgui_list_entry(node, rtgui_widget_t, sibling);
 
-        if (RTGUI_IS_CONTAINER(child))
+        if (IS_CONTAINER(child))
         {
             /* break parent firstly */
             child->parent = RT_NULL;
 
             /* destroy children of child */
-            rtgui_container_destroy_children(RTGUI_CONTAINER(child));
+            rtgui_container_destroy_children(TO_CONTAINER(child));
         }
 
         /* remove wgt from parent's children list */
@@ -344,7 +342,7 @@ void rtgui_container_destroy_children(rtgui_container_t *cntr)
         child->parent = RT_NULL;
 
         /* destroy object and remove from parent */
-        rtgui_object_destroy(RTGUI_OBJECT(child));
+        RTGUI_DELETE_INSTANCE(child);
 
         node = cntr->children.next;
     }
@@ -352,7 +350,7 @@ void rtgui_container_destroy_children(rtgui_container_t *cntr)
     cntr->children.next = RT_NULL;
 
     /* update wgt clip */
-    rtgui_win_update_clip(RTGUI_WIN(RTGUI_WIDGET(cntr)->toplevel));
+    rtgui_win_update_clip(TO_WIN(TO_WIDGET(cntr)->toplevel));
 }
 RTM_EXPORT(rtgui_container_destroy_children);
 
@@ -371,7 +369,7 @@ rtgui_widget_t *rtgui_container_get_first_child(rtgui_container_t *cntr)
 }
 RTM_EXPORT(rtgui_container_get_first_child);
 
-void rtgui_container_set_box(rtgui_container_t *cntr, struct rtgui_box *box)
+void rtgui_container_set_box(rtgui_container_t *cntr, rtgui_box_t *box)
 {
     if (cntr == RT_NULL || box  == RT_NULL)
         return;
@@ -395,16 +393,16 @@ rtgui_obj_t* rtgui_container_get_object(struct rtgui_container *cntr,
     rtgui_list_foreach(node, &(cntr->children))
     {
         rtgui_obj_t *o;
-        o = RTGUI_OBJECT(rtgui_list_entry(node, struct rtgui_widget, sibling));
+        o = TO_OBJECT(rtgui_list_entry(node, struct rtgui_widget, sibling));
 
         if (o->id == id)
             return o;
 
-        if (RTGUI_IS_CONTAINER(o))
+        if (IS_CONTAINER(o))
         {
             rtgui_obj_t *obj;
 
-            obj = rtgui_container_get_object(RTGUI_CONTAINER(o), id);
+            obj = rtgui_container_get_object(TO_CONTAINER(o), id);
             if (obj)
                 return obj;
         }

@@ -26,7 +26,6 @@
  */
 
 #include <stdlib.h> /* fir qsort  */
-#include <string.h> /* for strlen */
 #include <math.h>   /* for sin/cos etc */
 
 #include "../include/dc.h"
@@ -329,7 +328,7 @@ void rtgui_dc_draw_text(struct rtgui_dc *dc, const char *text, struct rtgui_rect
         font = rtgui_font_default();
     }
 
-    len = strlen((const char *)text);
+    len = rt_strlen((const char *)text);
     if (len == 0)
         return;
 
@@ -1839,7 +1838,7 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
                 break;
             }
 
-            parent = RTGUI_WIDGET(win);
+            parent = TO_WIDGET(win);
             if ((parent->clip.extents.x1 == parent->clip.extents.x2) || \
                 (parent->clip.extents.y1 == parent->clip.extents.y2)) {
                 LOG_D("b2");
@@ -1849,7 +1848,7 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
 
         /* increase drawing count */
         if (win->drawing == 0) {
-            memset(&(win->drawing_rect), 0x0, sizeof(struct rtgui_rect));
+            rt_memset(&(win->drawing_rect), 0x0, sizeof(struct rtgui_rect));
         }
         win->drawing++;
         LOG_D("drawing %d", win->drawing);
@@ -1893,7 +1892,7 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
                 rtgui_mouse_hide_cursor();
             #endif
 
-            if (!RTGUI_IS_WIN_TITLE(win)) {
+            if (!IS_WIN_TITLE(win)) {
                 /* send draw begin to server */
                 rtgui_evt_generic_t *evt;
                 rt_err_t ret;
@@ -1905,7 +1904,7 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
                     break;
                 }
                 RTGUI_EVENT_UPDATE_BEGIN_INIT(&evt->update_begin);
-                evt->update_begin.rect = RTGUI_WIDGET(win)->extent;
+                evt->update_begin.rect = TO_WIDGET(win)->extent;
                 LOG_D("post update");
                 ret = rtgui_server_post_event(evt);
                 if (ret) {
@@ -1944,7 +1943,7 @@ void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
 
     if (win->drawing == 0) {
         /* notify window to handle window update done */
-        if (RTGUI_OBJECT(win)->event_handler) {
+        if (TO_OBJECT(win)->evt_hdl) {
             rtgui_evt_generic_t *evt;
 
             /* send RTGUI_EVENT_WIN_UPDATE_END */
@@ -1953,7 +1952,7 @@ void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
             if (evt) {
                 RTGUI_EVENT_WIN_UPDATE_END_INIT(&evt->win_update);
                 evt->win_update.rect = win->drawing_rect;
-                RTGUI_OBJECT(win)->event_handler(RTGUI_OBJECT(win), evt);
+                TO_OBJECT(win)->evt_hdl(TO_OBJECT(win), evt);
             } else {
                 LOG_E("get mp err");
             }
@@ -1970,7 +1969,7 @@ void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
             rtgui_graphic_driver_screen_update(
                 rtgui_graphic_driver_get_default(), &(owner->extent));
 
-            if (!RTGUI_IS_WIN_TITLE(win)) {
+            if (!IS_WIN_TITLE(win)) {
                 /* send to server for window update */
                 //struct rtgui_evt_update_end eupdate;
                 //RTGUI_EVENT_UPDATE_END_INIT(&(eupdate));

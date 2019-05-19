@@ -722,7 +722,7 @@ static void ftc_get_metrics(struct rtgui_font *font, const char *text, struct rt
     if (len == 0)
         return;
 
-    memset(rect, 0, sizeof(struct rtgui_rect));
+    rt_memset(rect, 0, sizeof(struct rtgui_rect));
 
     /* allocate unicode buffer */
 #ifndef GUIENGINE_TTF_UTF8

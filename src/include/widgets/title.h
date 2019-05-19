@@ -20,7 +20,7 @@
  * Change Logs:
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
- * 2019-05-15     onelife      Refactor
+ * 2019-05-15     onelife      refactor
  */
 
 #ifndef __RTGUI_TITLE__
@@ -30,19 +30,19 @@
 #include "./widget.h"
 
 /* Exported defines ----------------------------------------------------------*/
-DECLARE_CLASS_TYPE(win_title);
+RTGUI_CLASS_PROTOTYPE(win_title);
 /** Gets the type of a title */
-#define RTGUI_WIN_TITLE_TYPE        (RTGUI_TYPE(win_title))
+#define _WIN_TITLE_METADATA                 CLASS_METADATA(win_title)
 /** Casts the object to an rtgui_win_title */
-#define RTGUI_WIN_TITLE(obj)        \
-    (RTGUI_OBJECT_CAST((obj), RTGUI_WIN_TITLE_TYPE, rtgui_win_title_t))
+#define TO_WIN_TITLE(obj)                   \
+    RTGUI_CAST(obj, _WIN_TITLE_METADATA, rtgui_win_title_t)
 /** Checks if the object is an rtgui_win_title */
-#define RTGUI_IS_WIN_TITLE(obj)     \
-    (RTGUI_OBJECT_CHECK_TYPE((obj), RTGUI_WIN_TITLE_TYPE))
+#define IS_WIN_TITLE(obj)                   \
+    IS_INSTANCE((obj), _WIN_TITLE_METADATA)
 
 /* Exported types ------------------------------------------------------------*/
 typedef struct rtgui_win_title {
-    struct rtgui_widget parent;
+    struct rtgui_widget _super;
 } rtgui_win_title_t;
 
 /* Exported constants --------------------------------------------------------*/

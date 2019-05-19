@@ -21,8 +21,6 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
-#include <stdio.h>
-#include <string.h>
 
 #include "../include/filerw.h"
 #include "../include/rtgui_system.h"
@@ -580,7 +578,7 @@ color_none:
 
     /* build rgb pixel data */
     image->data = (rt_uint8_t *) rtgui_malloc(image->w * image->h * sizeof(rtgui_color_t));
-    memset(image->data, 0, image->w * image->h * sizeof(rtgui_color_t));
+    rt_memset(image->data, 0, image->w * image->h * sizeof(rtgui_color_t));
 
     {
         rtgui_color_t *ptr = (rtgui_color_t *) image->data;

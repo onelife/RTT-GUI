@@ -20,9 +20,10 @@
  * Change Logs:
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
+ * 2019-05-18     onelife      refactor
  */
-#ifndef __RTGUI_BOX_H__
-#define __RTGUI_BOX_H__
+#ifndef __TO_BOX_H__
+#define __TO_BOX_H__
 
 #include "../rtgui.h"
 #include "./widget.h"
@@ -32,17 +33,18 @@
 extern "C" {
 #endif
 
-DECLARE_CLASS_TYPE(box);
+RTGUI_CLASS_PROTOTYPE(box);
 
 /** Gets the type of a box */
-#define RTGUI_BOX_TYPE       (RTGUI_TYPE(box))
+#define _BOX_METADATA                       CLASS_METADATA(box)
 /** Casts the object to an rtgui_box */
-#define RTGUI_BOX(obj)       (RTGUI_OBJECT_CAST((obj), RTGUI_BOX_TYPE, rtgui_box_t))
+#define TO_BOX(obj)                         \
+    RTGUI_CAST(obj, _BOX_METADATA, rtgui_box_t)
 /** Checks if the object is an rtgui_box */
-#define RTGUI_IS_BOX(obj)    (RTGUI_OBJECT_CHECK_TYPE((obj), RTGUI_BOX_TYPE))
+#define IS_BOX(obj)                         IS_INSTANCE(obj, _BOX_METADATA)
 
-struct rtgui_box *rtgui_box_create(int orientation, int border_size);
-void rtgui_box_destroy(struct rtgui_box *box);
+rtgui_box_t *rtgui_box_create(int orientation, int border_size);
+void rtgui_box_destroy(rtgui_box_t *box);
 
 void rtgui_box_layout(rtgui_box_t *box);
 void rtgui_box_layout_rect(rtgui_box_t *box, struct rtgui_rect *rect);

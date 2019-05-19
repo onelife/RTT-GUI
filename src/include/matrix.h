@@ -52,14 +52,7 @@
 
 /* Port to RTGUI and modified by Grissiom */
 
-#ifdef _MSC_VER
-typedef __int32 int32_t;
-typedef unsigned __int32 uint32_t;
-typedef __int64 int64_t;
-typedef unsigned __int64 uint64_t;
-#else
-#include <stdint.h>
-#endif
+#include "include/rtthread.h"
 
 #define RTGUI_MATRIX_FRAC_BITS   11
 #define RTGUI_MATRIX_FRAC      (1 << RTGUI_MATRIX_FRAC_BITS)
@@ -87,7 +80,7 @@ struct rtgui_matrix
     int m[6];
 };
 
-rt_inline int32_t _rtgui_matrix_round_div32(int32_t n, int32_t d)
+rt_inline rt_int32_t _rtgui_matrix_round_div32(rt_int32_t n, rt_int32_t d)
 {
     if (n == 0)
         return 0;
@@ -103,7 +96,7 @@ rt_inline int32_t _rtgui_matrix_round_div32(int32_t n, int32_t d)
         return (n - d / 2) / d;
 }
 
-rt_inline int32_t _rtgui_matrix_round_div6432(int64_t n, int32_t d)
+rt_inline rt_int32_t _rtgui_matrix_round_div6432(rt_int64_t n, rt_int32_t d)
 {
     if (n == 0)
         return 0;

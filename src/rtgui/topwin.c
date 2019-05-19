@@ -124,12 +124,12 @@ rt_err_t rtgui_topwin_add(struct rtgui_event_win_create *event) {
 
         topwin->wid = event->wid;
         if (event->wid->_title_wgt) {
-            topwin->extent = RTGUI_WIDGET(event->wid->_title_wgt)->extent;
+            topwin->extent = TO_WIDGET(event->wid->_title_wgt)->extent;
         } else {
-            topwin->extent = RTGUI_WIDGET(event->wid)->extent;
+            topwin->extent = TO_WIDGET(event->wid)->extent;
         }
-        topwin->app = event->parent.sender;
-        LOG_D("insert0 [%p] (%s)", event->wid, event->parent.sender->name);
+        topwin->app = event->_super.sender;
+        LOG_D("insert0 [%p] (%s)", event->wid, event->_super.sender->name);
 
         if (RT_NULL == event->parent_window) {
             LOG_D("insert as top [%p] (%s)", topwin->wid, topwin->app->name);
@@ -149,13 +149,13 @@ rt_err_t rtgui_topwin_add(struct rtgui_event_win_create *event) {
 
         rt_list_init(&topwin->child_list);
         topwin->flag = WINTITLE_INIT;
-        if (event->parent.user & RTGUI_WIN_STYLE_NO_FOCUS) {
+        if (event->_super.user & RTGUI_WIN_STYLE_NO_FOCUS) {
             topwin->flag |= WINTITLE_NOFOCUS;
         }
-        if (event->parent.user & RTGUI_WIN_STYLE_ONTOP) {
+        if (event->_super.user & RTGUI_WIN_STYLE_ONTOP) {
             topwin->flag |= WINTITLE_ONTOP;
         }
-        if (event->parent.user & RTGUI_WIN_STYLE_ONBTM) {
+        if (event->_super.user & RTGUI_WIN_STYLE_ONBTM) {
             topwin->flag |= WINTITLE_ONBTM;
         }
         topwin->title = RT_NULL;
@@ -690,7 +690,7 @@ rt_inline void _rtgui_topwin_mark_shown(struct rtgui_topwin *topwin) {
 
     LOG_D("mark show %s", topwin->wid->title);
     if (RTGUI_WIDGET_IS_HIDE(topwin->wid)) {
-        rtgui_widget_show(RTGUI_WIDGET(topwin->wid));
+        rtgui_widget_show(TO_WIDGET(topwin->wid));
     }
 }
 
@@ -911,9 +911,9 @@ struct rtgui_topwin *rtgui_topwin_get_focus(void)
     return _rtgui_topwin_get_focus_from_list(&_rtgui_topwin_list);
 }
 
-struct rtgui_app *rtgui_topwin_app_get_focus(void)
+rtgui_app_t *rtgui_topwin_app_get_focus(void)
 {
-    struct rtgui_app *topwin_app = RT_NULL;
+    rtgui_app_t *topwin_app = RT_NULL;
     struct rtgui_topwin *topwin = rtgui_topwin_get_focus();
 
     if (topwin)
@@ -1062,7 +1062,7 @@ static void _rtgui_topwin_redraw_tree(struct rt_list_node *list,
         if (!rtgui_rect_is_intersect(rect, &(topwin->extent))) {
             e_paint->wid = topwin->wid;
             // < XY do !!! >
-            //rtgui_send(topwin->app, &(e_paint->parent), sizeof(*e_paint));
+            //rtgui_send(topwin->app, &(e_paint->_super), sizeof(*e_paint));
         }
 
         _rtgui_topwin_redraw_tree(&topwin->child_list, rect, e_paint);
@@ -1149,14 +1149,14 @@ void rtgui_topwin_remove_monitor_rect(rtgui_win_t *wid,
 }
 
 static rtgui_obj_t* _get_obj_in_topwin(struct rtgui_topwin *topwin,
-    struct rtgui_app *app, rt_uint32_t id) {
+    rtgui_app_t *app, rt_uint32_t id) {
     rtgui_obj_t *object;
     struct rt_list_node *node;
 
-    object = RTGUI_OBJECT(topwin->wid);
+    object = TO_OBJECT(topwin->wid);
     if (object->id == id) return object;
 
-    object = rtgui_container_get_object(RTGUI_CONTAINER(object), id);
+    object = rtgui_container_get_object(TO_CONTAINER(object), id);
     if (object) return object;
 
     rt_list_foreach(node, &topwin->child_list, next) {
@@ -1172,30 +1172,30 @@ static rtgui_obj_t* _get_obj_in_topwin(struct rtgui_topwin *topwin,
     return RT_NULL;
 }
 
-rtgui_obj_t* rtgui_get_object(struct rtgui_app *app, rt_uint32_t id) {
-    rtgui_obj_t *obj;
-    struct rt_list_node *node;
+// rtgui_obj_t* rtgui_get_object(rtgui_app_t *app, rt_uint32_t id) {
+//     rtgui_obj_t *obj;
+//     struct rt_list_node *node;
 
-    obj = RTGUI_OBJECT(app);
-    if (obj->id == id) return obj;
+//     obj = TO_OBJECT(app);
+//     if (obj->id == id) return obj;
 
-    rt_list_foreach(node, &_rtgui_topwin_list, next) {
-        struct rtgui_topwin *topwin;
+//     rt_list_foreach(node, &_rtgui_topwin_list, next) {
+//         struct rtgui_topwin *topwin;
 
-        topwin = get_topwin_from_list(node);
-        if (topwin->app != app) continue;
+//         topwin = get_topwin_from_list(node);
+//         if (topwin->app != app) continue;
 
-        obj = _get_obj_in_topwin(topwin, app, id);
-        if (obj) return obj;
-    }
-    return RT_NULL;
-}
-RTM_EXPORT(rtgui_get_object);
+//         obj = _get_obj_in_topwin(topwin, app, id);
+//         if (obj) return obj;
+//     }
+//     return RT_NULL;
+// }
+// RTM_EXPORT(rtgui_get_object);
 
-rtgui_obj_t* rtgui_get_self_object(rt_uint32_t id) {
-    return rtgui_get_object(rtgui_app_self(), id);
-}
-RTM_EXPORT(rtgui_get_self_object);
+// rtgui_obj_t* rtgui_get_self_object(rt_uint32_t id) {
+//     return rtgui_get_object(rtgui_app_self(), id);
+// }
+// RTM_EXPORT(rtgui_get_self_object);
 
 static void _rtgui_topwin_dump(struct rtgui_topwin *topwin) {
     rt_kprintf("0x%p:%s,0x%x,%c%c",

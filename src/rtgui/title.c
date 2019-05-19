@@ -20,7 +20,7 @@
  * Change Logs:
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
- * 2019-05-15     onelife      Refactor
+ * 2019-05-15     onelife      refactor
  */
 /* Includes ------------------------------------------------------------------*/
 #include "../include/rtgui_system.h"
@@ -40,44 +40,39 @@
 #endif /* RT_USING_ULOG */
 
 /* Private function prototypes -----------------------------------------------*/
-static void _rtgui_win_title_constructor(rtgui_win_title_t *win_t);
-static void _rtgui_win_title_deconstructor(rtgui_win_title_t *win_t);
+static void _win_title_constructor(void *obj);
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-DEFINE_CLASS_TYPE(
-    win_title, "win_title",
-    RTGUI_PARENT_TYPE(widget),
-    _rtgui_win_title_constructor,
-    _rtgui_win_title_deconstructor,
+RTGUI_CLASS(
+    win_title,
+    CLASS_METADATA(widget),
+    _win_title_constructor,
+    RT_NULL,
     sizeof(rtgui_win_title_t));
 
 /* Private functions ---------------------------------------------------------*/
-static void _rtgui_win_title_constructor(rtgui_win_title_t *win_t) {
-    RTGUI_WIDGET(win_t)->flag = RTGUI_WIDGET_FLAG_DEFAULT;
+static void _win_title_constructor(void *obj) {
+    rtgui_win_title_t *win_t = obj;
+    TO_WIDGET(win_t)->flag = RTGUI_WIDGET_FLAG_DEFAULT;
     RTGUI_WIDGET_TEXTALIGN(win_t) = RTGUI_ALIGN_CENTER_VERTICAL;
 
-    rtgui_object_set_event_handler(RTGUI_OBJECT(win_t),
-        rtgui_win_tile_event_handler);
-}
-
-static void _rtgui_win_title_deconstructor(rtgui_win_title_t *win_t) {
-    (void)win_t;
+    SET_EVENT_HANDLER(TO_OBJECT(win_t), rtgui_win_tile_event_handler);
 }
 
 /* Public functions ----------------------------------------------------------*/
 rtgui_win_title_t *rtgui_win_title_create(rtgui_win_t *win) {
     rtgui_win_title_t *win_t;
 
-    win_t = (rtgui_win_title_t *)rtgui_widget_create(RTGUI_WIN_TITLE_TYPE);
-    if (win_t) RTGUI_WIDGET(win_t)->toplevel = win;
+    win_t = (rtgui_win_title_t *)RTGUI_CREATE_INSTANCE(win_title);
+    if (win_t) TO_WIDGET(win_t)->toplevel = win;
 
     return win_t;
 }
 
 void rtgui_win_title_destroy(rtgui_win_title_t *win_t) {
-    return rtgui_widget_destroy(RTGUI_WIDGET(win_t));
+    return rtgui_widget_destroy(TO_WIDGET(win_t));
 }
 
 rt_bool_t rtgui_win_tile_event_handler(rtgui_obj_t *obj,
@@ -86,8 +81,8 @@ rt_bool_t rtgui_win_tile_event_handler(rtgui_obj_t *obj,
     rtgui_widget_t *wgt;
     rt_bool_t done;
 
-    win_t = RTGUI_WIN_TITLE(obj);
-    wgt = RTGUI_WIDGET(obj);
+    win_t = TO_WIN_TITLE(obj);
+    wgt = TO_WIDGET(obj);
     if (!wgt->toplevel) {
         LOG_E("%s no toplevel");
         return RT_FALSE;

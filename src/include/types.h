@@ -32,6 +32,32 @@ extern "C" {
 #include "include/rtthread.h"
 
 /* Exported defines ----------------------------------------------------------*/
+#define RTGUI_CONTAINER_OF(obj, type, member) \
+    ((type *)((char *)(obj) - (unsigned long)(&((type *)0)->member)))
+
+#define CLASS_METADATA(name)                (&_rtgui_##name)
+
+#define RTGUI_CLASS_PROTOTYPE(cls)          \
+    extern const struct rtgui_class _rtgui_##cls;
+
+#define RTGUI_CLASS(name, _super, ctor, dtor, size) \
+    const struct rtgui_class _rtgui_##name = { \
+        _super,                             \
+        (rtgui_constructor_t)(ctor),        \
+        (rtgui_destructor_t)(dtor),         \
+        #name,                              \
+        size,                               \
+    };                                      \
+
+#define RTGUI_CREATE_INSTANCE(name)         \
+    rtgui_create_instance(CLASS_METADATA(name))
+
+#define RTGUI_DELETE_INSTANCE(obj)          rtgui_delete_instance(obj)
+
+#define SUPER_(obj)                         (obj->_super)
+#define CLASS_(ins)                         rtgui_class_of(ins)
+#define IS_SUBCLASS(cls, _super)            rtgui_is_subclass_of(cls, _super)
+
 /* Exported types ------------------------------------------------------------*/
 typedef struct rtgui_list_node rtgui_list_t;
 
@@ -41,7 +67,7 @@ typedef struct rtgui_line rtgui_line_t;
 typedef struct rtgui_region_data rtgui_region_data_t;
 typedef struct rtgui_region rtgui_region_t;
 
-typedef struct rtgui_type rtgui_type_t;
+typedef struct rtgui_class rtgui_type_t;
 typedef struct rtgui_obj rtgui_obj_t;
 typedef struct rtgui_app rtgui_app_t;
 typedef struct rtgui_box rtgui_box_t;
@@ -54,7 +80,7 @@ typedef struct rtgui_evt_base rtgui_evt_base_t;
 typedef struct rtgui_event_timer rtgui_event_timer_t;
 typedef union rtgui_evt_generic rtgui_evt_generic_t;
 
-typedef void (*rtgui_constructor_t)(rtgui_type_t *obj);
+typedef void (*rtgui_constructor_t)(void *obj);
 typedef void (*rtgui_destructor_t)(rtgui_type_t *obj);
 typedef rt_bool_t (*rtgui_evt_hdl_t)(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
 typedef void (*rtgui_onbutton_hdl_p)(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
@@ -110,12 +136,12 @@ struct rtgui_gc {
     struct rtgui_font *font;
 };
 
-/* type */
-struct rtgui_type {
-    char *name;
-    const struct rtgui_type *parent;
+/* type (class metadata) */
+struct rtgui_class {
+    const struct rtgui_class *_super;
     rtgui_constructor_t constructor;
     rtgui_destructor_t destructor;
+    char *name;
     rt_size_t size;
 };
 
@@ -130,8 +156,9 @@ typedef enum rtgui_obj_flag {
 } rtgui_obj_flag_t;
 
 struct rtgui_obj {
-    const rtgui_type_t *type;
-    rtgui_evt_hdl_t event_handler;
+    void *_super;
+    const rtgui_type_t *cls;
+    rtgui_evt_hdl_t evt_hdl;
     rtgui_obj_flag_t flag;
     rt_ubase_t id;
 };
@@ -145,7 +172,7 @@ typedef enum rtgui_app_flag {
 
 
 struct rtgui_app {
-    rtgui_obj_t parent;
+    rtgui_obj_t _super;
     char *name;
     rt_thread_t tid;
     rt_mailbox_t mb;
@@ -165,7 +192,7 @@ struct rtgui_app {
 
 /* widget */
 struct rtgui_widget {
-    rtgui_obj_t object;                     /* parent class */
+    rtgui_obj_t _super;                     /* _super class */
     rtgui_widget_t *parent;                 /* parent widget */
     rtgui_win_t *toplevel;                  /* parent window */
     rtgui_list_t sibling;                   /* children and sibling */
@@ -189,9 +216,9 @@ struct rtgui_widget {
     rt_uint32_t user_data;
 };
 
-/* layout box -*/
+/* box sizer */
 struct rtgui_box {
-    rtgui_obj_t parent;
+    rtgui_obj_t _super;
     rt_uint16_t orient;
     rt_uint16_t border_size;
     rtgui_container_t *container;
@@ -199,7 +226,7 @@ struct rtgui_box {
 
 /* container */
 struct rtgui_container {
-    rtgui_widget_t parent;
+    rtgui_widget_t _super;
     rtgui_box_t *layout_box;
     rtgui_list_t children;
 };
@@ -232,7 +259,7 @@ typedef enum rtgui_modal_code {
 } rtgui_modal_code_t;
 
 struct rtgui_win {
-    rtgui_container_t parent;               /* parent class */
+    rtgui_container_t _super;               /* _super class */
     rt_base_t update;                       /* update count */
     rt_base_t drawing;                      /* drawing count */
     rtgui_rect_t drawing_rect;
@@ -243,7 +270,7 @@ struct rtgui_win {
 
     rtgui_widget_t *focused_widget;
 
-    struct rtgui_app *app;
+    rtgui_app_t *app;
     rt_uint16_t style;
     rtgui_win_flag_t flag;
     rtgui_modal_code_t modal_code;
@@ -261,7 +288,7 @@ struct rtgui_win {
      * by @func on_key
      *
      * If you want to handle key event on your own, it's better to overload
-     * this function other than handle EVENT_KBD in event_handler.
+     * this function other than handle EVENT_KBD in evt_hdl.
      */
     rt_bool_t (*on_key)(rtgui_obj_t *widget, rtgui_evt_generic_t *evt);
 
@@ -283,7 +310,7 @@ typedef enum rtgui_timer_state {
 } rtgui_timer_state_t;
 
 struct rtgui_timer {
-    struct rtgui_app* app;
+    rtgui_app_t* app;
     struct rt_timer timer;
     int pending_cnt;                        /* #(pending event) */
     rtgui_timer_state_t state;
@@ -347,25 +374,25 @@ typedef enum rtgui_evt_type {
 struct rtgui_evt_base {
     rtgui_evt_type_t type;
     rt_uint16_t user;
-    struct rtgui_app *sender;
+    rtgui_app_t *sender;
     rt_mailbox_t ack;
 };
 
 /* app event */
 struct rtgui_evt_app {
-    rtgui_evt_base_t parent;
-    struct rtgui_app *app;
+    rtgui_evt_base_t _super;
+    rtgui_app_t *app;
 };
 
 /* window manager event  */
 struct rtgui_event_set_wm {
-    rtgui_evt_base_t parent;
-    struct rtgui_app *app;
+    rtgui_evt_base_t _super;
+    rtgui_app_t *app;
 };
 
 /* window event */
 #define _RTGUI_EVENT_WIN_ELEMENTS           \
-    rtgui_evt_base_t parent;                \
+    rtgui_evt_base_t _super;                \
     rtgui_win_t *wid;
 
 struct rtgui_event_win {
@@ -402,13 +429,13 @@ struct rtgui_event_win_update_end {
 
 /* other window event */
 struct rtgui_event_update_begin {
-    rtgui_evt_base_t parent;
+    rtgui_evt_base_t _super;
     /* the update rect */
     rtgui_rect_t rect;
 };
 
 struct rtgui_evt_update_end {
-    rtgui_evt_base_t parent;
+    rtgui_evt_base_t _super;
     /* the update rect */
     rtgui_rect_t rect;
 };
@@ -437,12 +464,12 @@ struct rtgui_event_clip_info {
 #define rtgui_event_hide rtgui_evt_base
 
 struct rtgui_event_update_toplvl {
-    rtgui_evt_base_t parent;
+    rtgui_evt_base_t _super;
     rtgui_win_t *toplvl;
 };
 
 struct rtgui_event_timer {
-    rtgui_evt_base_t parent;
+    rtgui_evt_base_t _super;
     struct rtgui_timer *timer;
 };
 
@@ -504,7 +531,7 @@ struct rtgui_event_kbd {
 
 /* touch event: handled by server */
 struct rtgui_event_touch {
-    rtgui_evt_base_t parent;
+    rtgui_evt_base_t _super;
     rt_uint16_t x, y;
     rt_uint16_t up_down;
     rt_uint16_t resv;
@@ -523,17 +550,17 @@ struct rtgui_event_command {
 
 /* widget event */
 struct rtgui_event_scrollbar {
-    rtgui_evt_base_t parent;
+    rtgui_evt_base_t _super;
     rt_uint8_t event;
 };
 
 struct rtgui_event_focused {
-    rtgui_evt_base_t parent;
+    rtgui_evt_base_t _super;
     rtgui_widget_t *widget;
 };
 
 struct rtgui_event_resize {
-    rtgui_evt_base_t parent;
+    rtgui_evt_base_t _super;
     rt_int16_t x, y;
     rt_int16_t w, h;
 };
@@ -545,7 +572,7 @@ typedef enum rtgui_event_model_mode {
 } rtgui_event_model_mode_t;
 
 struct rtgui_event_mv_model {
-    rtgui_evt_base_t parent;
+    rtgui_evt_base_t _super;
     struct rtgui_mv_model *model;
     struct rtgui_mv_view  *view;
     rt_size_t first_data_changed_idx;

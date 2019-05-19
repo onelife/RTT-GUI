@@ -62,7 +62,7 @@ struct rtgui_topwin
     rtgui_win_t *wid;
 
     /* which app I belong */
-    struct rtgui_app *app;
+    rtgui_app_t *app;
 
     /* the extent information */
     rtgui_rect_t extent;

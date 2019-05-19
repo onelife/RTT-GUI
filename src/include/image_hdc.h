@@ -28,7 +28,7 @@
 
 struct rtgui_image_hdcmm
 {
-    struct rtgui_image parent;
+    struct rtgui_image _super;
 
     /* hdc image information */
     rt_uint16_t byte_per_pixel;

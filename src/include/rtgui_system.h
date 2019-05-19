@@ -54,7 +54,7 @@ void *rtgui_realloc(void *ptr, rt_size_t size);
 #define rtgui_exit_critical     rt_exit_critical
 #endif
 
-struct rtgui_app* rtgui_get_server(void);
+rtgui_app_t* rtgui_get_server(void);
 void rtgui_set_mainwin_rect(struct rtgui_rect *rect);
 void rtgui_get_mainwin_rect(struct rtgui_rect *rect);
 void rtgui_get_screen_rect(struct rtgui_rect *rect);
@@ -64,10 +64,10 @@ void rtgui_screen_unlock(void);
 int rtgui_screen_lock_freeze(void);
 void rtgui_screen_lock_thaw(int value);
 
-rt_err_t rtgui_send(struct rtgui_app* app, rtgui_evt_generic_t *evt,
+rt_err_t rtgui_send(rtgui_app_t* app, rtgui_evt_generic_t *evt,
     rt_int32_t timeout);
 rt_err_t rtgui_recv(rtgui_evt_generic_t **evt, rt_int32_t timeout);
-rt_err_t rtgui_send_sync(struct rtgui_app *des, rtgui_evt_generic_t *evt);
+rt_err_t rtgui_send_sync(rtgui_app_t *des, rtgui_evt_generic_t *evt);
 rt_err_t rtgui_ack(rtgui_evt_generic_t *evt, rt_uint32_t val);
 rt_err_t rtgui_recv_filter(rt_uint32_t type, rtgui_evt_generic_t *evt);
 

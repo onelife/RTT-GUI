@@ -21,7 +21,6 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
-#include <string.h>
 
 #include "../include/rtgui.h"
 #include "../include/dc.h"
@@ -82,8 +81,8 @@ struct rtgui_dc *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w
     dc = (struct rtgui_dc_buffer *)rtgui_malloc(sizeof(struct rtgui_dc_buffer));
     if (dc)
     {
-        dc->parent.type = RTGUI_DC_BUFFER;
-        dc->parent.engine = &dc_buffer_engine;
+        dc->_super.type = RTGUI_DC_BUFFER;
+        dc->_super.engine = &dc_buffer_engine;
         dc->gc.foreground = default_foreground;
         dc->gc.background = default_background;
         dc->gc.font = rtgui_font_default();
@@ -107,7 +106,7 @@ struct rtgui_dc *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w
         }
         rt_memset(dc->pixel, 0, h * dc->pitch);
 
-        return &(dc->parent);
+        return &(dc->_super);
     }
 
     return RT_NULL;
@@ -123,8 +122,8 @@ struct rtgui_dc *rtgui_img_dc_create_pixformat(rt_uint8_t pixel_format,
     dc = (struct rtgui_dc_buffer *)rtgui_malloc(sizeof(struct rtgui_dc_buffer));
     if (dc)
     {
-        dc->parent.type = RTGUI_DC_BUFFER;
-        dc->parent.engine = &dc_buffer_engine;
+        dc->_super.type = RTGUI_DC_BUFFER;
+        dc->_super.engine = &dc_buffer_engine;
         dc->gc.foreground = default_foreground;
         dc->gc.background = default_background;
         dc->gc.font = rtgui_font_default();
@@ -139,7 +138,7 @@ struct rtgui_dc *rtgui_img_dc_create_pixformat(rt_uint8_t pixel_format,
         dc->image_item = image_item;
         dc->pixel = pixel;
 
-        return &(dc->parent);
+        return &(dc->_super);
     }
 
     return RT_NULL;
@@ -164,7 +163,7 @@ struct rtgui_dc *rtgui_dc_buffer_create_from_dc(struct rtgui_dc* dc)
                  d->height);
         if (buffer != RT_NULL)
         {
-            memcpy(buffer->pixel, d->pixel, d->pitch * d->height);
+            rt_memcpy(buffer->pixel, d->pixel, d->pitch * d->height);
             d->pixel_alpha = 255;
 
             return RTGUI_DC(buffer);
@@ -688,7 +687,7 @@ static void rtgui_dc_buffer_blit_line(struct rtgui_dc *self, int x1, int x2, int
         x2 = dc->width;
 
     pixel = _dc_get_pixel(dc,x1,y);
-    memcpy(pixel, line_data, (x2 - x1) * rtgui_color_get_bpp(dc->pixel_format));
+    rt_memcpy(pixel, line_data, (x2 - x1) * rtgui_color_get_bpp(dc->pixel_format));
 }
 
 #ifdef RT_USING_DFS

@@ -44,6 +44,18 @@
 #endif /* RT_USING_ULOG */
 
 
+static void app_constructor(void *obj);
+static void app_destructor(void *obj);
+
+RTGUI_CLASS(
+    application,
+    CLASS_METADATA(object),
+    app_constructor,
+    app_destructor,
+    sizeof(rtgui_app_t));
+
+
+
 #define _rtgui_application_check(app)           \
     do {                                        \
         RT_ASSERT(app != RT_NULL);              \
@@ -53,10 +65,10 @@
     } while (0)
 
 
-static void _rtgui_app_constructor(struct rtgui_app *app) {
+static void app_constructor(void *obj) {
+    rtgui_app_t *app = obj;
     /* set event handler */
-    rtgui_object_set_event_handler(
-        RTGUI_OBJECT(app), rtgui_app_event_handler);
+    SET_EVENT_HANDLER(TO_OBJECT(app), rtgui_app_event_handler);
 
     app->name           = RT_NULL;
     app->tid            = RT_NULL;
@@ -72,19 +84,15 @@ static void _rtgui_app_constructor(struct rtgui_app *app) {
     app->on_idle        = RT_NULL;
 }
 
-static void _rtgui_app_destructor(struct rtgui_app *app) {
+static void app_destructor(void *obj) {
+    rtgui_app_t *app = obj;
+
     RT_ASSERT(app != RT_NULL);
 
     rt_free(app->name);
     app->name = RT_NULL;
 }
 
-DEFINE_CLASS_TYPE(
-    application, "application",
-    RTGUI_PARENT_TYPE(object),
-    _rtgui_app_constructor,
-    _rtgui_app_destructor,
-    sizeof(struct rtgui_app));
 
 static rtgui_app_t *_rtgui_app_create(const char *title, rt_bool_t is_srv) {
     rt_thread_t self = rt_thread_self();
@@ -96,7 +104,7 @@ static rtgui_app_t *_rtgui_app_create(const char *title, rt_bool_t is_srv) {
 
     do {
         /* create application */
-        app = RTGUI_APP(rtgui_object_create(RTGUI_APP_TYPE));
+        app = RTGUI_APP(RTGUI_CREATE_INSTANCE(application));
         if (!app) {
             LOG_E("create %s err", title);
             break;
@@ -139,7 +147,7 @@ static rtgui_app_t *_rtgui_app_create(const char *title, rt_bool_t is_srv) {
             RTGUI_EVENT_APP_CREATE_INIT(&evt->app_create);
             evt->app_create.app = app;
             if (rtgui_send_sync(srv, evt)) {
-                LOG_E("%s sync %s err", title, RTGUI_APP_TYPE->name);
+                LOG_E("create %s sync err", title);
                 break;
             }
         }
@@ -150,7 +158,7 @@ static rtgui_app_t *_rtgui_app_create(const char *title, rt_bool_t is_srv) {
         return app;
     } while (0);
 
-    rtgui_object_destroy(RTGUI_OBJECT(app));
+    RTGUI_DELETE_INSTANCE(app);
     return RT_NULL;
 }
 
@@ -163,8 +171,8 @@ rtgui_app_t *rtgui_app_create(const char *title) {
 }
 RTM_EXPORT(rtgui_app_create);
 
-void rtgui_app_destroy(struct rtgui_app *app) {
-    struct rtgui_app *srv;
+void rtgui_app_destroy(rtgui_app_t *app) {
+    rtgui_app_t *srv;
 
     _rtgui_application_check(app);
     if (!(app->state_flag & RTGUI_APP_FLAG_EXITED)) {
@@ -196,36 +204,36 @@ void rtgui_app_destroy(struct rtgui_app *app) {
 
     app->tid->user_data = 0;
     rt_mb_delete(app->mb);
-    rtgui_object_destroy(RTGUI_OBJECT(app));
+    RTGUI_DELETE_INSTANCE(app);
 }
 RTM_EXPORT(rtgui_app_destroy);
 
-struct rtgui_app *rtgui_app_self(void) {
+rtgui_app_t *rtgui_app_self(void) {
     rt_thread_t self;
-    struct rtgui_app *app;
+    rtgui_app_t *app;
 
     /* get current thread */
     self = rt_thread_self();
-    app = (struct rtgui_app *)(self->user_data);
+    app = (rtgui_app_t *)(self->user_data);
 
     return app;
 }
 RTM_EXPORT(rtgui_app_self);
 
-void rtgui_app_set_onidle(struct rtgui_app *app, rtgui_idle_hdl_t onidle) {
+void rtgui_app_set_onidle(rtgui_app_t *app, rtgui_idle_hdl_t onidle) {
     _rtgui_application_check(app);
     app->on_idle = onidle;
 }
 RTM_EXPORT(rtgui_app_set_onidle);
 
-rtgui_idle_hdl_t rtgui_app_get_onidle(struct rtgui_app *app) {
+rtgui_idle_hdl_t rtgui_app_get_onidle(rtgui_app_t *app) {
     _rtgui_application_check(app);
     return app->on_idle;
 }
 RTM_EXPORT(rtgui_app_get_onidle);
 
 rt_inline rt_bool_t _rtgui_application_dest_handle(
-    struct rtgui_app *app, rtgui_evt_generic_t *evt) {
+    rtgui_app_t *app, rtgui_evt_generic_t *evt) {
     rtgui_obj_t *tgt;
     (void)app;
 
@@ -239,15 +247,15 @@ rt_inline rt_bool_t _rtgui_application_dest_handle(
     }
 
     /* The dest window may have been destroyed when this event arrived. Check
-     * against this condition. NOTE: we cannot use the RTGUI_OBJECT because it
+     * against this condition. NOTE: we cannot use the TO_OBJECT because it
      * may be invalid already. */
-    tgt = RTGUI_OBJECT(evt->win_base.wid);
+    tgt = TO_OBJECT(evt->win_base.wid);
     if (tgt) {
         if (RTGUI_OBJECT_FLAG_VALID != (tgt->flag & RTGUI_OBJECT_FLAG_VALID)) {
             return RT_TRUE;
         }
-        if (tgt->event_handler) {
-            return tgt->event_handler(tgt, evt);
+        if (tgt->evt_hdl) {
+            return tgt->evt_hdl(tgt, evt);
         } else {
             return RT_FALSE;
         }
@@ -259,7 +267,7 @@ rt_inline rt_bool_t _rtgui_application_dest_handle(
 
 rt_bool_t rtgui_app_event_handler(rtgui_obj_t *obj,
     rtgui_evt_generic_t *evt) {
-    struct rtgui_app *app;
+    rtgui_app_t *app;
 
     RT_ASSERT(obj != RT_NULL);
     RT_ASSERT(evt != RT_NULL);
@@ -330,7 +338,7 @@ rt_bool_t rtgui_app_event_handler(rtgui_obj_t *obj,
 
     case RTGUI_EVENT_MV_MODEL:
         RT_ASSERT(evt->model.view);
-        return rtgui_object_handle(RTGUI_OBJECT(evt->model.view), evt);
+        return rtgui_object_handle(TO_OBJECT(evt->model.view), evt);
 
     case RTGUI_EVENT_COMMAND:
         if (evt->command.wid) {
@@ -365,15 +373,15 @@ rt_inline void _rtgui_application_event_loop(rtgui_app_t *app) {
         if (app->on_idle) {
             ret = rtgui_recv(&evt, RT_WAITING_NO);
             if (RT_EOK == ret) {
-                RTGUI_OBJECT(app)->event_handler(RTGUI_OBJECT(app), evt);
+                TO_OBJECT(app)->evt_hdl(TO_OBJECT(app), evt);
             } else if (-RT_ETIMEOUT == ret) {
-                app->on_idle(RTGUI_OBJECT(app), RT_NULL);
+                app->on_idle(TO_OBJECT(app), RT_NULL);
             }
         } else {
             ret = rtgui_recv(&evt, RT_WAITING_FOREVER);
             if (RT_EOK == ret) {
                 LOG_E("loop2 %p from %s", evt, evt->base.sender->mb->parent.parent.name);
-                RTGUI_OBJECT(app)->event_handler(RTGUI_OBJECT(app), evt);
+                TO_OBJECT(app)->evt_hdl(TO_OBJECT(app), evt);
             }
         }
     }
@@ -395,7 +403,7 @@ rt_base_t rtgui_app_run(rtgui_app_t *app) {
 }
 RTM_EXPORT(rtgui_app_run);
 
-void rtgui_app_exit(struct rtgui_app *app, rt_uint16_t code) {
+void rtgui_app_exit(rtgui_app_t *app, rt_uint16_t code) {
     if (!app->ref_cnt) return;
 
     app->ref_cnt--;
@@ -403,7 +411,7 @@ void rtgui_app_exit(struct rtgui_app *app, rt_uint16_t code) {
 }
 RTM_EXPORT(rtgui_app_exit);
 
-void rtgui_app_activate(struct rtgui_app *app) {
+void rtgui_app_activate(rtgui_app_t *app) {
     rtgui_evt_generic_t *evt;
     rt_err_t ret;
 
@@ -425,7 +433,7 @@ void rtgui_app_activate(struct rtgui_app *app) {
 }
 RTM_EXPORT(rtgui_app_activate);
 
-void rtgui_app_sleep(struct rtgui_app *app, rt_uint32_t ms) {
+void rtgui_app_sleep(rtgui_app_t *app, rt_uint32_t ms) {
     rt_tick_t current, timeout;
     rt_uint16_t current_cnt;
 
@@ -441,14 +449,14 @@ void rtgui_app_sleep(struct rtgui_app *app, rt_uint32_t ms) {
         if (app->on_idle) {
             ret = rtgui_recv(&evt, RT_WAITING_NO);
             if (RT_EOK == ret) {
-                RTGUI_OBJECT(app)->event_handler(RTGUI_OBJECT(app), evt);
+                TO_OBJECT(app)->evt_hdl(TO_OBJECT(app), evt);
             } else if (-RT_ETIMEOUT == ret) {
-                app->on_idle(RTGUI_OBJECT(app), RT_NULL);
+                app->on_idle(TO_OBJECT(app), RT_NULL);
             }
         } else {
             ret = rtgui_recv(&evt, timeout - current);
             if (RT_EOK == ret) {
-                RTGUI_OBJECT(app)->event_handler(RTGUI_OBJECT(app), evt);
+                TO_OBJECT(app)->evt_hdl(TO_OBJECT(app), evt);
             }
         }
         current = rt_tick_get();
@@ -458,7 +466,7 @@ void rtgui_app_sleep(struct rtgui_app *app, rt_uint32_t ms) {
 }
 RTM_EXPORT(rtgui_app_sleep);
 
-void rtgui_app_close(struct rtgui_app *app) {
+void rtgui_app_close(rtgui_app_t *app) {
     rtgui_evt_generic_t *evt;
     rt_err_t ret;
 
@@ -483,8 +491,8 @@ RTM_EXPORT(rtgui_app_close);
 /**
  * set this application as window manager
  */
-rt_err_t rtgui_app_set_as_wm(struct rtgui_app *app) {
-    struct rtgui_app *srv;
+rt_err_t rtgui_app_set_as_wm(rtgui_app_t *app) {
+    rtgui_app_t *srv;
     rt_err_t ret;
 
     _rtgui_application_check(app);
@@ -516,20 +524,20 @@ rt_err_t rtgui_app_set_as_wm(struct rtgui_app *app) {
 }
 RTM_EXPORT(rtgui_app_set_as_wm);
 
-void rtgui_app_set_main_win(struct rtgui_app *app, rtgui_win_t *win) {
+void rtgui_app_set_main_win(rtgui_app_t *app, rtgui_win_t *win) {
     _rtgui_application_check(app);
-    app->main_object = RTGUI_OBJECT(win);
+    app->main_object = TO_OBJECT(win);
     LOG_D("%s main win: %s", app->name, win->title);
 }
 RTM_EXPORT(rtgui_app_set_main_win);
 
-rtgui_win_t *rtgui_app_get_main_win(struct rtgui_app *app) {
-    return RTGUI_WIN(app->main_object);
+rtgui_win_t *rtgui_app_get_main_win(rtgui_app_t *app) {
+    return TO_WIN(app->main_object);
 }
 RTM_EXPORT(rtgui_app_get_main_win);
 
 unsigned int rtgui_app_get_win_acti_cnt(void) {
-    struct rtgui_app *app;
+    rtgui_app_t *app;
 
     app = rtgui_topwin_app_get_focus();
     if (app) {

@@ -44,7 +44,6 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-#include <string.h>
 
 #include "../include/rtgui.h"
 #include "../include/blit.h"
@@ -531,7 +530,7 @@ static void rtgui_blit_line_2_3(rt_uint8_t *dst_ptr, rt_uint8_t *src_ptr, int li
 
 void rtgui_blit_line_direct(rt_uint8_t *dst_ptr, rt_uint8_t *src_ptr, int line)
 {
-    memcpy(dst_ptr, src_ptr, line);
+    rt_memcpy(dst_ptr, src_ptr, line);
 }
 
 /* convert 4bpp to 3bpp */

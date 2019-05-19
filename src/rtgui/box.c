@@ -20,6 +20,7 @@
  * Change Logs:
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
+ * 2019-05-18     onelife      refactor
  */
 
 #include "../include/rtgui_system.h"
@@ -37,10 +38,21 @@
 #endif /* RT_USING_ULOG */
 
 
-static void _rtgui_box_constructor(rtgui_box_t *box)
-{
+static void _box_constructor(void *obj);
+
+
+RTGUI_CLASS(
+    box,
+    CLASS_METADATA(object),
+    _box_constructor,
+    RT_NULL,
+    sizeof(rtgui_box_t));
+
+
+static void _box_constructor(void *obj) {
+    rtgui_box_t *box = obj;
     /* init widget and set event handler */
-    rtgui_object_set_event_handler(RTGUI_OBJECT(box), RT_NULL);
+    SET_EVENT_HANDLER(TO_OBJECT(box), RT_NULL);
 
     /* set proper of control */
     box->orient = RTGUI_HORIZONTAL;
@@ -48,17 +60,11 @@ static void _rtgui_box_constructor(rtgui_box_t *box)
     box->container = RT_NULL;
 }
 
-DEFINE_CLASS_TYPE(box, "box",
-                  RTGUI_PARENT_TYPE(object),
-                  _rtgui_box_constructor,
-                  RT_NULL,
-                  sizeof(struct rtgui_box));
-
-struct rtgui_box *rtgui_box_create(int orientation, int border_size)
+rtgui_box_t *rtgui_box_create(int orientation, int border_size)
 {
-    struct rtgui_box *box;
+    rtgui_box_t *box;
 
-    box = (struct rtgui_box *) rtgui_object_create(RTGUI_BOX_TYPE);
+    box = (rtgui_box_t *)RTGUI_CREATE_INSTANCE(box);
     if (box != RT_NULL)
     {
         box->orient = orientation;
@@ -69,13 +75,12 @@ struct rtgui_box *rtgui_box_create(int orientation, int border_size)
 }
 RTM_EXPORT(rtgui_box_create);
 
-void rtgui_box_destroy(struct rtgui_box *box)
-{
-    rtgui_object_destroy(RTGUI_OBJECT(box));
+void rtgui_box_destroy(rtgui_box_t *box) {
+    RTGUI_DELETE_INSTANCE(box);
 }
 RTM_EXPORT(rtgui_box_destroy);
 
-static void rtgui_box_layout_vertical(struct rtgui_box *box,
+static void rtgui_box_layout_vertical(rtgui_box_t *box,
     struct rtgui_rect *extent) {
     rtgui_list_t *node;
     rt_int32_t box_width;
@@ -162,14 +167,14 @@ static void rtgui_box_layout_vertical(struct rtgui_box *box,
         evt->resize.y = rect->y1;
         evt->resize.w = rect->x2 - rect->x1;
         evt->resize.h = rect->y2 - rect->y1;
-        RTGUI_OBJECT(widget)->event_handler(RTGUI_OBJECT(widget), evt);
+        TO_OBJECT(widget)->evt_hdl(TO_OBJECT(widget), evt);
 
         /* point to next height */
         next_y = rect->y2 + box->border_size;
     }
 }
 
-static void rtgui_box_layout_horizontal(struct rtgui_box *box,
+static void rtgui_box_layout_horizontal(rtgui_box_t *box,
     struct rtgui_rect *extent) {
     rtgui_list_t *node;
     rt_int32_t box_height;
@@ -256,7 +261,7 @@ static void rtgui_box_layout_horizontal(struct rtgui_box *box,
         evt->resize.y = rect->y1;
         evt->resize.w = rect->x2 - rect->x1;
         evt->resize.h = rect->y2 - rect->y1;
-        RTGUI_OBJECT(widget)->event_handler(RTGUI_OBJECT(widget), evt);
+        TO_OBJECT(widget)->evt_hdl(TO_OBJECT(widget), evt);
 
         /* point to next width */
         next_x = rect->x2 + box->border_size;
@@ -269,7 +274,7 @@ void rtgui_box_layout(rtgui_box_t *box) {
 
     if (box->container == RT_NULL) return;
 
-    rtgui_widget_get_extent(RTGUI_WIDGET(box->container), &extent);
+    rtgui_widget_get_extent(TO_WIDGET(box->container), &extent);
     if (box->orient & RTGUI_VERTICAL) {
         rtgui_box_layout_vertical(box, &extent);
     } else {
@@ -277,8 +282,8 @@ void rtgui_box_layout(rtgui_box_t *box) {
     }
 
     /* update box and its children clip */
-    if (!RTGUI_WIDGET_IS_HIDE(RTGUI_WIDGET(box->container))) {
-        rtgui_widget_update_clip(RTGUI_WIDGET(box->container));
+    if (!RTGUI_WIDGET_IS_HIDE(TO_WIDGET(box->container))) {
+        rtgui_widget_update_clip(TO_WIDGET(box->container));
     }
 }
 RTM_EXPORT(rtgui_box_layout);
@@ -299,9 +304,9 @@ void rtgui_box_layout_rect(rtgui_box_t *box, struct rtgui_rect *rect)
     }
 
     /* update box and its children clip */
-    if (!RTGUI_WIDGET_IS_HIDE(RTGUI_WIDGET(box->container)))
+    if (!RTGUI_WIDGET_IS_HIDE(TO_WIDGET(box->container)))
     {
-        rtgui_widget_update_clip(RTGUI_WIDGET(box->container));
+        rtgui_widget_update_clip(TO_WIDGET(box->container));
     }
 }
 RTM_EXPORT(rtgui_box_layout_rect);

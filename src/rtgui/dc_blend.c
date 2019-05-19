@@ -71,9 +71,7 @@
   Andreas Schiffler -- aschiffler at ferzkopp dot net
 */
 
-#include <stdlib.h>
 #include <math.h>
-#include <string.h>
 
 #include "../include/dc.h"
 #include "../include/dc_draw.h"

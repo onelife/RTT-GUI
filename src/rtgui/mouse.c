@@ -355,7 +355,7 @@ static void rtgui_cursor_restore()
 
     for (idx = 0; idx < height; idx ++)
     {
-        memcpy(fb_ptr, cursor_ptr, cursor_pitch);
+        rt_memcpy(fb_ptr, cursor_ptr, cursor_pitch);
 
         fb_ptr += _rtgui_cursor->screen_pitch;
         cursor_ptr += _rtgui_cursor->cursor_pitch;
@@ -382,7 +382,7 @@ static void rtgui_cursor_save()
 
     for (idx = 0; idx < height; idx ++)
     {
-        memcpy(cursor_ptr, fb_ptr, cursor_pitch);
+        rt_memcpy(cursor_ptr, fb_ptr, cursor_pitch);
 
         fb_ptr += _rtgui_cursor->screen_pitch;
         cursor_ptr += _rtgui_cursor->cursor_pitch;
@@ -434,8 +434,8 @@ void rtgui_winrect_set(rtgui_win_t *win)
     /* set win rect */
     _rtgui_cursor->win_rect =
         win->_title_wgt == RT_NULL ?
-        RTGUI_WIDGET(win)->extent :
-        RTGUI_WIDGET(win->_title_wgt)->extent;
+        TO_WIDGET(win)->extent :
+        TO_WIDGET(win->_title_wgt)->extent;
 
     _rtgui_cursor->win = win;
 }
@@ -520,7 +520,7 @@ static void rtgui_winrect_show()
 #define display_direct_memcpy(src, dest, src_pitch, dest_pitch, height, len)    \
     for (idx = 0; idx < height; idx ++)     \
     {                                       \
-        memcpy(dest, src, len);             \
+        rt_memcpy(dest, src, len);             \
         src  += src_pitch;                  \
         dest += dest_pitch;                 \
     }

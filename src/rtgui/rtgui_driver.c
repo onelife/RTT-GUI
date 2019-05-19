@@ -21,8 +21,6 @@
  * Date           Author       Notes
  * 2009-10-04     Bernard      first version
  */
-#include <string.h>
-
 #include "include/rtthread.h"
 
 #include "../include/driver.h"
@@ -136,7 +134,7 @@ rtgui_graphic_driver_get_rect_buffer(const struct rtgui_graphic_driver *drv,
 
     while (h--)
     {
-        memcpy(dst, pixel, buffer->pitch);
+        rt_memcpy(dst, pixel, buffer->pitch);
 
         dst += buffer->pitch;
         pixel += drv->pitch;
@@ -544,7 +542,7 @@ static void framebuffer_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y
 
     drv = rtgui_graphic_get_device();
     dst = GET_PIXEL(drv, x1, y, rt_uint8_t);
-    memcpy(dst, pixels,
+    rt_memcpy(dst, pixels,
            (x2 - x1) * _UI_BITBYTES(drv->bits_per_pixel));
 }
 
