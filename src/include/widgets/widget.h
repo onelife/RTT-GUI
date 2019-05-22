@@ -86,9 +86,6 @@ RTGUI_CLASS_PROTOTYPE(widget);
 // rtgui_widget_t *rtgui_widget_create(const rtgui_type_t *widget_type);
 void rtgui_widget_destroy(rtgui_widget_t *widget);
 
-rt_bool_t rtgui_widget_event_handler(rtgui_obj_t *object,
-    rtgui_evt_generic_t *event);
-
 /* focus and unfocus */
 void rtgui_widget_focus(rtgui_widget_t *widget);
 void rtgui_widget_unfocus(rtgui_widget_t *widget);

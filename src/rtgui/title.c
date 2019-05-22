@@ -41,6 +41,7 @@
 
 /* Private function prototypes -----------------------------------------------*/
 static void _win_title_constructor(void *obj);
+static rt_bool_t _win_tile_event_handler(void *obj, rtgui_evt_generic_t *evt);
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -50,6 +51,7 @@ RTGUI_CLASS(
     CLASS_METADATA(widget),
     _win_title_constructor,
     RT_NULL,
+    _win_tile_event_handler,
     sizeof(rtgui_win_title_t));
 
 /* Private functions ---------------------------------------------------------*/
@@ -57,26 +59,9 @@ static void _win_title_constructor(void *obj) {
     rtgui_win_title_t *win_t = obj;
     TO_WIDGET(win_t)->flag = RTGUI_WIDGET_FLAG_DEFAULT;
     RTGUI_WIDGET_TEXTALIGN(win_t) = RTGUI_ALIGN_CENTER_VERTICAL;
-
-    SET_EVENT_HANDLER(TO_OBJECT(win_t), rtgui_win_tile_event_handler);
 }
 
-/* Public functions ----------------------------------------------------------*/
-rtgui_win_title_t *rtgui_win_title_create(rtgui_win_t *win) {
-    rtgui_win_title_t *win_t;
-
-    win_t = (rtgui_win_title_t *)RTGUI_CREATE_INSTANCE(win_title);
-    if (win_t) TO_WIDGET(win_t)->toplevel = win;
-
-    return win_t;
-}
-
-void rtgui_win_title_destroy(rtgui_win_title_t *win_t) {
-    return rtgui_widget_destroy(TO_WIDGET(win_t));
-}
-
-rt_bool_t rtgui_win_tile_event_handler(rtgui_obj_t *obj,
-    rtgui_evt_generic_t *evt) {
+static rt_bool_t _win_tile_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     struct rtgui_win_title *win_t;
     rtgui_widget_t *wgt;
     rt_bool_t done;
@@ -142,7 +127,9 @@ rt_bool_t rtgui_win_tile_event_handler(rtgui_obj_t *obj,
         break;
 
     default:
-        done = rtgui_widget_event_handler(obj, evt);
+        if (SUPER_HANDLER(win_t)) {
+            done = SUPER_HANDLER(win_t)(win_t, evt);
+        }
         break;
     }
 
@@ -155,4 +142,18 @@ rt_bool_t rtgui_win_tile_event_handler(rtgui_obj_t *obj,
         }
     }
     return done;
+}
+
+/* Public functions ----------------------------------------------------------*/
+rtgui_win_title_t *rtgui_win_title_create(rtgui_win_t *win, rtgui_evt_hdl_t evt_hdl) {
+    rtgui_win_title_t *win_t;
+
+    win_t = (rtgui_win_title_t *)RTGUI_CREATE_INSTANCE(win_title, evt_hdl);
+    if (win_t) TO_WIDGET(win_t)->toplevel = win;
+
+    return win_t;
+}
+
+void rtgui_win_title_destroy(rtgui_win_title_t *win_t) {
+    return rtgui_widget_destroy(TO_WIDGET(win_t));
 }

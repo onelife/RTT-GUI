@@ -619,7 +619,7 @@ static void rtgui_winrect_save()
 }
 #endif
 
-void rtgui_mouse_monitor_append(rtgui_list_t *head, rtgui_rect_t *rect)
+void rtgui_mouse_monitor_append(rt_slist_t *head, rtgui_rect_t *rect)
 {
     struct rtgui_mouse_monitor *mmonitor;
 
@@ -632,15 +632,15 @@ void rtgui_mouse_monitor_append(rtgui_list_t *head, rtgui_rect_t *rect)
 
     /* set mouse monitor node */
     mmonitor->rect = *rect;
-    rtgui_list_init(&(mmonitor->list));
+    rt_slist_init(&(mmonitor->list));
 
     /* append to list */
-    rtgui_list_append(head, &(mmonitor->list));
+    rt_slist_append(head, &(mmonitor->list));
 }
 
-void rtgui_mouse_monitor_remove(rtgui_list_t *head, rtgui_rect_t *rect)
+void rtgui_mouse_monitor_remove(rt_slist_t *head, rtgui_rect_t *rect)
 {
-    struct rtgui_list_node *node;
+    rt_slist_t *node;
     struct rtgui_mouse_monitor *mmonitor;
 
     /* check parameters */
@@ -648,14 +648,14 @@ void rtgui_mouse_monitor_remove(rtgui_list_t *head, rtgui_rect_t *rect)
 
     for (node = head->next; node != RT_NULL; node = node->next)
     {
-        mmonitor = rtgui_list_entry(node, struct rtgui_mouse_monitor, list);
+        mmonitor = rt_slist_entry(node, struct rtgui_mouse_monitor, list);
         if (mmonitor->rect.x1 == rect->x1 &&
                 mmonitor->rect.x2 == rect->x2 &&
                 mmonitor->rect.y1 == rect->y1 &&
                 mmonitor->rect.y2 == rect->y2)
         {
             /* found node */
-            rtgui_list_remove(head, node);
+            rt_slist_remove(head, node);
             rtgui_free(mmonitor);
 
             return ;
@@ -663,16 +663,16 @@ void rtgui_mouse_monitor_remove(rtgui_list_t *head, rtgui_rect_t *rect)
     }
 }
 
-rt_bool_t rtgui_mouse_monitor_contains_point(rtgui_list_t *head, int x, int y)
+rt_bool_t rtgui_mouse_monitor_contains_point(rt_slist_t *head, int x, int y)
 {
-    struct rtgui_list_node *node;
+    rt_slist_t *node;
 
     /* check parameter */
     if (head == RT_NULL) return RT_FALSE;
 
-    rtgui_list_foreach(node, head)
+    rt_slist_for_each(node, head)
     {
-        struct rtgui_mouse_monitor *monitor = rtgui_list_entry(node,
+        struct rtgui_mouse_monitor *monitor = rt_slist_entry(node,
                                               struct rtgui_mouse_monitor, list);
 
         if (rtgui_rect_contains_point(&(monitor->rect), x, y) == RT_EOK)

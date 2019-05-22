@@ -1557,7 +1557,7 @@ void rtgui_dc_set_gc(struct rtgui_dc *dc, rtgui_gc_t *gc)
     {
         rtgui_widget_t *owner;
         /* get owner */
-        owner = RTGUI_CONTAINER_OF(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
         owner->gc = *gc;
         break;
     }
@@ -1597,7 +1597,7 @@ rtgui_gc_t *rtgui_dc_get_gc(struct rtgui_dc *dc)
     {
         rtgui_widget_t *owner;
         /* get owner */
-        owner = RTGUI_CONTAINER_OF(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
         gc = &owner->gc;
         break;
     }
@@ -1642,7 +1642,7 @@ rt_bool_t rtgui_dc_get_visible(struct rtgui_dc *dc)
     {
         rtgui_widget_t *owner;
         /* get owner */
-        owner = RTGUI_CONTAINER_OF(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
         if (!RTGUI_WIDGET_IS_DC_VISIBLE(owner)) result = RT_FALSE;
         break;
     }
@@ -1677,7 +1677,7 @@ void rtgui_dc_get_rect(struct rtgui_dc *dc, rtgui_rect_t *rect)
     {
         rtgui_widget_t *owner;
         /* get owner */
-        owner = RTGUI_CONTAINER_OF(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
         /* we should return the clipped rectangular information */
         rect->x1 = owner->clip.extents.x1 - owner->extent.x1;
         rect->y1 = owner->clip.extents.y1 - owner->extent.y1;
@@ -1758,7 +1758,7 @@ void rtgui_dc_logic_to_device(struct rtgui_dc *dc, struct rtgui_point *point)
     {
         rtgui_widget_t *owner;
         /* get owner */
-        owner = RTGUI_CONTAINER_OF(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
         point->x += owner->extent.x1;
         point->y += owner->extent.y1;
         break;
@@ -1789,7 +1789,7 @@ void rtgui_dc_rect_to_device(struct rtgui_dc *dc, struct rtgui_rect *rect)
     {
         rtgui_widget_t *owner;
         /* get owner */
-        owner = RTGUI_CONTAINER_OF(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
 
         rtgui_rect_move(rect, owner->extent.x1, owner->extent.y1);
         break;
@@ -1834,14 +1834,12 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
         if (!(win->flag & RTGUI_WIN_FLAG_ACTIVATE)) {
             if ((win->outer_clip.extents.x1 == win->outer_clip.extents.x2) || \
                 (win->outer_clip.extents.y1 == win->outer_clip.extents.y2)) {
-                LOG_D("b1");
                 break;
             }
 
             parent = TO_WIDGET(win);
             if ((parent->clip.extents.x1 == parent->clip.extents.x2) || \
                 (parent->clip.extents.y1 == parent->clip.extents.y2)) {
-                LOG_D("b2");
                 break;
             }
         }
@@ -1905,10 +1903,9 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
                 }
                 RTGUI_EVENT_UPDATE_BEGIN_INIT(&evt->update_begin);
                 evt->update_begin.rect = TO_WIDGET(win)->extent;
-                LOG_D("post update");
+                LOG_D("post update %s", evt->base.sender->name);
                 ret = rtgui_server_post_event(evt);
                 if (ret) {
-                    rt_mp_free(evt);
                     LOG_E("dc update err [%d]", ret);
                 }
             }
@@ -1929,7 +1926,7 @@ void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
     LOG_D("dc end");
     /* get owner */
     if (dc->type == RTGUI_DC_CLIENT)
-        owner = RTGUI_CONTAINER_OF(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
     else if (dc->type == RTGUI_DC_HW)
         owner = ((struct rtgui_dc_hw *)dc)->owner;
     else return ; /* bad DC type */
@@ -1943,7 +1940,7 @@ void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
 
     if (win->drawing == 0) {
         /* notify window to handle window update done */
-        if (TO_OBJECT(win)->evt_hdl) {
+        if (EVENT_HANDLER(win)) {
             rtgui_evt_generic_t *evt;
 
             /* send RTGUI_EVENT_WIN_UPDATE_END */
@@ -1952,7 +1949,7 @@ void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
             if (evt) {
                 RTGUI_EVENT_WIN_UPDATE_END_INIT(&evt->win_update);
                 evt->win_update.rect = win->drawing_rect;
-                TO_OBJECT(win)->evt_hdl(TO_OBJECT(win), evt);
+                (void)EVENT_HANDLER(win)(win, evt);
             } else {
                 LOG_E("get mp err");
             }

@@ -34,10 +34,10 @@
 extern "C" {
 #endif
 
-RTGUI_CLASS_PROTOTYPE(application);
+RTGUI_CLASS_PROTOTYPE(app);
 
-/** Gets the type of a application */
-#define _APP_METADATA                       CLASS_METADATA(application)
+/** Gets the type of a app */
+#define _APP_METADATA                       CLASS_METADATA(app)
 /** Casts the object to an rtgui_workbench */
 #define TO_APP(obj)                         \
     RTGUI_CAST(obj, _APP_METADATA, rtgui_app_t)
@@ -45,18 +45,15 @@ RTGUI_CLASS_PROTOTYPE(application);
 #define IS_APP(obj)                         IS_INSTANCE((obj), _APP_METADATA)
 
 /**
- * create an application named @myname on current thread.
+ * create an app named @myname on current thread.
  *
- * @param name the name of the application
+ * @param name the name of the app
  *
  * @return a pointer to rtgui_app_t on success. RT_NULL on failure.
  */
-rtgui_app_t *rtgui_srv_create(const char *name);
-rtgui_app_t *rtgui_app_create(const char *name);
+rtgui_app_t *rtgui_srv_create(const char *name, rtgui_evt_hdl_t srv_hdl);
+rtgui_app_t *rtgui_app_create(const char *name, rtgui_evt_hdl_t srv_hdl);
 void rtgui_app_destroy(rtgui_app_t *app);
-rt_bool_t rtgui_app_event_handler(rtgui_obj_t *obj,
-    rtgui_evt_generic_t *event);
-
 rt_base_t rtgui_app_run(rtgui_app_t *app);
 void rtgui_app_exit(rtgui_app_t *app, rt_uint16_t code);
 void rtgui_app_activate(rtgui_app_t *app);

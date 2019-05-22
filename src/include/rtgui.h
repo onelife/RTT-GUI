@@ -40,7 +40,6 @@ extern "C" {
 #include "./rtgui_config.h"
 #include "./types.h"
 #include "./event.h"
-#include "./list.h"
 #include "./rtgui_object.h"
 
 #define _UI_MIN(x, y)                       (((x)<(y))?(x):(y))

@@ -32,35 +32,35 @@ extern "C" {
 #include "include/rtthread.h"
 
 /* Exported defines ----------------------------------------------------------*/
-#define RTGUI_CONTAINER_OF(obj, type, member) \
-    ((type *)((char *)(obj) - (unsigned long)(&((type *)0)->member)))
-
 #define CLASS_METADATA(name)                (&_rtgui_##name)
-
-#define RTGUI_CLASS_PROTOTYPE(cls)          \
-    extern const struct rtgui_class _rtgui_##cls;
-
-#define RTGUI_CLASS(name, _super, ctor, dtor, size) \
+#define RTGUI_CLASS_PROTOTYPE(name)          \
+    extern const struct rtgui_class _rtgui_##name;
+#define RTGUI_CLASS(name, _super, ctor, dtor, hdl, size) \
     const struct rtgui_class _rtgui_##name = { \
         _super,                             \
         (rtgui_constructor_t)(ctor),        \
         (rtgui_destructor_t)(dtor),         \
+        (rtgui_evt_hdl_t)(hdl),             \
         #name,                              \
         size,                               \
     };                                      \
 
-#define RTGUI_CREATE_INSTANCE(name)         \
-    rtgui_create_instance(CLASS_METADATA(name))
-
+#define RTGUI_CREATE_INSTANCE(name, hdl)    \
+    rtgui_create_instance(CLASS_METADATA(name), (rtgui_evt_hdl_t)(hdl))
 #define RTGUI_DELETE_INSTANCE(obj)          rtgui_delete_instance(obj)
 
 #define SUPER_(obj)                         (obj->_super)
-#define CLASS_(ins)                         rtgui_class_of(ins)
+#define CLASS_(ins)                         rtgui_class_of((void *)ins)
 #define IS_SUBCLASS(cls, _super)            rtgui_is_subclass_of(cls, _super)
+#define OBJECT_HANDLER(obj)                 TO_OBJECT((void *)obj)->evt_hdl
+#define DEFAULT_HANDLER(obj)                CLASS_(obj)->evt_hdl
+#define EVENT_HANDLER(obj)                  \
+    (OBJECT_HANDLER(obj) ? OBJECT_HANDLER(obj) : DEFAULT_HANDLER(obj))
+#define SUPER_HANDLER(obj)                  \
+    (CLASS_(obj)->_super ? CLASS_(obj)->_super->evt_hdl : RT_NULL)
+
 
 /* Exported types ------------------------------------------------------------*/
-typedef struct rtgui_list_node rtgui_list_t;
-
 typedef struct rtgui_rect rtgui_rect_t;
 typedef struct rtgui_point rtgui_point_t;
 typedef struct rtgui_line rtgui_line_t;
@@ -74,6 +74,7 @@ typedef struct rtgui_box rtgui_box_t;
 typedef struct rtgui_container rtgui_container_t;
 typedef struct rtgui_widget rtgui_widget_t;
 typedef struct rtgui_win rtgui_win_t;
+typedef struct rtgui_topwin rtgui_topwin_t;
 typedef struct rtgui_timer rtgui_timer_t;
 
 typedef struct rtgui_evt_base rtgui_evt_base_t;
@@ -82,18 +83,12 @@ typedef union rtgui_evt_generic rtgui_evt_generic_t;
 
 typedef void (*rtgui_constructor_t)(void *obj);
 typedef void (*rtgui_destructor_t)(rtgui_type_t *obj);
-typedef rt_bool_t (*rtgui_evt_hdl_t)(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
-typedef void (*rtgui_onbutton_hdl_p)(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
+typedef rt_bool_t (*rtgui_evt_hdl_t)(void *obj, rtgui_evt_generic_t *evt);
 typedef void (*rtgui_idle_hdl_t)(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
 typedef void (*rtgui_timeout_hdl_t)(rtgui_timer_t *timer, void *parameter);
 
 typedef rt_uint32_t rtgui_color_t;
 typedef struct rtgui_gc rtgui_gc_t;
-
-/* list data structure */
-struct rtgui_list_node {
-    struct rtgui_list_node *next;
-};
 
 /* coordinate point */
 struct rtgui_point {
@@ -136,11 +131,12 @@ struct rtgui_gc {
     struct rtgui_font *font;
 };
 
-/* type (class metadata) */
+/* class metadata */
 struct rtgui_class {
     const struct rtgui_class *_super;
     rtgui_constructor_t constructor;
     rtgui_destructor_t destructor;
+    rtgui_evt_hdl_t evt_hdl;
     char *name;
     rt_size_t size;
 };
@@ -156,7 +152,7 @@ typedef enum rtgui_obj_flag {
 } rtgui_obj_flag_t;
 
 struct rtgui_obj {
-    void *_super;
+    rt_uint32_t _super;
     const rtgui_type_t *cls;
     rtgui_evt_hdl_t evt_hdl;
     rtgui_obj_flag_t flag;
@@ -195,7 +191,7 @@ struct rtgui_widget {
     rtgui_obj_t _super;                     /* _super class */
     rtgui_widget_t *parent;                 /* parent widget */
     rtgui_win_t *toplevel;                  /* parent window */
-    rtgui_list_t sibling;                   /* children and sibling */
+    rt_slist_t sibling;                   /* children and sibling */
 
     rt_int32_t flag;
     rt_ubase_t dc_type;                     /* hardware device context */
@@ -210,8 +206,8 @@ struct rtgui_widget {
     rt_uint16_t border;
     rt_uint16_t border_style;
 
-    rt_bool_t (*on_focus_in)(rtgui_obj_t *widget, rtgui_evt_generic_t *event);
-    rt_bool_t (*on_focus_out)(rtgui_obj_t *widget, rtgui_evt_generic_t *event);
+    rtgui_evt_hdl_t on_focus_in;
+    rtgui_evt_hdl_t on_focus_out;
 
     rt_uint32_t user_data;
 };
@@ -228,7 +224,7 @@ struct rtgui_box {
 struct rtgui_container {
     rtgui_widget_t _super;
     rtgui_box_t *layout_box;
-    rtgui_list_t children;
+    rt_slist_t children;
 };
 
 /* window */
@@ -243,7 +239,7 @@ typedef enum rtgui_win_flag {
     /* window is event_key dispatcher(dispatch it to the focused widget in
      * current window) _and_ a key handler(it should be able to handle keys
      * such as ESC). Both of dispatching and handling are in the same
-     * function(rtgui_win_event_handler). So we have to distinguish between the
+     * function(_win_event_handler). So we have to distinguish between the
      * two modes.
      *
      * If this flag is set, we are in key-handling mode.
@@ -280,9 +276,9 @@ struct rtgui_win {
     char *title;
     struct rtgui_win_title *_title_wgt;
 
-    rt_bool_t (*on_activate)(rtgui_obj_t *widget, rtgui_evt_generic_t *wvt);
-    rt_bool_t (*on_deactivate)(rtgui_obj_t *widget, rtgui_evt_generic_t *wvt);
-    rt_bool_t (*on_close)(rtgui_obj_t *widget, rtgui_evt_generic_t *evt);
+    rtgui_evt_hdl_t on_activate;
+    rtgui_evt_hdl_t on_deactivate;
+    rtgui_evt_hdl_t on_close;
     /* the key is sent to the focused widget by default. If the focused widget
      * and all of it's parents didn't handle the key event, it will be handled
      * by @func on_key
@@ -290,7 +286,7 @@ struct rtgui_win {
      * If you want to handle key event on your own, it's better to overload
      * this function other than handle EVENT_KBD in evt_hdl.
      */
-    rt_bool_t (*on_key)(rtgui_obj_t *widget, rtgui_evt_generic_t *evt);
+    rtgui_evt_hdl_t on_key;
 
     void *user_data;
 
@@ -316,6 +312,42 @@ struct rtgui_timer {
     rtgui_timer_state_t state;
     rtgui_timeout_hdl_t timeout;
     void *user_data;
+};
+
+/* top window at server side */
+enum rtgui_topwin_flag {
+    WINTITLE_INIT                           =  0x00,
+    WINTITLE_ACTIVATE                       =  0x01,
+    WINTITLE_NOFOCUS                        =  0x02,
+    /* window is hidden by default */
+    WINTITLE_SHOWN                          =  0x04,
+    /* window is modaled by other window */
+    WINTITLE_MODALED                        =  0x08,
+    /* window is modaling other window */
+    WINTITLE_MODALING                       = 0x100,
+    WINTITLE_ONTOP                          = 0x200,
+    WINTITLE_ONBTM                          = 0x400,
+};
+
+struct rtgui_topwin {
+    /* the window flag */
+    enum rtgui_topwin_flag flag;
+    /* event mask */
+    rt_uint32_t mask;
+    struct rtgui_win_title *title;
+    /* the window id */
+    rtgui_win_t *wid;
+    /* which app I belong */
+    rtgui_app_t *app;
+    /* the extent information */
+    rtgui_rect_t extent;
+    rtgui_topwin_t *parent;
+    /* we need to iterate the topwin list with usual order(get target window)
+     * or reversely(painting). So it's better to use a double linked list */
+    rt_list_t list;
+    rt_list_t child_list;
+    /* the monitor rect list */
+    rt_slist_t monitor_list;
 };
 
 /* event */

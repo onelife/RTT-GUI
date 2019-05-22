@@ -250,7 +250,8 @@ struct rtgui_font *rtgui_fnt_font_create(const char* filename, const char* font_
                 asc->last_char = 0xFF;
 
                 lseek(fd, fnt_header->asc_offset, SEEK_SET);
-                if (read(fd, (void*)asc->bmp, fnt_header->asc_length) != fnt_header->asc_length)
+                if (fnt_header->asc_length != (rt_uint32_t) \
+                    read(fd, (void*)asc->bmp, fnt_header->asc_length))
                 {
                     rtgui_free((void*)asc->bmp);
                     rtgui_free(asc);

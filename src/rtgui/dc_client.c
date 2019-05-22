@@ -99,7 +99,7 @@ static void rtgui_dc_client_draw_point(struct rtgui_dc *self, int x, int y)
     if (!rtgui_dc_get_visible(self)) return;
 
     /* get owner */
-    owner = RTGUI_CONTAINER_OF(self, struct rtgui_widget, dc_type);
+    owner = rt_container_of(self, struct rtgui_widget, dc_type);
 
     x = x + owner->extent.x1;
     y = y + owner->extent.y1;
@@ -120,7 +120,7 @@ static void rtgui_dc_client_draw_color_point(struct rtgui_dc *self, int x, int y
     if (!rtgui_dc_get_visible(self)) return;
 
     /* get owner */
-    owner = RTGUI_CONTAINER_OF(self, struct rtgui_widget, dc_type);
+    owner = rt_container_of(self, struct rtgui_widget, dc_type);
 
     x = x + owner->extent.x1;
     y = y + owner->extent.y1;
@@ -144,7 +144,7 @@ static void rtgui_dc_client_draw_vline(struct rtgui_dc *self, int x, int y1, int
     if (!rtgui_dc_get_visible(self)) return;
 
     /* get owner */
-    owner = RTGUI_CONTAINER_OF(self, struct rtgui_widget, dc_type);
+    owner = rt_container_of(self, struct rtgui_widget, dc_type);
 
     x  = x + owner->extent.x1;
     y1 = y1 + owner->extent.y1;
@@ -203,7 +203,7 @@ static void rtgui_dc_client_draw_hline(struct rtgui_dc *self, int x1, int x2, in
     if (!rtgui_dc_get_visible(self)) return;
 
     /* get owner */
-    owner = RTGUI_CONTAINER_OF(self, struct rtgui_widget, dc_type);
+    owner = rt_container_of(self, struct rtgui_widget, dc_type);
 
     /* convert logic to device */
     x1 = x1 + owner->extent.x1;
@@ -263,7 +263,7 @@ static void rtgui_dc_client_fill_rect(struct rtgui_dc *self, struct rtgui_rect *
     if (!rtgui_dc_get_visible(self)) return;
 
     /* get owner */
-    owner = RTGUI_CONTAINER_OF(self, struct rtgui_widget, dc_type);
+    owner = rt_container_of(self, struct rtgui_widget, dc_type);
 
     /* save foreground color */
     foreground = owner->gc.foreground;
@@ -290,7 +290,7 @@ static void rtgui_dc_client_blit_line(struct rtgui_dc *self, int x1, int x2, int
     if (!rtgui_dc_get_visible(self)) return;
 
     /* get owner */
-    owner = RTGUI_CONTAINER_OF(self, struct rtgui_widget, dc_type);
+    owner = rt_container_of(self, struct rtgui_widget, dc_type);
 
     /* convert logic to device */
     x1 = x1 + owner->extent.x1;

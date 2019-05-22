@@ -46,13 +46,12 @@ RTGUI_CLASS(
     CLASS_METADATA(object),
     _box_constructor,
     RT_NULL,
+    RT_NULL,
     sizeof(rtgui_box_t));
 
 
 static void _box_constructor(void *obj) {
     rtgui_box_t *box = obj;
-    /* init widget and set event handler */
-    SET_EVENT_HANDLER(TO_OBJECT(box), RT_NULL);
 
     /* set proper of control */
     box->orient = RTGUI_HORIZONTAL;
@@ -60,11 +59,10 @@ static void _box_constructor(void *obj) {
     box->container = RT_NULL;
 }
 
-rtgui_box_t *rtgui_box_create(int orientation, int border_size)
-{
+rtgui_box_t *rtgui_box_create(int orientation, int border_size) {
     rtgui_box_t *box;
 
-    box = (rtgui_box_t *)RTGUI_CREATE_INSTANCE(box);
+    box = (rtgui_box_t *)RTGUI_CREATE_INSTANCE(box, RT_NULL);
     if (box != RT_NULL)
     {
         box->orient = orientation;
@@ -82,7 +80,7 @@ RTM_EXPORT(rtgui_box_destroy);
 
 static void rtgui_box_layout_vertical(rtgui_box_t *box,
     struct rtgui_rect *extent) {
-    rtgui_list_t *node;
+    rt_slist_t *node;
     rt_int32_t box_width;
     rt_int32_t space_count;
     rt_int32_t next_x, next_y;
@@ -94,13 +92,13 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
     total_height = box->border_size;
     space_height = 0;
 
-    rtgui_list_foreach(node, &(box->container->children)) {
-        rtgui_widget_t *widget = \
-            rtgui_list_entry(node, struct rtgui_widget, sibling);
-        if (widget->align & RTGUI_ALIGN_STRETCH) {
+    rt_slist_for_each(node, &(box->container->children)) {
+        rtgui_widget_t *wgt = \
+            rt_slist_entry(node, struct rtgui_widget, sibling);
+        if (wgt->align & RTGUI_ALIGN_STRETCH) {
             space_count ++;
         } else {
-            total_height += widget->min_height;
+            total_height += wgt->min_height;
         }
         total_height += box->border_size;
     }
@@ -117,25 +115,25 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
     box_width = rtgui_rect_width(*extent) - box->border_size * 2;
 
     /* layout each widget */
-    rtgui_list_foreach(node, &(box->container->children)) {
+    rt_slist_for_each(node, &(box->container->children)) {
         struct rtgui_rect *rect;
-        rtgui_widget_t *widget = \
-            rtgui_list_entry(node, struct rtgui_widget, sibling);
+        rtgui_widget_t *wgt = \
+            rt_slist_entry(node, struct rtgui_widget, sibling);
 
         /* get extent of widget */
-        rect = &(widget->extent);
+        rect = &(wgt->extent);
 
         /* reset rect */
-        rtgui_rect_init(rect, 0, 0, widget->min_width, widget->min_height);
+        rtgui_rect_init(rect, 0, 0, wgt->min_width, wgt->min_height);
 
         /* left in default */
         rtgui_rect_move(rect, next_x, next_y);
 
-        if (widget->align & RTGUI_ALIGN_EXPAND) {
+        if (wgt->align & RTGUI_ALIGN_EXPAND) {
             /* expand on horizontal */
             rect->x2 = rect->x1 + (rt_int16_t)box_width;
         }
-        if (widget->align & RTGUI_ALIGN_CENTER_VERTICAL) {
+        if (wgt->align & RTGUI_ALIGN_CENTER_VERTICAL) {
             /* center */
             rt_uint32_t mid;
 
@@ -144,30 +142,31 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
 
             rect->x1 = next_x + mid;
             rect->x2 = next_x + box_width - mid;
-        } else if (widget->align & RTGUI_ALIGN_RIGHT) {
+        } else if (wgt->align & RTGUI_ALIGN_RIGHT) {
             /* right */
             rect->x1 = next_x + box_width - rtgui_rect_width(*rect);
             rect->x2 = next_x + box_width;
         }
 
-        if (widget->align & RTGUI_ALIGN_STRETCH) {
+        if (wgt->align & RTGUI_ALIGN_STRETCH) {
             rect->y2 = rect->y1 + space_height;
         }
 
         /* send RTGUI_EVENT_RESIZE */
-        evt = rtgui_malloc(sizeof(struct rtgui_event_resize));
-        if (!evt) {
-            LOG_E("evt mem err");
+        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
+            rtgui_event_pool, RT_WAITING_FOREVER);
+        if (evt) {
+            RTGUI_EVENT_RESIZE_INIT(&evt->resize);
+            /* process resize event */
+            evt->resize.x = rect->x1;
+            evt->resize.y = rect->y1;
+            evt->resize.w = rect->x2 - rect->x1;
+            evt->resize.h = rect->y2 - rect->y1;
+            (void)EVENT_HANDLER(wgt)(wgt, evt);
+        } else {
+            LOG_E("get mp err");
             return;
         }
-        RTGUI_EVENT_RESIZE_INIT(&evt->resize);
-
-        /* process resize event */
-        evt->resize.x = rect->x1;
-        evt->resize.y = rect->y1;
-        evt->resize.w = rect->x2 - rect->x1;
-        evt->resize.h = rect->y2 - rect->y1;
-        TO_OBJECT(widget)->evt_hdl(TO_OBJECT(widget), evt);
 
         /* point to next height */
         next_y = rect->y2 + box->border_size;
@@ -176,7 +175,7 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
 
 static void rtgui_box_layout_horizontal(rtgui_box_t *box,
     struct rtgui_rect *extent) {
-    rtgui_list_t *node;
+    rt_slist_t *node;
     rt_int32_t box_height;
     rt_int32_t space_count;
     rt_int32_t next_x, next_y;
@@ -188,13 +187,13 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
     total_width = 0;
     space_width = 0;
 
-    rtgui_list_foreach(node, &(box->container->children)) {
-        rtgui_widget_t *widget = \
-            rtgui_list_entry(node, struct rtgui_widget, sibling);
-        if (widget->align & RTGUI_ALIGN_STRETCH) {
+    rt_slist_for_each(node, &(box->container->children)) {
+        rtgui_widget_t *wgt = \
+            rt_slist_entry(node, struct rtgui_widget, sibling);
+        if (wgt->align & RTGUI_ALIGN_STRETCH) {
             space_count ++;
         } else {
-            total_width += widget->min_width;
+            total_width += wgt->min_width;
         }
         total_width += box->border_size;
     }
@@ -210,27 +209,27 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
     box_height = rtgui_rect_height(*extent) - (box->border_size << 1);
 
     /* layout each widget */
-    rtgui_list_foreach(node, &(box->container->children)) {
+    rt_slist_for_each(node, &(box->container->children)) {
         rtgui_rect_t *rect;
-        rtgui_widget_t *widget = \
-            rtgui_list_entry(node, struct rtgui_widget, sibling);
+        rtgui_widget_t *wgt = \
+            rt_slist_entry(node, struct rtgui_widget, sibling);
 
         /* get extent of widget */
-        rect = &(widget->extent);
+        rect = &(wgt->extent);
 
         /* reset rect */
         rtgui_rect_move(rect, -rect->x1, -rect->y1);
-        rect->x2 = widget->min_width;
-        rect->y2 = widget->min_height;
+        rect->x2 = wgt->min_width;
+        rect->y2 = wgt->min_height;
 
         /* top in default */
         rtgui_rect_move(rect, next_x, next_y);
 
-        if (widget->align & RTGUI_ALIGN_EXPAND) {
+        if (wgt->align & RTGUI_ALIGN_EXPAND) {
             /* expand on vertical */
             rect->y2 = rect->y1 + box_height;
         }
-        if (widget->align & RTGUI_ALIGN_CENTER_HORIZONTAL) {
+        if (wgt->align & RTGUI_ALIGN_CENTER_HORIZONTAL) {
             /* center */
             rt_uint32_t mid;
 
@@ -239,29 +238,31 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
 
             rect->y1 = next_y + mid;
             rect->y2 = next_y + box_height - mid;
-        } else if (widget->align & RTGUI_ALIGN_RIGHT) {
+        } else if (wgt->align & RTGUI_ALIGN_RIGHT) {
             /* right */
             rect->y1 = next_y + box_height - rtgui_rect_height(*rect);
             rect->y2 = next_y + box_height;
         }
 
-        if (widget->align & RTGUI_ALIGN_STRETCH) {
+        if (wgt->align & RTGUI_ALIGN_STRETCH) {
             rect->x2 = rect->x1 + space_width;
         }
 
         /* send RTGUI_EVENT_RESIZE */
-        evt = rtgui_malloc(sizeof(struct rtgui_event_resize));
-        if (!evt) {
-            LOG_E("evt mem err");
+        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
+            rtgui_event_pool, RT_WAITING_FOREVER);
+        if (evt) {
+            RTGUI_EVENT_RESIZE_INIT(&evt->resize);
+            /* process resize event */
+            evt->resize.x = rect->x1;
+            evt->resize.y = rect->y1;
+            evt->resize.w = rect->x2 - rect->x1;
+            evt->resize.h = rect->y2 - rect->y1;
+            (void)EVENT_HANDLER(wgt)(wgt, evt);
+        } else {
+            LOG_E("get mp err");
             return;
         }
-        RTGUI_EVENT_RESIZE_INIT(&evt->resize);
-        /* process resize event */
-        evt->resize.x = rect->x1;
-        evt->resize.y = rect->y1;
-        evt->resize.w = rect->x2 - rect->x1;
-        evt->resize.h = rect->y2 - rect->y1;
-        TO_OBJECT(widget)->evt_hdl(TO_OBJECT(widget), evt);
 
         /* point to next width */
         next_x = rect->x2 + box->border_size;

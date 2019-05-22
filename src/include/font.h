@@ -107,7 +107,7 @@ struct rtgui_font
     void *data;
 
     /* the font list */
-    rtgui_list_t list;
+    rt_slist_t list;
 };
 typedef struct rtgui_font rtgui_font_t;
 

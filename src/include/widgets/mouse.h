@@ -34,7 +34,7 @@ struct rtgui_mouse_monitor
     rtgui_rect_t rect;
 
     /* node list */
-    rtgui_list_t list;
+    rt_slist_t list;
 };
 typedef struct rtgui_mouse_monitor rtgui_mouse_monitor_t;
 
@@ -60,8 +60,8 @@ rt_bool_t rtgui_winrect_moved_done(rtgui_rect_t *winrect,
     rtgui_win_t **win);
 #endif
 
-void rtgui_mouse_monitor_append(rtgui_list_t *head, rtgui_rect_t *rect);
-void rtgui_mouse_monitor_remove(rtgui_list_t *head, rtgui_rect_t *rect);
-rt_bool_t rtgui_mouse_monitor_contains_point(rtgui_list_t *head, int x, int y);
+void rtgui_mouse_monitor_append(rt_slist_t *head, rtgui_rect_t *rect);
+void rtgui_mouse_monitor_remove(rt_slist_t *head, rtgui_rect_t *rect);
+rt_bool_t rtgui_mouse_monitor_contains_point(rt_slist_t *head, int x, int y);
 
 #endif

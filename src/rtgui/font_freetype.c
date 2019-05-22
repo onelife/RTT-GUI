@@ -328,7 +328,7 @@ struct ttf_face_id
 struct rtgui_ttf
 {
     /* the ttf list */
-    rtgui_list_t 	list;
+    rt_slist_t 	list;
     rt_uint32_t		refer_count;
 
     struct ttf_face_id  face_id;
@@ -344,30 +344,30 @@ struct rtgui_ttf_font
     FTC_ImageTypeRec	image_type_rec;
 };
 
-static rtgui_list_t _rtgui_ttf_list;
+static rt_slist_t _rtgui_ttf_list;
 
 void rtgui_ttf_system_init(void)
 {
-    rtgui_list_init(&(_rtgui_ttf_list));
+    rt_slist_init(&(_rtgui_ttf_list));
 }
 
 static void rtgui_ttf_system_add_ttf(struct rtgui_ttf *ttf)
 {
-    rtgui_list_append(&_rtgui_ttf_list, &(ttf->list));
+    rt_slist_append(&_rtgui_ttf_list, &(ttf->list));
 }
 
 static void rtgui_ttf_system_remove_ttf(struct rtgui_ttf *ttf)
 {
-    rtgui_list_remove(&_rtgui_ttf_list, &(ttf->list));
+    rt_slist_remove(&_rtgui_ttf_list, &(ttf->list));
 }
 
 static struct rtgui_ttf *rtgui_ttf_refer(const char *family)
 {
     /* search ttf */
-    struct rtgui_list_node *node;
+    rt_slist_t *node;
     struct rtgui_ttf *ttf;
 
-    rtgui_list_foreach(node, &_rtgui_ttf_list)
+    rt_slist_for_each(node, &_rtgui_ttf_list)
     {
         ttf = (struct rtgui_ttf *)node;
         if (rt_strncmp(ttf->face_id.pathname, family, RT_DFS_ELM_MAX_LFN) == 0)

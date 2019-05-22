@@ -50,7 +50,7 @@ extern void rtgui_image_jpeg_init(void);
 extern void rtgui_image_png_init(void);
 #endif
 
-static rtgui_list_t _rtgui_system_image_list = {RT_NULL};
+static rt_slist_t _rtgui_system_image_list = {RT_NULL};
 
 /* initialize rtgui image system */
 void rtgui_system_image_init(void) {
@@ -83,12 +83,12 @@ void rtgui_system_image_init(void) {
 
 static struct rtgui_image_engine *rtgui_image_get_engine(const char *type)
 {
-    struct rtgui_list_node *node;
+    rt_slist_t *node;
     struct rtgui_image_engine *engine;
 
-    rtgui_list_foreach(node, &_rtgui_system_image_list)
+    rt_slist_for_each(node, &_rtgui_system_image_list)
     {
-        engine = rtgui_list_entry(node, struct rtgui_image_engine, list);
+        engine = rt_slist_entry(node, struct rtgui_image_engine, list);
 
         if (strncasecmp(engine->name, type, strlen(engine->name)) == 0)
             return engine;
@@ -100,7 +100,7 @@ static struct rtgui_image_engine *rtgui_image_get_engine(const char *type)
 #if defined(GUIENGINE_USING_DFS_FILERW)
 struct rtgui_image_engine *rtgui_image_get_engine_by_filename(const char *fn)
 {
-    struct rtgui_list_node *node;
+    rt_slist_t *node;
     struct rtgui_image_engine *engine;
     const char *ext;
 
@@ -116,9 +116,9 @@ struct rtgui_image_engine *rtgui_image_get_engine_by_filename(const char *fn)
     }
     if (ext == fn) return RT_NULL; /* no ext */
 
-    rtgui_list_foreach(node, &_rtgui_system_image_list)
+    rt_slist_for_each(node, &_rtgui_system_image_list)
     {
-        engine = rtgui_list_entry(node, struct rtgui_image_engine, list);
+        engine = rt_slist_entry(node, struct rtgui_image_engine, list);
         if (strncasecmp(engine->name, ext, strlen(engine->name)) == 0)
             return engine;
     }
@@ -299,7 +299,7 @@ void rtgui_image_register_engine(struct rtgui_image_engine *engine)
 {
     RT_ASSERT(engine != RT_NULL);
 
-    rtgui_list_append(&_rtgui_system_image_list, &(engine->list));
+    rt_slist_append(&_rtgui_system_image_list, &(engine->list));
 }
 RTM_EXPORT(rtgui_image_register_engine);
 

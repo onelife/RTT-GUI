@@ -31,7 +31,7 @@
 #include "../include/font_freetype.h"
 #endif
 
-static rtgui_list_t _rtgui_font_list;
+static rt_slist_t _rtgui_font_list;
 static struct rtgui_font *rtgui_default_font;
 
 extern struct rtgui_font rtgui_font_asc16;
@@ -44,7 +44,7 @@ extern struct rtgui_font rtgui_font_hz12;
 #endif
 
 void rtgui_font_system_init(void) {
-    rtgui_list_init(&(_rtgui_font_list));
+    rt_slist_init(&(_rtgui_font_list));
 
     /* set default font to NULL */
     rtgui_default_font = RT_NULL;
@@ -91,12 +91,12 @@ void rtgui_font_system_init(void) {
 void rtgui_font_fd_uninstall(void)
 {
 #ifdef GUIENGINE_USING_HZ_FILE
-    struct rtgui_list_node *node;
+    rt_slist_t *node;
     struct rtgui_font *font;
 
-    rtgui_list_foreach(node, &_rtgui_font_list)
+    rt_slist_for_each(node, &_rtgui_font_list)
     {
-        font = rtgui_list_entry(node, struct rtgui_font, list);
+        font = rt_slist_entry(node, struct rtgui_font, list);
         if (font->engine == &rtgui_hz_file_font_engine)
         {
             struct rtgui_hz_file_font *hz_file_font = (struct rtgui_hz_file_font *)font->data;
@@ -112,8 +112,8 @@ void rtgui_font_fd_uninstall(void)
 
 void rtgui_font_system_add_font(struct rtgui_font *font)
 {
-    rtgui_list_init(&(font->list));
-    rtgui_list_append(&_rtgui_font_list, &(font->list));
+    rt_slist_init(&(font->list));
+    rt_slist_append(&_rtgui_font_list, &(font->list));
 
     /* init font */
     if (font->engine->font_init != RT_NULL)
@@ -127,7 +127,7 @@ RTM_EXPORT(rtgui_font_system_add_font);
 
 void rtgui_font_system_remove_font(struct rtgui_font *font)
 {
-    rtgui_list_remove(&_rtgui_font_list, &(font->list));
+    rt_slist_remove(&_rtgui_font_list, &(font->list));
 }
 RTM_EXPORT(rtgui_font_system_remove_font);
 
@@ -145,12 +145,12 @@ void rtgui_font_set_defaut(struct rtgui_font *font)
 struct rtgui_font *rtgui_font_refer(const char *family, rt_uint16_t height)
 {
     /* search font */
-    struct rtgui_list_node *node;
+    rt_slist_t *node;
     struct rtgui_font *font;
 
-    rtgui_list_foreach(node, &_rtgui_font_list)
+    rt_slist_for_each(node, &_rtgui_font_list)
     {
-        font = rtgui_list_entry(node, struct rtgui_font, list);
+        font = rt_slist_entry(node, struct rtgui_font, list);
         if ((rt_strcasecmp(font->family, family) == 0) && font->height == height)
         {
             font->refer_count ++;

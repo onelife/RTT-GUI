@@ -64,12 +64,14 @@ void rtgui_screen_unlock(void);
 int rtgui_screen_lock_freeze(void);
 void rtgui_screen_lock_thaw(int value);
 
-rt_err_t rtgui_send(rtgui_app_t* app, rtgui_evt_generic_t *evt,
+rt_err_t rtgui_send(rtgui_app_t *app, rtgui_evt_generic_t *evt,
     rt_int32_t timeout);
-rt_err_t rtgui_recv(rtgui_evt_generic_t **evt, rt_int32_t timeout);
-rt_err_t rtgui_send_sync(rtgui_app_t *des, rtgui_evt_generic_t *evt);
+rt_err_t rtgui_recv(rtgui_app_t *app, rtgui_evt_generic_t **evt,
+    rt_int32_t timeout);
+rt_err_t rtgui_recv_filter(rtgui_app_t* app, rt_uint32_t type,
+    rtgui_evt_generic_t **evt);
+rt_err_t rtgui_send_sync(rtgui_app_t *app, rtgui_evt_generic_t *evt);
 rt_err_t rtgui_ack(rtgui_evt_generic_t *evt, rt_uint32_t val);
-rt_err_t rtgui_recv_filter(rt_uint32_t type, rtgui_evt_generic_t *evt);
 
 #ifdef __cplusplus
 }

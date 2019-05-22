@@ -280,15 +280,15 @@ RTM_EXPORT(rtgui_region_copy);
  *
  *-----------------------------------------------------------------------
  */
-rt_inline int
+rt_inline rt_uint32_t
 rtgui_coalesce(
     rtgui_region_t *region,         /* Region to coalesce */
-    int prevStart,                  /* Index of start of previous band */
-    int curStart) {                 /* Index of start of current band */
+    rt_uint32_t prevStart,                  /* Index of start of previous band */
+    rt_uint32_t curStart) {                 /* Index of start of current band */
     rtgui_rect_t *pPrevBox;         /* Current box in previous band */
     rtgui_rect_t *pCurBox;          /* Current box in current band */
     rt_uint32_t numRects;           /* Number rectangles in both bands */
-    int y2;                         /* Bottom of current band */
+    rt_uint32_t y2;                         /* Bottom of current band */
     /*
      * Figure out how many rectangles are in the band.
      */
@@ -480,7 +480,7 @@ rtgui_op(
     int    r1y1;            /* Temps for r1->y1 and r2->y1   */
     int    r2y1;
     rt_uint32_t newSize;
-    int         numRects;
+    rt_uint32_t numRects;
 
     /*
      * Break any region computed from a broken region

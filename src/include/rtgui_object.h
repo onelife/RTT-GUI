@@ -32,11 +32,14 @@ extern "C" {
 #endif
 
 /* rtgui object */
-rt_bool_t rtgui_is_subclass_of(const rtgui_type_t *cls, const rtgui_type_t *_super);
+void *rtgui_create_instance(const rtgui_type_t *cls, rtgui_evt_hdl_t evt_hdl);
+void rtgui_delete_instance(void *_obj);
+rt_bool_t rtgui_is_subclass_of(const rtgui_type_t *cls,
+    const rtgui_type_t *_super);
+const rtgui_type_t *rtgui_class_of(void *_obj);
 void *rtgui_object_cast_check(void *_obj, const rtgui_type_t *cls,
     const char *func, int line);
 const rtgui_type_t *rtgui_object_type_get(void *_obj);
-void rtgui_object_event_handler_set(void *_obj, rtgui_evt_hdl_t hdl);
 
 #ifdef GUIENGIN_USING_CAST_CHECK
 # define RTGUI_CAST(obj, cls, _type)         \
@@ -47,34 +50,14 @@ void rtgui_object_event_handler_set(void *_obj, rtgui_evt_hdl_t hdl);
 
 #define IS_INSTANCE(ins, _cls)              \
     rtgui_is_subclass_of(((rtgui_obj_t *)ins)->cls, _cls)
-#define SET_EVENT_HANDLER(obj, hdl)         \
-    rtgui_object_event_handler_set(obj, hdl)
 
 
 #define _OBJECT_METADATA                    CLASS_METADATA(object)
-#define TO_OBJECT(obj)                      RTGUI_CAST(obj, _OBJECT_METADATA, rtgui_obj_t)
+#define TO_OBJECT(obj)                      \
+    RTGUI_CAST(obj, _OBJECT_METADATA, rtgui_obj_t)
 #define IS_OBJECT(obj)                      IS_INSTANCE(obj, _OBJECT_METADATA)
 
 RTGUI_CLASS_PROTOTYPE(object);
-
-
-/* object default event handler */
-rt_bool_t rtgui_object_event_handler(rtgui_obj_t *obj,
-    rtgui_evt_generic_t *evt);
-
-/** handle @param event on @param object's own event handler
- *
- * If the @param object does not have an event handler, which means the object
- * does not interested in any event, it will return RT_FALSE. Otherwise, the
- * return code of that handler is returned.
- */
-rt_inline rt_bool_t rtgui_object_handle(rtgui_obj_t *obj,
-    rtgui_evt_generic_t *evt) {
-    if (obj->evt_hdl) {
-        return obj->evt_hdl(obj, evt);
-    }
-    return RT_FALSE;
-}
 
 // void rtgui_object_set_id(rtgui_obj_t *obj, rt_uint32_t id);
 // rt_uint32_t rtgui_object_get_id(rtgui_obj_t *obj);

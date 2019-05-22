@@ -380,7 +380,7 @@ FINSH_FUNCTION_EXPORT(list_guimem, display memory information);
         char *sender;
 
         if ((evt->base.type == RTGUI_EVENT_TIMER) ||
-            (evt->base.type == RTGUI_EVENT_UPDATE_BEGIN) ||
+            // (evt->base.type == RTGUI_EVENT_UPDATE_BEGIN) ||
             (evt->base.type == RTGUI_EVENT_MOUSE_MOTION) ||
             (evt->base.type == RTGUI_EVENT_UPDATE_END)) {
             /* don't dump timer event */
@@ -513,10 +513,13 @@ rt_err_t rtgui_send(rtgui_app_t* app, rtgui_evt_generic_t *evt,
     rtgui_event_dump(app, evt);
 
     evt->base.ack = RT_NULL;
+    LOG_W("rt_mb_send_wait %p %d", app, app->mb->entry);
     ret = rt_mb_send_wait(app->mb, (rt_ubase_t)evt, timeout);
+    LOG_W("rt_mb_send_wait ok %d", ret);
     if (ret) {
         if (RTGUI_EVENT_TIMER != evt->base.type) {
             LOG_E("tx evt %d to %s err %d", evt->base.type, app->name, ret);
+            rt_mp_free(evt);
         }
     }
 
@@ -535,7 +538,10 @@ rt_err_t rtgui_send_sync(rtgui_app_t* dst, rtgui_evt_generic_t *evt) {
         evt->base.ack = &ack_sync;
         ret = rt_mb_send(dst->mb, (rt_ubase_t)evt);
         if (ret) {
-            LOG_E("tx sync %d err %d", evt->base.type, ret);
+            if (RTGUI_EVENT_TIMER != evt->base.type) {
+                LOG_E("tx sync %d err %d", evt->base.type, ret);
+                rt_mp_free(evt);
+            }
             break;
         }
 
@@ -556,54 +562,40 @@ rt_err_t rtgui_send_sync(rtgui_app_t* dst, rtgui_evt_generic_t *evt) {
 RTM_EXPORT(rtgui_send_sync);
 
 rt_err_t rtgui_ack(rtgui_evt_generic_t *evt, rt_uint32_t val) {
-    if (!evt->base.ack) return RT_EOK;
+    if (!evt->base.ack) {
+        LOG_W("no ack return");
+        return RT_EOK;
+    }
     return rt_mb_send(evt->base.ack, val);
 }
 RTM_EXPORT(rtgui_ack);
 
-rt_err_t rtgui_recv(rtgui_evt_generic_t **evt, rt_int32_t timeout) {
-    rt_thread_t self;
-    rtgui_app_t *app;
-
-    self = rt_thread_self();
-    app = (rtgui_app_t *)(self->user_data);
-    if (!app) {
-        LOG_E("%s has no app", self->name);
-        return -RT_ERROR;
-    }
-
-    rt_err_t ret = rt_mb_recv(app->mb, (rt_ubase_t *)evt, timeout);
-    return ret;
+rt_err_t rtgui_recv(rtgui_app_t *app, rtgui_evt_generic_t **evt,
+    rt_int32_t timeout) {
+    extern long list_thread(void);
+    LOG_W("recv %s %d %p", app->name, app->mb->entry, app);
+    list_thread();
+    return rt_mb_recv(app->mb, (rt_ubase_t *)evt, timeout);
 }
 RTM_EXPORT(rtgui_recv);
 
-rt_err_t rtgui_recv_filter(rt_uint32_t type, rtgui_evt_generic_t *evt) {
+rt_err_t rtgui_recv_filter(rtgui_app_t *app, rt_uint32_t type,
+    rtgui_evt_generic_t **evt) {
     rt_err_t ret;
-
-    if (!evt) return -RT_EINVAL;
 
     do {
         rtgui_evt_generic_t *_evt;
-        rt_thread_t self = rt_thread_self();
-        rtgui_app_t *app = (rtgui_app_t *)(self->user_data);
-
-        if (!app) {
-            LOG_E("%s without app", self->name);
-            ret = -RT_ERROR;
-            break;
-        }
-
-        ret = rtgui_recv(&_evt, RT_WAITING_FOREVER);
+        ret = rtgui_recv(app, &_evt, RT_WAITING_FOREVER);
         if (ret) {
             LOG_E("filter rx err [%d]", ret);
             break;
         }
         if (type == _evt->base.type) {
-            evt = _evt;
+            *evt = _evt;
             break;
         } else {
-            if (TO_OBJECT(app)->evt_hdl) {
-                TO_OBJECT(app)->evt_hdl(TO_OBJECT(app), _evt);
+            if (EVENT_HANDLER(app)) {
+                (void)EVENT_HANDLER(app)(app, _evt);
             }
         }
     } while (0);

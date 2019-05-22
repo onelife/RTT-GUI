@@ -36,7 +36,7 @@ struct rtgui_image;
 struct rtgui_image_engine
 {
     const char *name;
-    struct rtgui_list_node list;
+    rt_slist_t list;
 
     /* image engine function */
     rt_bool_t (*image_check)(struct rtgui_filerw *file);

@@ -53,6 +53,7 @@ RTGUI_CLASS(
     RT_NULL,
     _object_constructor,
     _object_destructor,
+    RT_NULL,
     sizeof(rtgui_obj_t));
 RTM_EXPORT(_rtgui_object);
 
@@ -61,11 +62,10 @@ static void _object_constructor(void *_obj) {
     rtgui_obj_t *obj = _obj;
 
     if (!obj) return;
-    obj->_super = RT_NULL;
-    obj->cls = RT_NULL;
-    obj->evt_hdl = RT_NULL;
+    obj->_super = 0;
     obj->flag = RTGUI_OBJECT_FLAG_VALID;
     obj->id = (rt_ubase_t)obj;
+    LOG_D("obj ctor");
 }
 
 static void _object_destructor(void *_obj) {
@@ -92,7 +92,7 @@ static void _deconstruct_instance(const rtgui_type_t *cls, void *obj) {
     if (cls->_super) _deconstruct_instance(cls->_super, obj);
 }
 
-void *rtgui_create_instance(const rtgui_type_t *cls) {
+void *rtgui_create_instance(const rtgui_type_t *cls, rtgui_evt_hdl_t evt_hdl) {
     rtgui_obj_t *_new;
 
     _new = rtgui_malloc(cls->size);
@@ -103,7 +103,8 @@ void *rtgui_create_instance(const rtgui_type_t *cls) {
 
     _new->cls = cls;
     _construct_instance(cls, _new);
-    LOG_D("create ins %s", cls->name);
+    _new->evt_hdl = evt_hdl;
+    LOG_D("create ins %s @p", cls->name, _new);
 
     #ifdef RTGUI_OBJECT_TRACE
         obj_info.objs_num++;
@@ -161,9 +162,8 @@ void *rtgui_object_cast_check(void *_obj, const rtgui_type_t *cls,
     rtgui_obj_t *obj = _obj;
 
     if (!obj) return RT_NULL;
-
     if (!rtgui_is_subclass_of(obj->cls, cls)) {
-        LOG_E("%s[%d] Invalid cast from \"%s\" to \"%s\"", func, line,
+        LOG_E("Bad casting [@%d %-20s(): %s => %s]", line, func,
             obj->cls->name, cls->name);
     }
     return _obj;
@@ -184,22 +184,6 @@ const rtgui_type_t *rtgui_object_type_get(void *_obj) {
     return obj->cls;
 }
 RTM_EXPORT(rtgui_object_type_get);
-
-void rtgui_object_event_handler_set(void *_obj, rtgui_evt_hdl_t hdl) {
-    rtgui_obj_t *obj = _obj;
-
-    obj->evt_hdl = hdl;
-}
-RTM_EXPORT(rtgui_object_event_handler_set);
-
-rt_bool_t rtgui_object_event_handler(rtgui_obj_t *obj,
-    rtgui_evt_generic_t *evt) {
-    (void)obj;
-    (void)evt;
-
-    return RT_FALSE;
-}
-RTM_EXPORT(rtgui_object_event_handler);
 
 // void rtgui_object_set_id(rtgui_obj_t *obj, rt_uint32_t id) {
 //     #ifdef RTGUI_USING_ID_CHECK

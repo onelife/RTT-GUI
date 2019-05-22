@@ -135,7 +135,7 @@ static boolean fill_input_buffer(j_decompress_ptr cinfo)
 * beyond the data currently in the buffer, the buffer can be marked empty so
 * that the next read will cause a fill_input_buffer call that can suspend.
 * Arranging for additional bytes to be discarded before reloading the input
-* buffer is the application writer's problem.
+* buffer is the app writer's problem.
 */
 static void skip_input_data(j_decompress_ptr cinfo, long num_bytes)
 {

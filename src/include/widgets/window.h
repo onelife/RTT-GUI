@@ -64,9 +64,10 @@ RTGUI_CLASS_PROTOTYPE(win);
 #define WINTITLE_CB_HEIGHT      16
 #define WINTITLE_BORDER_SIZE    2
 
-rtgui_win_t *rtgui_win_create(rtgui_win_t *parent_window, const char *title,
-                              rtgui_rect_t *rect, rt_uint16_t style);
-rtgui_win_t *rtgui_mainwin_create(rtgui_win_t *parent_window, const char *title, rt_uint16_t style);
+rtgui_win_t *rtgui_win_create(rtgui_win_t *parent_window, rtgui_evt_hdl_t evt_hdl,
+    const char *title, rtgui_rect_t *rect, rt_uint16_t style);
+rtgui_win_t *rtgui_mainwin_create(rtgui_win_t *parent_window, rtgui_evt_hdl_t evt_hdl,
+    const char *title, rt_uint16_t style);
 
 void rtgui_win_destroy(rtgui_win_t *win);
 
@@ -106,9 +107,6 @@ void rtgui_win_set_onactivate(rtgui_win_t *win, rtgui_evt_hdl_t handler);
 void rtgui_win_set_ondeactivate(rtgui_win_t *win, rtgui_evt_hdl_t handler);
 void rtgui_win_set_onclose(rtgui_win_t *win, rtgui_evt_hdl_t handler);
 void rtgui_win_set_onkey(rtgui_win_t *win, rtgui_evt_hdl_t handler);
-
-rt_bool_t rtgui_win_event_handler(rtgui_obj_t *win,
-    rtgui_evt_generic_t *event);
 
 void rtgui_win_event_loop(rtgui_win_t *wnd);
 
