@@ -24,15 +24,13 @@
  * 2019-05-15     onelife      Refactor
  */
 
+// #include "include/rtservice.h"
+
 #include "../include/rtgui.h"
 #include "../include/widgets/topwin.h"
 #include "../include/widgets/mouse.h"
-
-#include "include/rtservice.h"
 #include "../include/image.h"
 //#include <rtgui/rtgui_theme.h>
-#include "../include/rtgui_system.h"
-#include "../include/rtgui_app.h"
 #include "../include/widgets/window.h"
 #include "../include/widgets/container.h"
 

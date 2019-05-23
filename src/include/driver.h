@@ -28,15 +28,12 @@
 #include "./color.h"
 
 /* graphic driver operations */
-struct rtgui_graphic_driver_ops
-{
+struct rtgui_graphic_driver_ops {
     /* set and get pixel in (x, y) */
     void (*set_pixel)(rtgui_color_t *c, int x, int y);
     void (*get_pixel)(rtgui_color_t *c, int x, int y);
-
     void (*draw_hline)(rtgui_color_t *c, int x1, int x2, int y);
     void (*draw_vline)(rtgui_color_t *c, int x , int y1, int y2);
-
     /* draw raw hline */
     void (*draw_raw_hline)(rt_uint8_t *pixels, int x1, int x2, int y);
 };

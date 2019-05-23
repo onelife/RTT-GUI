@@ -25,8 +25,8 @@
 /*
 * rockbox fnt font engine
 */
+#include "../include/rtgui.h"
 #include "../include/font_fnt.h"
-#include "../include/rtgui_system.h"
 
 #ifdef _WIN32_NATIVE
 #include <fcntl.h>

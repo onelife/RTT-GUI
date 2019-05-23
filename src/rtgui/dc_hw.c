@@ -21,14 +21,21 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
+#include "../include/rtgui.h"
 #include "../include/dc.h"
 #include "../include/driver.h"
-#include "../include/rtgui_system.h"
-#include "../include/rtgui_app.h"
-#include "../include/rtgui_server.h"
-
 #include "../include/widgets/container.h"
 #include "../include/widgets/window.h"
+
+#ifdef RT_USING_ULOG
+# define LOG_LVL                    RTGUI_LOG_LEVEL
+# define LOG_TAG                    " DC_HW "
+# include "components/utilities/ulog/ulog.h"
+#else /* RT_USING_ULOG */
+# define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
+# define LOG_D                      LOG_E
+#endif /* RT_USING_ULOG */
+
 
 #define _int_swap(x, y)         do {x ^= y; y ^= x; x ^= y;} while (0)
 
@@ -167,31 +174,25 @@ static void rtgui_dc_hw_draw_vline(struct rtgui_dc *self, int x, int y1, int y2)
 /*
  * draw a logic horizontal line on device
  */
-static void rtgui_dc_hw_draw_hline(struct rtgui_dc *self, int x1, int x2, int y)
-{
+static void rtgui_dc_hw_draw_hline(struct rtgui_dc *self,
+    int x1, int x2, int y) {
     struct rtgui_dc_hw *dc;
 
-    RT_ASSERT(self != RT_NULL);
-    dc = (struct rtgui_dc_hw *) self;
+    if (!self) return;
+    dc = (struct rtgui_dc_hw *)self;
 
-    if (y < 0)
-        return;
+    if (y < 0) return;
     y = y + dc->owner->extent.y1;
-    if (y >= dc->owner->extent.y2)
-        return;
+    if (y >= dc->owner->extent.y2) return;
 
     /* convert logic to device */
     x1 = x1 + dc->owner->extent.x1;
     x2 = x2 + dc->owner->extent.x1;
-    if (x1 > x2)
-        _int_swap(x1, x2);
-    if (x1 > dc->owner->extent.x2 || x2 < dc->owner->extent.x1)
-        return;
+    if (x1 > x2) _int_swap(x1, x2);
+    if ((x1 > dc->owner->extent.x2) || (x2 < dc->owner->extent.x1)) return;
 
-    if (x1 < dc->owner->extent.x1)
-        x1 = dc->owner->extent.x1;
-    if (x2 > dc->owner->extent.x2)
-        x2 = dc->owner->extent.x2;
+    if (x1 < dc->owner->extent.x1) x1 = dc->owner->extent.x1;
+    if (x2 > dc->owner->extent.x2) x2 = dc->owner->extent.x2;
 
     /* draw hline */
     dc->hw_driver->ops->draw_hline(&(dc->owner->gc.foreground), x1, x2, y);

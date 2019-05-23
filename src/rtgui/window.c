@@ -24,13 +24,10 @@
  */
 
 #include "../include/rtgui.h"
-#include "../include/rtgui_system.h"
-#include "../include/rtgui_server.h"
-#include "../include/rtgui_app.h"
+#include "../include/app.h"
 #include "../include/dc.h"
 #include "../include/color.h"
 #include "../include/image.h"
-
 #include "../include/widgets/window.h"
 #include "../include/widgets/title.h"
 
@@ -272,7 +269,7 @@ rtgui_win_t *rtgui_win_create(rtgui_win_t *parent_win, rtgui_evt_hdl_t evt_hdl,
     rtgui_win_t *win;
 
     /* allocate win memory */
-    win = (rtgui_win_t *)RTGUI_CREATE_INSTANCE(win, evt_hdl);
+    win = (rtgui_win_t *)CREATE_INSTANCE(win, evt_hdl);
     if (RT_NULL == win) {
         LOG_E("create %s failed", title);
         return RT_NULL;
@@ -300,32 +297,42 @@ RTM_EXPORT(rtgui_mainwin_create);
 
 static rt_bool_t _rtgui_win_deal_close(rtgui_win_t *win,
     rtgui_evt_generic_t *evt, rt_bool_t force) {
-    if (win->on_close) {
-        if (!(win->on_close(TO_OBJECT(win), evt)) && !force) {
-            return RT_FALSE;
+    rt_bool_t done = RT_TRUE;
+
+    do {
+        if (win->on_close) {
+            if (!(win->on_close(TO_OBJECT(win), evt)) && !force) {
+                done = RT_FALSE;
+                break;
+            }
         }
+
+        rtgui_win_hide(win);
+        win->flag |= RTGUI_WIN_FLAG_CLOSED;
+
+        if (win->flag & RTGUI_WIN_FLAG_MODAL) {
+            /* rtgui_win_end_modal cleared the RTGUI_WIN_FLAG_MODAL in win->flag so
+             * we have to record it. */
+            rtgui_win_end_modal(win, RTGUI_MODAL_CANCEL);
+        }
+
+        win->app->window_cnt--;
+        if (!win->app->window_cnt && \
+            !(win->app->state_flag & RTGUI_APP_FLAG_KEEP)) {
+            rtgui_app_exit(rtgui_app_self(), 0);
+        }
+
+        if (win->style & RTGUI_WIN_STYLE_DESTROY_ON_CLOSE) {
+            rtgui_win_destroy(win);
+        }
+    } while (0);
+
+    if (!evt->base.ack) {
+        LOG_I("win close free %p", evt);
+        rt_mp_free(evt);
     }
 
-    rtgui_win_hide(win);
-    win->flag |= RTGUI_WIN_FLAG_CLOSED;
-
-    if (win->flag & RTGUI_WIN_FLAG_MODAL) {
-        /* rtgui_win_end_modal cleared the RTGUI_WIN_FLAG_MODAL in win->flag so
-         * we have to record it. */
-        rtgui_win_end_modal(win, RTGUI_MODAL_CANCEL);
-    }
-
-    win->app->window_cnt--;
-    if (!win->app->window_cnt && \
-        !(win->app->state_flag & RTGUI_APP_FLAG_KEEP)) {
-        rtgui_app_exit(rtgui_app_self(), 0);
-    }
-
-    if (win->style & RTGUI_WIN_STYLE_DESTROY_ON_CLOSE) {
-        rtgui_win_destroy(win);
-    }
-
-    return RT_TRUE;
+    return done;
 }
 
 void rtgui_win_destroy(rtgui_win_t *win) {
@@ -701,7 +708,7 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     rtgui_win_t *win = TO_WIN(obj);
     rt_bool_t done = RT_TRUE;
 
-    LOG_D("win rx %x from %s", evt->base.type, evt->base.sender->mb->parent.parent.name);
+    LOG_I("win rx %x (%p) from %s", evt->base.type, evt, evt->base.sender->mb->parent.parent.name);
     switch (evt->base.type) {
     case RTGUI_EVENT_WIN_SHOW:
         rtgui_win_do_show(win);
@@ -713,6 +720,7 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     case RTGUI_EVENT_WIN_CLOSE:
         (void)_rtgui_win_deal_close(win, evt, RT_FALSE);
+        evt = RT_NULL;
         /* do not broadcast WIN_CLOSE event */
         break;
 
@@ -827,7 +835,7 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     LOG_D("win done %d", done);
     if (done && evt) {
         if (!evt->base.ack) {
-            LOG_W("win free %p", evt);
+            LOG_I("win free %p", evt);
             rt_mp_free(evt);
             evt = RT_NULL;
         }
@@ -1012,7 +1020,7 @@ static const rt_uint8_t close_byte[14] =
 };
 
 /* window drawing */
-void rtgui_theme_draw_win(struct rtgui_win_title *win_t) {
+void rtgui_theme_draw_win(rtgui_title_t *win_t) {
     if (!win_t) return;
 
     do {

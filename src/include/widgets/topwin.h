@@ -25,7 +25,6 @@
 #define __RTGUI_TOPWIN_H__
 
 #include "../rtgui.h"
-#include "../rtgui_server.h"
 #include "../region.h"
 #include "./title.h"
 

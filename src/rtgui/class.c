@@ -1,5 +1,5 @@
 /*
- * File      : rtgui_obj.c
+ * File      : class.c
  * This file is part of RT-Thread GUI Engine
  * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
  *
@@ -19,26 +19,27 @@
  *
  * Change Logs:
  * Date           Author       Notes
- * 2009-10-04     Bernard      first version
+ * 2019-05-23     onelife      rename to "class.c"
  */
-
-#include "../include/rtgui_object.h"
-#include "../include/rtgui_system.h"
+/* Includes ------------------------------------------------------------------*/
+#include "../include/rtgui.h"
 
 #ifdef RT_USING_ULOG
-# define LOG_LVL                    LOG_LVL_DBG
-// # define LOG_LVL                   LOG_LVL_INFO
-# define LOG_TAG                    "GUI_OBJ"
+# define LOG_LVL                    RTGUI_LOG_LEVEL
+# define LOG_TAG                    "GUI_CLS"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
+/* Private function prototype ------------------------------------------------*/
 static void _object_constructor(void *obj);
 static void _object_destructor(void *obj);
 
-
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
 #ifdef RTGUI_OBJECT_TRACE
     struct rtgui_obj_info {
         rt_uint32_t objs_num;
@@ -57,6 +58,18 @@ RTGUI_CLASS(
     sizeof(rtgui_obj_t));
 RTM_EXPORT(_rtgui_object);
 
+/* Private functions ---------------------------------------------------------*/
+static void _construct_instance(const rtgui_type_t *cls, void *obj) {
+    /* call super constructor first */
+    if (cls->_super) _construct_instance(cls->_super, obj);
+    if (cls->constructor) cls->constructor(obj);
+}
+
+static void _deconstruct_instance(const rtgui_type_t *cls, void *obj) {
+    /* call self destructor first */
+    if (cls->destructor) cls->destructor(obj);
+    if (cls->_super) _deconstruct_instance(cls->_super, obj);
+}
 
 static void _object_constructor(void *_obj) {
     rtgui_obj_t *obj = _obj;
@@ -79,19 +92,7 @@ static void _object_destructor(void *_obj) {
     obj->evt_hdl = RT_NULL;
 }
 
-
-static void _construct_instance(const rtgui_type_t *cls, void *obj) {
-    /* call super constructor first */
-    if (cls->_super) _construct_instance(cls->_super, obj);
-    if (cls->constructor) cls->constructor(obj);
-}
-
-static void _deconstruct_instance(const rtgui_type_t *cls, void *obj) {
-    /* call self destructor first */
-    if (cls->destructor) cls->destructor(obj);
-    if (cls->_super) _deconstruct_instance(cls->_super, obj);
-}
-
+/* Public functions ----------------------------------------------------------*/
 void *rtgui_create_instance(const rtgui_type_t *cls, rtgui_evt_hdl_t evt_hdl) {
     rtgui_obj_t *_new;
 
@@ -121,7 +122,6 @@ void rtgui_delete_instance(void *_obj) {
     rtgui_obj_t *obj = _obj;
 
     // if (!obj || (obj->flag & RTGUI_OBJECT_FLAG_STATIC)) return;
-
     #ifdef RTGUI_OBJECT_TRACE
         obj_info.objs_num--;
         obj_info.alloc_size -= obj->cls->size;
@@ -146,7 +146,6 @@ const rtgui_type_t *rtgui_class_of(void *_obj) {
     return obj->cls;
 }
 
-
 /**
  * @brief Checks if the object can be cast to the specified cls.
  *
@@ -169,33 +168,3 @@ void *rtgui_object_cast_check(void *_obj, const rtgui_type_t *cls,
     return _obj;
 }
 RTM_EXPORT(rtgui_object_cast_check);
-
-
-/**
- * @brief Gets the cls of the object
- *
- * @param object an object
- * @return the cls of the object (RT_NULL on failure)
- */
-const rtgui_type_t *rtgui_object_type_get(void *_obj) {
-    rtgui_obj_t *obj = _obj;
-
-    if (!obj) return RT_NULL;
-    return obj->cls;
-}
-RTM_EXPORT(rtgui_object_type_get);
-
-// void rtgui_object_set_id(rtgui_obj_t *obj, rt_uint32_t id) {
-//     #ifdef RTGUI_USING_ID_CHECK
-//         rtgui_obj_t *_obj = rtgui_get_self_object(id);
-//         RT_ASSERT(!_obj);
-//     #endif
-
-//     obj->id = id;
-// }
-// RTM_EXPORT(rtgui_object_set_id);
-
-// rt_uint32_t rtgui_object_get_id(rtgui_obj_t *obj) {
-//     return obj->id;
-// }
-// RTM_EXPORT(rtgui_object_get_id);

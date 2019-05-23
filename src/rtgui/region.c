@@ -21,8 +21,8 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
+#include "../include/rtgui.h"
 #include "../include/region.h"
-#include "../include/rtgui_system.h"
 
 /* #define good(reg) RT_ASSERT(rtgui_region16_valid(reg)) */
 #define good(reg)

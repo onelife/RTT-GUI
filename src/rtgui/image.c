@@ -24,11 +24,9 @@
  * 2012-08-29     amsl         add Image zoom interface.
  */
 
-#include "include/rtthread.h"
-
+#include "../include/rtgui.h"
 #include "../include/image.h"
 #include "../include/image_hdc.h"
-#include "../include/rtgui_system.h"
 #include "../include/image_container.h"
 
 #ifdef _WIN32

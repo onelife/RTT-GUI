@@ -23,7 +23,7 @@
  * 2019-05-15     onelife      refactor
  */
 /* Includes ------------------------------------------------------------------*/
-#include "../include/rtgui_system.h"
+#include "../include/rtgui.h"
 //#include <rtgui/rtgui_theme.h>
 //#include "../server/mouse.h"
 #include "../include/widgets/window.h"
@@ -39,34 +39,34 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-/* Private function prototypes -----------------------------------------------*/
+/* Private function prototype ------------------------------------------------*/
 static void _win_title_constructor(void *obj);
-static rt_bool_t _win_tile_event_handler(void *obj, rtgui_evt_generic_t *evt);
+static rt_bool_t _tile_event_handler(void *obj, rtgui_evt_generic_t *evt);
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 RTGUI_CLASS(
-    win_title,
+    title,
     CLASS_METADATA(widget),
     _win_title_constructor,
     RT_NULL,
-    _win_tile_event_handler,
-    sizeof(rtgui_win_title_t));
+    _tile_event_handler,
+    sizeof(rtgui_title_t));
 
 /* Private functions ---------------------------------------------------------*/
 static void _win_title_constructor(void *obj) {
-    rtgui_win_title_t *win_t = obj;
+    rtgui_title_t *win_t = obj;
     TO_WIDGET(win_t)->flag = RTGUI_WIDGET_FLAG_DEFAULT;
     RTGUI_WIDGET_TEXTALIGN(win_t) = RTGUI_ALIGN_CENTER_VERTICAL;
 }
 
-static rt_bool_t _win_tile_event_handler(void *obj, rtgui_evt_generic_t *evt) {
-    struct rtgui_win_title *win_t;
+static rt_bool_t _tile_event_handler(void *obj, rtgui_evt_generic_t *evt) {
+    rtgui_title_t *win_t;
     rtgui_widget_t *wgt;
     rt_bool_t done;
 
-    win_t = TO_WIN_TITLE(obj);
+    win_t = TO_TITLE(obj);
     wgt = TO_WIDGET(obj);
     if (!wgt->toplevel) {
         LOG_E("%s no toplevel");
@@ -74,7 +74,7 @@ static rt_bool_t _win_tile_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     }
     done = RT_FALSE;
 
-    LOG_D("title rx %x from %s", evt->base.type, evt->base.sender->mb->parent.parent.name);
+    LOG_I("title rx %x (%p) from %s", evt->base.type, evt, evt->base.sender->mb->parent.parent.name);
     switch (evt->base.type) {
     case RTGUI_EVENT_PAINT:
         rtgui_theme_draw_win(win_t);
@@ -145,15 +145,15 @@ static rt_bool_t _win_tile_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 /* Public functions ----------------------------------------------------------*/
-rtgui_win_title_t *rtgui_win_title_create(rtgui_win_t *win, rtgui_evt_hdl_t evt_hdl) {
-    rtgui_win_title_t *win_t;
+rtgui_title_t *rtgui_win_title_create(rtgui_win_t *win, rtgui_evt_hdl_t evt_hdl) {
+    rtgui_title_t *win_t;
 
-    win_t = (rtgui_win_title_t *)RTGUI_CREATE_INSTANCE(win_title, evt_hdl);
+    win_t = (rtgui_title_t *)CREATE_INSTANCE(title, evt_hdl);
     if (win_t) TO_WIDGET(win_t)->toplevel = win;
 
     return win_t;
 }
 
-void rtgui_win_title_destroy(rtgui_win_title_t *win_t) {
+void rtgui_win_title_destroy(rtgui_title_t *win_t) {
     return rtgui_widget_destroy(TO_WIDGET(win_t));
 }

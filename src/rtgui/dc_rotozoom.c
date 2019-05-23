@@ -56,7 +56,6 @@ Andreas Schiffler -- aschiffler at ferzkopp dot net
 #include "../include/dc.h"
 #include "../include/dc_draw.h"
 #include "../include/color.h"
-#include "../include/rtgui_system.h"
 
 
 /* ---- Internally used structures */

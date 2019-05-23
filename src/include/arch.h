@@ -1,5 +1,5 @@
 /*
- * File      : rtgui_system.h
+ * File      : arch.h
  * This file is part of RT-Thread GUI Engine
  * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
  *
@@ -20,17 +20,22 @@
  * Change Logs:
  * Date           Author       Notes
  * 2009-10-04     Bernard      first version
- * 2019-05-15     onelife      refactor
+ * 2019-05-15     onelife      refactor and rename to "arch.h"
  */
-#ifndef __RTGUI_SYSTEM_H__
-#define __RTGUI_SYSTEM_H__
-
-#include "./rtgui.h"
+#ifndef __ARCH_H__
+#define __ARCH_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Includes ------------------------------------------------------------------*/
+#include "./rtgui.h"
+
+/* Exported defines ----------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Exported functions ------------------------------------------------------- */
 rtgui_timer_t *rtgui_timer_create(rt_int32_t time, rt_int32_t flag,
     rtgui_timeout_hdl_t timeout, void *parameter);
 void rtgui_timer_destory(rtgui_timer_t *timer);
@@ -77,4 +82,4 @@ rt_err_t rtgui_ack(rtgui_evt_generic_t *evt, rt_uint32_t val);
 }
 #endif
 
-#endif /* __RTGUI_SYSTEM_H__ */
+#endif /* __ARCH_H__ */

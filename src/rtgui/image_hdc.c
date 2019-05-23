@@ -21,10 +21,9 @@
  * Date           Author       Notes
  * 2010-09-15     Bernard      first version
  */
-#include "include/rtthread.h"
+#include "../include/rtgui.h"
 #include "../include/dc.h"
 #include "../include/image.h"
-#include "../include/rtgui_system.h"
 #include "../include/image_hdc.h"
 #include "../include/blit.h"
 

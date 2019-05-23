@@ -24,10 +24,9 @@
  *  provides scaledown function.
  */
 
-#include "include/rtthread.h"
+#include "../include/rtgui.h"
 #include "../include/dc.h"
 #include "../include/image.h"
-#include "../include/rtgui_system.h"
 #include "../include/image_bmp.h"
 #include "../include/blit.h"
 

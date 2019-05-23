@@ -27,27 +27,14 @@
 #define __RTGUI_TITLE__
 
 /* Includes ------------------------------------------------------------------*/
+#include "../rtgui.h"
 #include "./widget.h"
 
 /* Exported defines ----------------------------------------------------------*/
-RTGUI_CLASS_PROTOTYPE(win_title);
-/** Gets the type of a title */
-#define _WIN_TITLE_METADATA                 CLASS_METADATA(win_title)
-/** Casts the object to an rtgui_win_title */
-#define TO_WIN_TITLE(obj)                   \
-    RTGUI_CAST(obj, _WIN_TITLE_METADATA, rtgui_win_title_t)
-/** Checks if the object is an rtgui_win_title */
-#define IS_WIN_TITLE(obj)                   \
-    IS_INSTANCE((obj), _WIN_TITLE_METADATA)
-
 /* Exported types ------------------------------------------------------------*/
-typedef struct rtgui_win_title {
-    struct rtgui_widget _super;
-} rtgui_win_title_t;
-
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-rtgui_win_title_t *rtgui_win_title_create(rtgui_win_t *win, rtgui_evt_hdl_t evt_hdl);
-void rtgui_win_title_destroy(rtgui_win_title_t *win_t);
+rtgui_title_t *rtgui_win_title_create(rtgui_win_t *win, rtgui_evt_hdl_t evt_hdl);
+void rtgui_win_title_destroy(rtgui_title_t *win_t);
 
 #endif /* __RTGUI_TITLE__ */

@@ -22,7 +22,6 @@
  * 2010-09-15     Bernard      first version
  * 2012-01-24     onelife      add TJpgDec (Tiny JPEG Decompressor) support
  */
-#include "include/rtthread.h"
 #include "../include/rtgui.h"
 #include "../include/image.h"
 
@@ -31,7 +30,7 @@
 // #include <stdlib.h>
 #include "jpeglib.h"
 
-#include "../include/rtgui_system.h"
+#include "../include/rtgui.h"
 #include "../include/filerw.h"
 #include "../include/blit.h"
 
@@ -608,7 +607,7 @@ static rt_bool_t rtgui_image_jpeg_check(struct rtgui_filerw *file)
 /* Includes ------------------------------------------------------------------*/
 #include "tjpgd.h"
 
-#include "../include/rtgui_system.h"
+#include "../include/rtgui.h"
 #include "../include/filerw.h"
 #include "../include/blit.h"
 

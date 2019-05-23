@@ -23,9 +23,8 @@
  * 2010-09-24     Bernard      fix cntr destroy issue
  */
 
+#include "../include/rtgui.h"
 #include "../include/dc.h"
-#include "../include/rtgui_system.h"
-#include "../include/rtgui_app.h"
 #include "../include/widgets/container.h"
 #include "../include/widgets/window.h"
 
@@ -73,7 +72,7 @@ static void _container_destructor(void *obj) {
     rtgui_container_destroy_children(cntr);
 
     if (cntr->layout_box) {
-        RTGUI_DELETE_INSTANCE(cntr->layout_box);
+        DELETE_INSTANCE(cntr->layout_box);
     }
 }
 
@@ -173,7 +172,7 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     wgt = TO_WIDGET(obj);
     done = RT_FALSE;
 
-    LOG_D("cntr rx %x from %s", evt->base.type, evt->base.sender->mb->parent.parent.name);
+    LOG_I("cntr rx %x (%p) from %s", evt->base.type, evt, evt->base.sender->mb->parent.parent.name);
     switch (evt->base.type) {
     case RTGUI_EVENT_PAINT:
     {
@@ -239,7 +238,7 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     LOG_D("cntr done %d", done);
     if (done && evt) {
         if (!evt->base.ack) {
-            LOG_W("cntr free %p", evt);
+            LOG_I("cntr free %p", evt);
             rt_mp_free(evt);
             evt = RT_NULL;
         }
@@ -347,7 +346,7 @@ void rtgui_container_destroy_children(rtgui_container_t *cntr)
         child->parent = RT_NULL;
 
         /* destroy object and remove from parent */
-        RTGUI_DELETE_INSTANCE(child);
+        DELETE_INSTANCE(child);
 
         node = cntr->children.next;
     }

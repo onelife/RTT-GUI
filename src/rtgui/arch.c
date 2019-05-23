@@ -21,16 +21,15 @@
  * Date           Author       Notes
  * 2009-10-04     Bernard      first version
  * 2016-03-23     Bernard      fix the default font initialization issue.
- * 2019-05-15     onelife      Refactor
+ * 2019-05-15     onelife      refactor and rename to "arch.c"
  */
 
 #include "../include/rtgui.h"
+#include "../include/arch.h"
+#include "../include/app.h"
 #include "../include/image.h"
 #include "../include/font.h"
 #include "../include/types.h"
-#include "../include/rtgui_app.h"
-#include "../include/rtgui_server.h"
-#include "../include/rtgui_system.h"
 #include "../include/widgets/window.h"
 
 #ifdef RT_USING_ULOG
@@ -379,13 +378,13 @@ FINSH_FUNCTION_EXPORT(list_guimem, display memory information);
         rtgui_evt_generic_t *evt) {
         char *sender;
 
-        if ((evt->base.type == RTGUI_EVENT_TIMER) ||
-            // (evt->base.type == RTGUI_EVENT_UPDATE_BEGIN) ||
-            (evt->base.type == RTGUI_EVENT_MOUSE_MOTION) ||
-            (evt->base.type == RTGUI_EVENT_UPDATE_END)) {
-            /* don't dump timer event */
-            return;
-        }
+        // if ((evt->base.type == RTGUI_EVENT_TIMER) ||
+        //     (evt->base.type == RTGUI_EVENT_UPDATE_BEGIN) ||
+        //     (evt->base.type == RTGUI_EVENT_MOUSE_MOTION) ||
+        //     (evt->base.type == RTGUI_EVENT_UPDATE_END)) {
+        //     /* don't dump timer event */
+        //     return;
+        // }
 
         if (!evt->base.sender) {
             sender = "NULL";
@@ -513,9 +512,7 @@ rt_err_t rtgui_send(rtgui_app_t* app, rtgui_evt_generic_t *evt,
     rtgui_event_dump(app, evt);
 
     evt->base.ack = RT_NULL;
-    LOG_W("rt_mb_send_wait %p %d", app, app->mb->entry);
     ret = rt_mb_send_wait(app->mb, (rt_ubase_t)evt, timeout);
-    LOG_W("rt_mb_send_wait ok %d", ret);
     if (ret) {
         if (RTGUI_EVENT_TIMER != evt->base.type) {
             LOG_E("tx evt %d to %s err %d", evt->base.type, app->name, ret);
@@ -572,9 +569,6 @@ RTM_EXPORT(rtgui_ack);
 
 rt_err_t rtgui_recv(rtgui_app_t *app, rtgui_evt_generic_t **evt,
     rt_int32_t timeout) {
-    extern long list_thread(void);
-    LOG_W("recv %s %d %p", app->name, app->mb->entry, app);
-    list_thread();
     return rt_mb_recv(app->mb, (rt_ubase_t *)evt, timeout);
 }
 RTM_EXPORT(rtgui_recv);

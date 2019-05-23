@@ -22,8 +22,8 @@
  * 2009-10-16     Bernard      first version
  */
 
+#include "../include/rtgui.h"
 #include "../include/filerw.h"
-#include "../include/rtgui_system.h"
 #include "../include/image.h"
 
 #ifdef GUIENGINE_IMAGE_XPM

@@ -21,7 +21,7 @@
  * Date           Author       Notes
  * 2010-09-15     Bernard      first version
  */
-#include "../include/rtgui_system.h"
+#include "../include/rtgui.h"
 #include "../include/image_container.h"
 
 /*

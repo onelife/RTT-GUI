@@ -33,16 +33,6 @@
 extern "C" {
 #endif
 
-RTGUI_CLASS_PROTOTYPE(box);
-
-/** Gets the type of a box */
-#define _BOX_METADATA                       CLASS_METADATA(box)
-/** Casts the object to an rtgui_box */
-#define TO_BOX(obj)                         \
-    RTGUI_CAST(obj, _BOX_METADATA, rtgui_box_t)
-/** Checks if the object is an rtgui_box */
-#define IS_BOX(obj)                         IS_INSTANCE(obj, _BOX_METADATA)
-
 rtgui_box_t *rtgui_box_create(int orientation, int border_size);
 void rtgui_box_destroy(rtgui_box_t *box);
 

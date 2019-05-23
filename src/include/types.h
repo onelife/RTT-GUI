@@ -19,7 +19,7 @@
  *
  * Change Logs:
  * Date           Author       Notes
- * 2019-05-17     onelife      move all typedef here
+ * 2019-05-17     onelife      move typedef here
  */
 #ifndef __RTGUI_TYPES_H__
 #define __RTGUI_TYPES_H__
@@ -33,8 +33,8 @@ extern "C" {
 
 /* Exported defines ----------------------------------------------------------*/
 #define CLASS_METADATA(name)                (&_rtgui_##name)
-#define RTGUI_CLASS_PROTOTYPE(name)          \
-    extern const struct rtgui_class _rtgui_##name;
+#define CLASS_PROTOTYPE(name)               \
+    extern const struct rtgui_class _rtgui_##name
 #define RTGUI_CLASS(name, _super, ctor, dtor, hdl, size) \
     const struct rtgui_class _rtgui_##name = { \
         _super,                             \
@@ -43,22 +43,30 @@ extern "C" {
         (rtgui_evt_hdl_t)(hdl),             \
         #name,                              \
         size,                               \
-    };                                      \
-
-#define RTGUI_CREATE_INSTANCE(name, hdl)    \
+    }
+#define CREATE_INSTANCE(name, hdl)          \
     rtgui_create_instance(CLASS_METADATA(name), (rtgui_evt_hdl_t)(hdl))
-#define RTGUI_DELETE_INSTANCE(obj)          rtgui_delete_instance(obj)
+#define DELETE_INSTANCE(obj)                rtgui_delete_instance(obj)
+
+#ifdef GUIENGIN_USING_CAST_CHECK
+# define CAST(obj, cls, _type)              \
+    ((_type *)rtgui_object_cast_check(obj, cls, __FUNCTION__, __LINE__))
+#else
+# define CAST(obj, cls, _type)              ((_type *)(obj))
+#endif
 
 #define SUPER_(obj)                         (obj->_super)
 #define CLASS_(ins)                         rtgui_class_of((void *)ins)
 #define IS_SUBCLASS(cls, _super)            rtgui_is_subclass_of(cls, _super)
+#define IS_INSTANCE(ins, _cls)              \
+    rtgui_is_subclass_of(((rtgui_obj_t *)ins)->cls, _cls)
+
 #define OBJECT_HANDLER(obj)                 TO_OBJECT((void *)obj)->evt_hdl
 #define DEFAULT_HANDLER(obj)                CLASS_(obj)->evt_hdl
 #define EVENT_HANDLER(obj)                  \
     (OBJECT_HANDLER(obj) ? OBJECT_HANDLER(obj) : DEFAULT_HANDLER(obj))
 #define SUPER_HANDLER(obj)                  \
     (CLASS_(obj)->_super ? CLASS_(obj)->_super->evt_hdl : RT_NULL)
-
 
 /* Exported types ------------------------------------------------------------*/
 typedef struct rtgui_rect rtgui_rect_t;
@@ -73,6 +81,7 @@ typedef struct rtgui_app rtgui_app_t;
 typedef struct rtgui_box rtgui_box_t;
 typedef struct rtgui_container rtgui_container_t;
 typedef struct rtgui_widget rtgui_widget_t;
+typedef struct rtgui_title rtgui_title_t;
 typedef struct rtgui_win rtgui_win_t;
 typedef struct rtgui_topwin rtgui_topwin_t;
 typedef struct rtgui_timer rtgui_timer_t;
@@ -166,7 +175,6 @@ typedef enum rtgui_app_flag {
     RTGUI_APP_FLAG_KEEP                     = 0x80,
 } rtgui_app_flag_t;
 
-
 struct rtgui_app {
     rtgui_obj_t _super;
     char *name;
@@ -184,6 +192,14 @@ struct rtgui_app {
     unsigned int window_cnt;
     unsigned int win_acti_cnt;              /* activate count */
     void *user_data;
+};
+
+/* box sizer */
+struct rtgui_box {
+    rtgui_obj_t _super;
+    rt_uint16_t orient;
+    rt_uint16_t border_size;
+    rtgui_container_t *container;
 };
 
 /* widget */
@@ -212,19 +228,16 @@ struct rtgui_widget {
     rt_uint32_t user_data;
 };
 
-/* box sizer */
-struct rtgui_box {
-    rtgui_obj_t _super;
-    rt_uint16_t orient;
-    rt_uint16_t border_size;
-    rtgui_container_t *container;
-};
-
 /* container */
 struct rtgui_container {
     rtgui_widget_t _super;
     rtgui_box_t *layout_box;
     rt_slist_t children;
+};
+
+/* title */
+struct rtgui_title {
+    struct rtgui_widget _super;
 };
 
 /* window */
@@ -274,7 +287,7 @@ struct rtgui_win {
     rtgui_widget_t *last_mevent_widget;     /* last mouse event handler */
 
     char *title;
-    struct rtgui_win_title *_title_wgt;
+    rtgui_title_t *_title_wgt;
 
     rtgui_evt_hdl_t on_activate;
     rtgui_evt_hdl_t on_deactivate;
@@ -334,7 +347,7 @@ struct rtgui_topwin {
     enum rtgui_topwin_flag flag;
     /* event mask */
     rt_uint32_t mask;
-    struct rtgui_win_title *title;
+    rtgui_title_t *title;
     /* the window id */
     rtgui_win_t *wid;
     /* which app I belong */

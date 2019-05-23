@@ -22,11 +22,9 @@
  * 2010-09-15     Grissom      first version
  */
 
-#include "include/rtthread.h"
+#include "../include/rtgui.h"
 
 #ifdef GUIENGINE_USING_TTF
-#include "../include/rtgui.h"
-#include "../include/rtgui_system.h"
 #include "../include/dc.h"
 #include "../include/blit.h"
 #include "../include/font.h"

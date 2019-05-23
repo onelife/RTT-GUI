@@ -23,7 +23,6 @@
  */
 
 #include "../include/rtgui.h"
-#include "../include/rtgui_system.h"
 #include "../include/dc.h"
 #include "../include/dc_trans.h"
 

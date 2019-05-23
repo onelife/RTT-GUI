@@ -26,7 +26,6 @@
 #include "../include/dc.h"
 #include "../include/blit.h"
 #include "../include/color.h"
-#include "../include/rtgui_system.h"
 #include "../include/dc_draw.h"
 #include "../include/image_container.h"
 

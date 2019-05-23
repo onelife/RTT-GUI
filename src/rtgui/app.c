@@ -1,5 +1,5 @@
 /*
- * File      : rtgui_app.c
+ * File      : app.c
  * This file is part of RT-Thread GUI Engine
  * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
  *
@@ -21,15 +21,13 @@
  * Date           Author       Notes
  * 2012-01-13     Grissiom     first version(just a prototype of app API)
  * 2012-07-07     Bernard      move the send/recv message to the rtgui_system.c
- * 2019-05-15     onelife      Refactor
+ * 2019-05-15     onelife      refactor and rename to "app.c"
  */
 
-#include "include/rthw.h"
-#include "include/rtthread.h"
+// #include "include/rthw.h"
 
 #include "../include/rtgui.h"
-#include "../include/rtgui_system.h"
-#include "../include/rtgui_app.h"
+#include "../include/app.h"
 #include "../include/widgets/window.h"
 #include "../include/widgets/topwin.h"
 
@@ -105,7 +103,7 @@ static rtgui_app_t *_rtgui_app_create(const char *title, rtgui_evt_hdl_t evt_hdl
 
     do {
         /* create app */
-        app = (rtgui_app_t *)RTGUI_CREATE_INSTANCE(app, evt_hdl);
+        app = (rtgui_app_t *)CREATE_INSTANCE(app, evt_hdl);
         if (!app) {
             LOG_E("create %s err", title);
             break;
@@ -159,7 +157,7 @@ static rtgui_app_t *_rtgui_app_create(const char *title, rtgui_evt_hdl_t evt_hdl
         return app;
     } while (0);
 
-    RTGUI_DELETE_INSTANCE(app);
+    DELETE_INSTANCE(app);
     return RT_NULL;
 }
 
@@ -206,7 +204,7 @@ void rtgui_app_destroy(rtgui_app_t *app) {
 
     app->tid->user_data = 0;
     rt_mb_delete(app->mb);
-    RTGUI_DELETE_INSTANCE(app);
+    DELETE_INSTANCE(app);
 }
 RTM_EXPORT(rtgui_app_destroy);
 
@@ -222,17 +220,17 @@ rtgui_app_t *rtgui_app_self(void) {
 }
 RTM_EXPORT(rtgui_app_self);
 
-void rtgui_app_set_onidle(rtgui_app_t *app, rtgui_idle_hdl_t onidle) {
-    _rtgui_application_check(app);
-    app->on_idle = onidle;
-}
-RTM_EXPORT(rtgui_app_set_onidle);
+// void rtgui_app_set_onidle(rtgui_app_t *app, rtgui_idle_hdl_t onidle) {
+//     _rtgui_application_check(app);
+//     app->on_idle = onidle;
+// }
+// RTM_EXPORT(rtgui_app_set_onidle);
 
-rtgui_idle_hdl_t rtgui_app_get_onidle(rtgui_app_t *app) {
-    _rtgui_application_check(app);
-    return app->on_idle;
-}
-RTM_EXPORT(rtgui_app_get_onidle);
+// rtgui_idle_hdl_t rtgui_app_get_onidle(rtgui_app_t *app) {
+//     _rtgui_application_check(app);
+//     return app->on_idle;
+// }
+// RTM_EXPORT(rtgui_app_get_onidle);
 
 rt_inline rt_bool_t _app_dest_handler(
     rtgui_app_t *app, rtgui_evt_generic_t *evt) {
@@ -275,6 +273,7 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     RT_ASSERT(evt != RT_NULL);
 
     app = TO_APP(obj);
+    LOG_I("app rx %x (%p) from %s", evt->base.type, evt, evt->base.sender->mb->parent.parent.name);
 
     switch (evt->base.type) {
     case RTGUI_EVENT_KBD:
@@ -329,7 +328,7 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     case RTGUI_EVENT_TIMER:
     {
-        struct rtgui_timer *timer = evt->timer.timer;
+        rtgui_timer_t *timer = evt->timer.timer;
         rt_base_t level = rt_hw_interrupt_disable();
         timer->pending_cnt--;
         rt_hw_interrupt_enable(level);
@@ -384,37 +383,25 @@ rt_inline void _rtgui_application_event_loop(rtgui_app_t *app) {
     while (current_cnt <= app->ref_cnt) {
         rt_err_t ret;
 
-
-        LOG_E("app %p", app);
-        LOG_E("current_cnt %d", current_cnt);
-        LOG_E("app->ref_cnt %d", app->ref_cnt);
-        RT_ASSERT(current_cnt == app->ref_cnt);
-        LOG_E("app->on_idle %d", app->on_idle);
-        LOG_E("mb %d", app->mb->entry);
+        if (current_cnt != app->ref_cnt) {
+            LOG_D("%s cnt %d %d", app->name, current_cnt, app->ref_cnt);
+        }
         evt = RT_NULL;
+        LOG_D("%s mb: %d", app->name, app->mb->entry);
 
         if (app->on_idle) {
             ret = rtgui_recv(app, &evt, RT_WAITING_NO);
-            LOG_E("loop1 %p from %s", evt, evt->base.sender->mb->parent.parent.name);
+            LOG_I("loop1 %p from %s", evt, evt->base.sender->mb->parent.parent.name);
             if (RT_EOK == ret) {
                 (void)EVENT_HANDLER(app);
             } else if (-RT_ETIMEOUT == ret) {
                 app->on_idle(TO_OBJECT(app), RT_NULL);
             }
         } else {
-            LOG_E("mb %d", app->mb->entry);
-            LOG_E("app->on_idle2 %d", app->on_idle);
             ret = rtgui_recv(app, &evt, RT_WAITING_FOREVER);
-            LOG_E("rtgui_recv %d", ret);
-            LOG_E("rtgui_recv %d", ret);
-            LOG_E("rtgui_recv %d", ret);
+            LOG_I("loop2 %p from %s", evt, evt->base.sender->mb->parent.parent.name);
             if (RT_EOK == ret) {
-                LOG_E("loop2 %p from %s", evt, evt->base.sender->mb->parent.parent.name);
-                LOG_E("loop2 %p from %s", evt, evt->base.sender->mb->parent.parent.name);
-                LOG_E("loop2 %p from %s", evt, evt->base.sender->mb->parent.parent.name);
-                LOG_E("loop2 %p from %s", evt, evt->base.sender->mb->parent.parent.name);
                 (void)EVENT_HANDLER(app)(app, evt);
-                LOG_E("hdl %p", EVENT_HANDLER(app));
             }
         }
     }

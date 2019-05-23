@@ -24,9 +24,7 @@
  */
 
 #include "../include/rtgui.h"
-#include "../include/rtgui_system.h"
-#include "../include/rtgui_object.h"
-#include "../include/rtgui_app.h"
+#include "../include/app.h"
 #include "../include/driver.h"
 //#include <rtgui/touch.h>
 #include "../include/widgets/window.h"
@@ -50,11 +48,11 @@ static void (*_show_win_hook)(void) = RT_NULL;
 static void (*_act_win_hook)(void) = RT_NULL;
 
 
-void rtgui_server_install_show_win_hook(void (*hk)(void)) {
+void rtgui_server_set_show_win_hook(void (*hk)(void)) {
     _show_win_hook = hk;
 }
 
-void rtgui_server_install_act_win_hook(void (*hk)(void)) {
+void rtgui_server_set_act_win_hook(void (*hk)(void)) {
     _act_win_hook = hk;
 }
 
@@ -219,7 +217,7 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     rt_bool_t done = RT_TRUE;
     (void)obj;
 
-    LOG_D("srv rx %x from %s", evt->base.type, evt->base.sender->mb->parent.parent.name);
+    LOG_I("srv rx %x (%p) from %s", evt->base.type, evt, evt->base.sender->mb->parent.parent.name);
     switch (evt->base.type) {
     case RTGUI_EVENT_APP_CREATE:
     case RTGUI_EVENT_APP_DESTROY:
@@ -310,7 +308,6 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
             /* hide cursor */
             rtgui_mouse_hide_cursor();
         #endif
-            LOG_W("RTGUI_EVENT_UPDATE_BEGIN");
         break;
 
     case RTGUI_EVENT_UPDATE_END:
@@ -337,7 +334,7 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     if (done && evt) {
         rtgui_ack(evt, ack);
-        LOG_W("srv free %p [%d]", evt, ack);
+        LOG_I("srv free %p [%d]", evt, ack);
         rt_mp_free(evt);
         evt = RT_NULL;
     }

@@ -28,15 +28,13 @@
 #include <stdlib.h> /* fir qsort  */
 #include <math.h>   /* for sin/cos etc */
 
+#include "../include/rtgui.h"
 #include "../include/dc.h"
-#include "../include/rtgui_system.h"
-#include "../include/rtgui_server.h"
 #include "../include/widgets/window.h"
 #include "../include/widgets/title.h"
 
 #ifdef RT_USING_ULOG
-# define LOG_LVL                    LOG_LVL_DBG
-// # define LOG_LVL                   LOG_LVL_INFO
+# define LOG_LVL                    RTGUI_LOG_LEVEL
 # define LOG_TAG                    "GUI_DC "
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
@@ -1627,40 +1625,38 @@ RTM_EXPORT(rtgui_dc_get_gc);
 /*
  * get visible status of dc
  */
-rt_bool_t rtgui_dc_get_visible(struct rtgui_dc *dc)
-{
-    rt_bool_t result = RT_TRUE;
+rt_bool_t rtgui_dc_get_visible(struct rtgui_dc *dc) {
+    rt_bool_t ret = RT_TRUE;
 
-    RT_ASSERT(dc != RT_NULL);
+    if (!rtgui_graphic_driver_is_vmode()) {
+        switch (dc->type) {
+        case RTGUI_DC_CLIENT:
+            {
+                rtgui_widget_t *owner = \
+                    rt_container_of(dc, rtgui_widget_t, dc_type);
+                if (!RTGUI_WIDGET_IS_DC_VISIBLE(owner)) {
+                    ret = RT_FALSE;
+                }
+            }
+            break;
 
-    if (rtgui_graphic_driver_is_vmode())
-        return RT_TRUE;
+        case RTGUI_DC_HW:
+            {
+                struct rtgui_dc_hw *dc_hw = (struct rtgui_dc_hw *)dc;
+                if (!RTGUI_WIDGET_IS_DC_VISIBLE(dc_hw->owner)) {
+                    ret = RT_FALSE;
+                }
+            }
+            break;
 
-    switch (dc->type)
-    {
-    case RTGUI_DC_CLIENT:
-    {
-        rtgui_widget_t *owner;
-        /* get owner */
-        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
-        if (!RTGUI_WIDGET_IS_DC_VISIBLE(owner)) result = RT_FALSE;
-        break;
-    }
-    case RTGUI_DC_HW:
-    {
-        struct rtgui_dc_hw *dc_hw;
-
-        dc_hw = (struct rtgui_dc_hw *) dc;
-        if (!RTGUI_WIDGET_IS_DC_VISIBLE(dc_hw->owner)) result = RT_FALSE;
-        break;
-    }
-
-    default:
-        /* use default value */
-        break;
+        default:
+            /* use default value */
+            break;
+        }
     }
 
-    return result;
+    LOG_D("visible %d", ret);
+    return ret;
 }
 RTM_EXPORT(rtgui_dc_get_visible);
 
@@ -1873,8 +1869,10 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
         if (rtgui_region_is_flat(&owner->clip) && \
             rtgui_rect_is_equal(&(owner->extent), &(owner->clip.extents))) {
             dc = rtgui_dc_hw_create(owner);
+            LOG_D("hw dc");
         } else {
             dc = rtgui_dc_client_create(owner);
+            LOG_D("client dc");
         }
 
         if (!dc) {
@@ -1890,7 +1888,7 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
                 rtgui_mouse_hide_cursor();
             #endif
 
-            if (!IS_WIN_TITLE(win)) {
+            if (!IS_TITLE(win)) {
                 /* send draw begin to server */
                 rtgui_evt_generic_t *evt;
                 rt_err_t ret;
@@ -1966,7 +1964,7 @@ void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
             rtgui_graphic_driver_screen_update(
                 rtgui_graphic_driver_get_default(), &(owner->extent));
 
-            if (!IS_WIN_TITLE(win)) {
+            if (!IS_TITLE(win)) {
                 /* send to server for window update */
                 //struct rtgui_evt_update_end eupdate;
                 //RTGUI_EVENT_UPDATE_END_INIT(&(eupdate));

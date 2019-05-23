@@ -73,15 +73,6 @@ extern "C" {
 #define RTGUI_WIDGET_DC_SET_UNVISIBLE(w) (RTGUI_WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_DC_VISIBLE)
 #define RTGUI_WIDGET_DC(w)              ((struct rtgui_dc*)&((w)->dc_type))
 
-RTGUI_CLASS_PROTOTYPE(widget);
-
-/** Gets the type of a widget */
-#define _WIDGET_METADATA                    CLASS_METADATA(widget)
-/** Casts the object to a rtgui_widget */
-#define TO_WIDGET(obj)                      \
-    RTGUI_CAST(obj, _WIDGET_METADATA, rtgui_widget_t)
-/** Check if the object is a rtgui_widget */
-#define IS_WIDGET(obj)                      IS_INSTANCE(obj, _WIDGET_METADATA)
 
 // rtgui_widget_t *rtgui_widget_create(const rtgui_type_t *widget_type);
 void rtgui_widget_destroy(rtgui_widget_t *widget);

@@ -31,16 +31,6 @@
 extern "C" {
 #endif
 
-RTGUI_CLASS_PROTOTYPE(container);
-/** Gets the type of a container */
-#define _CONTAINER_METADATA                 CLASS_METADATA(container)
-/** Casts the object to an rtgui_container */
-#define TO_CONTAINER(obj)                   \
-    RTGUI_CAST(obj, _CONTAINER_METADATA, rtgui_container_t)
-/** Checks if the object is an rtgui_container */
-#define IS_CONTAINER(obj)                   \
-    IS_INSTANCE((obj), _CONTAINER_METADATA)
-
 void rtgui_container_destroy(rtgui_container_t *container);
 
 /* set layout box */

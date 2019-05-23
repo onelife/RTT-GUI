@@ -24,8 +24,8 @@
  * 2013-10-07     Bernard      remove the win_check in update_clip.
  */
 
+#include "../include/rtgui.h"
 #include "../include/dc.h"
-#include "../include/rtgui_app.h"
 #include "../include/widgets/widget.h"
 #include "../include/widgets/window.h"
 #include "../include/widgets/container.h"
@@ -114,7 +114,7 @@ static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     rtgui_widget_t *wgt = TO_WIDGET(obj);
     rt_bool_t done = RT_FALSE;
 
-    LOG_D("wgt rx %x from %s", evt->base.type, evt->base.sender->mb->parent.parent.name);
+    LOG_D("wgt rx %x (%p) from %s", evt->base.type, evt, evt->base.sender->mb->parent.parent.name);
     switch (evt->base.type) {
     case RTGUI_EVENT_SHOW:
         done = rtgui_widget_onshow(obj, evt);
@@ -139,7 +139,7 @@ static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     LOG_D("wgt done %d", done);
     if (done && evt) {
         if (!evt->base.ack) {
-            LOG_W("wgt free %p", evt);
+            LOG_I("wgt free %p", evt);
             rt_mp_free(evt);
             evt = RT_NULL;
         }
@@ -159,7 +159,7 @@ static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
 void rtgui_widget_destroy(rtgui_widget_t *widget)
 {
-    RTGUI_DELETE_INSTANCE(widget);
+    DELETE_INSTANCE(widget);
 }
 RTM_EXPORT(rtgui_widget_destroy);
 
@@ -651,6 +651,7 @@ rt_bool_t rtgui_widget_onshow(rtgui_obj_t *obj,
     }
     if (!(wgt->flag & RTGUI_WIDGET_FLAG_TRANSPARENT)) {
         rtgui_widget_clip_parent(wgt);
+        return RT_TRUE;
     }
     return RT_FALSE;
 }
@@ -745,8 +746,6 @@ void rtgui_widget_update(rtgui_widget_t *wgt) {
             rtgui_event_pool, RT_WAITING_FOREVER);
         if (evt) {
             RTGUI_EVENT_PAINT_INIT(&evt->paint);
-            LOG_E("update %s %s", wgt->_super.cls->name,
-                evt->base.sender->name);
             evt->paint.wid = RT_NULL;
             (void)EVENT_HANDLER(wgt)(wgt, evt);
         } else {

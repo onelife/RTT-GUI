@@ -24,10 +24,10 @@
 /*
  * Cached HZ font engine
  */
+#include "../include/rtgui.h"
 #include "../include/dc.h"
 #include "../include/font.h"
 #include "../include/tree.h"
-#include "../include/rtgui_system.h"
 #include "../include/gb2312.h"
 
 #ifdef GUIENGINE_USING_HZ_FILE

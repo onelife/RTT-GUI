@@ -23,7 +23,7 @@
  * 2019-05-18     onelife      refactor
  */
 
-#include "../include/rtgui_system.h"
+#include "../include/rtgui.h"
 #include "../include/dc.h"
 #include "../include/widgets/box.h"
 
@@ -62,7 +62,7 @@ static void _box_constructor(void *obj) {
 rtgui_box_t *rtgui_box_create(int orientation, int border_size) {
     rtgui_box_t *box;
 
-    box = (rtgui_box_t *)RTGUI_CREATE_INSTANCE(box, RT_NULL);
+    box = (rtgui_box_t *)CREATE_INSTANCE(box, RT_NULL);
     if (box != RT_NULL)
     {
         box->orient = orientation;
@@ -74,7 +74,7 @@ rtgui_box_t *rtgui_box_create(int orientation, int border_size) {
 RTM_EXPORT(rtgui_box_create);
 
 void rtgui_box_destroy(rtgui_box_t *box) {
-    RTGUI_DELETE_INSTANCE(box);
+    DELETE_INSTANCE(box);
 }
 RTM_EXPORT(rtgui_box_destroy);
 
