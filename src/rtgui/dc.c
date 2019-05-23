@@ -1948,6 +1948,7 @@ void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
                 RTGUI_EVENT_WIN_UPDATE_END_INIT(&evt->win_update);
                 evt->win_update.rect = win->drawing_rect;
                 (void)EVENT_HANDLER(win)(win, evt);
+                rt_mp_free(evt);
             } else {
                 LOG_E("get mp err");
             }

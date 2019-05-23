@@ -37,10 +37,11 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "./rtgui_config.h"
+#include "guiconfig.h"
 #include "./types.h"
 #include "./event.h"
 #include "./arch.h"
+#include "./driver.h"
 
 /* Exported defines ----------------------------------------------------------*/
 /* Object */

@@ -231,7 +231,7 @@ static void rtgui_dc_client_draw_hline(struct rtgui_dc *self,
         if (rect->x2 < x2) x2 = rect->x2;
 
         /* draw hline */
-        LOG_E("hw hline1");
+        LOG_D("hw hline1");
         hw_driver->ops->draw_hline(&(owner->gc.foreground), x1, x2, y);
     } else {
         rt_uint32_t num = rtgui_region_num_rects(&(owner->clip));
@@ -250,7 +250,7 @@ static void rtgui_dc_client_draw_hline(struct rtgui_dc *self,
             if (rect->x2 < x2) draw_x2 = rect->x2;
 
             /* draw hline */
-            LOG_E("hw hline2");
+            LOG_D("hw hline2");
             hw_driver->ops->draw_hline(&(owner->gc.foreground),
                 draw_x1, draw_x2, y);
         }

@@ -137,13 +137,6 @@ static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     }
 
     LOG_D("wgt done %d", done);
-    if (done && evt) {
-        if (!evt->base.ack) {
-            LOG_I("wgt free %p", evt);
-            rt_mp_free(evt);
-            evt = RT_NULL;
-        }
-    }
     return done;
 }
 
@@ -612,6 +605,7 @@ void rtgui_widget_show(struct rtgui_widget *wgt) {
     if (evt) {
         RTGUI_EVENT_SHOW_INIT(&evt->base);
         (void)EVENT_HANDLER(wgt)(wgt, evt);
+        rt_mp_free(evt);
     } else {
         LOG_E("get mp err");
         return;
@@ -631,6 +625,7 @@ void rtgui_widget_hide(struct rtgui_widget *wgt) {
     if (evt) {
         RTGUI_EVENT_HIDE_INIT(&evt->base);
         (void)EVENT_HANDLER(wgt)(wgt, evt);
+        rt_mp_free(evt);
     } else {
         LOG_E("get mp err");
         return;
@@ -748,6 +743,7 @@ void rtgui_widget_update(rtgui_widget_t *wgt) {
             RTGUI_EVENT_PAINT_INIT(&evt->paint);
             evt->paint.wid = RT_NULL;
             (void)EVENT_HANDLER(wgt)(wgt, evt);
+            rt_mp_free(evt);
         } else {
             LOG_E("get mp err");
         }

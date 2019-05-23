@@ -30,8 +30,8 @@
 extern "C" {
 #endif
 
-rtgui_app_t *rtgui_srv_create(const char *name, rtgui_evt_hdl_t srv_hdl);
-rtgui_app_t *rtgui_app_create(const char *name, rtgui_evt_hdl_t srv_hdl);
+rtgui_app_t *rtgui_srv_create(const char *name, rtgui_evt_hdl_t evt_hdl);
+rtgui_app_t *rtgui_app_create(const char *name, rtgui_evt_hdl_t evt_hdl);
 void rtgui_app_destroy(rtgui_app_t *app);
 rt_base_t rtgui_app_run(rtgui_app_t *app);
 void rtgui_app_exit(rtgui_app_t *app, rt_uint16_t code);

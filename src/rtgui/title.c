@@ -134,13 +134,6 @@ static rt_bool_t _tile_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     }
 
     LOG_D("title done %d", done);
-    if (done && evt) {
-        if (!evt->base.ack) {
-            LOG_W("title free %p", evt);
-            rt_mp_free(evt);
-            evt = RT_NULL;
-        }
-    }
     return done;
 }
 

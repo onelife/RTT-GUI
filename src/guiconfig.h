@@ -1,5 +1,5 @@
 /*
- * File      : rtgui_config.h
+ * File      : guiconfig.h
  * This file is part of RT-Thread GUI Engine
  * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
  *
@@ -21,19 +21,19 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  * 2010-02-08     Bernard      move some RTGUI options to bsp
+ * 2019-05-23     onelife      rename to "guiconfig.h"
  */
 
-#ifndef __RTGUI_CONFIG_H__
-#define __RTGUI_CONFIG_H__
+#ifndef __GUICONFIG_H__
+#define __GUICONFIG_H__
 
-/* RTGUI options */
+#define CONFIG_GUI_DEVICE_NAME              "ILI9341"
+
 
 #define RTGUI_MQ_SIZE                       (16)
 #define RTGUI_MB_SIZE                       (16)
 #define RTGUI_EVENT_POOL_NUMBER             (32)
 #define RTGUI_EVENT_RESEND_DELAY            (RT_TICK_PER_SECOND / 50)
-
-#define RTGRAPHIC_PIXEL_FORMAT_COLOR        RTGRAPHIC_PIXEL_FORMAT_RGB565
 
 #define RTGUI_LOG_LEVEL                     (LOG_LVL_DBG)
 #define GUIENGIN_USING_CAST_CHECK

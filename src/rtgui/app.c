@@ -162,7 +162,6 @@ static rtgui_app_t *_rtgui_app_create(const char *title, rtgui_evt_hdl_t evt_hdl
 }
 
 rtgui_app_t *rtgui_srv_create(const char *title, rtgui_evt_hdl_t evt_hdl) {
-    LOG_W("srv_hdl %p", evt_hdl);
     return _rtgui_app_create(title, evt_hdl, RT_TRUE);
 }
 
@@ -372,6 +371,11 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
     }
 
+    if (done && evt) {
+        LOG_I("app free %p", evt);
+        rt_mp_free(evt);
+    }
+
     return done;
 }
 
@@ -462,7 +466,7 @@ void rtgui_app_sleep(rtgui_app_t *app, rt_uint32_t ms) {
 
     current_cnt = ++app->ref_cnt;
     while (current_cnt <= app->ref_cnt && (current < timeout)) {
-        rtgui_evt_generic_t *evt = RT_NULL;
+        rtgui_evt_generic_t *evt;
         rt_err_t ret;
 
         RT_ASSERT(current_cnt == app->ref_cnt);

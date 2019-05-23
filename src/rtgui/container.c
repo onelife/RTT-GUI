@@ -236,13 +236,6 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     }
 
     LOG_D("cntr done %d", done);
-    if (done && evt) {
-        if (!evt->base.ack) {
-            LOG_I("cntr free %p", evt);
-            rt_mp_free(evt);
-            evt = RT_NULL;
-        }
-    }
     return done;
 }
 
@@ -283,6 +276,7 @@ void rtgui_container_add_child(rtgui_container_t *cntr,
                 RTGUI_EVENT_UPDATE_TOPLVL_INIT(&evt->update_toplvl);
                 evt->update_toplvl.toplvl = TO_WIDGET(cntr)->toplevel;
                 (void)EVENT_HANDLER(cntr)(cntr, evt);
+                rt_mp_free(evt);
             } else {
                 LOG_E("get mp err");
                 return;

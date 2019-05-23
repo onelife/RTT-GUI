@@ -163,6 +163,7 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
             evt->resize.w = rect->x2 - rect->x1;
             evt->resize.h = rect->y2 - rect->y1;
             (void)EVENT_HANDLER(wgt)(wgt, evt);
+            rt_mp_free(evt);
         } else {
             LOG_E("get mp err");
             return;
@@ -259,6 +260,7 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
             evt->resize.w = rect->x2 - rect->x1;
             evt->resize.h = rect->y2 - rect->y1;
             (void)EVENT_HANDLER(wgt)(wgt, evt);
+            rt_mp_free(evt);
         } else {
             LOG_E("get mp err");
             return;

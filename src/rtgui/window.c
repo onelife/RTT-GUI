@@ -243,6 +243,7 @@ rt_err_t rtgui_win_fini(rtgui_win_t* win) {
                 RTGUI_EVENT_WIN_CLOSE_INIT(&evt->win_close);
                 evt->win_close.wid = win;
                 (void)_rtgui_win_deal_close(win, evt, RT_TRUE);
+                rt_mp_free(evt);
             } else {
                 LOG_E("get mp err");
                 ret = -RT_ENOMEM;
@@ -327,11 +328,7 @@ static rt_bool_t _rtgui_win_deal_close(rtgui_win_t *win,
         }
     } while (0);
 
-    if (!evt->base.ack) {
-        LOG_I("win close free %p", evt);
-        rt_mp_free(evt);
-    }
-
+    LOG_D("win close done %d", done);
     return done;
 }
 
@@ -347,6 +344,7 @@ void rtgui_win_destroy(rtgui_win_t *win) {
             RTGUI_EVENT_WIN_CLOSE_INIT(&evt->win_close);
             evt->win_close.wid = win;
             (void)_rtgui_win_deal_close(win, evt, RT_TRUE);
+            rt_mp_free(evt);
             if (win->style & RTGUI_WIN_STYLE_DESTROY_ON_CLOSE) return;
         } else {
             LOG_E("get mp err");
@@ -368,6 +366,7 @@ RTM_EXPORT(rtgui_win_destroy);
 /* send a close event to myself to get a consistent behavior */
 rt_bool_t rtgui_win_close(rtgui_win_t *win) {
     rtgui_evt_generic_t *evt;
+    rt_bool_t done = RT_FALSE;
 
     /* send RTGUI_EVENT_WIN_CLOSE */
     evt = (rtgui_evt_generic_t *)rt_mp_alloc(
@@ -375,11 +374,13 @@ rt_bool_t rtgui_win_close(rtgui_win_t *win) {
     if (evt) {
         RTGUI_EVENT_WIN_CLOSE_INIT(&evt->win_close);
         evt->win_close.wid = win;
-        return _rtgui_win_deal_close(win, evt, RT_TRUE);
+        done = _rtgui_win_deal_close(win, evt, RT_TRUE);
+        rt_mp_free(evt);
     } else {
         LOG_E("get mp err");
-        return RT_FALSE;
     }
+
+    return done;
 }
 RTM_EXPORT(rtgui_win_close);
 
@@ -619,6 +620,8 @@ void rtgui_win_move(rtgui_win_t *win, int x, int y) {
 RTM_EXPORT(rtgui_win_move);
 
 static rt_bool_t rtgui_win_ondraw(rtgui_win_t *win) {
+    rt_bool_t done = RT_FALSE;
+
     if (SUPER_HANDLER(win)) {
         rtgui_evt_generic_t *evt;
 
@@ -628,13 +631,14 @@ static rt_bool_t rtgui_win_ondraw(rtgui_win_t *win) {
         if (evt) {
             RTGUI_EVENT_PAINT_INIT(&evt->paint);
             evt->paint.wid = RT_NULL;
-            return SUPER_HANDLER(win)(win, evt);
+            done = SUPER_HANDLER(win)(win, evt);
+            rt_mp_free(evt);
         } else {
             LOG_E("get mp err");
         }
     }
 
-    return RT_FALSE;
+    return done;
 }
 
 void rtgui_win_update_clip(rtgui_win_t *win) {
@@ -720,7 +724,6 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     case RTGUI_EVENT_WIN_CLOSE:
         (void)_rtgui_win_deal_close(win, evt, RT_FALSE);
-        evt = RT_NULL;
         /* do not broadcast WIN_CLOSE event */
         break;
 
@@ -833,13 +836,6 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     }
 
     LOG_D("win done %d", done);
-    if (done && evt) {
-        if (!evt->base.ack) {
-            LOG_I("win free %p", evt);
-            rt_mp_free(evt);
-            evt = RT_NULL;
-        }
-    }
     return done;
 }
 

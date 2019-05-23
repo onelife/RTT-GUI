@@ -62,12 +62,16 @@ static rtgui_rect_t _mainwin_rect;
 static struct rt_mutex _screen_lock;
 
 
-void rtgui_system_server_init(void) {
-        RT_ASSERT(!rt_mutex_init(&_screen_lock, "screen", RT_IPC_FLAG_FIFO));
-        RT_ASSERT(!rt_mb_init(
-            &ack_sync, "ack",
-            ack_pool, SYNC_ACK_NUMBER,
-            RT_IPC_FLAG_FIFO));
+rt_err_t rtgui_system_server_init(void) {
+    rt_err_t ret;
+
+    do {
+        ret = rt_mutex_init(&_screen_lock, "screen", RT_IPC_FLAG_FIFO);
+        if (RT_EOK != ret) break;
+        ret = rt_mb_init(&ack_sync, "ack",ack_pool, SYNC_ACK_NUMBER,
+            RT_IPC_FLAG_FIFO);
+        if (RT_EOK != ret) break;
+
         /* init image */
         rtgui_system_image_init();
         /* init font */
@@ -78,6 +82,9 @@ void rtgui_system_server_init(void) {
         /* use driver rect for main window */
         rtgui_graphic_driver_get_rect(rtgui_graphic_driver_get_default(),
             &_mainwin_rect);
+    } while (0);
+
+    return ret;
 }
 INIT_ENV_EXPORT(rtgui_system_server_init);
 

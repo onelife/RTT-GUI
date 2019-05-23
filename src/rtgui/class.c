@@ -105,7 +105,7 @@ void *rtgui_create_instance(const rtgui_type_t *cls, rtgui_evt_hdl_t evt_hdl) {
     _new->cls = cls;
     _construct_instance(cls, _new);
     _new->evt_hdl = evt_hdl;
-    LOG_D("create ins %s @p", cls->name, _new);
+    LOG_D("create ins %s @%p", cls->name, _new);
 
     #ifdef RTGUI_OBJECT_TRACE
         obj_info.objs_num++;

@@ -336,7 +336,6 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         rtgui_ack(evt, ack);
         LOG_I("srv free %p [%d]", evt, ack);
         rt_mp_free(evt);
-        evt = RT_NULL;
     }
     return done;    // who care server handler return value?
 }
