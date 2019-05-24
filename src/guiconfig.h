@@ -39,6 +39,11 @@
 #define GUIENGIN_USING_CAST_CHECK
 // #define RTGUI_OBJECT_TRACE
 
+// #define GUIENGINE_USING_FONT12
+#define GUIENGINE_USING_FONT16
+// #define GUIENGINE_USING_FONTHZ
+// #define RTGUI_USING_HZ_BMP // todo(onelife) not working
+
 #ifndef GUIENGINE_SVR_THREAD_PRIORITY
 # define GUIENGINE_SVR_THREAD_PRIORITY      (20)
 #endif

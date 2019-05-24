@@ -97,7 +97,7 @@ rtgui_region_status_t rtgui_region_validate(rtgui_region_t *badreg, int *pOverla
 void rtgui_region_reset(rtgui_region_t *region, rtgui_rect_t *rect);
 void rtgui_region_empty(rtgui_region_t *region);
 void rtgui_region_dump(rtgui_region_t *region);
-void rtgui_region_draw_clip(rtgui_region_t *region, struct rtgui_dc *dc);
+void rtgui_region_draw_clip(rtgui_region_t *region, rtgui_dc_t *dc);
 rt_bool_t rtgui_region_is_flat(rtgui_region_t *region);
 
 /* rect functions */

@@ -79,7 +79,7 @@ void rtgui_box_destroy(rtgui_box_t *box) {
 RTM_EXPORT(rtgui_box_destroy);
 
 static void rtgui_box_layout_vertical(rtgui_box_t *box,
-    struct rtgui_rect *extent) {
+    rtgui_rect_t *extent) {
     rt_slist_t *node;
     rt_int32_t box_width;
     rt_int32_t space_count;
@@ -116,7 +116,7 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
 
     /* layout each widget */
     rt_slist_for_each(node, &(box->container->children)) {
-        struct rtgui_rect *rect;
+        rtgui_rect_t *rect;
         rtgui_widget_t *wgt = \
             rt_slist_entry(node, struct rtgui_widget, sibling);
 
@@ -156,7 +156,7 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
         evt = (rtgui_evt_generic_t *)rt_mp_alloc(
             rtgui_event_pool, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_RESIZE_INIT(&evt->resize);
+            RTGUI_EVENT_INIT(evt, RESIZE);
             /* process resize event */
             evt->resize.x = rect->x1;
             evt->resize.y = rect->y1;
@@ -175,7 +175,7 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
 }
 
 static void rtgui_box_layout_horizontal(rtgui_box_t *box,
-    struct rtgui_rect *extent) {
+    rtgui_rect_t *extent) {
     rt_slist_t *node;
     rt_int32_t box_height;
     rt_int32_t space_count;
@@ -253,7 +253,7 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
         evt = (rtgui_evt_generic_t *)rt_mp_alloc(
             rtgui_event_pool, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_RESIZE_INIT(&evt->resize);
+            RTGUI_EVENT_INIT(evt, RESIZE);
             /* process resize event */
             evt->resize.x = rect->x1;
             evt->resize.y = rect->y1;
@@ -272,7 +272,7 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
 }
 
 void rtgui_box_layout(rtgui_box_t *box) {
-    struct rtgui_rect extent;
+    rtgui_rect_t extent;
     RT_ASSERT(box != RT_NULL);
 
     if (box->container == RT_NULL) return;
@@ -291,7 +291,7 @@ void rtgui_box_layout(rtgui_box_t *box) {
 }
 RTM_EXPORT(rtgui_box_layout);
 
-void rtgui_box_layout_rect(rtgui_box_t *box, struct rtgui_rect *rect)
+void rtgui_box_layout_rect(rtgui_box_t *box, rtgui_rect_t *rect)
 {
     RT_ASSERT(box != RT_NULL);
 

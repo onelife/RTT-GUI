@@ -245,7 +245,7 @@ rtgui_blit_line_func rtgui_blit_line_get(int dst_bpp, int src_bpp);
 rtgui_blit_line_func rtgui_blit_line_get_inv(int dst_bpp, int src_bpp);
 
 void rtgui_blit(struct rtgui_blit_info * info);
-void rtgui_image_info_blit(struct rtgui_image_info* image, struct rtgui_dc* dc, struct rtgui_rect *dc_rect);
+void rtgui_image_info_blit(struct rtgui_image_info* image, rtgui_dc_t* dc, rtgui_rect_t *dc_rect);
 
 #ifdef __cplusplus
 }

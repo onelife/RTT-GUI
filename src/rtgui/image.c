@@ -24,13 +24,15 @@
  * 2012-08-29     amsl         add Image zoom interface.
  */
 
-#include "../include/rtgui.h"
-#include "../include/image.h"
-#include "../include/image_hdc.h"
-#include "../include/image_container.h"
+#include "include/rtgui.h"
+#include "include/image.h"
+#include "include/image_hdc.h"
+#include "include/image_container.h"
 
 #ifdef _WIN32
-#define strncasecmp  strnicmp
+# define strncasecmp  strnicmp
+#else
+# include <string.h>    // strncasecmp
 #endif
 
 #ifdef GUIENGINE_IMAGE_XPM
@@ -88,7 +90,7 @@ static struct rtgui_image_engine *rtgui_image_get_engine(const char *type)
     {
         engine = rt_slist_entry(node, struct rtgui_image_engine, list);
 
-        if (strncasecmp(engine->name, type, strlen(engine->name)) == 0)
+        if (strncasecmp(engine->name, type, rt_strlen(engine->name)) == 0)
             return engine;
     }
 
@@ -117,7 +119,7 @@ struct rtgui_image_engine *rtgui_image_get_engine_by_filename(const char *fn)
     rt_slist_for_each(node, &_rtgui_system_image_list)
     {
         engine = rt_slist_entry(node, struct rtgui_image_engine, list);
-        if (strncasecmp(engine->name, ext, strlen(engine->name)) == 0)
+        if (strncasecmp(engine->name, ext, rt_strlen(engine->name)) == 0)
             return engine;
     }
 
@@ -301,9 +303,9 @@ void rtgui_image_register_engine(struct rtgui_image_engine *engine)
 }
 RTM_EXPORT(rtgui_image_register_engine);
 
-void rtgui_image_blit(struct rtgui_image *image, struct rtgui_dc *dc, struct rtgui_rect *rect)
+void rtgui_image_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
-    struct rtgui_rect r;
+    rtgui_rect_t r;
     RT_ASSERT(dc    != RT_NULL);
 
     if (rtgui_dc_get_visible(dc) != RT_TRUE) return;
@@ -352,7 +354,7 @@ struct rtgui_image_palette *rtgui_image_palette_create(rt_uint32_t ncolors)
 }
 RTM_EXPORT(rtgui_image_palette_create);
 
-void rtgui_image_get_rect(struct rtgui_image *image, struct rtgui_rect *rect)
+void rtgui_image_get_rect(struct rtgui_image *image, rtgui_rect_t *rect)
 {
     RT_ASSERT(image != RT_NULL);
     RT_ASSERT(rect  != RT_NULL);

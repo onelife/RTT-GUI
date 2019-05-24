@@ -97,14 +97,14 @@ rt_bool_t rtgui_graphic_driver_is_vmode(void) {
 }
 RTM_EXPORT(rtgui_graphic_driver_is_vmode);
 
-struct rtgui_dc*
+rtgui_dc_t*
 rtgui_graphic_driver_get_rect_buffer(const struct rtgui_graphic_driver *drv,
-                                     struct rtgui_rect *r)
+                                     rtgui_rect_t *r)
 {
     int w, h;
     struct rtgui_dc_buffer *buffer;
     rt_uint8_t *pixel, *dst;
-    struct rtgui_rect src, rect;
+    rtgui_rect_t src, rect;
 
     /* use virtual framebuffer in default */
     if (drv == RT_NULL) drv = _current_driver;
@@ -128,7 +128,7 @@ rtgui_graphic_driver_get_rect_buffer(const struct rtgui_graphic_driver *drv,
     /* create buffer DC */
     buffer = (struct rtgui_dc_buffer*)rtgui_dc_buffer_create_pixformat(drv->pixel_format, w, h);
     if (buffer == RT_NULL)
-        return (struct rtgui_dc*)buffer;
+        return (rtgui_dc_t*)buffer;
 
     /* get source pixel */
     pixel = (rt_uint8_t*)drv->framebuffer
@@ -145,7 +145,7 @@ rtgui_graphic_driver_get_rect_buffer(const struct rtgui_graphic_driver *drv,
         pixel += drv->pitch;
     }
 
-    return (struct rtgui_dc*)buffer;
+    return (rtgui_dc_t*)buffer;
 }
 RTM_EXPORT(rtgui_graphic_driver_get_rect_buffer);
 #else /* GUIENGIN_USING_VFRAMEBUFFER */
@@ -792,12 +792,9 @@ static void _pixel_rgb565_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
     gfx_device_ops->draw_vline(&pixel, x, y1, y2);
 }
 
-static void _pixel_rgb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2)
-{
-    rt_uint32_t pixel;
-
-    pixel = rtgui_color_to_888(*c);
-    gfx_device_ops->draw_vline((char *)&pixel, x, y1, y2);
+static void _pixel_rgb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
+    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_888(*c);
+    gfx_device_ops->draw_vline(&pixel, x, y1, y2);
 }
 
 static void _pixel_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y) {

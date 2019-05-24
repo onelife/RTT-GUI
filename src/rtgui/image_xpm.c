@@ -32,7 +32,7 @@
 static rt_bool_t rtgui_image_xpm_check(struct rtgui_filerw *file);
 static rt_bool_t rtgui_image_xpm_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load);
 static void rtgui_image_xpm_unload(struct rtgui_image *image);
-static void rtgui_image_xpm_blit(struct rtgui_image *image, struct rtgui_dc *dc, struct rtgui_rect *rect);
+static void rtgui_image_xpm_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
 struct rtgui_image_engine rtgui_image_xpm_engine =
 {
@@ -465,19 +465,19 @@ static rt_bool_t rtgui_image_xpm_check(struct rtgui_filerw *file)
 #endif
 }
 
-static int _str2int(const char *str, int strlen, int *p)
+static int _str2int(const char *str, int rt_strlen, int *p)
 {
     int i;
 
     *p = 0;
     /* Skip the leading chars. */
-    for (i = 0; i < strlen; i++)
+    for (i = 0; i < rt_strlen; i++)
     {
         if ('0' <= str[i] && str[i] <= '9')
             break;
     }
 
-    for (; i < strlen; i++)
+    for (; i < rt_strlen; i++)
     {
         if (str[i] < '0' || '9' < str[i])
             break;
@@ -611,7 +611,7 @@ static void rtgui_image_xpm_unload(struct rtgui_image *image)
     }
 }
 
-static void rtgui_image_xpm_blit(struct rtgui_image *image, struct rtgui_dc *dc, struct rtgui_rect *rect)
+static void rtgui_image_xpm_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
     rt_uint16_t x, y;
     rtgui_color_t *ptr;

@@ -21,10 +21,10 @@
  * Date           Author       Notes
  * 2010-04-10     Bernard      first version
  */
-
 #ifndef __FONT_FNT_H__
 #define __FONT_FNT_H__
 
+/* Includes ------------------------------------------------------------------*/
 #include "./font.h"
 #include "./dc.h"
 
@@ -32,9 +32,10 @@
 extern "C" {
 #endif
 
+/* Exported defines ----------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
 /* fnt font header */
-struct fnt_header
-{
+struct fnt_header {
     rt_uint8_t version[4];
     rt_uint16_t max_width;
     rt_uint16_t height;
@@ -48,22 +49,17 @@ struct fnt_header
     rt_uint32_t noffset;
     rt_uint32_t nwidth;
 };
+
 typedef rt_uint8_t MWIMAGEBITS;
 
-struct fnt_font
-{
+struct fnt_font {
     struct fnt_header header;
-
     const MWIMAGEBITS *bits;   /* nbits */
     const rt_uint16_t *offset; /* noffset */
     const rt_uint8_t  *width;  /* nwidth */
 };
-extern const struct rtgui_font_engine fnt_font_engine;
 
-struct rtgui_font *fnt_font_create(const char* filename, const char* font_family);
-
-struct rtgui_fnt_header
-{
+struct rtgui_fnt_header {
     rt_uint32_t p;
     rt_uint32_t len1;
     rt_uint32_t len2;
@@ -74,13 +70,18 @@ struct rtgui_fnt_header
     rt_uint16_t crc16;
 };
 
-struct rtgui_font *rtgui_fnt_font_create(const char* filename, const char* font_family);
-struct rtgui_font *rtgui_hz_fnt_font_create(const char* filename, const char* font_family, rt_uint8_t font_size);
-struct rtgui_font *rtgui_asc_fnt_font_create(const char* filename, const char* font_family, rt_uint8_t font_size);
+/* Exported constants --------------------------------------------------------*/
+extern const rtgui_font_engine_t fnt_font_engine;
+
+/* Exported functions ------------------------------------------------------- */
+rtgui_font_t *fnt_font_create(const char* filename, const char* font_family);
+
+rtgui_font_t *rtgui_fnt_font_create(const char* filename, const char* font_family);
+rtgui_font_t *rtgui_hz_fnt_font_create(const char* filename, const char* font_family, rt_uint8_t font_size);
+rtgui_font_t *rtgui_asc_fnt_font_create(const char* filename, const char* font_family, rt_uint8_t font_size);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
-
+#endif /* __FONT_FNT_H__ */

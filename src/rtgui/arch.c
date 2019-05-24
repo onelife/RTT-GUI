@@ -55,8 +55,8 @@ const rtgui_color_t default_foreground = RTGUI_RGB(0x00, 0x00, 0x00);
 const rtgui_color_t default_background = RTGUI_RGB(212, 208, 200);
 
 // TODO: remove extern
-extern struct rtgui_font rtgui_font_asc16;
-extern struct rtgui_font rtgui_font_asc12;
+extern rtgui_font_t rtgui_font_asc16;
+extern rtgui_font_t rtgui_font_asc12;
 
 static rtgui_rect_t _mainwin_rect;
 static struct rt_mutex _screen_lock;
@@ -102,12 +102,9 @@ static void rtgui_time_out(void *param) {
     /* send RTGUI_EVENT_TIMER */
     evt = (rtgui_evt_generic_t *)rt_mp_alloc(rtgui_event_pool, RT_WAITING_NO);
     if (evt) {
-        /*  Note
-            event_timer must not init as RTGUI_EVENT_TIMER_INIT, due to
-            not in thread context
-        */
-        evt->timer._super.type = RTGUI_EVENT_TIMER;
-        evt->timer._super.sender = RT_NULL;
+        /* not in thread context */
+        evt->timer.base.type = RTGUI_EVENT_TIMER;
+        evt->timer.base.sender = RT_NULL;
         evt->timer.timer = timer;
         ret = rtgui_send(timer->app, evt, RT_WAITING_NO);
         if (ret) {
@@ -605,17 +602,17 @@ rt_err_t rtgui_recv_filter(rtgui_app_t *app, rt_uint32_t type,
 }
 RTM_EXPORT(rtgui_recv_filter);
 
-void rtgui_set_mainwin_rect(struct rtgui_rect *rect) {
+void rtgui_set_mainwin_rect(rtgui_rect_t *rect) {
     _mainwin_rect = *rect;
 }
 RTM_EXPORT(rtgui_set_mainwin_rect);
 
-void rtgui_get_mainwin_rect(struct rtgui_rect *rect) {
+void rtgui_get_mainwin_rect(rtgui_rect_t *rect) {
     *rect = _mainwin_rect;
 }
 RTM_EXPORT(rtgui_get_mainwin_rect);
 
-void rtgui_get_screen_rect(struct rtgui_rect *rect) {
+void rtgui_get_screen_rect(rtgui_rect_t *rect) {
     rtgui_graphic_driver_get_rect(rtgui_graphic_driver_get_default(), rect);
 }
 RTM_EXPORT(rtgui_get_screen_rect);

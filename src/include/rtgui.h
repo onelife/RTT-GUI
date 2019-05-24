@@ -104,12 +104,12 @@ CLASS_PROTOTYPE(win);
 CLASS_PROTOTYPE(title);
 
 /* Exported functions ------------------------------------------------------- */
-void *rtgui_create_instance(const rtgui_type_t *cls, rtgui_evt_hdl_t evt_hdl);
+void *rtgui_create_instance(const rtgui_class_t *cls, rtgui_evt_hdl_t evt_hdl);
 void rtgui_delete_instance(void *_obj);
-rt_bool_t rtgui_is_subclass_of(const rtgui_type_t *cls,
-    const rtgui_type_t *_super);
-const rtgui_type_t *rtgui_class_of(void *_obj);
-void *rtgui_object_cast_check(void *_obj, const rtgui_type_t *cls,
+rt_bool_t rtgui_is_subclass_of(const rtgui_class_t *cls,
+    const rtgui_class_t *_super);
+const rtgui_class_t *rtgui_class_of(void *_obj);
+void *rtgui_object_cast_check(void *_obj, const rtgui_class_t *cls,
     const char *func, int line);
 
 /* RTGUI server definitions */

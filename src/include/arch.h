@@ -60,9 +60,9 @@ void *rtgui_realloc(void *ptr, rt_size_t size);
 #endif
 
 rtgui_app_t* rtgui_get_server(void);
-void rtgui_set_mainwin_rect(struct rtgui_rect *rect);
-void rtgui_get_mainwin_rect(struct rtgui_rect *rect);
-void rtgui_get_screen_rect(struct rtgui_rect *rect);
+void rtgui_set_mainwin_rect(rtgui_rect_t *rect);
+void rtgui_get_mainwin_rect(rtgui_rect_t *rect);
+void rtgui_get_screen_rect(rtgui_rect_t *rect);
 
 void rtgui_screen_lock(rt_int32_t timeout);
 void rtgui_screen_unlock(void);

@@ -59,13 +59,13 @@ RTGUI_CLASS(
 RTM_EXPORT(_rtgui_object);
 
 /* Private functions ---------------------------------------------------------*/
-static void _construct_instance(const rtgui_type_t *cls, void *obj) {
+static void _construct_instance(const rtgui_class_t *cls, void *obj) {
     /* call super constructor first */
     if (cls->_super) _construct_instance(cls->_super, obj);
     if (cls->constructor) cls->constructor(obj);
 }
 
-static void _deconstruct_instance(const rtgui_type_t *cls, void *obj) {
+static void _deconstruct_instance(const rtgui_class_t *cls, void *obj) {
     /* call self destructor first */
     if (cls->destructor) cls->destructor(obj);
     if (cls->_super) _deconstruct_instance(cls->_super, obj);
@@ -93,7 +93,7 @@ static void _object_destructor(void *_obj) {
 }
 
 /* Public functions ----------------------------------------------------------*/
-void *rtgui_create_instance(const rtgui_type_t *cls, rtgui_evt_hdl_t evt_hdl) {
+void *rtgui_create_instance(const rtgui_class_t *cls, rtgui_evt_hdl_t evt_hdl) {
     rtgui_obj_t *_new;
 
     _new = rtgui_malloc(cls->size);
@@ -132,8 +132,8 @@ void rtgui_delete_instance(void *_obj) {
     rtgui_free(obj);
 }
 
-rt_bool_t rtgui_is_subclass_of(const rtgui_type_t *cls,
-    const rtgui_type_t *_super) {
+rt_bool_t rtgui_is_subclass_of(const rtgui_class_t *cls,
+    const rtgui_class_t *_super) {
     while (cls) {
         if (cls == _super) return RT_TRUE;
         cls = cls->_super;
@@ -141,7 +141,7 @@ rt_bool_t rtgui_is_subclass_of(const rtgui_type_t *cls,
     return RT_FALSE;
 }
 
-const rtgui_type_t *rtgui_class_of(void *_obj) {
+const rtgui_class_t *rtgui_class_of(void *_obj) {
     rtgui_obj_t *obj = _obj;
     return obj->cls;
 }
@@ -156,7 +156,7 @@ const rtgui_type_t *rtgui_class_of(void *_obj) {
  * @param cls the cls to which we cast the object
  * @return Returns the object
  */
-void *rtgui_object_cast_check(void *_obj, const rtgui_type_t *cls,
+void *rtgui_object_cast_check(void *_obj, const rtgui_class_t *cls,
     const char *func, int line) {
     rtgui_obj_t *obj = _obj;
 

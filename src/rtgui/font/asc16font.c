@@ -21,11 +21,16 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
-#include "../include/font.h"
+/* Includes ------------------------------------------------------------------*/
+#include "include/font.h"
 
 #ifdef GUIENGINE_USING_FONT16
-const unsigned char asc16_font[] =
-{
+
+/* Private function prototype ------------------------------------------------*/
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+static const unsigned char _asc16_font[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  
     0x00, 0x00, 0x7e, 0x81, 0xa5, 0x81, 0x81, 0xbd, 0x99, 0x81, 0x81, 0x7e, 0x00, 0x00, 0x00, 0x00,  
     0x00, 0x00, 0x7e, 0xff, 0xdb, 0xff, 0xff, 0xc3, 0xe7, 0xff, 0xff, 0x7e, 0x00, 0x00, 0x00, 0x00,  
@@ -284,9 +289,8 @@ const unsigned char asc16_font[] =
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  
 };
 
-struct rtgui_font_bitmap asc16 =
-{
-    (const rt_uint8_t *)asc16_font,     /* bmp */
+static rtgui_font_bitmap_t _asc16 = {
+    (const rt_uint8_t *)_asc16_font,    /* bmp */
     RT_NULL,            /* each character width, NULL for fixed font */
     RT_NULL,            /* offset for each character */
     8,                  /* width */
@@ -295,13 +299,16 @@ struct rtgui_font_bitmap asc16 =
     255                 /* last char */
 };
 
-struct rtgui_font rtgui_font_asc16 =
-{
+rtgui_font_t rtgui_font_asc16 = {
     "asc",              /* family */
     16,                 /* height */
     1,                  /* refer count */
     &bmp_font_engine,   /* font engine */
-    &asc16,             /* font private data */
+    (void *)&_asc16,    /* font private data */
+    { RT_NULL },
 };
 
-#endif
+/* Private functions ---------------------------------------------------------*/
+/* Public functions ----------------------------------------------------------*/
+
+#endif /* GUIENGINE_USING_FONT16 */

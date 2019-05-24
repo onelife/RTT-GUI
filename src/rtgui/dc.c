@@ -46,7 +46,7 @@ static int _int_compare(const void *a, const void *b) {
     return (*(const int *) a) - (*(const int *) b);
 }
 
-void rtgui_dc_destory(struct rtgui_dc *dc)
+void rtgui_dc_destory(rtgui_dc_t *dc)
 {
     if (dc == RT_NULL) return;
 
@@ -55,7 +55,7 @@ void rtgui_dc_destory(struct rtgui_dc *dc)
 }
 RTM_EXPORT(rtgui_dc_destory);
 
-void rtgui_dc_draw_line(struct rtgui_dc *dc, int x1, int y1, int x2, int y2)
+void rtgui_dc_draw_line(rtgui_dc_t *dc, int x1, int y1, int x2, int y2)
 {
     if (dc == RT_NULL) return;
 
@@ -123,7 +123,7 @@ void rtgui_dc_draw_line(struct rtgui_dc *dc, int x1, int y1, int x2, int y2)
 }
 RTM_EXPORT(rtgui_dc_draw_line);
 
-void rtgui_dc_draw_horizontal_line(struct rtgui_dc *dc, int x1, int x2, int y)
+void rtgui_dc_draw_horizontal_line(rtgui_dc_t *dc, int x1, int x2, int y)
 {
     rtgui_color_t color;
 
@@ -145,7 +145,7 @@ void rtgui_dc_draw_horizontal_line(struct rtgui_dc *dc, int x1, int x2, int y)
 }
 RTM_EXPORT(rtgui_dc_draw_horizontal_line);
 
-void rtgui_dc_draw_vertical_line(struct rtgui_dc *dc, int x, int y1, int y2)
+void rtgui_dc_draw_vertical_line(rtgui_dc_t *dc, int x, int y1, int y2)
 {
     rtgui_color_t color;
 
@@ -167,7 +167,7 @@ void rtgui_dc_draw_vertical_line(struct rtgui_dc *dc, int x, int y1, int y2)
 }
 RTM_EXPORT(rtgui_dc_draw_vertical_line);
 
-void rtgui_dc_draw_rect(struct rtgui_dc *dc, struct rtgui_rect *rect)
+void rtgui_dc_draw_rect(rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
     rtgui_dc_draw_hline(dc, rect->x1, rect->x2, rect->y1);
     rtgui_dc_draw_hline(dc, rect->x1, rect->x2, rect->y2 - 1);
@@ -177,7 +177,7 @@ void rtgui_dc_draw_rect(struct rtgui_dc *dc, struct rtgui_rect *rect)
 }
 RTM_EXPORT(rtgui_dc_draw_rect);
 
-void rtgui_dc_fill_rect_forecolor(struct rtgui_dc *dc, struct rtgui_rect *rect)
+void rtgui_dc_fill_rect_forecolor(rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
     rtgui_color_t save_color;
     /*save the background color of dc*/
@@ -190,7 +190,7 @@ void rtgui_dc_fill_rect_forecolor(struct rtgui_dc *dc, struct rtgui_rect *rect)
 }
 RTM_EXPORT(rtgui_dc_fill_rect_forecolor);
 
-void rtgui_dc_draw_round_rect(struct rtgui_dc *dc, struct rtgui_rect *rect, int r)
+void rtgui_dc_draw_round_rect(rtgui_dc_t *dc, rtgui_rect_t *rect, int r)
 {
     RT_ASSERT(((rect->x2 - rect->x1) / 2 >= r) && ((rect->y2 - rect->y1) / 2 >= r));
 
@@ -220,9 +220,9 @@ void rtgui_dc_draw_round_rect(struct rtgui_dc *dc, struct rtgui_rect *rect, int 
 }
 RTM_EXPORT(rtgui_dc_draw_round_rect);
 
-void rtgui_dc_fill_round_rect(struct rtgui_dc *dc, struct rtgui_rect *rect, int r)
+void rtgui_dc_fill_round_rect(rtgui_dc_t *dc, rtgui_rect_t *rect, int r)
 {
-    struct rtgui_rect rect_temp;
+    rtgui_rect_t rect_temp;
 
     RT_ASSERT(((rect->x2 - rect->x1) / 2 >= r) && ((rect->y2 - rect->y1) / 2 >= r));
 
@@ -254,7 +254,7 @@ void rtgui_dc_fill_round_rect(struct rtgui_dc *dc, struct rtgui_rect *rect, int 
 }
 RTM_EXPORT(rtgui_dc_fill_round_rect);
 
-void rtgui_dc_draw_shaded_rect(struct rtgui_dc *dc, rtgui_rect_t *rect,
+void rtgui_dc_draw_shaded_rect(rtgui_dc_t *dc, rtgui_rect_t *rect,
                                rtgui_color_t c1, rtgui_color_t c2)
 {
     RT_ASSERT(dc != RT_NULL);
@@ -269,7 +269,7 @@ void rtgui_dc_draw_shaded_rect(struct rtgui_dc *dc, rtgui_rect_t *rect,
 }
 RTM_EXPORT(rtgui_dc_draw_shaded_rect);
 
-void rtgui_dc_fill_gradient_rectv(struct rtgui_dc *dc, rtgui_rect_t *rect,
+void rtgui_dc_fill_gradient_rectv(rtgui_dc_t *dc, rtgui_rect_t *rect,
                                   rtgui_color_t c1, rtgui_color_t c2)
 {
     int y, step;
@@ -294,7 +294,7 @@ void rtgui_dc_fill_gradient_rectv(struct rtgui_dc *dc, rtgui_rect_t *rect,
 }
 RTM_EXPORT(rtgui_dc_fill_gradient_rectv);
 
-void rtgui_dc_draw_focus_rect(struct rtgui_dc *dc, rtgui_rect_t *rect)
+void rtgui_dc_draw_focus_rect(rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
     int x, y;
 
@@ -312,29 +312,26 @@ void rtgui_dc_draw_focus_rect(struct rtgui_dc *dc, rtgui_rect_t *rect)
 }
 RTM_EXPORT(rtgui_dc_draw_focus_rect);
 
-void rtgui_dc_draw_text(struct rtgui_dc *dc, const char *text, struct rtgui_rect *rect)
-{
+void rtgui_dc_draw_text(rtgui_dc_t *dc, const char *text, rtgui_rect_t *rect) {
     rt_uint32_t len;
-    struct rtgui_font *font;
+    rtgui_font_t *font;
 
     RT_ASSERT(dc != RT_NULL);
 
     font = RTGUI_DC_FONT(dc);
-    if (font == RT_NULL)
-    {
+    if (!font) {
         /* use system default font */
         font = rtgui_font_default();
     }
 
     len = rt_strlen((const char *)text);
-    if (len == 0)
-        return;
+    if (!len) return;
 
     rtgui_font_draw(font, dc, text, len, rect);
 }
 RTM_EXPORT(rtgui_dc_draw_text);
 
-void rtgui_dc_draw_text_stroke(struct rtgui_dc *dc, const char *text, struct rtgui_rect *rect,
+void rtgui_dc_draw_text_stroke(rtgui_dc_t *dc, const char *text, rtgui_rect_t *rect,
                                rtgui_color_t color_stroke, rtgui_color_t color_core)
 {
     int x, y;
@@ -363,7 +360,7 @@ RTM_EXPORT(rtgui_dc_draw_text_stroke);
 /*
  * draw a monochrome color bitmap data
  */
-void rtgui_dc_draw_mono_bmp(struct rtgui_dc *dc, int x, int y, int w, int h, const rt_uint8_t *data)
+void rtgui_dc_draw_mono_bmp(rtgui_dc_t *dc, int x, int y, int w, int h, const rt_uint8_t *data)
 {
     int i, j, k;
 
@@ -379,19 +376,19 @@ void rtgui_dc_draw_mono_bmp(struct rtgui_dc *dc, int x, int y, int w, int h, con
 }
 RTM_EXPORT(rtgui_dc_draw_mono_bmp);
 
-void rtgui_dc_draw_byte(struct rtgui_dc *dc, int x, int y, int h, const rt_uint8_t *data)
+void rtgui_dc_draw_byte(rtgui_dc_t *dc, int x, int y, int h, const rt_uint8_t *data)
 {
     rtgui_dc_draw_mono_bmp(dc, x, y, 8, h, data);
 }
 RTM_EXPORT(rtgui_dc_draw_byte);
 
-void rtgui_dc_draw_word(struct rtgui_dc *dc, int x, int y, int h, const rt_uint8_t *data)
+void rtgui_dc_draw_word(rtgui_dc_t *dc, int x, int y, int h, const rt_uint8_t *data)
 {
     rtgui_dc_draw_mono_bmp(dc, x, y, 16, h, data);
 }
 RTM_EXPORT(rtgui_dc_draw_word);
 
-void rtgui_dc_draw_border(struct rtgui_dc *dc, rtgui_rect_t *rect, int flag)
+void rtgui_dc_draw_border(rtgui_dc_t *dc, rtgui_rect_t *rect, int flag)
 {
     rtgui_rect_t r;
     rtgui_color_t color;
@@ -445,7 +442,7 @@ void rtgui_dc_draw_border(struct rtgui_dc *dc, rtgui_rect_t *rect, int flag)
 }
 RTM_EXPORT(rtgui_dc_draw_border);
 
-void rtgui_dc_draw_polygon(struct rtgui_dc *dc, const int *vx, const int *vy, int count)
+void rtgui_dc_draw_polygon(rtgui_dc_t *dc, const int *vx, const int *vy, int count)
 {
     int i;
     const int *x1, *y1, *x2, *y2;
@@ -478,7 +475,7 @@ void rtgui_dc_draw_polygon(struct rtgui_dc *dc, const int *vx, const int *vy, in
 }
 RTM_EXPORT(rtgui_dc_draw_polygon);
 
-void rtgui_dc_fill_polygon(struct rtgui_dc *dc, const int *vx, const int *vy, int count)
+void rtgui_dc_fill_polygon(rtgui_dc_t *dc, const int *vx, const int *vy, int count)
 {
     int i;
     int y, xa, xb;
@@ -571,7 +568,7 @@ void rtgui_dc_fill_polygon(struct rtgui_dc *dc, const int *vx, const int *vy, in
 }
 RTM_EXPORT(rtgui_dc_fill_polygon);
 
-void rtgui_dc_draw_circle(struct rtgui_dc *dc, int x, int y, int r)
+void rtgui_dc_draw_circle(rtgui_dc_t *dc, int x, int y, int r)
 {
     rtgui_dc_draw_ellipse(dc, x, y, r, r);
 }
@@ -588,7 +585,7 @@ enum
     QUARTER_FULL,
 };
 
-static void _fill_quarter_circle(struct rtgui_dc *dc,
+static void _fill_quarter_circle(rtgui_dc_t *dc,
                                  rt_int16_t ox, rt_int16_t oy,
                                  rt_int16_t rad, int quadrant)
 {
@@ -650,7 +647,7 @@ static void _fill_quarter_circle(struct rtgui_dc *dc,
     }
 }
 
-void rtgui_dc_fill_circle(struct rtgui_dc *dc, rt_int16_t x, rt_int16_t y, rt_int16_t r)
+void rtgui_dc_fill_circle(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t r)
 {
     /*
      * Sanity check radius
@@ -671,7 +668,7 @@ void rtgui_dc_fill_circle(struct rtgui_dc *dc, rt_int16_t x, rt_int16_t y, rt_in
 }
 RTM_EXPORT(rtgui_dc_fill_circle);
 
-void rtgui_dc_draw_arc(struct rtgui_dc *dc, rt_int16_t x, rt_int16_t y, rt_int16_t r, rt_int16_t start, rt_int16_t end)
+void rtgui_dc_draw_arc(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t r, rt_int16_t start, rt_int16_t end)
 {
     rt_int16_t cx = 0;
     rt_int16_t cy = r;
@@ -895,7 +892,7 @@ void rtgui_dc_draw_arc(struct rtgui_dc *dc, rt_int16_t x, rt_int16_t y, rt_int16
 }
 RTM_EXPORT(rtgui_dc_draw_arc);
 
-void rtgui_dc_draw_annulus(struct rtgui_dc *dc, rt_int16_t x, rt_int16_t y, rt_int16_t r1, rt_int16_t r2, rt_int16_t start, rt_int16_t end)
+void rtgui_dc_draw_annulus(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t r1, rt_int16_t r2, rt_int16_t start, rt_int16_t end)
 {
     rt_int16_t start_x, start_y;
     rt_int16_t end_x, end_y;
@@ -947,7 +944,7 @@ void rtgui_dc_draw_annulus(struct rtgui_dc *dc, rt_int16_t x, rt_int16_t y, rt_i
 }
 RTM_EXPORT(rtgui_dc_draw_annulus);
 
-void rtgui_dc_draw_ellipse(struct rtgui_dc *dc, rt_int16_t x, rt_int16_t y, rt_int16_t rx, rt_int16_t ry)
+void rtgui_dc_draw_ellipse(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t rx, rt_int16_t ry)
 {
     int ix, iy;
     int h, i, j, k;
@@ -1098,7 +1095,7 @@ void rtgui_dc_draw_ellipse(struct rtgui_dc *dc, rt_int16_t x, rt_int16_t y, rt_i
 }
 RTM_EXPORT(rtgui_dc_draw_ellipse);
 
-void rtgui_dc_fill_ellipse(struct rtgui_dc *dc, rt_int16_t x, rt_int16_t y, rt_int16_t rx, rt_int16_t ry)
+void rtgui_dc_fill_ellipse(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t rx, rt_int16_t ry)
 {
     int ix, iy;
     int h, i, j, k;
@@ -1231,7 +1228,7 @@ void rtgui_dc_fill_ellipse(struct rtgui_dc *dc, rt_int16_t x, rt_int16_t y, rt_i
 }
 RTM_EXPORT(rtgui_dc_fill_ellipse);
 
-void rtgui_dc_draw_pie(struct rtgui_dc *dc, rt_int16_t x, rt_int16_t y, rt_int16_t rad, rt_int16_t start, rt_int16_t end)
+void rtgui_dc_draw_pie(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t rad, rt_int16_t start, rt_int16_t end)
 {
     double angle, start_angle, end_angle;
     double deltaAngle;
@@ -1341,7 +1338,7 @@ RTM_EXPORT(rtgui_dc_draw_pie);
  *  / 2 | 1 \
  *      +y
  */
-static void _draw_octant(struct rtgui_dc *dc,
+static void _draw_octant(rtgui_dc_t *dc,
                          rt_int16_t ox, rt_int16_t oy,
                          rt_int16_t y1, rt_int16_t y2, rt_int16_t x, int oct)
 {
@@ -1387,7 +1384,7 @@ static void _draw_octant(struct rtgui_dc *dc,
     };
 }
 
-static void _fill_small_pie(struct rtgui_dc *dc,
+static void _fill_small_pie(rtgui_dc_t *dc,
                             rt_int16_t ox, rt_int16_t oy,
                             rt_int16_t rad, rt_int16_t start, rt_int16_t end,
                             int oct)
@@ -1473,7 +1470,7 @@ static void _fill_small_pie(struct rtgui_dc *dc,
     }
 }
 
-void rtgui_dc_fill_pie(struct rtgui_dc *dc,
+void rtgui_dc_fill_pie(rtgui_dc_t *dc,
                        rt_int16_t x, rt_int16_t y, rt_int16_t rad,
                        rt_int16_t start, rt_int16_t end)
 {
@@ -1545,7 +1542,7 @@ RTM_EXPORT(rtgui_dc_fill_pie);
 /*
  * set gc of dc
  */
-void rtgui_dc_set_gc(struct rtgui_dc *dc, rtgui_gc_t *gc)
+void rtgui_dc_set_gc(rtgui_dc_t *dc, rtgui_gc_t *gc)
 {
     RT_ASSERT(dc != RT_NULL);
 
@@ -1583,7 +1580,7 @@ RTM_EXPORT(rtgui_dc_set_gc);
 /*
  * get gc of dc
  */
-rtgui_gc_t *rtgui_dc_get_gc(struct rtgui_dc *dc)
+rtgui_gc_t *rtgui_dc_get_gc(rtgui_dc_t *dc)
 {
     rtgui_gc_t *gc = RT_NULL;
 
@@ -1625,7 +1622,7 @@ RTM_EXPORT(rtgui_dc_get_gc);
 /*
  * get visible status of dc
  */
-rt_bool_t rtgui_dc_get_visible(struct rtgui_dc *dc) {
+rt_bool_t rtgui_dc_get_visible(rtgui_dc_t *dc) {
     rt_bool_t ret = RT_TRUE;
 
     if (!rtgui_graphic_driver_is_vmode()) {
@@ -1663,7 +1660,7 @@ RTM_EXPORT(rtgui_dc_get_visible);
 /*
  * get rect of dc
  */
-void rtgui_dc_get_rect(struct rtgui_dc *dc, rtgui_rect_t *rect)
+void rtgui_dc_get_rect(rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
     RT_ASSERT(dc != RT_NULL);
 
@@ -1713,7 +1710,7 @@ void rtgui_dc_get_rect(struct rtgui_dc *dc, rtgui_rect_t *rect)
 }
 RTM_EXPORT(rtgui_dc_get_rect);
 
-rt_uint8_t rtgui_dc_get_pixel_format(struct rtgui_dc *dc)
+rt_uint8_t rtgui_dc_get_pixel_format(rtgui_dc_t *dc)
 {
     rt_uint8_t pixel_fmt = 0;
 
@@ -1746,7 +1743,7 @@ rt_uint8_t rtgui_dc_get_pixel_format(struct rtgui_dc *dc)
 }
 RTM_EXPORT(rtgui_dc_get_pixel_format);
 
-void rtgui_dc_logic_to_device(struct rtgui_dc *dc, struct rtgui_point *point)
+void rtgui_dc_logic_to_device(rtgui_dc_t *dc, struct rtgui_point *point)
 {
     switch (dc->type)
     {
@@ -1777,7 +1774,7 @@ void rtgui_dc_logic_to_device(struct rtgui_dc *dc, struct rtgui_point *point)
 }
 RTM_EXPORT(rtgui_dc_logic_to_device);
 
-void rtgui_dc_rect_to_device(struct rtgui_dc *dc, struct rtgui_rect *rect)
+void rtgui_dc_rect_to_device(rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
     switch (dc->type)
     {
@@ -1811,8 +1808,8 @@ extern struct rt_mutex cursor_mutex;
 extern void rtgui_mouse_show_cursor(void);
 extern void rtgui_mouse_hide_cursor(void);
 
-struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
-    struct rtgui_dc *dc = RT_NULL;
+rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
+    rtgui_dc_t *dc = RT_NULL;
 
     RT_ASSERT(owner != RT_NULL);
 
@@ -1842,7 +1839,7 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
 
         /* increase drawing count */
         if (win->drawing == 0) {
-            rt_memset(&(win->drawing_rect), 0x0, sizeof(struct rtgui_rect));
+            rt_memset(&(win->drawing_rect), 0x0, sizeof(rtgui_rect_t));
         }
         win->drawing++;
         LOG_D("drawing %d", win->drawing);
@@ -1899,7 +1896,7 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
                     LOG_D("update mem err");
                     break;
                 }
-                RTGUI_EVENT_UPDATE_BEGIN_INIT(&evt->update_begin);
+                RTGUI_EVENT_INIT(evt, UPDATE_BEGIN);
                 evt->update_begin.rect = TO_WIDGET(win)->extent;
                 LOG_D("post update %s", evt->base.sender->name);
                 ret = rtgui_server_post_event(evt);
@@ -1915,7 +1912,7 @@ struct rtgui_dc *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
 }
 RTM_EXPORT(rtgui_dc_begin_drawing);
 
-void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
+void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
     struct rtgui_widget *owner;
     rtgui_win_t *win;
 
@@ -1945,7 +1942,7 @@ void rtgui_dc_end_drawing(struct rtgui_dc *dc, rt_bool_t update) {
             evt = (rtgui_evt_generic_t *)rt_mp_alloc(
                 rtgui_event_pool, RT_WAITING_FOREVER);
             if (evt) {
-                RTGUI_EVENT_WIN_UPDATE_END_INIT(&evt->win_update);
+                RTGUI_EVENT_INIT(evt, WIN_UPDATE_END);
                 evt->win_update.rect = win->drawing_rect;
                 (void)EVENT_HANDLER(win)(win, evt);
                 rt_mp_free(evt);

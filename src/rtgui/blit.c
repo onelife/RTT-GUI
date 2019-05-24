@@ -1737,12 +1737,12 @@ void rtgui_blit(struct rtgui_blit_info *info)
 }
 RTM_EXPORT(rtgui_blit);
 
-void rtgui_image_info_blit(struct rtgui_image_info *image, struct rtgui_dc *dc, struct rtgui_rect *dc_rect)
+void rtgui_image_info_blit(struct rtgui_image_info *image, rtgui_dc_t *dc, rtgui_rect_t *dc_rect)
 {
     rt_uint8_t bpp, hw_bpp;
     struct rtgui_widget *owner;
     struct rtgui_blit_info info = { 0 };
-    struct rtgui_rect dest_extent;
+    rtgui_rect_t dest_extent;
     struct rtgui_graphic_driver *hw_driver;
 
     hw_driver = rtgui_graphic_driver_get_default();
@@ -1751,7 +1751,7 @@ void rtgui_image_info_blit(struct rtgui_image_info *image, struct rtgui_dc *dc, 
     if (dc->type == RTGUI_DC_CLIENT && hw_driver->framebuffer)
     {
         int index, num_rects;
-        struct rtgui_rect *rects;
+        rtgui_rect_t *rects;
         struct rtgui_region dest_region;
 
         bpp = rtgui_color_get_bpp(image->src_fmt);
@@ -1777,7 +1777,7 @@ void rtgui_image_info_blit(struct rtgui_image_info *image, struct rtgui_dc *dc, 
 
         for (index = 0; index < num_rects; index ++)
         {
-            struct rtgui_rect *r = &rects[index];
+            rtgui_rect_t *r = &rects[index];
 
             /* blit source */
             info.src = image->pixels + (r->x1 - dest_extent.x1) * bpp + (r->y1 - dest_extent.y1) * image->src_pitch;
@@ -1800,7 +1800,7 @@ void rtgui_image_info_blit(struct rtgui_image_info *image, struct rtgui_dc *dc, 
     else if (dc->type == RTGUI_DC_HW && hw_driver->framebuffer)
     {
         struct rtgui_dc_hw *hw = (struct rtgui_dc_hw *)dc;
-        struct rtgui_rect *r;
+        rtgui_rect_t *r;
 
         bpp = rtgui_color_get_bpp(image->src_fmt);
         hw_bpp = rtgui_color_get_bpp(hw_driver->pixel_format);
@@ -1833,7 +1833,7 @@ void rtgui_image_info_blit(struct rtgui_image_info *image, struct rtgui_dc *dc, 
     }
     else if (dc->type == RTGUI_DC_BUFFER)
     {
-        struct rtgui_rect *r;
+        rtgui_rect_t *r;
         struct rtgui_dc_buffer *dc_buffer = (struct rtgui_dc_buffer*)dc;
 
         bpp = rtgui_color_get_bpp(image->src_fmt);

@@ -34,7 +34,7 @@ struct rtgui_dc_trans;
  *
  * @return RT_NULL is there is no memory.
  */
-struct rtgui_dc_trans* rtgui_dc_trans_create(struct rtgui_dc *owner);
+struct rtgui_dc_trans* rtgui_dc_trans_create(rtgui_dc_t *owner);
 
 /** Rotate the dc clockwise.
  *
@@ -56,8 +56,8 @@ void rtgui_dc_trans_get_new_wh(struct rtgui_dc_trans *dct, int *new_w, int *new_
 
 void rtgui_dc_trans_blit(struct rtgui_dc_trans *dct,
                          struct rtgui_point *dc_point,
-                         struct rtgui_dc *dest,
-                         struct rtgui_rect *rect);
+                         rtgui_dc_t *dest,
+                         rtgui_rect_t *rect);
 
 void rtgui_dc_trans_destroy(struct rtgui_dc_trans *dct);
 

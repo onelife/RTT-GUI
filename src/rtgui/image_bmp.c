@@ -63,7 +63,7 @@ struct rtgui_image_bmp
 static rt_bool_t rtgui_image_bmp_check(struct rtgui_filerw *file);
 static rt_bool_t rtgui_image_bmp_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load);
 static void rtgui_image_bmp_unload(struct rtgui_image *image);
-static void rtgui_image_bmp_blit(struct rtgui_image *image, struct rtgui_dc *dc, struct rtgui_rect *rect);
+static void rtgui_image_bmp_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
 struct rtgui_image_engine rtgui_image_bmp_engine =
 {
@@ -509,7 +509,7 @@ static void rtgui_image_bmp_unload(struct rtgui_image *image)
     }
 }
 
-static void rtgui_image_bmp_blit(struct rtgui_image *image, struct rtgui_dc *dc, struct rtgui_rect *dst_rect)
+static void rtgui_image_bmp_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *dst_rect)
 {
     rt_uint16_t w, h;
     struct rtgui_image_bmp *bmp;

@@ -105,7 +105,7 @@ void rtgui_cursor_set_image(enum rtgui_cursor_type type);
 #ifdef GUIENGIN_USING_VFRAMEBUFFER
 void rtgui_graphic_driver_vmode_enter(void);
 void rtgui_graphic_driver_vmode_exit(void);
-struct rtgui_dc* rtgui_graphic_driver_get_rect_buffer(const struct rtgui_graphic_driver *driver, struct rtgui_rect *rect);
+rtgui_dc_t* rtgui_graphic_driver_get_rect_buffer(const struct rtgui_graphic_driver *driver, rtgui_rect_t *rect);
 #endif
 
 rt_bool_t rtgui_graphic_driver_is_vmode(void);

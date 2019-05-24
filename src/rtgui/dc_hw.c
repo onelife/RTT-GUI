@@ -39,14 +39,14 @@
 
 #define _int_swap(x, y)         do {x ^= y; y ^= x; x ^= y;} while (0)
 
-static void rtgui_dc_hw_draw_point(struct rtgui_dc *dc, int x, int y);
-static void rtgui_dc_hw_draw_color_point(struct rtgui_dc *dc, int x, int y, rtgui_color_t color);
-static void rtgui_dc_hw_draw_hline(struct rtgui_dc *dc, int x1, int x2, int y);
-static void rtgui_dc_hw_draw_vline(struct rtgui_dc *dc, int x, int y1, int y2);
-static void rtgui_dc_hw_fill_rect(struct rtgui_dc *dc, rtgui_rect_t *rect);
-static void rtgui_dc_hw_blit_line(struct rtgui_dc *self, int x1, int x2, int y, rt_uint8_t *line_data);
-static void rtgui_dc_hw_blit(struct rtgui_dc *dc, struct rtgui_point *dc_point, struct rtgui_dc *dest, rtgui_rect_t *rect);
-static rt_bool_t rtgui_dc_hw_fini(struct rtgui_dc *dc);
+static void rtgui_dc_hw_draw_point(rtgui_dc_t *dc, int x, int y);
+static void rtgui_dc_hw_draw_color_point(rtgui_dc_t *dc, int x, int y, rtgui_color_t color);
+static void rtgui_dc_hw_draw_hline(rtgui_dc_t *dc, int x1, int x2, int y);
+static void rtgui_dc_hw_draw_vline(rtgui_dc_t *dc, int x, int y1, int y2);
+static void rtgui_dc_hw_fill_rect(rtgui_dc_t *dc, rtgui_rect_t *rect);
+static void rtgui_dc_hw_blit_line(rtgui_dc_t *self, int x1, int x2, int y, rt_uint8_t *line_data);
+static void rtgui_dc_hw_blit(rtgui_dc_t *dc, struct rtgui_point *dc_point, rtgui_dc_t *dest, rtgui_rect_t *rect);
+static rt_bool_t rtgui_dc_hw_fini(rtgui_dc_t *dc);
 
 const struct rtgui_dc_engine dc_hw_engine =
 {
@@ -61,7 +61,7 @@ const struct rtgui_dc_engine dc_hw_engine =
     rtgui_dc_hw_fini,
 };
 
-struct rtgui_dc *rtgui_dc_hw_create(rtgui_widget_t *owner)
+rtgui_dc_t *rtgui_dc_hw_create(rtgui_widget_t *owner)
 {
     struct rtgui_dc_hw *dc;
 
@@ -83,7 +83,7 @@ struct rtgui_dc *rtgui_dc_hw_create(rtgui_widget_t *owner)
     return RT_NULL;
 }
 
-static rt_bool_t rtgui_dc_hw_fini(struct rtgui_dc *dc)
+static rt_bool_t rtgui_dc_hw_fini(rtgui_dc_t *dc)
 {
     if (dc == RT_NULL || dc->type != RTGUI_DC_HW) return RT_FALSE;
 
@@ -96,7 +96,7 @@ static rt_bool_t rtgui_dc_hw_fini(struct rtgui_dc *dc)
 /*
  * draw a logic point on device
  */
-static void rtgui_dc_hw_draw_point(struct rtgui_dc *self, int x, int y)
+static void rtgui_dc_hw_draw_point(rtgui_dc_t *self, int x, int y)
 {
     struct rtgui_dc_hw *dc;
 
@@ -117,7 +117,7 @@ static void rtgui_dc_hw_draw_point(struct rtgui_dc *self, int x, int y)
     dc->hw_driver->ops->set_pixel(&(dc->owner->gc.foreground), x, y);
 }
 
-static void rtgui_dc_hw_draw_color_point(struct rtgui_dc *self, int x, int y, rtgui_color_t color)
+static void rtgui_dc_hw_draw_color_point(rtgui_dc_t *self, int x, int y, rtgui_color_t color)
 {
     struct rtgui_dc_hw *dc;
 
@@ -141,7 +141,7 @@ static void rtgui_dc_hw_draw_color_point(struct rtgui_dc *self, int x, int y, rt
 /*
  * draw a logic vertical line on device
  */
-static void rtgui_dc_hw_draw_vline(struct rtgui_dc *self, int x, int y1, int y2)
+static void rtgui_dc_hw_draw_vline(rtgui_dc_t *self, int x, int y1, int y2)
 {
     struct rtgui_dc_hw *dc;
 
@@ -174,7 +174,7 @@ static void rtgui_dc_hw_draw_vline(struct rtgui_dc *self, int x, int y1, int y2)
 /*
  * draw a logic horizontal line on device
  */
-static void rtgui_dc_hw_draw_hline(struct rtgui_dc *self,
+static void rtgui_dc_hw_draw_hline(rtgui_dc_t *self,
     int x1, int x2, int y) {
     struct rtgui_dc_hw *dc;
 
@@ -198,7 +198,7 @@ static void rtgui_dc_hw_draw_hline(struct rtgui_dc *self,
     dc->hw_driver->ops->draw_hline(&(dc->owner->gc.foreground), x1, x2, y);
 }
 
-static void rtgui_dc_hw_fill_rect(struct rtgui_dc *self, struct rtgui_rect *rect)
+static void rtgui_dc_hw_fill_rect(rtgui_dc_t *self, rtgui_rect_t *rect)
 {
     rtgui_color_t color;
     register rt_base_t y1, y2, x1, x2;
@@ -241,7 +241,7 @@ static void rtgui_dc_hw_fill_rect(struct rtgui_dc *self, struct rtgui_rect *rect
     }
 }
 
-static void rtgui_dc_hw_blit_line(struct rtgui_dc *self, int x1, int x2, int y, rt_uint8_t *line_data)
+static void rtgui_dc_hw_blit_line(rtgui_dc_t *self, int x1, int x2, int y, rt_uint8_t *line_data)
 {
     struct rtgui_dc_hw *dc;
 
@@ -270,9 +270,9 @@ static void rtgui_dc_hw_blit_line(struct rtgui_dc *self, int x1, int x2, int y, 
     dc->hw_driver->ops->draw_raw_hline(line_data, x1, x2, y);
 }
 
-static void rtgui_dc_hw_blit(struct rtgui_dc *dc,
+static void rtgui_dc_hw_blit(rtgui_dc_t *dc,
                              struct rtgui_point *dc_point,
-                             struct rtgui_dc *dest,
+                             rtgui_dc_t *dest,
                              rtgui_rect_t *rect)
 {
     /* not blit in hardware dc */

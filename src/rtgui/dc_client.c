@@ -42,14 +42,14 @@
 #endif /* RT_USING_ULOG */
 
 
-static void rtgui_dc_client_draw_point(struct rtgui_dc *dc, int x, int y);
-static void rtgui_dc_client_draw_color_point(struct rtgui_dc *dc, int x, int y, rtgui_color_t color);
-static void rtgui_dc_client_draw_hline(struct rtgui_dc *dc, int x1, int x2, int y);
-static void rtgui_dc_client_draw_vline(struct rtgui_dc *dc, int x, int y1, int y2);
-static void rtgui_dc_client_fill_rect(struct rtgui_dc *dc, rtgui_rect_t *rect);
-static void rtgui_dc_client_blit_line(struct rtgui_dc *self, int x1, int x2, int y, rt_uint8_t *line_data);
-static void rtgui_dc_client_blit(struct rtgui_dc *dc, struct rtgui_point *dc_point, struct rtgui_dc *dest, rtgui_rect_t *rect);
-static rt_bool_t rtgui_dc_client_fini(struct rtgui_dc *dc);
+static void rtgui_dc_client_draw_point(rtgui_dc_t *dc, int x, int y);
+static void rtgui_dc_client_draw_color_point(rtgui_dc_t *dc, int x, int y, rtgui_color_t color);
+static void rtgui_dc_client_draw_hline(rtgui_dc_t *dc, int x1, int x2, int y);
+static void rtgui_dc_client_draw_vline(rtgui_dc_t *dc, int x, int y1, int y2);
+static void rtgui_dc_client_fill_rect(rtgui_dc_t *dc, rtgui_rect_t *rect);
+static void rtgui_dc_client_blit_line(rtgui_dc_t *self, int x1, int x2, int y, rt_uint8_t *line_data);
+static void rtgui_dc_client_blit(rtgui_dc_t *dc, struct rtgui_point *dc_point, rtgui_dc_t *dest, rtgui_rect_t *rect);
+static rt_bool_t rtgui_dc_client_fini(rtgui_dc_t *dc);
 
 #define hw_driver               (rtgui_graphic_driver_get_default())
 #define dc_set_foreground(c)    dc->gc.foreground = c
@@ -71,7 +71,7 @@ const struct rtgui_dc_engine dc_client_engine =
 
 void rtgui_dc_client_init(rtgui_widget_t *owner)
 {
-    struct rtgui_dc *dc;
+    rtgui_dc_t *dc;
 
     RT_ASSERT(owner != RT_NULL);
 
@@ -80,7 +80,7 @@ void rtgui_dc_client_init(rtgui_widget_t *owner)
     dc->engine = &dc_client_engine;
 }
 
-struct rtgui_dc *rtgui_dc_client_create(rtgui_widget_t *owner)
+rtgui_dc_t *rtgui_dc_client_create(rtgui_widget_t *owner)
 {
     /* adjudge owner */
     if (owner == RT_NULL || owner->toplevel == RT_NULL) return RT_NULL;
@@ -88,7 +88,7 @@ struct rtgui_dc *rtgui_dc_client_create(rtgui_widget_t *owner)
     return RTGUI_WIDGET_DC(owner);
 }
 
-static rt_bool_t rtgui_dc_client_fini(struct rtgui_dc *dc)
+static rt_bool_t rtgui_dc_client_fini(rtgui_dc_t *dc)
 {
     if (dc == RT_NULL || dc->type != RTGUI_DC_CLIENT) return RT_FALSE;
 
@@ -98,7 +98,7 @@ static rt_bool_t rtgui_dc_client_fini(struct rtgui_dc *dc)
 /*
  * draw a logic point on device
  */
-static void rtgui_dc_client_draw_point(struct rtgui_dc *self, int x, int y)
+static void rtgui_dc_client_draw_point(rtgui_dc_t *self, int x, int y)
 {
     rtgui_rect_t rect;
     rtgui_widget_t *owner;
@@ -119,7 +119,7 @@ static void rtgui_dc_client_draw_point(struct rtgui_dc *self, int x, int y)
     }
 }
 
-static void rtgui_dc_client_draw_color_point(struct rtgui_dc *self, int x, int y, rtgui_color_t color)
+static void rtgui_dc_client_draw_color_point(rtgui_dc_t *self, int x, int y, rtgui_color_t color)
 {
     rtgui_rect_t rect;
     rtgui_widget_t *owner;
@@ -143,7 +143,7 @@ static void rtgui_dc_client_draw_color_point(struct rtgui_dc *self, int x, int y
 /*
  * draw a logic vertical line on device
  */
-static void rtgui_dc_client_draw_vline(struct rtgui_dc *self, int x, int y1, int y2)
+static void rtgui_dc_client_draw_vline(rtgui_dc_t *self, int x, int y1, int y2)
 {
     register rt_uint32_t idx;
     rtgui_widget_t *owner;
@@ -202,7 +202,7 @@ static void rtgui_dc_client_draw_vline(struct rtgui_dc *self, int x, int y1, int
 /*
  * draw a logic horizontal line on device
  */
-static void rtgui_dc_client_draw_hline(struct rtgui_dc *self,
+static void rtgui_dc_client_draw_hline(rtgui_dc_t *self,
     int x1, int x2, int y) {
     rtgui_widget_t *owner;
     register rt_uint32_t idx;
@@ -257,7 +257,7 @@ static void rtgui_dc_client_draw_hline(struct rtgui_dc *self,
     }
 }
 
-static void rtgui_dc_client_fill_rect(struct rtgui_dc *self, struct rtgui_rect *rect)
+static void rtgui_dc_client_fill_rect(rtgui_dc_t *self, rtgui_rect_t *rect)
 {
     rtgui_color_t foreground;
     register rt_base_t idx;
@@ -287,7 +287,7 @@ static void rtgui_dc_client_fill_rect(struct rtgui_dc *self, struct rtgui_rect *
     owner->gc.foreground = foreground;
 }
 
-static void rtgui_dc_client_blit_line(struct rtgui_dc *self, int x1, int x2, int y, rt_uint8_t *line_data)
+static void rtgui_dc_client_blit_line(rtgui_dc_t *self, int x1, int x2, int y, rt_uint8_t *line_data)
 {
     register rt_base_t idx;
     rtgui_widget_t *owner;
@@ -349,7 +349,7 @@ static void rtgui_dc_client_blit_line(struct rtgui_dc *self, int x1, int x2, int
     }
 }
 
-static void rtgui_dc_client_blit(struct rtgui_dc *dc, struct rtgui_point *dc_point, struct rtgui_dc *dest, rtgui_rect_t *rect)
+static void rtgui_dc_client_blit(rtgui_dc_t *dc, struct rtgui_point *dc_point, rtgui_dc_t *dest, rtgui_rect_t *rect)
 {
     /* not blit in hardware dc */
     return ;

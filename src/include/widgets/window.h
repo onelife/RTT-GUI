@@ -104,7 +104,7 @@ void rtgui_win_event_loop(rtgui_win_t *wnd);
 void rtgui_win_set_title(rtgui_win_t *win, const char *title);
 char *rtgui_win_get_title(rtgui_win_t *win);
 
-struct rtgui_dc *rtgui_win_get_drawing(rtgui_win_t * win);
+rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win);
 
 rtgui_win_t* rtgui_win_get_topmost_shown(void);
 rtgui_win_t* rtgui_win_get_next_shown(void);

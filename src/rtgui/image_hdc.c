@@ -38,8 +38,8 @@ extern int fastlz_decompress(const void *input, int length, void *output, int ma
 static rt_bool_t rtgui_image_hdc_check(struct rtgui_filerw *file);
 static rt_bool_t rtgui_image_hdc_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load);
 static void rtgui_image_hdc_unload(struct rtgui_image *image);
-static void rtgui_image_hdc_blit(struct rtgui_image *image, struct rtgui_dc *dc, struct rtgui_rect *rect);
-static void rtgui_image_hdcmm_blit(struct rtgui_image *image, struct rtgui_dc *dc, struct rtgui_rect *dst_rect);
+static void rtgui_image_hdc_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
+static void rtgui_image_hdcmm_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *dst_rect);
 
 struct rtgui_image_engine rtgui_image_hdc_engine =
 {
@@ -226,8 +226,8 @@ static void rtgui_image_hdc_unload(struct rtgui_image *image)
 }
 
 static void rtgui_image_hdc_blit(struct rtgui_image *image,
-                                 struct rtgui_dc *dc,
-                                 struct rtgui_rect *dst_rect)
+                                 rtgui_dc_t *dc,
+                                 rtgui_rect_t *dst_rect)
 {
     rt_int16_t y, w, h, xoff, yoff;
     struct rtgui_image_hdc *hdc;
@@ -273,7 +273,7 @@ static void rtgui_image_hdc_blit(struct rtgui_image *image,
     if (hdc->pixels != RT_NULL)
     {
         struct rtgui_image_info info;
-        struct rtgui_rect dest = *dst_rect;
+        rtgui_rect_t dest = *dst_rect;
         info.a = 255;
         info.pixels = hdc->pixels + hdc->pitch * yoff + hdc->byte_per_pixel * xoff;
         info.src_fmt = hdc->pixel_format;
@@ -315,7 +315,7 @@ static void rtgui_image_hdc_blit(struct rtgui_image *image,
     }
 }
 
-static void rtgui_image_hdcmm_blit(struct rtgui_image *image, struct rtgui_dc *dc, struct rtgui_rect *dst_rect)
+static void rtgui_image_hdcmm_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *dst_rect)
 {
     rt_uint8_t *ptr;
     rt_uint16_t y, w, h, xoff, yoff;

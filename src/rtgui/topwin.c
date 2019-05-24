@@ -74,7 +74,7 @@ static rt_list_t _rtgui_topwin_list = RT_LIST_OBJECT_INIT(_rtgui_topwin_list);
 static struct rt_semaphore _rtgui_topwin_lock;
 
 static void rtgui_topwin_update_clip(void);
-static void rtgui_topwin_redraw(struct rtgui_rect *rect);
+static void rtgui_topwin_redraw(rtgui_rect_t *rect);
 static void _rtgui_topwin_activate_next(enum rtgui_topwin_flag);
 
 void rtgui_topwin_init(void) {
@@ -123,8 +123,8 @@ rt_err_t rtgui_topwin_add(struct rtgui_event_win_create *event) {
         } else {
             topwin->extent = TO_WIDGET(event->wid)->extent;
         }
-        topwin->app = event->_super.sender;
-        LOG_D("insert0 [%p] (%s)", event->wid, event->_super.sender->name);
+        topwin->app = event->base.sender;
+        LOG_D("insert0 [%p] (%s)", event->wid, event->base.sender->name);
 
         if (RT_NULL == event->parent_window) {
             LOG_D("insert as top [%p] (%s)", topwin->wid, topwin->app->name);
@@ -144,13 +144,13 @@ rt_err_t rtgui_topwin_add(struct rtgui_event_win_create *event) {
 
         rt_list_init(&topwin->child_list);
         topwin->flag = WINTITLE_INIT;
-        if (event->_super.user & RTGUI_WIN_STYLE_NO_FOCUS) {
+        if (event->base.user & RTGUI_WIN_STYLE_NO_FOCUS) {
             topwin->flag |= WINTITLE_NOFOCUS;
         }
-        if (event->_super.user & RTGUI_WIN_STYLE_ONTOP) {
+        if (event->base.user & RTGUI_WIN_STYLE_ONTOP) {
             topwin->flag |= WINTITLE_ONTOP;
         }
-        if (event->_super.user & RTGUI_WIN_STYLE_ONBTM) {
+        if (event->base.user & RTGUI_WIN_STYLE_ONBTM) {
             topwin->flag |= WINTITLE_ONBTM;
         }
         topwin->title = RT_NULL;
@@ -394,7 +394,7 @@ static void _rtgui_topwin_only_activate(rtgui_topwin_t *topwin) {
     if (evt) {
         rt_err_t ret;
 
-        RTGUI_EVENT_WIN_ACTIVATE_INIT(&evt->win_activate);
+        RTGUI_EVENT_INIT(evt, WIN_ACTIVATE);
         evt->win_activate.wid = topwin->wid;
         ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
         if (ret) {
@@ -434,7 +434,7 @@ static void _rtgui_topwin_deactivate(rtgui_topwin_t *topwin) {
         rtgui_event_pool, RT_WAITING_FOREVER);
     if (evt) {
         rt_err_t ret;
-        RTGUI_EVENT_WIN_DEACTIVATE_INIT(&evt->win_deactivate);
+        RTGUI_EVENT_INIT(evt, WIN_DEACTIVATE);
         evt->win_deactivate.wid = topwin->wid;
         ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
         if (ret) {
@@ -594,7 +594,7 @@ rt_err_t rtgui_topwin_activate_topwin(rtgui_topwin_t *topwin) {
             break;
         }
 
-        RTGUI_EVENT_PAINT_INIT(&evt->paint);
+        RTGUI_EVENT_INIT(evt, PAINT);
         evt->win_activate.wid = topwin->wid;
         ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
         if (ret) {
@@ -832,7 +832,7 @@ rt_err_t rtgui_topwin_move(rtgui_evt_generic_t *evt) {
             evt = (rtgui_evt_generic_t *)rt_mp_alloc(
                 rtgui_event_pool, RT_WAITING_FOREVER);
             if (evt) {
-                RTGUI_EVENT_PAINT_INIT(&evt->paint);
+                RTGUI_EVENT_INIT(evt, PAINT);
                 evt->paint.wid = topwin->wid;
                 ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
                 if (ret) {
@@ -1010,7 +1010,7 @@ static void rtgui_topwin_update_clip(void) {
         LOG_E("get mp err");
         return;
     }
-    RTGUI_EVENT_CLIP_INFO_INIT(&evt->clip_info);
+    RTGUI_EVENT_INIT(evt, CLIP_INFO);
 
     while (topwin) {
         LOG_D("topwin %s (%s)", topwin->wid->title, topwin->wid->app->name);
@@ -1034,13 +1034,13 @@ static void rtgui_topwin_update_clip(void) {
     rtgui_region_fini(&region_available);
 }
 
-static void _rtgui_topwin_redraw_tree(rt_list_t *list,
-    struct rtgui_rect *rect, struct rtgui_event_paint *e_paint) {
+static void _rtgui_topwin_redraw_tree(rt_list_t *list, rtgui_rect_t *rect,
+    rtgui_evt_generic_t *evt) {
     rt_list_t *node;
 
     RT_ASSERT(list != RT_NULL);
     RT_ASSERT(rect != RT_NULL);
-    RT_ASSERT(e_paint != RT_NULL);
+    RT_ASSERT(evt != RT_NULL);
 
     /* skip the hidden windows */
     rt_list_foreach(node, list, prev) {
@@ -1048,33 +1048,32 @@ static void _rtgui_topwin_redraw_tree(rt_list_t *list,
     }
 
     for (; node != list; node = node->prev) {
-        rtgui_topwin_t *topwin;
-
-        topwin = get_topwin_from_list(node);
+        rtgui_topwin_t *topwin = get_topwin_from_list(node);
 
         //FIXME: intersect with clip?
         if (!rtgui_rect_is_intersect(rect, &(topwin->extent))) {
-            e_paint->wid = topwin->wid;
+            evt->paint.wid = topwin->wid;
             // < XY do !!! >
-            //rtgui_send(topwin->app, &(e_paint->_super), sizeof(*e_paint));
+            //rtgui_send(topwin->app, evt);
         }
-
-        _rtgui_topwin_redraw_tree(&topwin->child_list, rect, e_paint);
+        _rtgui_topwin_redraw_tree(&topwin->child_list, rect, evt);
     }
 }
 
-static void rtgui_topwin_redraw(struct rtgui_rect *rect) {
-    struct rtgui_event_paint *e_paint;
+static void rtgui_topwin_redraw(rtgui_rect_t *rect) {
+    rtgui_evt_generic_t *evt;
 
-    e_paint = rtgui_malloc(sizeof(struct rtgui_event_paint));
-    if (!e_paint) {
-        LOG_E("redraw mem err");
+    /* send RTGUI_EVENT_PAINT */
+    evt = rt_mp_alloc(rtgui_event_pool, RT_WAITING_FOREVER);
+    if (evt) {
+        RTGUI_EVENT_INIT(evt, PAINT);
+        evt->paint.wid = RT_NULL;
+        _rtgui_topwin_redraw_tree(&_rtgui_topwin_list, rect, evt);
+        rt_mp_free(evt);
+    } else {
+        LOG_E("get mp err");
         return;
     }
-    RTGUI_EVENT_PAINT_INIT(e_paint);
-    e_paint->wid = RT_NULL;
-
-    _rtgui_topwin_redraw_tree(&_rtgui_topwin_list, rect, e_paint);
 }
 
 /* a window enter modal mode will modal all the sibling window and parent

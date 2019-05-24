@@ -141,7 +141,7 @@ static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 
-// rtgui_widget_t *rtgui_widget_create(const rtgui_type_t *widget_type) {
+// rtgui_widget_t *rtgui_widget_create(const rtgui_class_t *widget_type) {
 //     struct rtgui_widget *widget;
 
 //     widget = TO_WIDGET(rtgui_object_create(widget_type));
@@ -603,7 +603,7 @@ void rtgui_widget_show(struct rtgui_widget *wgt) {
     rtgui_evt_generic_t *evt = (rtgui_evt_generic_t *)rt_mp_alloc(
         rtgui_event_pool, RT_WAITING_FOREVER);
     if (evt) {
-        RTGUI_EVENT_SHOW_INIT(&evt->base);
+        RTGUI_EVENT_INIT(evt, SHOW);
         (void)EVENT_HANDLER(wgt)(wgt, evt);
         rt_mp_free(evt);
     } else {
@@ -623,7 +623,7 @@ void rtgui_widget_hide(struct rtgui_widget *wgt) {
     rtgui_evt_generic_t *evt = (rtgui_evt_generic_t *)rt_mp_alloc(
         rtgui_event_pool, RT_WAITING_FOREVER);
     if (evt) {
-        RTGUI_EVENT_HIDE_INIT(&evt->base);
+        RTGUI_EVENT_INIT(evt, HIDE);
         (void)EVENT_HANDLER(wgt)(wgt, evt);
         rt_mp_free(evt);
     } else {
@@ -740,7 +740,7 @@ void rtgui_widget_update(rtgui_widget_t *wgt) {
         evt = (rtgui_evt_generic_t *)rt_mp_alloc(
             rtgui_event_pool, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_PAINT_INIT(&evt->paint);
+            RTGUI_EVENT_INIT(evt, PAINT);
             evt->paint.wid = RT_NULL;
             (void)EVENT_HANDLER(wgt)(wgt, evt);
             rt_mp_free(evt);

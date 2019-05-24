@@ -613,7 +613,7 @@ not scanning or interpolation takes place. Input surface must be 32 bit.
 
 \returns The new, rotated surface; or RT_NULL for surfaces with incorrect input format.
 */
-struct rtgui_dc* rtgui_dc_rotate_90degrees(struct rtgui_dc_buffer* src, int numClockwiseTurns)
+rtgui_dc_t* rtgui_dc_rotate_90degrees(struct rtgui_dc_buffer* src, int numClockwiseTurns)
 {
     int row, col, newWidth, newHeight;
     int bpp, src_ipr, dst_ipr;
@@ -805,7 +805,7 @@ or 32bit RGBA/ABGR it will be converted into a 32bit RGBA format on the fly.
 
 \return The new rotozoomed surface.
 */
-struct rtgui_dc *rtgui_dc_rotozoom(struct rtgui_dc *dc, double angle, double zoomx, double zoomy, int smooth)
+rtgui_dc_t *rtgui_dc_rotozoom(rtgui_dc_t *dc, double angle, double zoomx, double zoomy, int smooth)
 {
     struct rtgui_dc_buffer *rz_src;
     struct rtgui_dc_buffer *rz_dst;
@@ -984,7 +984,7 @@ If zoom factors are negative, the image is flipped on the axes.
 
 \return The new, zoomed surface.
 */
-struct rtgui_dc *rtgui_dc_zoom(struct rtgui_dc *dc, double zoomx, double zoomy, int smooth)
+rtgui_dc_t *rtgui_dc_zoom(rtgui_dc_t *dc, double zoomx, double zoomy, int smooth)
 {
     struct rtgui_dc_buffer *rz_src;
     struct rtgui_dc_buffer *rz_dst;
@@ -1045,7 +1045,7 @@ The input surface is not modified. The output surface is newly allocated.
 
 \return The new, shrunken surface.
 */
-struct rtgui_dc *rtgui_dc_shrink(struct rtgui_dc *dc, int factorx, int factory)
+rtgui_dc_t *rtgui_dc_shrink(rtgui_dc_t *dc, int factorx, int factory)
 {
     struct rtgui_dc_buffer *rz_src;
     struct rtgui_dc_buffer *rz_dst;

@@ -106,7 +106,7 @@ static void _rtgui_win_destructor(void *obj) {
         evt = (rtgui_evt_generic_t *)rt_mp_alloc(
                 rtgui_event_pool, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_WIN_DESTROY_INIT(&evt->win_destroy);
+            RTGUI_EVENT_INIT(evt, WIN_DESTROY);
             evt->win_destroy.wid = win;
             ret = rtgui_server_post_event_sync(evt);
             if (ret) {
@@ -143,10 +143,10 @@ static rt_bool_t _rtgui_win_create_in_server(rtgui_win_t *win) {
     evt = (rtgui_evt_generic_t *)rt_mp_alloc(
             rtgui_event_pool, RT_WAITING_FOREVER);
     if (evt) {
-        RTGUI_EVENT_WIN_CREATE_INIT(&evt->win_create);
+        RTGUI_EVENT_INIT(evt, WIN_CREATE);
         evt->win_create.parent_window = win->parent_window;
         evt->win_create.wid = win;
-        evt->win_create._super.user = win->style;
+        evt->win_create.base.user = win->style;
         ret = rtgui_server_post_event_sync(evt);
         if (ret) {
             LOG_E("create %s err [%d]", win->title, ret);
@@ -182,7 +182,7 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent_window,
 
         if (!((style & RTGUI_WIN_STYLE_NO_TITLE) && \
               (style & RTGUI_WIN_STYLE_NO_BORDER))) {
-            struct rtgui_rect trect = *rect;
+            rtgui_rect_t trect = *rect;
 
             win->_title_wgt = rtgui_win_title_create(win, RT_NULL);
             if (!win->_title_wgt) {
@@ -240,7 +240,7 @@ rt_err_t rtgui_win_fini(rtgui_win_t* win) {
             evt = (rtgui_evt_generic_t *)rt_mp_alloc(
                 rtgui_event_pool, RT_WAITING_FOREVER);
             if (evt) {
-                RTGUI_EVENT_WIN_CLOSE_INIT(&evt->win_close);
+                RTGUI_EVENT_INIT(evt, WIN_CLOSE);
                 evt->win_close.wid = win;
                 (void)_rtgui_win_deal_close(win, evt, RT_TRUE);
                 rt_mp_free(evt);
@@ -288,7 +288,7 @@ RTM_EXPORT(rtgui_win_create);
 
 rtgui_win_t *rtgui_mainwin_create(rtgui_win_t *parent_win, rtgui_evt_hdl_t evt_hdl,
     const char *title, rt_uint16_t style) {
-    struct rtgui_rect rect;
+    rtgui_rect_t rect;
 
     /* get rect of main window */
     rtgui_get_mainwin_rect(&rect);
@@ -341,7 +341,7 @@ void rtgui_win_destroy(rtgui_win_t *win) {
         evt = (rtgui_evt_generic_t *)rt_mp_alloc(
                 rtgui_event_pool, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_WIN_CLOSE_INIT(&evt->win_close);
+            RTGUI_EVENT_INIT(evt, WIN_CLOSE);
             evt->win_close.wid = win;
             (void)_rtgui_win_deal_close(win, evt, RT_TRUE);
             rt_mp_free(evt);
@@ -372,7 +372,7 @@ rt_bool_t rtgui_win_close(rtgui_win_t *win) {
     evt = (rtgui_evt_generic_t *)rt_mp_alloc(
             rtgui_event_pool, RT_WAITING_FOREVER);
     if (evt) {
-        RTGUI_EVENT_WIN_CLOSE_INIT(&evt->win_close);
+        RTGUI_EVENT_INIT(evt, WIN_CLOSE);
         evt->win_close.wid = win;
         done = _rtgui_win_deal_close(win, evt, RT_TRUE);
         rt_mp_free(evt);
@@ -393,7 +393,7 @@ rt_err_t rtgui_win_enter_modal(rtgui_win_t *win) {
     evt = (rtgui_evt_generic_t *)rt_mp_alloc(
             rtgui_event_pool, RT_WAITING_FOREVER);
     if (evt) {
-        RTGUI_EVENT_WIN_MODAL_ENTER_INIT(&evt->win_modal_enter);
+        RTGUI_EVENT_INIT(evt, WIN_MODAL_ENTER);
         evt->win_modal_enter.wid = win;
         ret = rtgui_server_post_event_sync(evt);
         if (ret) {
@@ -448,7 +448,7 @@ rt_err_t rtgui_win_do_show(rtgui_win_t *win) {
             break;
         }
 
-        RTGUI_EVENT_WIN_SHOW_INIT(&evt->win_show);
+        RTGUI_EVENT_INIT(evt, WIN_SHOW);
         evt->win_show.wid = win;
         ret = rtgui_server_post_event_sync(evt);
         if (ret) {
@@ -521,7 +521,7 @@ void rtgui_win_hide(rtgui_win_t *win) {
     if (evt) {
         rt_err_t ret;
 
-        RTGUI_EVENT_WIN_HIDE_INIT(&evt->win_hide);
+        RTGUI_EVENT_INIT(evt, WIN_HIDE);
         evt->win_hide.wid = win;
         ret = rtgui_server_post_event_sync(evt);
         if (ret) {
@@ -546,7 +546,7 @@ rt_err_t rtgui_win_activate(rtgui_win_t *win) {
     evt = (rtgui_evt_generic_t *)rt_mp_alloc(
             rtgui_event_pool, RT_WAITING_FOREVER);
     if (evt) {
-        RTGUI_EVENT_WIN_ACTIVATE_INIT(&evt->win_activate);
+        RTGUI_EVENT_INIT(evt, WIN_ACTIVATE);
         evt->win_activate.wid = win;
         ret = rtgui_server_post_event_sync(evt);
         if (ret) {
@@ -601,7 +601,7 @@ void rtgui_win_move(rtgui_win_t *win, int x, int y) {
         evt = (rtgui_evt_generic_t *)rt_mp_alloc(
                 rtgui_event_pool, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_WIN_MOVE_INIT(&evt->win_move);
+            RTGUI_EVENT_INIT(evt, WIN_MOVE);
             evt->win_move.wid = win;
             evt->win_move.x = x;
             evt->win_move.y = y;
@@ -629,7 +629,7 @@ static rt_bool_t rtgui_win_ondraw(rtgui_win_t *win) {
         evt = (rtgui_evt_generic_t *)rt_mp_alloc(
             rtgui_event_pool, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_PAINT_INIT(&evt->paint);
+            RTGUI_EVENT_INIT(evt, PAINT);
             evt->paint.wid = RT_NULL;
             done = SUPER_HANDLER(win)(win, evt);
             rt_mp_free(evt);
@@ -852,7 +852,7 @@ void rtgui_win_set_rect(rtgui_win_t *win, rtgui_rect_t *rect) {
         if (evt) {
             rt_err_t ret;
 
-            RTGUI_EVENT_WIN_RESIZE_INIT(&evt->win_resize);
+            RTGUI_EVENT_INIT(evt, WIN_RESIZE);
             evt->win_resize.wid = win;
             evt->win_resize.rect = *rect;
             ret= rtgui_server_post_event(evt);
@@ -921,9 +921,9 @@ RTM_EXPORT(rtgui_win_get_title);
 #ifdef GUIENGIN_USING_VFRAMEBUFFER
 # include "../include/driver.h"
 
-struct rtgui_dc *rtgui_win_get_drawing(rtgui_win_t * win) {
-    struct rtgui_dc *dc;
-    struct rtgui_rect rect;
+rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
+    rtgui_dc_t *dc;
+    rtgui_rect_t rect;
 
     if (rtgui_app_self() == RT_NULL)
         return RT_NULL;
@@ -1021,7 +1021,7 @@ void rtgui_theme_draw_win(rtgui_title_t *win_t) {
 
     do {
         rtgui_win_t *win;
-        struct rtgui_dc *dc;
+        rtgui_dc_t *dc;
         rtgui_rect_t rect;
         rtgui_rect_t box_rect = {0, 0, WINTITLE_CB_WIDTH, WINTITLE_CB_HEIGHT};
         rt_uint16_t index, r, g, b, delta;

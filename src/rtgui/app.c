@@ -24,12 +24,13 @@
  * 2019-05-15     onelife      refactor and rename to "app.c"
  */
 
-// #include "include/rthw.h"
+#include "include/rthw.h" // rtt: rt_hw_interrupt_disable()
 
-#include "../include/rtgui.h"
-#include "../include/app.h"
-#include "../include/widgets/window.h"
-#include "../include/widgets/topwin.h"
+#include "include/rtgui.h"
+#include "include/app.h"
+#include "include/widgets/window.h"
+#include "include/widgets/topwin.h"
+
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    LOG_LVL_DBG
@@ -143,7 +144,7 @@ static rtgui_app_t *_rtgui_app_create(const char *title, rtgui_evt_hdl_t evt_hdl
                 break;
             }
             /* send RTGUI_EVENT_APP_CREATE */
-            RTGUI_EVENT_APP_CREATE_INIT(&evt->app_create);
+            RTGUI_EVENT_INIT(evt, APP_CREATE);
             evt->app_create.app = app;
             if (rtgui_send_sync(srv, evt)) {
                 LOG_E("create %s sync err", title);
@@ -188,7 +189,7 @@ void rtgui_app_destroy(rtgui_app_t *app) {
         evt = (rtgui_evt_generic_t *)rt_mp_alloc(
                 rtgui_event_pool, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_APP_DESTROY_INIT(&evt->app_destroy);
+            RTGUI_EVENT_INIT(evt, APP_DESTROY);
             evt->app_destroy.app = app;
             ret = rtgui_send_sync(srv, evt);
             if (ret) {
@@ -313,7 +314,7 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     case RTGUI_EVENT_APP_ACTIVATE:
         if (app->main_object) {
             /* send RTGUI_EVENT_WIN_SHOW */
-            RTGUI_EVENT_WIN_SHOW_INIT(&evt->win_show);
+            RTGUI_EVENT_INIT(evt, WIN_SHOW);
             evt->win_show.wid = (rtgui_win_t *)app->main_object;
             done = EVENT_HANDLER(app->main_object)(app->main_object, evt);
         } else {
@@ -443,7 +444,7 @@ void rtgui_app_activate(rtgui_app_t *app) {
     evt = (rtgui_evt_generic_t *)rt_mp_alloc(
             rtgui_event_pool, RT_WAITING_FOREVER);
     if (evt) {
-        RTGUI_EVENT_APP_ACTIVATE_INIT(&evt->app_activate);
+        RTGUI_EVENT_INIT(evt, APP_ACTIVATE);
         evt->app_activate.app = app;
         ret = rtgui_send(app, evt, RT_WAITING_FOREVER);
         if (ret) {
@@ -498,7 +499,7 @@ void rtgui_app_close(rtgui_app_t *app) {
     evt = (rtgui_evt_generic_t *)rt_mp_alloc(
             rtgui_event_pool, RT_WAITING_FOREVER);
     if (evt) {
-        RTGUI_EVENT_APP_DESTROY_INIT(&evt->app_destroy);
+        RTGUI_EVENT_INIT(evt, APP_DESTROY);
         evt->app_destroy.app = app;
         ret = rtgui_send(app, evt, RT_WAITING_FOREVER);
         if (ret) {
@@ -529,7 +530,7 @@ rt_err_t rtgui_app_set_as_wm(rtgui_app_t *app) {
         evt = (rtgui_evt_generic_t *)rt_mp_alloc(
                 rtgui_event_pool, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_SET_WM_INIT(&evt->set_wm);
+            RTGUI_EVENT_INIT(evt, SET_WM);
             evt->set_wm.app = app;
             ret = rtgui_send_sync(srv, evt);
             if (ret) {

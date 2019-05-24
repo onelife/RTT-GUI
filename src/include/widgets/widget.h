@@ -71,10 +71,10 @@ extern "C" {
 #define RTGUI_WIDGET_IS_DC_VISIBLE(w)   (RTGUI_WIDGET_FLAG(w) & RTGUI_WIDGET_FLAG_DC_VISIBLE)
 #define RTGUI_WIDGET_DC_SET_VISIBLE(w)  (RTGUI_WIDGET_FLAG(w) |= RTGUI_WIDGET_FLAG_DC_VISIBLE)
 #define RTGUI_WIDGET_DC_SET_UNVISIBLE(w) (RTGUI_WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_DC_VISIBLE)
-#define RTGUI_WIDGET_DC(w)              ((struct rtgui_dc*)&((w)->dc_type))
+#define RTGUI_WIDGET_DC(w)              ((rtgui_dc_t*)&((w)->dc_type))
 
 
-// rtgui_widget_t *rtgui_widget_create(const rtgui_type_t *widget_type);
+// rtgui_widget_t *rtgui_widget_create(const rtgui_class_t *widget_type);
 void rtgui_widget_destroy(rtgui_widget_t *widget);
 
 /* focus and unfocus */

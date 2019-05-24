@@ -21,15 +21,21 @@
  * Date           Author       Notes
  * 2010-09-15     Bernard      first version
  */
-#include "../include/font.h"
+#include "include/font.h"
 
 #if defined(GUIENGINE_USING_FONT12) && defined(GUIENGINE_USING_FONTHZ)
-#ifndef GUIENGINE_USING_HZ_FILE
-#ifdef RTGUI_USING_FONT_COMPACT
+
+#if !defined(RTGUI_USING_HZ_BMP) && !defined(GUIENGINE_USING_HZ_FILE)
+# error "Please enable RTGUI_USING_HZ_BMP or GUIENGINE_USING_HZ_FILE"
+#endif
+
+# if defined(RTGUI_USING_HZ_BMP)
+
+#  ifdef RTGUI_USING_FONT_COMPACT
 extern const unsigned char hz12_font[];
-#else
-const unsigned char hz12_font[] =
-{
+
+#  else
+const unsigned char hz12_font[] = {
     FONT_BMP_DATA_BEGIN
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -12300,10 +12306,10 @@ const unsigned char hz12_font[] =
     0x4c, 0x90, 0xfb, 0xe0, 0xaa, 0x20, 0xfb, 0xe0, 0x02, 0x20, 0xff, 0xe0, 0x48, 0x00, 0x8b, 0xf0,
     FONT_BMP_DATA_END
 };
-#endif
 
-const struct rtgui_font_bitmap hz12 =
-{
+#  endif /* RTGUI_USING_FONT_COMPACT */
+
+static const rtgui_font_bitmap_t _hz12 = {
     hz12_font,          /* bmp */
     RT_NULL,            /* each character width, NULL for fixed font */
     RT_NULL,            /* offset for each character */
@@ -12313,34 +12319,38 @@ const struct rtgui_font_bitmap hz12 =
     255                 /* last char */
 };
 
-extern struct rtgui_font_engine hz_bmp_font_engine;
-struct rtgui_font rtgui_font_hz12 =
-{
+
+rtgui_font_t rtgui_font_hz12 = {
     "hz",               /* family */
     12,                 /* height */
     1,                  /* refer count */
     &hz_bmp_font_engine,/* font engine */
-    (void *) &hz12,     /* font private data */
+    (void *)&_hz12,     /* font private data */
+    { RT_NULL },
 };
 /* size = 196272 bytes */
-#else
-struct rtgui_hz_file_font hz12 =
+
+# elif defined(GUIENGINE_USING_HZ_FILE)
+static struct rtgui_hz_file_font _hz12 =
 {
-    {RT_NULL},              /* cache root       */
-    0,                      /* cache size       */
-    12,                     /* font size        */
-    24,                     /* font data size   */
-    -1,                     /* fd               */
+    {RT_NULL},          /* cache root       */
+    0,                  /* cache size       */
+    12,                 /* font size        */
+    24,                 /* font data size   */
+    -1,                 /* fd               */
     "/resource/hzk12.fnt"   /* font_fn          */
 };
 
-struct rtgui_font rtgui_font_hz12 =
+rtgui_font_t rtgui_font_hz12 =
 {
     "hz",               /* family */
     12,                 /* height */
     1,                  /* refer count */
-    &rtgui_hz_file_font_engine,/* font engine */
-    (void *) &hz12,     /* font private data */
+    &rtgui_hz_file_font_engine, /* font engine */
+    (void *)&_hz12,     /* font private data */
+    { RT_NULL },
 };
-#endif
-#endif
+
+# endif /* defined(GUIENGINE_USING_HZ_FILE) */
+
+#endif /* defined(GUIENGINE_USING_FONT12) && defined(GUIENGINE_USING_FONTHZ) */

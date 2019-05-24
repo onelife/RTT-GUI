@@ -22,13 +22,13 @@
  * 2010-09-15     Grissom      first version
  */
 
-#include "../include/rtgui.h"
+#include "include/rtgui.h"
 
 #ifdef GUIENGINE_USING_TTF
-#include "../include/dc.h"
-#include "../include/blit.h"
-#include "../include/font.h"
-#include "../include/font_freetype.h"
+#include "include/dc.h"
+#include "include/blit.h"
+#include "include/font.h"
+#include "include/font_freetype.h"
 
 #include <ftcache.h>
 #include <ft2build.h>
@@ -302,14 +302,14 @@ static void _rtgui_rect_move_to_align(const rtgui_rect_t *rect, rtgui_rect_t *to
     PINFO(" rect align =3=>  %d %d %d %d\n", to->x1, to->y1, to->x2, to->y2);
 }
 
-static void ftc_draw_text(struct rtgui_font *font,
-                          struct rtgui_dc *dc,
+static void ftc_draw_text(rtgui_font_t *font,
+                          rtgui_dc_t *dc,
                           const char *text,
                           rt_ubase_t len,
-                          struct rtgui_rect *rect);
-static void ftc_get_metrics(struct rtgui_font *font, const char *text, rtgui_rect_t *rect);
+                          rtgui_rect_t *rect);
+static void ftc_get_metrics(rtgui_font_t *font, const char *text, rtgui_rect_t *rect);
 
-static const struct rtgui_font_engine ftc_engine =
+static const rtgui_font_engine_t ftc_engine =
 {
     RT_NULL,
     RT_NULL,
@@ -392,9 +392,9 @@ static void rtgui_ttf_derefer(struct rtgui_ttf *ttf)
 }
 
 
-static void _get_metrics(struct rtgui_ttf_font *ttf_font, const rt_uint16_t *text_short, struct rtgui_rect *rect);
+static void _get_metrics(struct rtgui_ttf_font *ttf_font, const rt_uint16_t *text_short, rtgui_rect_t *rect);
 
-static void _draw_bitmap(struct rtgui_dc *dc,
+static void _draw_bitmap(rtgui_dc_t *dc,
                          FTC_SBit bitmap,
                          rt_int16_t ox, rt_int16_t btm_y,
                          rtgui_color_t fgc, rt_uint16_t right, rt_uint16_t bottom)
@@ -481,9 +481,9 @@ static void _draw_bitmap(struct rtgui_dc *dc,
     }
     else
     {
-        struct rtgui_rect text_rect;
+        rtgui_rect_t text_rect;
         struct rtgui_point dc_point = { 0, 0 };
-        struct rtgui_dc *text_dc;
+        rtgui_dc_t *text_dc;
 
         if (x_start + bitmap->width < 0 || y_start + bitmap->height < 0
                 || x_start > right || y_start > bottom)
@@ -527,7 +527,7 @@ static void _draw_bitmap(struct rtgui_dc *dc,
     }
 }
 
-static void _draw_text(struct rtgui_dc *dc,
+static void _draw_text(rtgui_dc_t *dc,
                        struct rtgui_ttf_font *ttf_font,
                        rt_uint16_t *text_short,
                        rt_int16_t begin_x, rt_int16_t btm_y,
@@ -567,18 +567,18 @@ static void _draw_text(struct rtgui_dc *dc,
     }
 }
 
-static void ftc_draw_text(struct rtgui_font *font,
-                          struct rtgui_dc *dc,
+static void ftc_draw_text(rtgui_font_t *font,
+                          rtgui_dc_t *dc,
                           const char *text,
                           rt_ubase_t len,
-                          struct rtgui_rect *rect)
+                          rtgui_rect_t *rect)
 {
     rt_uint16_t *text_short;
     struct rtgui_ttf_font *ttf_font;
     rt_int16_t begin_x, btm_y;
     rt_int16_t topy;
     rtgui_color_t fgc;
-    struct rtgui_rect text_rect;
+    rtgui_rect_t text_rect;
 
     RT_ASSERT(font != RT_NULL);
     ttf_font = (struct rtgui_ttf_font *) font->data;
@@ -650,7 +650,7 @@ _out:
     rtgui_free(text_short);
 }
 
-static void _get_metrics(struct rtgui_ttf_font *ttf_font, const rt_uint16_t *text_short, struct rtgui_rect *rect)
+static void _get_metrics(struct rtgui_ttf_font *ttf_font, const rt_uint16_t *text_short, rtgui_rect_t *rect)
 {
     FT_Error err = 0;
     FTC_SBit ftcSBit = RT_NULL;
@@ -705,7 +705,7 @@ static void _get_metrics(struct rtgui_ttf_font *ttf_font, const rt_uint16_t *tex
     PINFO(" _get_metrics: %d %d %d %d\n", rect->x1, rect->y1, rect->x2, rect->y2);
 }
 
-static void ftc_get_metrics(struct rtgui_font *font, const char *text, struct rtgui_rect *rect)
+static void ftc_get_metrics(rtgui_font_t *font, const char *text, rtgui_rect_t *rect)
 {
     int len;
     rt_uint16_t *text_short;
@@ -716,11 +716,11 @@ static void ftc_get_metrics(struct rtgui_font *font, const char *text, struct rt
     ttf_font = (struct rtgui_ttf_font *) font->data;
     RT_ASSERT(ttf_font != RT_NULL);
 
-    len = strlen(text);
+    len = rt_strlen(text);
     if (len == 0)
         return;
 
-    rt_memset(rect, 0, sizeof(struct rtgui_rect));
+    rt_memset(rect, 0, sizeof(rtgui_rect_t));
 
     /* allocate unicode buffer */
 #ifndef GUIENGINE_TTF_UTF8
@@ -847,7 +847,7 @@ RTM_EXPORT(rtgui_ttf_load);
 
 rtgui_font_t *rtgui_freetype_font_create(const char *filename, rt_size_t size, const char* font_family)
 {
-    struct rtgui_font *font;
+    rtgui_font_t *font;
     struct rtgui_ttf_font *ttf_font;
     struct rtgui_ttf *ttf;
 
@@ -873,7 +873,7 @@ rtgui_font_t *rtgui_freetype_font_create(const char *filename, rt_size_t size, c
         }
     }
 
-    font = (struct rtgui_font *)rtgui_malloc(sizeof(struct rtgui_font) + sizeof(struct rtgui_ttf_font));
+    font = (rtgui_font_t *)rtgui_malloc(sizeof(rtgui_font_t) + sizeof(struct rtgui_ttf_font));
     if (!font)
     {
         PERROR("rtgui_ttf_load rtgui_malloc failed!\n");

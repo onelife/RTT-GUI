@@ -93,7 +93,7 @@ rt_bool_t rtgui_server_handle_mouse_motion(rtgui_evt_generic_t *evt) {
 
         /* send RTGUI_EVENT_MOUSE_MOTION */
         /* change owner to server */
-        RTGUI_EVENT_MOUSE_MOTION_INIT(&evt->mouse);
+        RTGUI_EVENT_INIT(evt, MOUSE_MOTION);
         evt->mouse.wid = topwin->wid;
         evt->mouse.win_acti_cnt = rtgui_app_get_win_acti_cnt();
         rtgui_send(topwin->wid->app, evt, RT_WAITING_NO);
@@ -120,7 +120,7 @@ rt_bool_t rtgui_server_handle_mouse_btn(rtgui_evt_generic_t *evt) {
 
                 if (rtgui_winrect_moved_done(&rect, &win)) {
                     /* send RTGUI_EVENT_WIN_MOVE */
-                    RTGUI_EVENT_WIN_MOVE_INIT(&evt->win_move);
+                    RTGUI_EVENT_INIT(evt, WIN_MOVE);
                     evt->win_move.wid = win;
                     evt->win_move.x = rect.x1;
                     evt->win_move.y = rect.y1;
@@ -133,7 +133,7 @@ rt_bool_t rtgui_server_handle_mouse_btn(rtgui_evt_generic_t *evt) {
 
         /* send RTGUI_EVENT_MOUSE_BUTTON */
         /* change owner to server */
-        RTGUI_EVENT_MOUSE_BUTTON_INIT(&evt->mouse);
+        RTGUI_EVENT_INIT(evt, MOUSE_BUTTON);
         /* set cursor position */
         rtgui_mouse_set_position(evt->mouse.x, evt->mouse.y);
 
@@ -201,7 +201,7 @@ rt_bool_t rtgui_server_handle_kbd(rtgui_evt_generic_t *evt) {
 
         /* send RTGUI_EVENT_KBD */
         /* change owner to server */
-        RTGUI_EVENT_KBD_INIT(&evt->kbd);
+        RTGUI_EVENT_INIT(evt, KBD);
         /* send to focus window */
         evt->kbd.wid = topwin->wid;
         evt->kbd.win_acti_cnt = rtgui_app_get_win_acti_cnt();

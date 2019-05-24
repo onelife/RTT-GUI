@@ -29,15 +29,15 @@
 #include "../include/dc_draw.h"
 #include "../include/image_container.h"
 
-static rt_bool_t rtgui_dc_buffer_fini(struct rtgui_dc *dc);
-static void rtgui_dc_buffer_draw_point(struct rtgui_dc *dc, int x, int y);
-static void rtgui_dc_buffer_draw_color_point(struct rtgui_dc *dc, int x, int y, rtgui_color_t color);
-static void rtgui_dc_buffer_draw_vline(struct rtgui_dc *dc, int x, int y1, int y2);
-static void rtgui_dc_buffer_draw_hline(struct rtgui_dc *dc, int x1, int x2, int y);
-static void rtgui_dc_buffer_fill_rect(struct rtgui_dc *dc, struct rtgui_rect *rect);
-static void rtgui_dc_buffer_blit_line(struct rtgui_dc *self, int x1, int x2, int y, rt_uint8_t *line_data);
-static void rtgui_dc_buffer_blit(struct rtgui_dc *self, struct rtgui_point *dc_point,
-                                 struct rtgui_dc *dest, rtgui_rect_t *rect);
+static rt_bool_t rtgui_dc_buffer_fini(rtgui_dc_t *dc);
+static void rtgui_dc_buffer_draw_point(rtgui_dc_t *dc, int x, int y);
+static void rtgui_dc_buffer_draw_color_point(rtgui_dc_t *dc, int x, int y, rtgui_color_t color);
+static void rtgui_dc_buffer_draw_vline(rtgui_dc_t *dc, int x, int y1, int y2);
+static void rtgui_dc_buffer_draw_hline(rtgui_dc_t *dc, int x1, int x2, int y);
+static void rtgui_dc_buffer_fill_rect(rtgui_dc_t *dc, rtgui_rect_t *rect);
+static void rtgui_dc_buffer_blit_line(rtgui_dc_t *self, int x1, int x2, int y, rt_uint8_t *line_data);
+static void rtgui_dc_buffer_blit(rtgui_dc_t *self, struct rtgui_point *dc_point,
+                                 rtgui_dc_t *dest, rtgui_rect_t *rect);
 
 const struct rtgui_dc_engine dc_buffer_engine =
 {
@@ -62,7 +62,7 @@ const struct rtgui_dc_engine dc_buffer_engine =
 #define _hw_get_pixel(dst, x, y, type)  \
         (type *)((rt_uint8_t*)((dst)->framebuffer) + (y) * (dst)->pitch + (x) * _UI_BITBYTES((dst)->bits_per_pixel))
 
-struct rtgui_dc *rtgui_dc_buffer_create(int w, int h)
+rtgui_dc_t *rtgui_dc_buffer_create(int w, int h)
 {
     rt_uint8_t pixel_format;
 
@@ -73,7 +73,7 @@ struct rtgui_dc *rtgui_dc_buffer_create(int w, int h)
 }
 RTM_EXPORT(rtgui_dc_buffer_create);
 
-struct rtgui_dc *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w, int h)
+rtgui_dc_t *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w, int h)
 {
     struct rtgui_dc_buffer *dc;
 
@@ -113,7 +113,7 @@ struct rtgui_dc *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w
 RTM_EXPORT(rtgui_dc_buffer_create_pixformat);
 
 #ifdef GUIENGINE_IMAGE_CONTAINER
-struct rtgui_dc *rtgui_img_dc_create_pixformat(rt_uint8_t pixel_format,
+rtgui_dc_t *rtgui_img_dc_create_pixformat(rt_uint8_t pixel_format,
         rt_uint8_t *pixel, struct rtgui_image_item *image_item)
 {
     struct rtgui_dc_buffer *dc;
@@ -145,7 +145,7 @@ struct rtgui_dc *rtgui_img_dc_create_pixformat(rt_uint8_t pixel_format,
 RTM_EXPORT(rtgui_img_dc_create_pixformat);
 #endif
 
-struct rtgui_dc *rtgui_dc_buffer_create_from_dc(struct rtgui_dc* dc)
+rtgui_dc_t *rtgui_dc_buffer_create_from_dc(rtgui_dc_t* dc)
 {
     struct rtgui_dc_buffer *buffer;
 
@@ -173,7 +173,7 @@ struct rtgui_dc *rtgui_dc_buffer_create_from_dc(struct rtgui_dc* dc)
 }
 RTM_EXPORT(rtgui_dc_buffer_create_from_dc);
 
-void rtgui_dc_buffer_set_alpha(struct rtgui_dc* dc, rt_uint8_t pixel_alpha)
+void rtgui_dc_buffer_set_alpha(rtgui_dc_t* dc, rt_uint8_t pixel_alpha)
 {
     struct rtgui_dc_buffer *d = (struct rtgui_dc_buffer*) dc;
     if (d)
@@ -182,7 +182,7 @@ void rtgui_dc_buffer_set_alpha(struct rtgui_dc* dc, rt_uint8_t pixel_alpha)
     }
 }
 
-rt_uint8_t *rtgui_dc_buffer_get_pixel(struct rtgui_dc *dc)
+rt_uint8_t *rtgui_dc_buffer_get_pixel(rtgui_dc_t *dc)
 {
     struct rtgui_dc_buffer *dc_buffer;
 
@@ -192,7 +192,7 @@ rt_uint8_t *rtgui_dc_buffer_get_pixel(struct rtgui_dc *dc)
 }
 RTM_EXPORT(rtgui_dc_buffer_get_pixel);
 
-static rt_bool_t rtgui_dc_buffer_fini(struct rtgui_dc *dc)
+static rt_bool_t rtgui_dc_buffer_fini(rtgui_dc_t *dc)
 {
     struct rtgui_dc_buffer *buffer = (struct rtgui_dc_buffer *)dc;
 
@@ -212,7 +212,7 @@ static rt_bool_t rtgui_dc_buffer_fini(struct rtgui_dc *dc)
     return RT_TRUE;
 }
 
-static void rtgui_dc_buffer_draw_point(struct rtgui_dc *self, int x, int y)
+static void rtgui_dc_buffer_draw_point(rtgui_dc_t *self, int x, int y)
 {
     struct rtgui_dc_buffer *dst;
     unsigned r, g, b, a;
@@ -245,7 +245,7 @@ static void rtgui_dc_buffer_draw_point(struct rtgui_dc *self, int x, int y)
     }
 }
 
-static void rtgui_dc_buffer_draw_color_point(struct rtgui_dc *self, int x, int y, rtgui_color_t color)
+static void rtgui_dc_buffer_draw_color_point(rtgui_dc_t *self, int x, int y, rtgui_color_t color)
 {
     struct rtgui_dc_buffer *dst;
     unsigned r, g, b, a;
@@ -278,7 +278,7 @@ static void rtgui_dc_buffer_draw_color_point(struct rtgui_dc *self, int x, int y
     }
 }
 
-static void rtgui_dc_buffer_draw_vline(struct rtgui_dc *self, int x1, int y1, int y2)
+static void rtgui_dc_buffer_draw_vline(rtgui_dc_t *self, int x1, int y1, int y2)
 {
     struct rtgui_dc_buffer *dst;
     unsigned r, g, b, a;
@@ -317,7 +317,7 @@ static void rtgui_dc_buffer_draw_vline(struct rtgui_dc *self, int x1, int y1, in
     }
 }
 
-static void rtgui_dc_buffer_draw_hline(struct rtgui_dc *self, int x1, int x2, int y1)
+static void rtgui_dc_buffer_draw_hline(rtgui_dc_t *self, int x1, int x2, int y1)
 {
     struct rtgui_dc_buffer *dst;
     unsigned r, g, b, a;
@@ -357,7 +357,7 @@ static void rtgui_dc_buffer_draw_hline(struct rtgui_dc *self, int x1, int x2, in
     }
 }
 
-static void rtgui_dc_buffer_fill_rect(struct rtgui_dc *self, struct rtgui_rect *dst_rect)
+static void rtgui_dc_buffer_fill_rect(rtgui_dc_t *self, rtgui_rect_t *dst_rect)
 {
     struct rtgui_dc_buffer *dst;
     unsigned r, g, b, a;
@@ -414,14 +414,14 @@ static void rtgui_dc_buffer_fill_rect(struct rtgui_dc *self, struct rtgui_rect *
 }
 
 /* blit a dc to another dc */
-static void rtgui_dc_buffer_blit(struct rtgui_dc *self,
+static void rtgui_dc_buffer_blit(rtgui_dc_t *self,
                                  struct rtgui_point *dc_pt,
-                                 struct rtgui_dc *dest,
+                                 rtgui_dc_t *dest,
                                  rtgui_rect_t *rect)
 {
     int pitch;
     rt_uint16_t rect_width, rect_height;
-    struct rtgui_rect _rect, *dest_rect;
+    rtgui_rect_t _rect, *dest_rect;
     struct rtgui_point dc_point;
     struct rtgui_dc_buffer *dc = (struct rtgui_dc_buffer *)self;
 
@@ -526,9 +526,9 @@ static void rtgui_dc_buffer_blit(struct rtgui_dc *self,
             struct rtgui_blit_info info = { 0 };
             struct rtgui_widget *owner;
             struct rtgui_region dest_region;
-            struct rtgui_rect dest_extent;
+            rtgui_rect_t dest_extent;
             int num_rects;
-            struct rtgui_rect *rects;
+            rtgui_rect_t *rects;
 
             /* get owner */
             owner = rt_container_of(dest, struct rtgui_widget, dc_type);
@@ -557,7 +557,7 @@ static void rtgui_dc_buffer_blit(struct rtgui_dc *self,
 
             for (index = 0; index < num_rects; index ++)
             {
-                struct rtgui_rect *r = &rects[index];
+                rtgui_rect_t *r = &rects[index];
                 rt_uint16_t blit_width, blit_height;
 
                 blit_width = rtgui_rect_width(*r) >(hw_driver->width - r->x1) ? (hw_driver->width - r->x1) : rtgui_rect_width(*r);
@@ -667,7 +667,7 @@ static void rtgui_dc_buffer_blit(struct rtgui_dc *self,
     }
 }
 
-static void rtgui_dc_buffer_blit_line(struct rtgui_dc *self, int x1, int x2, int y, rt_uint8_t *line_data)
+static void rtgui_dc_buffer_blit_line(rtgui_dc_t *self, int x1, int x2, int y, rt_uint8_t *line_data)
 {
     rt_uint8_t *pixel;
     struct rtgui_dc_buffer *dc = (struct rtgui_dc_buffer *)self;
@@ -691,7 +691,7 @@ static void rtgui_dc_buffer_blit_line(struct rtgui_dc *self, int x1, int x2, int
 
 #ifdef RT_USING_DFS
 # include "components/dfs/include/dfs_posix.h"
-void rtgui_dc_buffer_dump(struct rtgui_dc *self, char *fn)
+void rtgui_dc_buffer_dump(rtgui_dc_t *self, char *fn)
 {
     struct dc_file_header
     {

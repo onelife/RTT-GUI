@@ -75,7 +75,17 @@ typedef struct rtgui_line rtgui_line_t;
 typedef struct rtgui_region_data rtgui_region_data_t;
 typedef struct rtgui_region rtgui_region_t;
 
-typedef struct rtgui_class rtgui_type_t;
+struct rtgui_font_engine;
+struct rtgui_font_bitmap;
+typedef struct rtgui_font_engine rtgui_font_engine_t;
+typedef struct rtgui_font_bitmap rtgui_font_bitmap_t;
+typedef struct rtgui_font rtgui_font_t;
+
+typedef rt_uint32_t rtgui_color_t;
+typedef struct rtgui_gc rtgui_gc_t;
+typedef struct rtgui_dc rtgui_dc_t;
+
+typedef struct rtgui_class rtgui_class_t;
 typedef struct rtgui_obj rtgui_obj_t;
 typedef struct rtgui_app rtgui_app_t;
 typedef struct rtgui_box rtgui_box_t;
@@ -91,13 +101,10 @@ typedef struct rtgui_event_timer rtgui_event_timer_t;
 typedef union rtgui_evt_generic rtgui_evt_generic_t;
 
 typedef void (*rtgui_constructor_t)(void *obj);
-typedef void (*rtgui_destructor_t)(rtgui_type_t *obj);
+typedef void (*rtgui_destructor_t)(rtgui_class_t *obj);
 typedef rt_bool_t (*rtgui_evt_hdl_t)(void *obj, rtgui_evt_generic_t *evt);
 typedef void (*rtgui_idle_hdl_t)(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
 typedef void (*rtgui_timeout_hdl_t)(rtgui_timer_t *timer, void *parameter);
-
-typedef rt_uint32_t rtgui_color_t;
-typedef struct rtgui_gc rtgui_gc_t;
 
 /* coordinate point */
 struct rtgui_point {
@@ -132,12 +139,30 @@ typedef enum {
     RTGUI_REGION_STATUS_SUCCESS
 } rtgui_region_status_t;
 
+/* font */
+struct rtgui_font {
+    char *family;                           /* font name */
+    rt_uint16_t height;                     /* font height */
+    rt_uint32_t refer_count;                /* refer count */
+    const rtgui_font_engine_t *engine;      /* font engine */
+    void *data;                             /* font private data */
+    rt_slist_t list;                        /* the font list */
+};
+
+/* device context / drawable canvas */
+struct rtgui_dc {
+    /* type of device context */
+    rt_uint32_t type;
+    /* dc engine */
+    const struct rtgui_dc_engine *engine;
+};
+
 /* graphic context */
 struct rtgui_gc {
     rtgui_color_t foreground, background;
     rt_uint16_t textstyle;
     rt_uint16_t textalign;
-    struct rtgui_font *font;
+    rtgui_font_t *font;
 };
 
 /* class metadata */
@@ -162,7 +187,7 @@ typedef enum rtgui_obj_flag {
 
 struct rtgui_obj {
     rt_uint32_t _super;
-    const rtgui_type_t *cls;
+    const rtgui_class_t *cls;
     rtgui_evt_hdl_t evt_hdl;
     rtgui_obj_flag_t flag;
     rt_ubase_t id;
@@ -425,19 +450,19 @@ struct rtgui_evt_base {
 
 /* app event */
 struct rtgui_evt_app {
-    rtgui_evt_base_t _super;
+    rtgui_evt_base_t base;
     rtgui_app_t *app;
 };
 
 /* window manager event  */
 struct rtgui_event_set_wm {
-    rtgui_evt_base_t _super;
+    rtgui_evt_base_t base;
     rtgui_app_t *app;
 };
 
 /* window event */
 #define _RTGUI_EVENT_WIN_ELEMENTS           \
-    rtgui_evt_base_t _super;                \
+    rtgui_evt_base_t base;                \
     rtgui_win_t *wid;
 
 struct rtgui_event_win {
@@ -474,13 +499,13 @@ struct rtgui_event_win_update_end {
 
 /* other window event */
 struct rtgui_event_update_begin {
-    rtgui_evt_base_t _super;
+    rtgui_evt_base_t base;
     /* the update rect */
     rtgui_rect_t rect;
 };
 
 struct rtgui_evt_update_end {
-    rtgui_evt_base_t _super;
+    rtgui_evt_base_t base;
     /* the update rect */
     rtgui_rect_t rect;
 };
@@ -503,18 +528,17 @@ struct rtgui_event_clip_info {
     /*rt_uint32_t num_rect;*/
     /* rtgui_rect_t *rects */
 };
-// #define RTGUI_EVENT_GET_RECT(e, i)          &(((rtgui_rect_t*)(e + 1))[i])
 
 #define rtgui_event_show rtgui_evt_base
 #define rtgui_event_hide rtgui_evt_base
 
 struct rtgui_event_update_toplvl {
-    rtgui_evt_base_t _super;
+    rtgui_evt_base_t base;
     rtgui_win_t *toplvl;
 };
 
 struct rtgui_event_timer {
-    rtgui_evt_base_t _super;
+    rtgui_evt_base_t base;
     struct rtgui_timer *timer;
 };
 
@@ -527,7 +551,7 @@ struct rtgui_event_vpaint_req {
     _RTGUI_EVENT_WIN_ELEMENTS;
     struct rtgui_event_vpaint_req *sender;
     struct rt_completion *cmp;
-    struct rtgui_dc* buffer;
+    rtgui_dc_t* buffer;
 };
 
 /* gesture event */
@@ -576,7 +600,7 @@ struct rtgui_event_kbd {
 
 /* touch event: handled by server */
 struct rtgui_event_touch {
-    rtgui_evt_base_t _super;
+    rtgui_evt_base_t base;
     rt_uint16_t x, y;
     rt_uint16_t up_down;
     rt_uint16_t resv;
@@ -595,17 +619,17 @@ struct rtgui_event_command {
 
 /* widget event */
 struct rtgui_event_scrollbar {
-    rtgui_evt_base_t _super;
+    rtgui_evt_base_t base;
     rt_uint8_t event;
 };
 
 struct rtgui_event_focused {
-    rtgui_evt_base_t _super;
+    rtgui_evt_base_t base;
     rtgui_widget_t *widget;
 };
 
 struct rtgui_event_resize {
-    rtgui_evt_base_t _super;
+    rtgui_evt_base_t base;
     rt_int16_t x, y;
     rt_int16_t w, h;
 };
@@ -617,7 +641,7 @@ typedef enum rtgui_event_model_mode {
 } rtgui_event_model_mode_t;
 
 struct rtgui_event_mv_model {
-    rtgui_evt_base_t _super;
+    rtgui_evt_base_t base;
     struct rtgui_mv_model *model;
     struct rtgui_mv_view  *view;
     rt_size_t first_data_changed_idx;

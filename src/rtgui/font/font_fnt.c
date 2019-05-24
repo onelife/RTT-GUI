@@ -25,85 +25,79 @@
 /*
 * rockbox fnt font engine
 */
-#include "../include/rtgui.h"
-#include "../include/font_fnt.h"
-
-#ifdef _WIN32_NATIVE
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <io.h>
-#define open    _open
-#define close   _close
-#define read    _read
-#define write   _write
-#define unlink  _unlink
-#else
-#include "components/dfs/include/dfs_posix.h"
+/* Includes ------------------------------------------------------------------*/
+#include "include/rtgui.h"
+#include "include/font_fnt.h"
+#ifdef RT_USING_DFS
+# include "components/dfs/include/dfs_posix.h"
 #endif
 
-static void rtgui_fnt_font_draw_text(struct rtgui_font *font, struct rtgui_dc *dc, const char *text, rt_ubase_t len, struct rtgui_rect *rect);
-static void rtgui_fnt_font_get_metrics(struct rtgui_font *font, const char *text, rtgui_rect_t *rect);
-const struct rtgui_font_engine fnt_font_engine =
-{
+/* Private function prototype ------------------------------------------------*/
+static void rtgui_fnt_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
+    const char *text, rt_ubase_t len, rtgui_rect_t *rect);
+static void rtgui_fnt_font_get_metrics(rtgui_font_t *font, const char *text,
+    rtgui_rect_t *rect);
+
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+const rtgui_font_engine_t fnt_font_engine = {
     RT_NULL,
     RT_NULL,
     rtgui_fnt_font_draw_text,
     rtgui_fnt_font_get_metrics
 };
 
-void rtgui_fnt_font_draw_text(struct rtgui_font *font, struct rtgui_dc *dc, const char *text, rt_ubase_t len, struct rtgui_rect *rect)
-{
+/* Private functions ---------------------------------------------------------*/
+static void rtgui_fnt_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
+    const char *text, rt_ubase_t len, rtgui_rect_t *rect) {
+    struct fnt_font *fnt;
+    rtgui_rect_t text_rect;
     int ch, i, j, c, width;
     rt_uint32_t position;
-    struct fnt_font *fnt;
     rt_uint8_t *data_ptr;
-    struct rtgui_rect text_rect;
 
-    fnt = (struct fnt_font*)font->data;
-    RT_ASSERT(fnt != RT_NULL);
+    RT_ASSERT(font->data != RT_NULL);
+    fnt = font->data;
 
     rtgui_font_get_metrics(font, text, &text_rect);
     rtgui_rect_move_to_align(rect, &text_rect, RTGUI_DC_TEXTALIGN(dc));
 
-    while (len)
-    {
+    while (len) {
         /* get character */
         ch = *text;
         /* NOTE: we only support asc character right now */
-        if (ch > 0x80)
-        {
+        if (ch > 0x80) {
             text += 1;
             len -= 1;
             continue;
         }
 
         /* get position and width */
-        if (fnt->offset == RT_NULL)
-        {
+        if (!fnt->offset) {
             width = fnt->header.max_width;
-            position = (ch - fnt->header.first_char) * width * ((fnt->header.height + 7)/8);
-        }
-        else
-        {
+            position = (ch - fnt->header.first_char) * width * \
+                       ((fnt->header.height + 7) / 8);
+        } else {
             width = fnt->width[ch - fnt->header.first_char];
             position = fnt->offset[ch - fnt->header.first_char];
         }
 
         /* draw a character */
         data_ptr = (rt_uint8_t*)&fnt->bits[position];
-        for (i = 0; i < width; i ++) /* x */
-        {
-            for (j = 0; j < 8; j ++) /* y */
-            {
-                for (c = 0; c < (fnt->header.height + 7)/8; c ++)
-                {
+        for (i = 0; i < width; i ++) { /* x */
+            for (j = 0; j < 8; j ++) { /* y */
+                for (c = 0; c < (fnt->header.height + 7)/8; c ++) {
                     /* check drawable region */
-                    if ((text_rect.x1 + i > text_rect.x2) || (text_rect.y1 + c * 8 + j > text_rect.y2))
+                    if (((text_rect.x1 + i) > text_rect.x2) || \
+                        ((text_rect.y1 + c * 8 + j) > text_rect.y2))
                         continue;
 
                     if (data_ptr[i + c * width] & (1 << j))
-                        rtgui_dc_draw_point(dc, text_rect.x1 + i, text_rect.y1 + c * 8 + j);
+                        rtgui_dc_draw_point(
+                            dc, text_rect.x1 + i, text_rect.y1 + c * 8 + j);
                 }
             }
         }
@@ -114,62 +108,53 @@ void rtgui_fnt_font_draw_text(struct rtgui_font *font, struct rtgui_dc *dc, cons
     }
 }
 
-void rtgui_fnt_font_get_metrics(struct rtgui_font *font, const char *text, rtgui_rect_t *rect)
-{
-    int ch;
+static void rtgui_fnt_font_get_metrics(rtgui_font_t *font, const char *text,
+    rtgui_rect_t *rect) {
     struct fnt_font *fnt;
+    int ch;
 
-    fnt = (struct fnt_font*)font->data;
-    RT_ASSERT(fnt != RT_NULL);
+    RT_ASSERT(font->data != RT_NULL);
+    fnt = font->data;
 
     rt_memset(rect, 0x00, sizeof(rtgui_rect_t));
     rect->y2 = fnt->header.height;
 
-    while (*text)
-    {
-        if (fnt->width == RT_NULL)
-        {
+    while (*text) {
+        if (!fnt->width) {
             /* fixed width font */
             rect->x2 += fnt->header.max_width;
-        }
-        else
-        {
+        } else {
             ch = *text;
             /* NOTE: we only support asc character right now */
-            if (ch > 0x80)
-            {
+            if (ch > 0x80) {
                 text += 1;
                 continue;
             }
-
             rect->x2 += fnt->width[ch - fnt->header.first_char];
         }
-
         text += 1;
     }
 }
 
-struct rtgui_font *rtgui_fnt_font_create(const char* filename, const char* font_family)
-{
+/* Public functions ----------------------------------------------------------*/
+rtgui_font_t *rtgui_fnt_font_create(const char* filename,
+    const char* font_family) {
     int fd = -1, file_len = 0;
-    struct rtgui_font *font = RT_NULL;
+    rtgui_font_t *font = RT_NULL;
     struct rtgui_fnt_header *fnt_header = RT_NULL;
 
     fd = open(filename, O_RDONLY, 0);
-    if (fd < 0)
-    {
-        return RT_NULL;
-    }
+    if (fd < 0) return RT_NULL;
 
     file_len = lseek(fd, 0, SEEK_END);
     lseek(fd, (file_len - sizeof(struct rtgui_fnt_header)), SEEK_SET);
 
     /* read fnt header */
-    fnt_header = (struct rtgui_fnt_header*) rtgui_malloc(sizeof(struct rtgui_fnt_header));
-    if (fnt_header)
-    {
-        if (read(fd, fnt_header, sizeof(struct rtgui_fnt_header)) != sizeof(struct rtgui_fnt_header))
-        {
+    fnt_header = (struct rtgui_fnt_header*)rtgui_malloc(
+        sizeof(struct rtgui_fnt_header));
+    if (fnt_header) {
+        if (read(fd, fnt_header, sizeof(struct rtgui_fnt_header)) != \
+            sizeof(struct rtgui_fnt_header)) {
             rtgui_free(fnt_header);
             close(fd);
             return RT_NULL;
@@ -184,16 +169,15 @@ struct rtgui_font *rtgui_fnt_font_create(const char* filename, const char* font_
         rt_uint16_t crc;
         rt_uint8_t i ;
 
-        for (i = 2; i < 22; i += 2)
-        {
+        for (i = 2; i < 22; i += 2) {
             crc_h ^= data[i];
             crc_l ^= data[i + 1];
         }
 
         crc = (crc_h << 8) + crc_l;
 
-        if (crc != fnt_header->crc16 || fnt_header->w == 0 || fnt_header->h == 0)
-        {
+        if ((crc != fnt_header->crc16) || (fnt_header->w == 0) || \
+            (fnt_header->h == 0)) {
             rtgui_free(fnt_header);
             close(fd);
             return RT_NULL;
@@ -202,46 +186,45 @@ struct rtgui_font *rtgui_fnt_font_create(const char* filename, const char* font_
 
     /* load font */
     {
-        struct rtgui_font_bitmap *asc = (struct rtgui_font_bitmap*)rtgui_malloc(sizeof(struct rtgui_font_bitmap));
+        rtgui_font_bitmap_t *asc = (rtgui_font_bitmap_t*)rtgui_malloc(
+            sizeof(rtgui_font_bitmap_t));
         struct rtgui_hz_file_font *hz = NULL;
-        struct rtgui_font *asc_font = (struct rtgui_font*)rtgui_malloc(sizeof(struct rtgui_font));
-        struct rtgui_font *hz_font = NULL;
+        rtgui_font_t *asc_font = (rtgui_font_t*)rtgui_malloc(
+            sizeof(rtgui_font_t));
+        rtgui_font_t *hz_font = NULL;
 
-#ifdef GUIENGINE_USING_HZ_FILE
-        hz = (struct rtgui_hz_file_font*)rtgui_malloc(sizeof(struct rtgui_hz_file_font));
-        hz_font = (struct rtgui_font*)rtgui_malloc(sizeof(struct rtgui_font));
-        /* load hz */
-        if (hz && hz_font && fnt_header->asc_offset != 0)
-        {
-            struct cache_tree _cache_root = { NULL };
+        #ifdef GUIENGINE_USING_HZ_FILE
+            hz = (struct rtgui_hz_file_font*)rtgui_malloc(
+                sizeof(struct rtgui_hz_file_font));
+            hz_font = (rtgui_font_t*)rtgui_malloc(sizeof(rtgui_font_t));
 
-            hz->cache_root = _cache_root;
-            hz->cache_size = 0;
-            hz->font_size = fnt_header->h;
-            hz->font_data_size = (fnt_header->h + 7) / 8 * fnt_header->h;
-            hz->fd = -1;
-            hz->font_fn = rt_strdup(filename);
+            /* load hz */
+            if (hz && hz_font && fnt_header->asc_offset != 0) {
+                struct cache_tree _cache_root = { NULL };
 
-            hz_font->family = rt_strdup(font_family);
-            hz_font->height = fnt_header->h;
-            hz_font->refer_count = 1;
-            hz_font->engine = &rtgui_hz_file_font_engine;
-            hz_font->data = (void *)hz;
-        }
-        else
-        {
-            rtgui_free(hz);
-            rtgui_free(hz_font);
-            hz_font = RT_NULL;
-        }
-#endif
+                hz->cache_root = _cache_root;
+                hz->cache_size = 0;
+                hz->font_size = fnt_header->h;
+                hz->font_data_size = (fnt_header->h + 7) / 8 * fnt_header->h;
+                hz->fd = -1;
+                hz->font_fn = rt_strdup(filename);
+
+                hz_font->family = rt_strdup(font_family);
+                hz_font->height = fnt_header->h;
+                hz_font->refer_count = 1;
+                hz_font->engine = &rtgui_hz_file_font_engine;
+                hz_font->data = (void *)hz;
+            } else {
+                rtgui_free(hz);
+                rtgui_free(hz_font);
+                hz_font = RT_NULL;
+            }
+        #endif
 
         /* load asc */
-        if (asc && asc_font)
-        {
+        if (asc && asc_font) {
             asc->bmp = (const rt_uint8_t *)rtgui_malloc(fnt_header->asc_length);
-            if (asc->bmp)
-            {
+            if (asc->bmp) {
                 asc->char_width = RT_NULL;
                 asc->offset = RT_NULL;
                 asc->width = fnt_header->w / 2;
@@ -251,14 +234,11 @@ struct rtgui_font *rtgui_fnt_font_create(const char* filename, const char* font_
 
                 lseek(fd, fnt_header->asc_offset, SEEK_SET);
                 if (fnt_header->asc_length != (rt_uint32_t) \
-                    read(fd, (void*)asc->bmp, fnt_header->asc_length))
-                {
+                    read(fd, (void*)asc->bmp, fnt_header->asc_length)) {
                     rtgui_free((void*)asc->bmp);
                     rtgui_free(asc);
                     rtgui_free(asc_font);
-                }
-                else
-                {
+                } else {
                     if (hz_font)
                         asc_font->family = rt_strdup("asc");
                     else
@@ -275,13 +255,10 @@ struct rtgui_font *rtgui_fnt_font_create(const char* filename, const char* font_
 
         close(fd);
 
-        if (hz_font)
-        {
+        if (hz_font) {
             rtgui_font_system_add_font(hz_font);
             font = hz_font;
-        }
-        else if (asc_font)
-        {
+        } else if (asc_font) {
             font = asc_font;
         }
     }
@@ -289,84 +266,76 @@ struct rtgui_font *rtgui_fnt_font_create(const char* filename, const char* font_
     return font;
 }
 
-struct rtgui_font *rtgui_hz_fnt_font_create(const char* filename, const char* font_family, rt_uint8_t font_size)
-{
-#ifdef GUIENGINE_USING_HZ_FILE
-    int fd = -1;
-    struct rtgui_font *font = RT_NULL;
+rtgui_font_t *rtgui_hz_fnt_font_create(const char* filename,
+    const char* font_family, rt_uint8_t font_size) {
+        rtgui_font_t *font = RT_NULL;
 
-    fd = open(filename, O_RDONLY, 0);
-    if (fd < 0)
-    {
-        return RT_NULL;
-    }
+    #ifdef GUIENGINE_USING_HZ_FILE
+        int fd = -1;
 
-    close(fd);
+        fd = open(filename, O_RDONLY, 0);
+        if (fd < 0) return RT_NULL;
 
-    /* load font */
-    {
-        struct rtgui_hz_file_font *hz = (struct rtgui_hz_file_font*)rtgui_malloc(sizeof(struct rtgui_hz_file_font));
-        struct rtgui_font *hz_font = (struct rtgui_font*)rtgui_malloc(sizeof(struct rtgui_font));
+        close(fd);
 
-        /* load hz */
-        if (hz && hz_font)
+        /* load font */
         {
-            struct cache_tree _cache_root = { NULL };
+            struct rtgui_hz_file_font *hz = (struct rtgui_hz_file_font*) \
+                rtgui_malloc(sizeof(struct rtgui_hz_file_font));
+            rtgui_font_t *hz_font = (rtgui_font_t*)rtgui_malloc(
+                sizeof(rtgui_font_t));
 
-            hz->cache_root = _cache_root;
-            hz->cache_size = 0;
-            hz->font_size = font_size;
-            hz->font_data_size = (font_size + 7) / 8 * font_size;
-            hz->fd = -1;
-            hz->font_fn = rt_strdup(filename);
+            /* load hz */
+            if (hz && hz_font) {
+                struct cache_tree _cache_root = { NULL };
 
-            hz_font->family = rt_strdup(font_family);
-            hz_font->height = font_size;
-            hz_font->refer_count = 1;
-            hz_font->engine = &rtgui_hz_file_font_engine;
-            hz_font->data = (void *)hz;
+                hz->cache_root = _cache_root;
+                hz->cache_size = 0;
+                hz->font_size = font_size;
+                hz->font_data_size = (font_size + 7) / 8 * font_size;
+                hz->fd = -1;
+                hz->font_fn = rt_strdup(filename);
 
-            rtgui_font_system_add_font(hz_font);
-            font = hz_font;
+                hz_font->family = rt_strdup(font_family);
+                hz_font->height = font_size;
+                hz_font->refer_count = 1;
+                hz_font->engine = &rtgui_hz_file_font_engine;
+                hz_font->data = (void *)hz;
+
+                rtgui_font_system_add_font(hz_font);
+                font = hz_font;
+            } else {
+                rtgui_free(hz);
+                rtgui_free(hz_font);
+            }
         }
-        else
-        {
-            rtgui_free(hz);
-            rtgui_free(hz_font);
-        }
-    }
+    #endif
 
     return font;
-#else
-    return RT_NULL;
-#endif
 }
 
-struct rtgui_font *rtgui_asc_fnt_font_create(const char* filename, const char* font_family, rt_uint8_t font_size)
-{
+rtgui_font_t *rtgui_asc_fnt_font_create(const char* filename,
+    const char* font_family, rt_uint8_t font_size) {
     int fd = -1, file_len = 0;
-    struct rtgui_font *font = RT_NULL;
+    rtgui_font_t *font = RT_NULL;
 
     fd = open(filename, O_RDONLY, 0);
-    if (fd < 0)
-    {
-        return RT_NULL;
-    }
+    if (fd < 0) return RT_NULL;
 
     file_len = lseek(fd, 0, SEEK_END);
     lseek(fd, 0, SEEK_SET);
 
     /* load font */
     {
-        struct rtgui_font_bitmap *asc = (struct rtgui_font_bitmap*)rtgui_malloc(sizeof(struct rtgui_font_bitmap));
-        struct rtgui_font *asc_font = (struct rtgui_font*)rtgui_malloc(sizeof(struct rtgui_font));
+        rtgui_font_bitmap_t *asc = (rtgui_font_bitmap_t*)rtgui_malloc(
+            sizeof(rtgui_font_bitmap_t));
+        rtgui_font_t *asc_font = (rtgui_font_t*)rtgui_malloc(
+            sizeof(rtgui_font_t));
 
         /* load asc */
-        if (asc && asc_font)
-        {
+        if (asc && asc_font) {
             asc->bmp = (const rt_uint8_t *)rtgui_malloc(file_len);
-            if (asc->bmp)
-            {
+            if (asc->bmp) {
                 asc->char_width = RT_NULL;
                 asc->offset = RT_NULL;
                 asc->width = font_size / 2;
@@ -374,14 +343,11 @@ struct rtgui_font *rtgui_asc_fnt_font_create(const char* filename, const char* f
                 asc->first_char = 0x00;
                 asc->last_char = 0xFF;
 
-                if (read(fd, (void*)asc->bmp, file_len) != file_len)
-                {
+                if (file_len != read(fd, (void*)asc->bmp, file_len)) {
                     rtgui_free((void*)asc->bmp);
                     rtgui_free(asc);
                     rtgui_free(asc_font);
-                }
-                else
-                {
+                } else {
                     asc_font->family = rt_strdup("asc");
                     asc_font->height = font_size;
                     asc_font->refer_count = 1;
@@ -393,7 +359,6 @@ struct rtgui_font *rtgui_asc_fnt_font_create(const char* filename, const char* f
                 }
             }
         }
-
         close(fd);
     }
 
@@ -401,7 +366,6 @@ struct rtgui_font *rtgui_asc_fnt_font_create(const char* filename, const char* f
 }
 
 #ifdef GUIENG_USING_FNT_FILE
-# include "components/dfs/include/dfs_posix.h"
 
 rt_inline int readbyte(int fd, unsigned char *cp)
 {
@@ -438,11 +402,11 @@ rt_inline int readstr(int fd, char *buf, int count)
     return read(fd, buf, count);
 }
 
-struct rtgui_font *fnt_font_create(const char* filename, const char* font_family)
+rtgui_font_t *fnt_font_create(const char* filename, const char* font_family)
 {
     int fd = -1;
     rt_uint32_t index;
-    struct rtgui_font *font = RT_NULL;
+    rtgui_font_t *font = RT_NULL;
     struct fnt_font *fnt = RT_NULL;
     struct fnt_header *fnt_header;
 
@@ -452,7 +416,7 @@ struct rtgui_font *fnt_font_create(const char* filename, const char* font_family
         goto __exit;
     }
 
-    font = (struct rtgui_font*) rtgui_malloc (sizeof(struct rtgui_font));
+    font = (rtgui_font_t*) rtgui_malloc (sizeof(rtgui_font_t));
     if (font == RT_NULL) goto __exit;
     fnt = (struct fnt_font*) rtgui_malloc (sizeof(struct fnt_font));
     if (fnt == RT_NULL) goto __exit;
@@ -537,5 +501,5 @@ __exit:
     }
     return RT_NULL;
 }
-#endif
+#endif /* GUIENG_USING_FNT_FILE */
 

@@ -2025,7 +2025,7 @@ RTM_EXPORT(rtgui_region_dump);
 
 #include "../include/dc.h"
 #include "../include/color.h"
-void rtgui_region_draw_clip(rtgui_region_t *region, struct rtgui_dc *dc)
+void rtgui_region_draw_clip(rtgui_region_t *region, rtgui_dc_t *dc)
 {
     int i;
     int num;
@@ -2045,7 +2045,7 @@ void rtgui_region_draw_clip(rtgui_region_t *region, struct rtgui_dc *dc)
 
     for (i = 0; i < num; i++)
     {
-        struct rtgui_rect rect;
+        rtgui_rect_t rect;
 
         rect = rects[i];
 

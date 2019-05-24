@@ -48,7 +48,7 @@ struct rtgui_image_png
 static rt_bool_t rtgui_image_png_check(struct rtgui_filerw *file);
 static rt_bool_t rtgui_image_png_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load);
 static void rtgui_image_png_unload(struct rtgui_image *image);
-static void rtgui_image_png_blit(struct rtgui_image *image, struct rtgui_dc *dc, struct rtgui_rect *rect);
+static void rtgui_image_png_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
 struct rtgui_image_engine rtgui_image_png_engine =
 {
@@ -276,7 +276,7 @@ static void rtgui_image_png_unload(struct rtgui_image *image)
     }
 }
 
-static void rtgui_image_png_blit(struct rtgui_image *image, struct rtgui_dc *dc, struct rtgui_rect *rect)
+static void rtgui_image_png_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
     rt_uint16_t x, y, w, h;
     rtgui_color_t *ptr;
@@ -428,7 +428,7 @@ void rtgui_image_png_init()
 static rt_bool_t rtgui_image_png_check(struct rtgui_filerw *file);
 static rt_bool_t rtgui_image_png_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load);
 static void rtgui_image_png_unload(struct rtgui_image *image);
-static void rtgui_image_png_blit(struct rtgui_image *image, struct rtgui_dc *dc, struct rtgui_rect *rect);
+static void rtgui_image_png_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
 struct rtgui_image_engine rtgui_image_png_engine =
 {
@@ -545,7 +545,7 @@ static void rtgui_image_png_unload(struct rtgui_image *image)
     }
 }
 
-static void rtgui_image_png_blit(struct rtgui_image *image, struct rtgui_dc *dc, struct rtgui_rect *rect)
+static void rtgui_image_png_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
     int x, y;
     int w, h;
@@ -687,7 +687,7 @@ static void rtgui_image_png_blit(struct rtgui_image *image, struct rtgui_dc *dc,
         else if (dc->type == RTGUI_DC_HW)
         {
             struct rtgui_widget *owner;
-            struct rtgui_rect r;
+            rtgui_rect_t r;
 
             owner = ((struct rtgui_dc_hw*)dc)->owner;
 

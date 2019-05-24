@@ -317,7 +317,7 @@ static void string_cleanup(char** out)
 
 static void string_set(char** out, const char* in)
 {
-  size_t insize = strlen(in), i;
+  size_t insize = rt_strlen(in), i;
   if(string_resize(out, insize))
   {
     for(i = 0; i != insize; ++i)
@@ -2406,7 +2406,7 @@ void lodepng_chunk_type(char type[5], const unsigned char* chunk)
 
 unsigned char lodepng_chunk_type_equals(const unsigned char* chunk, const char* type)
 {
-  if(strlen(type) != 4) return 0;
+  if(rt_strlen(type) != 4) return 0;
   return (chunk[4] == type[0] && chunk[5] == type[1] && chunk[6] == type[2] && chunk[7] == type[3]);
 }
 
@@ -4922,7 +4922,7 @@ static unsigned addChunk_zTXt(ucvector* out, const char* keyword, const char* te
 {
   unsigned error = 0;
   ucvector data, compressed;
-  size_t i, textsize = strlen(textstring);
+  size_t i, textsize = rt_strlen(textstring);
 
   ucvector_init(&data);
   ucvector_init(&compressed);
@@ -4949,7 +4949,7 @@ static unsigned addChunk_iTXt(ucvector* out, unsigned compressed, const char* ke
 {
   unsigned error = 0;
   ucvector data;
-  size_t i, textsize = strlen(textstring);
+  size_t i, textsize = rt_strlen(textstring);
 
   ucvector_init(&data);
 
@@ -5664,12 +5664,12 @@ unsigned lodepng_encode(unsigned char** out, size_t* outsize,
     /*tEXt and/or zTXt*/
     for(i = 0; i != info.text_num; ++i)
     {
-      if(strlen(info.text_keys[i]) > 79)
+      if(rt_strlen(info.text_keys[i]) > 79)
       {
         state->error = 66; /*text chunk too large*/
         break;
       }
-      if(strlen(info.text_keys[i]) < 1)
+      if(rt_strlen(info.text_keys[i]) < 1)
       {
         state->error = 67; /*text chunk too small*/
         break;
@@ -5703,12 +5703,12 @@ unsigned lodepng_encode(unsigned char** out, size_t* outsize,
     /*iTXt*/
     for(i = 0; i != info.itext_num; ++i)
     {
-      if(strlen(info.itext_keys[i]) > 79)
+      if(rt_strlen(info.itext_keys[i]) > 79)
       {
         state->error = 66; /*text chunk too large*/
         break;
       }
-      if(strlen(info.itext_keys[i]) < 1)
+      if(rt_strlen(info.itext_keys[i]) < 1)
       {
         state->error = 67; /*text chunk too small*/
         break;

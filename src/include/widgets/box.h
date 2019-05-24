@@ -37,7 +37,7 @@ rtgui_box_t *rtgui_box_create(int orientation, int border_size);
 void rtgui_box_destroy(rtgui_box_t *box);
 
 void rtgui_box_layout(rtgui_box_t *box);
-void rtgui_box_layout_rect(rtgui_box_t *box, struct rtgui_rect *rect);
+void rtgui_box_layout_rect(rtgui_box_t *box, rtgui_rect_t *rect);
 
 #ifdef __cplusplus
 }

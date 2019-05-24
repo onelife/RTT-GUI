@@ -29,11 +29,11 @@
 struct rtgui_dc_trans
 {
     struct rtgui_matrix m;
-    struct rtgui_dc *owner;
+    rtgui_dc_t *owner;
     int use_aa;
 };
 
-struct rtgui_dc_trans* rtgui_dc_trans_create(struct rtgui_dc *owner)
+struct rtgui_dc_trans* rtgui_dc_trans_create(rtgui_dc_t *owner)
 {
     struct rtgui_dc_trans *dct;
 
@@ -95,7 +95,7 @@ void rtgui_dc_trans_get_new_wh(struct rtgui_dc_trans *dct,
                                int *new_wp,
                                int *new_hp)
 {
-    struct rtgui_rect rect;
+    rtgui_rect_t rect;
     struct rtgui_point topleft, topright, bottomright;
 
     RT_ASSERT(dct);
@@ -647,11 +647,11 @@ static void _blit_rotate_FR2FR_ARGB2RGB565_AA(struct _fb_rect* RTGUI_RESTRICT sr
 static void _blit_rotate_B2B(struct rtgui_dc_trans *dct,
                              const struct rtgui_point *dc_point,
                              struct rtgui_dc_buffer* RTGUI_RESTRICT dest,
-                             struct rtgui_rect *rect,
+                             rtgui_rect_t *rect,
                              const struct rtgui_matrix *invm,
                              int neww, int newh)
 {
-    struct rtgui_rect srcrect;
+    rtgui_rect_t srcrect;
     struct rtgui_dc_buffer *dc = (struct rtgui_dc_buffer*)dct->owner;
     struct _fb_rect srcfb, dstfb;
 
@@ -713,11 +713,11 @@ static void _blit_rotate_B2B(struct rtgui_dc_trans *dct,
 static void _blit_rotate_B2H(struct rtgui_dc_trans *dct,
                              const struct rtgui_point *dc_point,
                              struct rtgui_dc_hw* dest,
-                             struct rtgui_rect *rect,
+                             rtgui_rect_t *rect,
                              const struct rtgui_matrix *invm,
                              int neww, int newh)
 {
-    struct rtgui_rect srcrect;
+    rtgui_rect_t srcrect;
     int start_pix;
     struct _fb_rect srcfb, dstfb;
     struct rtgui_dc_buffer *dc = (struct rtgui_dc_buffer*)dct->owner;
@@ -791,10 +791,10 @@ static void _blit_rotate_B2H(struct rtgui_dc_trans *dct,
 
 void rtgui_dc_trans_blit(struct rtgui_dc_trans *dct,
                          struct rtgui_point *dc_point,
-                         struct rtgui_dc *dest,
-                         struct rtgui_rect *rect)
+                         rtgui_dc_t *dest,
+                         rtgui_rect_t *rect)
 {
-    struct rtgui_rect bkrect;
+    rtgui_rect_t bkrect;
     struct rtgui_matrix invm;
     struct rtgui_point dp;
     int neww, newh;

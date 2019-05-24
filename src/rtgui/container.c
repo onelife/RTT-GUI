@@ -176,8 +176,8 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     switch (evt->base.type) {
     case RTGUI_EVENT_PAINT:
     {
-        struct rtgui_dc *dc;
-        struct rtgui_rect rect;
+        rtgui_dc_t *dc;
+        rtgui_rect_t rect;
 
         dc = rtgui_dc_begin_drawing(wgt);
         if (!dc) {
@@ -273,7 +273,7 @@ void rtgui_container_add_child(rtgui_container_t *cntr,
             evt = (rtgui_evt_generic_t *)rt_mp_alloc(
                 rtgui_event_pool, RT_WAITING_FOREVER);
             if (evt) {
-                RTGUI_EVENT_UPDATE_TOPLVL_INIT(&evt->update_toplvl);
+                RTGUI_EVENT_INIT(evt, UPDATE_TOPLVL);
                 evt->update_toplvl.toplvl = TO_WIDGET(cntr)->toplevel;
                 (void)EVENT_HANDLER(cntr)(cntr, evt);
                 rt_mp_free(evt);
