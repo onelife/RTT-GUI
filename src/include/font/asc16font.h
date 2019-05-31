@@ -1,5 +1,5 @@
 /*
- * File      : asc16font.c
+ * File      : asc16font.h
  * This file is part of RT-Thread GUI Engine
  * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
  *
@@ -21,15 +21,9 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
-/* Includes ------------------------------------------------------------------*/
-#include "include/font.h"
+#ifndef __ASC16FONT_H__
+#define __ASC16FONT_H__
 
-#ifdef GUIENGINE_USING_FONT16
-
-/* Private function prototype ------------------------------------------------*/
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
 static const unsigned char _asc16_font[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  
     0x00, 0x00, 0x7e, 0x81, 0xa5, 0x81, 0x81, 0xbd, 0x99, 0x81, 0x81, 0x7e, 0x00, 0x00, 0x00, 0x00,  
@@ -289,26 +283,5 @@ static const unsigned char _asc16_font[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  
 };
 
-static rtgui_font_bitmap_t _asc16 = {
-    (const rt_uint8_t *)_asc16_font,    /* bmp */
-    2,            /* each character width, NULL for fixed font */
-    RT_NULL,            /* offset for each character */
-    8,                  /* width */
-    16,                 /* height */
-    0,                  /* first char */
-    255                 /* last char */
-};
 
-const rtgui_font_t rtgui_font_asc16 = {
-    "asc",              /* family */
-    16,                 /* height */
-    1,                  /* refer count */
-    &bmp_font_engine,   /* font engine */
-    (void *)&_asc16,    /* font private data */
-    { RT_NULL },
-};
-
-/* Private functions ---------------------------------------------------------*/
-/* Public functions ----------------------------------------------------------*/
-
-#endif /* GUIENGINE_USING_FONT16 */
+#endif /* __ASC16FONT_H__ */

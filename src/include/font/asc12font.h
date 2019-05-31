@@ -1,5 +1,5 @@
 /*
- * File      : asc12font.c
+ * File      : asc12font.h
  * This file is part of RT-Thread GUI Engine
  * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
  *
@@ -22,11 +22,8 @@
  * 2009-10-16     Bernard      first version
  * 2013-08-31     Bernard      use FNT font as default
  */
-/* Includes ------------------------------------------------------------------*/
-#include "include/font.h"
-#include "include/font_fnt.h"
-
-#ifdef GUIENGINE_USING_FONT12
+#ifndef __ASC12FONT_H__
+#define __ASC12FONT_H__
 
 /* Font information:
    name: DejaVuSans-Bold
@@ -43,10 +40,6 @@
    Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved.  Copyright (c) 2006 by Tavmjong Bah. All Rights Reserved.  DejaVu changes are in public domain  
 */
 
-/* Private function prototype ------------------------------------------------*/
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
 /* Font character bitmap data. */
 static const unsigned char _font_bits[] = {
     /* Character 32 (0x20):
@@ -4135,35 +4128,4 @@ static const unsigned char _sysfont_width[] = {
     7,          /* (0xff) */
 };
 
-static const struct fnt_font _asc12 = {
-    {
-        "RB12",
-        13,
-        12,
-        10,
-        0,
-        32,
-        32,
-        224,
-        2864,
-        224,
-        224
-    },
-    _font_bits,         /* bits */
-    _sysfont_offset,    /* offset */
-    _sysfont_width      /* width */
-};
-
-const rtgui_font_t rtgui_font_asc12 = {
-    "asc",              /* family */
-    12,                 /* height */
-    1,                  /* refer count */
-    &fnt_font_engine,   /* font engine */
-    (void *)&_asc12,    /* font private data */
-    { RT_NULL },
-};
-
-/* Private functions ---------------------------------------------------------*/
-/* Public functions ----------------------------------------------------------*/
-
-#endif /* GUIENGINE_USING_FONT12 */
+#endif /* __ASC12FONT_H__ */

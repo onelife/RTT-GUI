@@ -41,7 +41,29 @@ static void rtgui_fnt_font_get_metrics(rtgui_font_t *font, const char *text,
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
+#ifdef GUIENGINE_USING_FONT12
+#include "include/font/asc12font.h"
+
+    static const struct fnt_font _asc12 = {
+        {
+            "RB12",
+            13,
+            12,
+            10,
+            0,
+            32,
+            32,
+            224,
+            2864,
+            224,
+            224
+        },
+        _font_bits,         /* bits */
+        _sysfont_offset,    /* offset */
+        _sysfont_width      /* width */
+    };
+#endif /* GUIENGINE_USING_FONT12 */
+
 /* Exported constants --------------------------------------------------------*/
 const rtgui_font_engine_t fnt_font_engine = {
     RT_NULL,
@@ -49,6 +71,17 @@ const rtgui_font_engine_t fnt_font_engine = {
     rtgui_fnt_font_draw_text,
     rtgui_fnt_font_get_metrics
 };
+
+#ifdef GUIENGINE_USING_FONT12
+    const rtgui_font_t rtgui_font_asc12 = {
+        "asc",              /* family */
+        12,                 /* height */
+        1,                  /* refer count */
+        &fnt_font_engine,   /* font engine */
+        (void *)&_asc12,    /* font private data */
+        { RT_NULL },
+    };
+#endif /* GUIENGINE_USING_FONT12 */
 
 /* Private functions ---------------------------------------------------------*/
 static void rtgui_fnt_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,

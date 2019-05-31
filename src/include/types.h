@@ -86,9 +86,8 @@ struct rtgui_blit_info;
 struct rtgui_filerw;
 typedef struct rtgui_filerw rtgui_filerw_t;
 typedef rt_uint32_t rtgui_color_t;
-typedef struct rtgui_image_engine rtgui_image_engine_t; //TODO
-typedef struct rtgui_image_palette rtgui_image_palette_t;
 typedef struct rtgui_image_engine rtgui_image_engine_t;
+typedef struct rtgui_image_palette rtgui_image_palette_t;
 typedef struct rtgui_image rtgui_image_t;
 typedef struct rtgui_image_info rtgui_image_info_t;
 typedef struct rtgui_blit_info rtgui_blit_info_t;

@@ -34,7 +34,20 @@ static void rtgui_bitmap_font_get_metrics(rtgui_font_t *font, const char *text,
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
+#ifdef GUIENGINE_USING_FONT16
+#include "include/font/asc16font.h"
+
+    static rtgui_font_bitmap_t _asc16 = {
+        (const rt_uint8_t *)_asc16_font,    /* bmp */
+        2,            /* each character width, NULL for fixed font */
+        RT_NULL,            /* offset for each character */
+        8,                  /* width */
+        16,                 /* height */
+        0,                  /* first char */
+        255                 /* last char */
+    };
+#endif /* GUIENGINE_USING_FONT16 */
+
 /* Exported constants --------------------------------------------------------*/
 const rtgui_font_engine_t bmp_font_engine = {
     RT_NULL,
@@ -43,6 +56,17 @@ const rtgui_font_engine_t bmp_font_engine = {
     rtgui_bitmap_font_get_metrics
 };
 RTM_EXPORT(bmp_font_engine);
+
+#ifdef GUIENGINE_USING_FONT16
+    const rtgui_font_t rtgui_font_asc16 = {
+        "asc",              /* family */
+        16,                 /* height */
+        1,                  /* refer count */
+        &bmp_font_engine,   /* font engine */
+        (void *)&_asc16,    /* font private data */
+        { RT_NULL },
+    };
+#endif /* GUIENGINE_USING_FONT16 */
 
 /* Private functions ---------------------------------------------------------*/
 static void rtgui_bitmap_font_draw_char(rtgui_font_bitmap_t *font,

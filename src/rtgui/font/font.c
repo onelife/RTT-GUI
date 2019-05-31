@@ -27,9 +27,6 @@
 #include "include/font.h"
 #include "include/dc.h"
 #include "include/filerw.h"
-#ifdef GUIENGINE_USING_TTF
-# include "include/font_freetype.h"
-#endif
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -96,10 +93,6 @@ void rtgui_font_system_init(void) {
     #endif
 
     LOG_D("default font %d", _default_font->height);
-
-    #ifdef GUIENGINE_USING_TTF
-        rtgui_ttf_system_init();
-    #endif
 }
 
 void rtgui_font_fd_uninstall(void) {
