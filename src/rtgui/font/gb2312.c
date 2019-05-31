@@ -2400,7 +2400,7 @@ int Gb2312ToUtf8(char *pGb2312, int len, char **ppUtf8)
     }
 
     utfLen = len + (len >> 2) + 2;
-    pUtf = *ppUtf8 = (char *)rt_malloc(utfLen);
+    pUtf = *ppUtf8 = (char *)rtgui_malloc(utfLen);
     if (NULL != pUtf)
     {
         GB2312ToUTF_8(pUtf, pGb2312, len);

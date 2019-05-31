@@ -836,10 +836,10 @@ void rtgui_dc_trans_blit(struct rtgui_dc_trans *dct,
     if (rtgui_matrix_inverse(&dct->m, &invm))
         return;
 
-    if (rtgui_rect_width(*rect) < neww - dc_point->x)
-        neww = dc_point->x + rtgui_rect_width(*rect);
-    if (rtgui_rect_height(*rect) < newh - dc_point->y)
-        newh = dc_point->y + rtgui_rect_height(*rect);
+    if (RECT_W(*rect) < neww - dc_point->x)
+        neww = dc_point->x + RECT_W(*rect);
+    if (RECT_H(*rect) < newh - dc_point->y)
+        newh = dc_point->y + RECT_H(*rect);
 
     /* Route to different optimized routines. */
     if (dct->owner->type == RTGUI_DC_BUFFER)

@@ -89,7 +89,7 @@ static void _app_destructor(void *obj) {
 
     RT_ASSERT(app != RT_NULL);
 
-    rt_free(app->name);
+    rtgui_free(app->name);
     app->name = RT_NULL;
 }
 

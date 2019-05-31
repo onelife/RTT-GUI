@@ -278,7 +278,7 @@ void rtgui_dc_fill_gradient_rectv(rtgui_dc_t *dc, rtgui_rect_t *rect,
     RT_ASSERT(dc != RT_NULL);
     RT_ASSERT(rect != RT_NULL);
 
-    step = rtgui_rect_height(*rect);
+    step = RECT_H(*rect);
     fc = RTGUI_DC_FC(dc);
 
     for (y = rect->y1; y < rect->y2; y++)

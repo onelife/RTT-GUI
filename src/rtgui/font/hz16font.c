@@ -25,11 +25,11 @@
 
 #if defined(GUIENGINE_USING_FONT16) && defined(GUIENGINE_USING_FONTHZ)
 
-#if !defined(RTGUI_USING_HZ_BMP) && !defined(GUIENGINE_USING_HZ_FILE)
-# error "Please enable RTGUI_USING_HZ_BMP or GUIENGINE_USING_HZ_FILE"
+#if !defined(GUIENGINE_USING_HZ_BMP) && !defined(GUIENGINE_USING_HZ_FILE)
+# error "Please enable GUIENGINE_USING_HZ_BMP or GUIENGINE_USING_HZ_FILE"
 #endif
 
-# if defined(RTGUI_USING_HZ_BMP)
+# if defined(GUIENGINE_USING_HZ_BMP)
 
 #  ifdef RTGUI_USING_FONT_COMPACT
 extern const unsigned char hz16_font[];
@@ -16778,7 +16778,7 @@ const rtgui_font_bitmap_t _hz16 = {
     255                 /* last char */
 };
 
-rtgui_font_t rtgui_font_hz16 = {
+const rtgui_font_t rtgui_font_hz16 = {
     "hz",               /* family */
     16,                 /* height */
     1,                  /* refer count */
@@ -16788,7 +16788,7 @@ rtgui_font_t rtgui_font_hz16 = {
 };
 /* size = 267616 bytes */
 
-# elif defined(GUIENGINE_USING_HZ_FILE)
+# elif defined(GUIENGINE_USING_HZ_FILE) /* GUIENGINE_USING_HZ_BMP */
 struct rtgui_hz_file_font _hz16 = {
     {RT_NULL},          /* cache root       */
     0,                  /* cache size       */
@@ -16798,7 +16798,7 @@ struct rtgui_hz_file_font _hz16 = {
     "/resource/hzk16.fnt"   /* font_fn          */
 };
 
-rtgui_font_t rtgui_font_hz16 = {
+const rtgui_font_t rtgui_font_hz16 = {
     "hz",               /* family */
     16,                 /* height */
     1,                  /* refer count */

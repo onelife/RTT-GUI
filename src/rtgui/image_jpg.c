@@ -31,17 +31,12 @@
 #include "jpeglib.h"
 
 #include "../include/rtgui.h"
-#include "../include/filerw.h"
 #include "../include/blit.h"
 
-#ifdef GUIENGINE_USING_DFS_FILERW
-#include "components/dfs/include/dfs_posix.h"
-#endif
-
-static rt_bool_t rtgui_image_jpeg_check(struct rtgui_filerw *file);
-static rt_bool_t rtgui_image_jpeg_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load);
-static void rtgui_image_jpeg_unload(struct rtgui_image *image);
-static void rtgui_image_jpeg_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
+static rt_bool_t rtgui_image_jpeg_check(rtgui_filerw_t *file);
+static rt_bool_t rtgui_image_jpeg_load(rtgui_image_t *image, rtgui_filerw_t *file, rt_bool_t load);
+static void rtgui_image_jpeg_unload(rtgui_image_t *image);
+static void rtgui_image_jpeg_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
 struct rtgui_jpeg_error_mgr
 {
@@ -52,7 +47,7 @@ struct rtgui_image_jpeg
 {
     rt_bool_t is_loaded;
 
-    struct rtgui_filerw *filerw;
+    rtgui_filerw_t *filerw;
 
     /* jpeg structure */
     struct jpeg_decompress_struct cinfo;
@@ -62,7 +57,7 @@ struct rtgui_image_jpeg
     rt_uint8_t *line_pixels;
 };
 
-struct rtgui_image_engine rtgui_image_jpeg_engine =
+rtgui_image_engine_t rtgui_image_jpeg_engine =
 {
     "jpeg",
     {RT_NULL},
@@ -72,7 +67,7 @@ struct rtgui_image_engine rtgui_image_jpeg_engine =
     rtgui_image_jpeg_blit
 };
 
-struct rtgui_image_engine rtgui_image_jpg_engine =
+rtgui_image_engine_t rtgui_image_jpg_engine =
 {
     "jpg",
     {RT_NULL},
@@ -87,7 +82,7 @@ typedef struct
 {
     struct jpeg_source_mgr pub;
 
-    struct rtgui_filerw *ctx;
+    rtgui_filerw_t *ctx;
     rt_uint8_t buffer[INPUT_BUFFER_SIZE];
 } rtgui_jpeg_source_mgr;
 
@@ -174,7 +169,7 @@ static void term_source(j_decompress_ptr cinfo)
 * The caller must have already opened the stream, and is responsible
 * for closing it after finishing decompression.
 */
-static void rtgui_jpeg_filerw_src_init(j_decompress_ptr cinfo, struct rtgui_filerw *ctx)
+static void rtgui_jpeg_filerw_src_init(j_decompress_ptr cinfo, rtgui_filerw_t *ctx)
 {
     rtgui_jpeg_source_mgr *src;
 
@@ -205,7 +200,7 @@ static void rtgui_jpeg_filerw_src_init(j_decompress_ptr cinfo, struct rtgui_file
 }
 
 /* get line data of a jpeg image */
-static rt_uint8_t *rtgui_image_get_line(struct rtgui_image *image, int h)
+static rt_uint8_t *rtgui_image_get_line(rtgui_image_t *image, int h)
 {
     struct rtgui_image_jpeg *jpeg;
     rt_uint8_t *result_ptr;
@@ -251,7 +246,7 @@ static rt_uint8_t *rtgui_image_get_line(struct rtgui_image *image, int h)
     return jpeg->line_pixels;
 }
 
-static rt_bool_t rtgui_image_jpeg_loadall(struct rtgui_image *image)
+static rt_bool_t rtgui_image_jpeg_loadall(rtgui_image_t *image)
 {
     struct rtgui_image_jpeg *jpeg;
     rt_uint8_t *line_ptr;
@@ -324,7 +319,7 @@ static void output_no_message(j_common_ptr cinfo)
     /* do nothing */
 }
 
-static rt_bool_t rtgui_image_jpeg_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load)
+static rt_bool_t rtgui_image_jpeg_load(rtgui_image_t *image, rtgui_filerw_t *file, rt_bool_t load)
 {
     struct rtgui_image_jpeg *jpeg;
 
@@ -371,7 +366,7 @@ static rt_bool_t rtgui_image_jpeg_load(struct rtgui_image *image, struct rtgui_f
         /* no memory */
         jpeg_finish_decompress(&jpeg->cinfo);
         jpeg_destroy_decompress(&jpeg->cinfo);
-        rt_free(jpeg);
+        rtgui_free(jpeg);
 
         return RT_FALSE;
     }
@@ -383,7 +378,7 @@ static rt_bool_t rtgui_image_jpeg_load(struct rtgui_image *image, struct rtgui_f
 }
 
 
-static void rtgui_image_jpeg_unload(struct rtgui_image *image)
+static void rtgui_image_jpeg_unload(rtgui_image_t *image)
 {
     if (image != RT_NULL)
     {
@@ -402,11 +397,11 @@ static void rtgui_image_jpeg_unload(struct rtgui_image *image)
             jpeg_finish_decompress(&jpeg->cinfo);
         }
         jpeg_destroy_decompress(&jpeg->cinfo);
-        rt_free(jpeg);
+        rtgui_free(jpeg);
     }
 }
 
-static void rtgui_image_jpeg_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
+static void rtgui_image_jpeg_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
     rt_uint16_t x, y;
     rtgui_color_t *ptr;
@@ -426,11 +421,11 @@ static void rtgui_image_jpeg_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtg
             /* blit ARGB888 to this buffered DC */
             int dst_x, dst_y;
             int w, h;
-            struct rtgui_blit_info info = { 0 };
+            rtgui_blit_info_t info = { 0 };
             struct rtgui_dc_buffer *buffer = (struct rtgui_dc_buffer*)dc;
 
-            w = _UI_MIN(image->w, rtgui_rect_width(*rect));
-            h = _UI_MIN(image->h, rtgui_rect_height(*rect));
+            w = _MIN(image->w, RECT_W(*rect));
+            h = _MIN(image->h, RECT_H(*rect));
 
             info.a = 255;
 
@@ -501,7 +496,7 @@ static void rtgui_image_jpeg_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtg
     }
 }
 
-static rt_bool_t rtgui_image_jpeg_check(struct rtgui_filerw *file)
+static rt_bool_t rtgui_image_jpeg_check(rtgui_filerw_t *file)
 {
     int start;
     rt_bool_t is_JPG;
@@ -608,17 +603,14 @@ static rt_bool_t rtgui_image_jpeg_check(struct rtgui_filerw *file)
 #include "tjpgd.h"
 
 #include "../include/rtgui.h"
-#include "../include/filerw.h"
+#include "../include/image.h"
 #include "../include/blit.h"
 
-#ifdef GUIENGINE_USING_DFS_FILERW
-# include "components/dfs/include/dfs_posix.h"
-#endif
 
 /* Private typedef -----------------------------------------------------------*/
 struct rtgui_image_jpeg
 {
-    struct rtgui_filerw *filerw;
+    rtgui_filerw_t *filerw;
     rtgui_dc_t *dc;
     rt_uint16_t dst_x, dst_y;
     rt_uint16_t dst_w, dst_h;
@@ -635,14 +627,14 @@ struct rtgui_image_jpeg
 
 /* Private macro -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
-static rt_bool_t rtgui_image_jpeg_check(struct rtgui_filerw *file);
-static rt_bool_t rtgui_image_jpeg_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load);
-static void rtgui_image_jpeg_unload(struct rtgui_image *image);
-static void rtgui_image_jpeg_blit(struct rtgui_image *image,
+static rt_bool_t rtgui_image_jpeg_check(rtgui_filerw_t *file);
+static rt_bool_t rtgui_image_jpeg_load(rtgui_image_t *image, rtgui_filerw_t *file, rt_bool_t load);
+static void rtgui_image_jpeg_unload(rtgui_image_t *image);
+static void rtgui_image_jpeg_blit(rtgui_image_t *image,
                                   rtgui_dc_t *dc, rtgui_rect_t *dst_rect);
 
 /* Private variables ---------------------------------------------------------*/
-struct rtgui_image_engine rtgui_image_jpeg_engine =
+rtgui_image_engine_t rtgui_image_jpeg_engine =
 {
     "jpeg",
     {RT_NULL},
@@ -652,7 +644,7 @@ struct rtgui_image_engine rtgui_image_jpeg_engine =
     rtgui_image_jpeg_blit
 };
 
-struct rtgui_image_engine rtgui_image_jpg_engine =
+rtgui_image_engine_t rtgui_image_jpg_engine =
 {
     "jpg",
     {RT_NULL},
@@ -673,7 +665,7 @@ void rtgui_image_jpeg_init()
 
 static UINT tjpgd_in_func(JDEC *jdec, BYTE *buff, UINT ndata)
 {
-    struct rtgui_filerw *file = *(struct rtgui_filerw **)jdec->device;
+    rtgui_filerw_t *file = *(rtgui_filerw_t **)jdec->device;
 
     if (buff == RT_NULL)
     {
@@ -716,9 +708,9 @@ static UINT tjpgd_out_func(JDEC *jdec, void *bitmap, JRECT *rect)
         if (rect->left > jpeg->dst_w) return 1;
         if (rect->top  > jpeg->dst_h) return 0;
 
-        w = _UI_MIN(rect->right, jpeg->dst_w);
+        w = _MIN(rect->right, jpeg->dst_w);
         w = w - rect->left + 1;
-        h = _UI_MIN(rect->bottom, jpeg->dst_h);
+        h = _MIN(rect->bottom, jpeg->dst_h);
         h = h - rect->top + 1;
 
         for (y = 0; y < h; y++)
@@ -733,7 +725,7 @@ static UINT tjpgd_out_func(JDEC *jdec, void *bitmap, JRECT *rect)
     return 1;                           /* Continue to decompress */
 }
 
-static rt_bool_t rtgui_image_jpeg_check(struct rtgui_filerw *file)
+static rt_bool_t rtgui_image_jpeg_check(rtgui_filerw_t *file)
 {
     rt_uint8_t soi[2];
     rtgui_filerw_seek(file, 0, RTGUI_FILE_SEEK_SET);
@@ -746,7 +738,7 @@ static rt_bool_t rtgui_image_jpeg_check(struct rtgui_filerw *file)
     return RT_FALSE;
 }
 
-static rt_bool_t rtgui_image_jpeg_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load)
+static rt_bool_t rtgui_image_jpeg_load(rtgui_image_t *image, rtgui_filerw_t *file, rt_bool_t load)
 {
     rt_bool_t res = RT_FALSE;
     struct rtgui_image_jpeg *jpeg;
@@ -755,7 +747,7 @@ static rt_bool_t rtgui_image_jpeg_load(struct rtgui_image *image, struct rtgui_f
 
     do
     {
-        jpeg = (struct rtgui_image_jpeg *)rt_malloc(sizeof(struct rtgui_image_jpeg));
+        jpeg = (struct rtgui_image_jpeg *)rtgui_malloc(sizeof(struct rtgui_image_jpeg));
         if (jpeg == RT_NULL) break;
 
         jpeg->filerw = file;
@@ -763,7 +755,7 @@ static rt_bool_t rtgui_image_jpeg_load(struct rtgui_image *image, struct rtgui_f
         jpeg->pixels = RT_NULL;
 
         /* allocate memory pool */
-        jpeg->pool = rt_malloc(TJPGD_WORKING_BUFFER_SIZE);
+        jpeg->pool = rtgui_malloc(TJPGD_WORKING_BUFFER_SIZE);
         if (jpeg->pool == RT_NULL)
         {
             rt_kprintf("TJPGD err: no mem (%d)\n", TJPGD_WORKING_BUFFER_SIZE);
@@ -810,7 +802,7 @@ static rt_bool_t rtgui_image_jpeg_load(struct rtgui_image *image, struct rtgui_f
         {
             rt_uint8_t *pixels = RT_NULL;
 
-            if (jpeg->tjpgd.format == 0 && PKG_USING_RGB888_PIXEL_BITS == 32)
+            if (jpeg->tjpgd.format == 0 && GUIENGINE_RGB888_PIXEL_BITS == 32)
                 pixels = (rt_uint8_t *)rtgui_malloc(4 * image->w * image->h);
 
             jpeg->pixels = (rt_uint8_t *)rtgui_malloc(jpeg->byte_per_pixel * image->w * image->h);
@@ -851,7 +843,7 @@ static rt_bool_t rtgui_image_jpeg_load(struct rtgui_image *image, struct rtgui_f
 
     if (jpeg && (!res || jpeg->is_loaded))
     {
-        rt_free(jpeg->pool);
+        rtgui_free(jpeg->pool);
         jpeg->pool = RT_NULL;
     }
 
@@ -859,7 +851,7 @@ static rt_bool_t rtgui_image_jpeg_load(struct rtgui_image *image, struct rtgui_f
     {
         if (jpeg)
             rtgui_free(jpeg->pixels);
-        rt_free(jpeg);
+        rtgui_free(jpeg);
 
         image->data   = RT_NULL;
         image->engine = RT_NULL;
@@ -869,7 +861,7 @@ static rt_bool_t rtgui_image_jpeg_load(struct rtgui_image *image, struct rtgui_f
     return res;
 }
 
-static void rtgui_image_jpeg_unload(struct rtgui_image *image)
+static void rtgui_image_jpeg_unload(rtgui_image_t *image)
 {
     if (image != RT_NULL)
     {
@@ -884,14 +876,14 @@ static void rtgui_image_jpeg_unload(struct rtgui_image *image)
         }
         else
         {
-            rt_free(jpeg->pool);
+            rtgui_free(jpeg->pool);
             rtgui_filerw_close(jpeg->filerw);
         }
-        rt_free(jpeg);
+        rtgui_free(jpeg);
     }
 }
 
-static void rtgui_image_jpeg_blit(struct rtgui_image *image,
+static void rtgui_image_jpeg_blit(rtgui_image_t *image,
                                   rtgui_dc_t *dc, rtgui_rect_t *dst_rect)
 {
     rt_uint16_t y, w, h, xoff, yoff;
@@ -922,14 +914,14 @@ static void rtgui_image_jpeg_blit(struct rtgui_image *image,
         return;
 
     /* the minimum rect */
-    w = _UI_MIN(image->w - xoff, rtgui_rect_width (*dst_rect));
-    h = _UI_MIN(image->h - yoff, rtgui_rect_height(*dst_rect));
+    w = _MIN(image->w - xoff, RECT_W (*dst_rect));
+    h = _MIN(image->h - yoff, RECT_H(*dst_rect));
 
     if (jpeg->pixels)
     {
         if ((rtgui_dc_get_pixel_format(dc) == RTGRAPHIC_PIXEL_FORMAT_RGB888 && jpeg->tjpgd.format == 0) ||
                 (rtgui_dc_get_pixel_format(dc) == RTGRAPHIC_PIXEL_FORMAT_RGB565 && jpeg->tjpgd.format == 1) ||
-                (rtgui_dc_get_pixel_format(dc) == RTGRAPHIC_PIXEL_FORMAT_ARGB888 && jpeg->tjpgd.format == 0 && PKG_USING_RGB888_PIXEL_BITS == 32))
+                (rtgui_dc_get_pixel_format(dc) == RTGRAPHIC_PIXEL_FORMAT_ARGB888 && jpeg->tjpgd.format == 0 && GUIENGINE_RGB888_PIXEL_BITS == 32))
         {
             rt_uint16_t imageWidth = image->w * jpeg->byte_per_pixel;
             rt_uint8_t *src = jpeg->pixels + yoff * imageWidth + xoff * jpeg->byte_per_pixel;
@@ -946,22 +938,22 @@ static void rtgui_image_jpeg_blit(struct rtgui_image *image,
         /* if the format is not match, only support DC buffer */
         else if (dc->type == RTGUI_DC_BUFFER)
         {
-            struct rtgui_blit_info info = { 0 };
+            rtgui_blit_info_t info = { 0 };
             struct rtgui_dc_buffer *buffer;
 
             buffer = (struct rtgui_dc_buffer*)dc;
 
             info.src = jpeg->pixels + yoff * image->w * jpeg->byte_per_pixel + xoff * jpeg->byte_per_pixel;
-            info.src_h = rtgui_rect_height(*dst_rect);
-            info.src_w = rtgui_rect_width(*dst_rect);
+            info.src_h = RECT_H(*dst_rect);
+            info.src_w = RECT_W(*dst_rect);
             info.src_fmt = (jpeg->tjpgd.format == 0 ? RTGRAPHIC_PIXEL_FORMAT_RGB888 : RTGRAPHIC_PIXEL_FORMAT_RGB565);
             info.src_pitch = image->w * jpeg->byte_per_pixel;
             info.src_skip = info.src_pitch - info.src_w * jpeg->byte_per_pixel;
 
             info.dst = rtgui_dc_buffer_get_pixel(RTGUI_DC(buffer)) + dst_rect->y1 * buffer->pitch +
                        dst_rect->x1 * rtgui_color_get_bpp(buffer->pixel_format);
-            info.dst_h = rtgui_rect_height(*dst_rect);
-            info.dst_w = rtgui_rect_width(*dst_rect);
+            info.dst_h = RECT_H(*dst_rect);
+            info.dst_w = RECT_W(*dst_rect);
             info.dst_fmt = buffer->pixel_format;
             info.dst_pitch = buffer->pitch;
             info.dst_skip = info.dst_pitch - info.dst_w * rtgui_color_get_bpp(buffer->pixel_format);

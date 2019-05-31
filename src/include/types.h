@@ -81,7 +81,18 @@ typedef struct rtgui_font_engine rtgui_font_engine_t;
 typedef struct rtgui_font_bitmap rtgui_font_bitmap_t;
 typedef struct rtgui_font rtgui_font_t;
 
+struct rtgui_image_info;
+struct rtgui_blit_info;
+struct rtgui_filerw;
+typedef struct rtgui_filerw rtgui_filerw_t;
 typedef rt_uint32_t rtgui_color_t;
+typedef struct rtgui_image_engine rtgui_image_engine_t; //TODO
+typedef struct rtgui_image_palette rtgui_image_palette_t;
+typedef struct rtgui_image_engine rtgui_image_engine_t;
+typedef struct rtgui_image rtgui_image_t;
+typedef struct rtgui_image_info rtgui_image_info_t;
+typedef struct rtgui_blit_info rtgui_blit_info_t;
+
 typedef struct rtgui_gc rtgui_gc_t;
 typedef struct rtgui_dc rtgui_dc_t;
 
@@ -149,7 +160,36 @@ struct rtgui_font {
     rt_slist_t list;                        /* the font list */
 };
 
-/* device context / drawable canvas */
+/* image */
+struct rtgui_image_engine {
+    const char *name;
+    rt_slist_t list;
+    /* image engine function */
+    rt_bool_t (*image_check)(rtgui_filerw_t *file);
+    rt_bool_t (*image_load)(rtgui_image_t *image, rtgui_filerw_t *file,
+        rt_bool_t load);
+    void (*image_unload)(rtgui_image_t *image);
+    void (*image_blit)(rtgui_image_t *image, rtgui_dc_t *dc,
+        rtgui_rect_t *rect);
+};
+
+struct rtgui_image_palette {
+    rtgui_color_t *colors;
+    rt_uint32_t ncolors;
+};
+
+struct rtgui_image {
+    /* image metrics */
+    rt_uint16_t w, h;
+    /* image engine */
+    const rtgui_image_engine_t *engine;
+    /* image palette */
+    rtgui_image_palette_t *palette;
+    /* image private data */
+    void *data;
+};
+
+/* device context/drawable canvas */
 struct rtgui_dc {
     /* type of device context */
     rt_uint32_t type;
@@ -207,7 +247,7 @@ struct rtgui_app {
     rt_mailbox_t mb;
     rt_base_t ref_cnt;
     rt_base_t exit_code;
-    struct rtgui_image *icon;
+    rtgui_image_t *icon;
     rtgui_app_flag_t state_flag;
     /* if not RT_NULL, the main_object is the one will be activated when the
      * app recieves activate event. By default, it is the first window shown in

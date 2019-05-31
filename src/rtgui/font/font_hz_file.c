@@ -220,7 +220,7 @@ static void rtgui_hz_file_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
     efont = rtgui_font_refer("asc", hz_file_font->font_size);
     if (!efont) efont = rtgui_font_default(); /* use system default font */
 
-    str = rt_malloc(UTF_8ToGB2312_LEN((char *)text, length));
+    str = rtgui_malloc(UTF_8ToGB2312_LEN((char *)text, length));
     if (str) {
         str_p = str;
         UTF_8ToGB2312((char *)str, (char *)text, length);
@@ -254,7 +254,7 @@ static void rtgui_hz_file_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
     }
 
     rtgui_font_derefer(efont);
-    rt_free(str_p);
+    rtgui_free(str_p);
 }
 
 static void rtgui_hz_file_font_get_metrics(rtgui_font_t *font, const char *text,
@@ -264,7 +264,7 @@ static void rtgui_hz_file_font_get_metrics(rtgui_font_t *font, const char *text,
     struct rtgui_hz_file_font *hz_file_font = (struct rtgui_hz_file_font *)font->data;
     RT_ASSERT(hz_file_font != RT_NULL);
 
-    str = rt_malloc(UTF_8ToGB2312_LEN((char *)text, rt_strlen(text)));
+    str = rtgui_malloc(UTF_8ToGB2312_LEN((char *)text, rt_strlen(text)));
     if (str)
         UTF_8ToGB2312((char *)str, (char *)text, rt_strlen(text));
     else
@@ -275,7 +275,7 @@ static void rtgui_hz_file_font_get_metrics(rtgui_font_t *font, const char *text,
     x2 = hz_file_font->font_size / 2 * rt_strlen((const char *)str);
     rect->x2 = (rt_int16_t)(x2 >= 0x7FFF ? 0x7FFF : x2);
     rect->y2 = hz_file_font->font_size;
-    rt_free(str);
+    rtgui_free(str);
 }
 
 #endif /* GUIENGINE_USING_HZ_FILE */

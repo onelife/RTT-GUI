@@ -23,18 +23,17 @@
  */
 
 #include "../include/rtgui.h"
-#include "../include/filerw.h"
 #include "../include/image.h"
 
 #ifdef GUIENGINE_IMAGE_XPM
 #define XPM_MAGIC_LEN       9
 
-static rt_bool_t rtgui_image_xpm_check(struct rtgui_filerw *file);
-static rt_bool_t rtgui_image_xpm_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load);
-static void rtgui_image_xpm_unload(struct rtgui_image *image);
-static void rtgui_image_xpm_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
+static rt_bool_t rtgui_image_xpm_check(rtgui_filerw_t *file);
+static rt_bool_t rtgui_image_xpm_load(rtgui_image_t *image, rtgui_filerw_t *file, rt_bool_t load);
+static void rtgui_image_xpm_unload(rtgui_image_t *image);
+static void rtgui_image_xpm_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
-struct rtgui_image_engine rtgui_image_xpm_engine =
+rtgui_image_engine_t rtgui_image_xpm_engine =
 {
     "xpm",
     {RT_NULL},
@@ -336,7 +335,7 @@ static struct color_hash *create_colorhash(int maxnum)
     hash->size = s;
     hash->maxnum = maxnum;
     bytes = hash->size *sizeof(struct hash_entry **);
-    hash->entries = RT_NULL;    /* in case rt_malloc fails */
+    hash->entries = RT_NULL;    /* in case rtgui_malloc fails */
     hash->table = rtgui_malloc(bytes);
     if (!hash->table) return RT_NULL;
 
@@ -438,7 +437,7 @@ void rtgui_image_xpm_init()
     rtgui_image_register_engine(&rtgui_image_xpm_engine);
 }
 
-static rt_bool_t rtgui_image_xpm_check(struct rtgui_filerw *file)
+static rt_bool_t rtgui_image_xpm_check(rtgui_filerw_t *file)
 {
 #if 0
     rt_uint8_t buffer[XPM_MAGIC_LEN];
@@ -486,7 +485,7 @@ static int _str2int(const char *str, int rt_strlen, int *p)
     return i;
 }
 
-static rt_bool_t rtgui_image_xpm_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load)
+static rt_bool_t rtgui_image_xpm_load(rtgui_image_t *image, rtgui_filerw_t *file, rt_bool_t load)
 {
     const char **xpm;
     const char *buf;
@@ -601,7 +600,7 @@ color_none:
     return RT_TRUE;
 }
 
-static void rtgui_image_xpm_unload(struct rtgui_image *image)
+static void rtgui_image_xpm_unload(rtgui_image_t *image)
 {
     if (image != RT_NULL)
     {
@@ -611,7 +610,7 @@ static void rtgui_image_xpm_unload(struct rtgui_image *image)
     }
 }
 
-static void rtgui_image_xpm_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
+static void rtgui_image_xpm_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
     rt_uint16_t x, y;
     rtgui_color_t *ptr;

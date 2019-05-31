@@ -25,7 +25,7 @@
 #include "include/font.h"
 #include "include/dc.h"
 
-#ifdef RTGUI_USING_HZ_BMP
+#ifdef GUIENGINE_USING_HZ_BMP
 /* Private function prototype ------------------------------------------------*/
 static void rtgui_hz_bitmap_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
     const char *text, rt_ubase_t len, rtgui_rect_t *rect);
@@ -191,4 +191,4 @@ static void rtgui_hz_bitmap_font_get_metrics(rtgui_font_t *font,
 
 /* Public functions ----------------------------------------------------------*/
 
-#endif /* RTGUI_USING_HZ_BMP */
+#endif /* GUIENGINE_USING_HZ_BMP */

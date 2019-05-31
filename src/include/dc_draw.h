@@ -250,7 +250,7 @@ do { \
     DRAW_SETPIXEL_MOD(RGB_FROM_RGB888(*pixel, sr, sg, sb), \
                       RGB888_FROM_RGB(*pixel, sr, sg, sb))
 
-#ifdef PKG_USING_RGB888_PIXEL_BITS_32
+#ifdef GUIENGINE_USING_RGB888_AS_32BIT
 #define DRAW_SETPIXELXY_RGB888(x, y) \
     DRAW_SETPIXELXY(x, y, rt_uint32_t, 4, DRAW_SETPIXEL_RGB888)
 #else
@@ -258,7 +258,7 @@ do { \
     DRAW_SETPIXELXY(x, y, rt_uint8_t, 3, DRAW_SETPIXEL_RGB888)
 #endif
 
-#ifdef PKG_USING_RGB888_PIXEL_BITS_32
+#ifdef GUIENGINE_USING_RGB888_AS_32BIT
 #define DRAW_SETPIXELXY_BLEND_RGB888(x, y) \
     DRAW_SETPIXELXY(x, y, rt_uint32_t, 4, DRAW_SETPIXEL_BLEND_RGB888)
 #else
@@ -266,7 +266,7 @@ do { \
     DRAW_SETPIXELXY(x, y, rt_uint8_t, 3, DRAW_SETPIXEL_BLEND_RGB888)
 #endif
 
-#ifdef PKG_USING_RGB888_PIXEL_BITS_32
+#ifdef GUIENGINE_USING_RGB888_AS_32BIT
 #define DRAW_SETPIXELXY_ADD_RGB888(x, y) \
     DRAW_SETPIXELXY(x, y, rt_uint32_t, 4, DRAW_SETPIXEL_ADD_RGB888)
 #else
@@ -274,7 +274,7 @@ do { \
     DRAW_SETPIXELXY(x, y, rt_uint8_t, 3, DRAW_SETPIXEL_ADD_RGB888)
 #endif
 
-#ifdef PKG_USING_RGB888_PIXEL_BITS_32
+#ifdef GUIENGINE_USING_RGB888_AS_32BIT
 #define DRAW_SETPIXELXY_MOD_RGB888(x, y) \
     DRAW_SETPIXELXY(x, y, rt_uint32_t, 4, DRAW_SETPIXEL_MOD_RGB888)
 #else
@@ -340,7 +340,7 @@ do { \
 #define HLINE(type, op, draw_end) \
 { \
     int length; \
-    int inc_size = _UI_BITBYTES(_dc_get_bits_per_pixel(dst)) / sizeof(type); \
+    int inc_size = _BIT2BYTE(_dc_get_bits_per_pixel(dst)) / sizeof(type); \
     type *pixel; \
     if (x1 <= x2) { \
         pixel = (type *)_dc_get_pixel(dst, x1, y1); \
@@ -362,7 +362,7 @@ do { \
 #define VLINE(type, op, draw_end) \
 { \
     int length; \
-    int inc_size = _UI_BITBYTES(_dc_get_bits_per_pixel(dst)); \
+    int inc_size = _BIT2BYTE(_dc_get_bits_per_pixel(dst)); \
     int pitch = _dc_get_pitch(dst) / inc_size; \
     type *pixel; \
     inc_size = inc_size / sizeof(type); \
@@ -386,7 +386,7 @@ do { \
 #define DLINE(type, op, draw_end) \
 { \
     int length; \
-    int inc_size = _UI_BITBYTES(_dc_get_bits_per_pixel(dst)); \
+    int inc_size = _BIT2BYTE(_dc_get_bits_per_pixel(dst)); \
     int pitch = _dc_get_pitch(dst) / inc_size; \
     type *pixel; \
     inc_size = inc_size / sizeof(type); \
@@ -601,7 +601,7 @@ do { \
 do { \
     int width = rect->x2 - rect->x1; \
     int height = rect->y2 - rect->y1; \
-    int inc_size = _UI_BITBYTES(_dc_get_bits_per_pixel(dst)); \
+    int inc_size = _BIT2BYTE(_dc_get_bits_per_pixel(dst)); \
     int pitch = _dc_get_pitch(dst) / inc_size; \
     int skip = pitch - width; \
     type *pixel = (type *)_dc_get_pixel(dst, rect->x1, rect->y1); \

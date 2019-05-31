@@ -123,7 +123,7 @@ rt_inline rt_uint8_t* _dc_get_pixel(rtgui_dc_t* dc, int x, int y)
         pixel = (rt_uint8_t*)(hw_driver->framebuffer);
         if (pixel == RT_NULL) return RT_NULL;
 
-        pixel = pixel + y * hw_driver->pitch + x * (_UI_BITBYTES(hw_driver->bits_per_pixel));
+        pixel = pixel + y * hw_driver->pitch + x * (_BIT2BYTE(hw_driver->bits_per_pixel));
     }
     else if (dc->type == RTGUI_DC_BUFFER)
     {
@@ -1157,7 +1157,7 @@ _dc_blend_line_rgb888(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
     {
         switch (blendMode)
         {
-#ifdef PKG_USING_RGB888_PIXEL_BITS_32
+#ifdef GUIENGINE_USING_RGB888_AS_32BIT
         case RTGUI_BLENDMODE_BLEND:
             HLINE(rt_uint32_t, DRAW_SETPIXEL_BLEND_RGB888, draw_end);
             break;
@@ -1190,7 +1190,7 @@ _dc_blend_line_rgb888(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
     {
         switch (blendMode)
         {
-#ifdef PKG_USING_RGB888_PIXEL_BITS_32
+#ifdef GUIENGINE_USING_RGB888_AS_32BIT
         case RTGUI_BLENDMODE_BLEND:
             VLINE(rt_uint32_t, DRAW_SETPIXEL_BLEND_RGB888, draw_end);
             break;
@@ -1223,7 +1223,7 @@ _dc_blend_line_rgb888(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
     {
         switch (blendMode)
         {
-#ifdef PKG_USING_RGB888_PIXEL_BITS_32
+#ifdef GUIENGINE_USING_RGB888_AS_32BIT
         case RTGUI_BLENDMODE_BLEND:
             DLINE(rt_uint32_t, DRAW_SETPIXEL_BLEND_RGB888, draw_end);
             break;
@@ -1618,7 +1618,7 @@ _dc_blend_fill_rect_rgb888(rtgui_dc_t * dst, const rtgui_rect_t * rect,
 
     switch (blendMode)
     {
-#ifdef PKG_USING_RGB888_PIXEL_BITS_32
+#ifdef GUIENGINE_USING_RGB888_AS_32BIT
     case RTGUI_BLENDMODE_BLEND:
         FILLRECT(rt_uint32_t, DRAW_SETPIXEL_BLEND_RGB888);
         break;

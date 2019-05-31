@@ -257,11 +257,11 @@ static void _rtgui_rect_move_to_align(const rtgui_rect_t *rect, rtgui_rect_t *to
     int dw = 0, dh = 0;
 
     /* get delta width and height */
-    dw = rtgui_rect_width(*rect) - rtgui_rect_width(*to);
+    dw = RECT_W(*rect) - RECT_W(*to);
     if (RTGUI_ALIGN_TTF_SIZE & align)
-        dh = rtgui_rect_height(*rect) - height;
+        dh = RECT_H(*rect) - height;
     else
-        dh = rtgui_rect_height(*rect) - rtgui_rect_height(*to);
+        dh = RECT_H(*rect) - RECT_H(*to);
 
     PINFO(" rect align =1=>  %d %d %d %d\n", to->x1, to->y1, to->x2, to->y2);
 
@@ -400,7 +400,7 @@ static void _draw_bitmap(rtgui_dc_t *dc,
                          rtgui_color_t fgc, rt_uint16_t right, rt_uint16_t bottom)
 {
     rt_int16_t x_start, y_start;
-    struct rtgui_blit_info info = { 0 };
+    rtgui_blit_info_t info = { 0 };
     struct rtgui_dc_buffer *dest_buf;
 
 
@@ -838,7 +838,7 @@ _err_done_manager:
 _err_done_init:
     FT_Done_FreeType(ttf->library);
 _err_done_malloc:
-    rt_free((void *)ttf->face_id.pathname);
+    rtgui_free((void *)ttf->face_id.pathname);
     rtgui_free(ttf);
 
     return RT_NULL;
@@ -920,7 +920,7 @@ void rtgui_freetype_font_destroy(rtgui_font_t *font)
     {
         FTC_Manager_Done(ttf_font->ttf->manager);
         FT_Done_FreeType(ttf_font->ttf->library);
-        rt_free(font->family);
+        rtgui_free(font->family);
     }
 
     rtgui_free(font);

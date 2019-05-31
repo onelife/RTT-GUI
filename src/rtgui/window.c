@@ -125,7 +125,7 @@ static void _rtgui_win_destructor(void *obj) {
         win->_title_wgt = RT_NULL;
     }
     if (RT_NULL != win->title) {
-        rt_free(win->title);
+        rtgui_free(win->title);
         win->title = RT_NULL;
     }
     rtgui_region_fini(&win->outer_clip);

@@ -54,10 +54,6 @@ struct rt_mempool *rtgui_event_pool = RT_NULL;
 const rtgui_color_t default_foreground = RTGUI_RGB(0x00, 0x00, 0x00);
 const rtgui_color_t default_background = RTGUI_RGB(212, 208, 200);
 
-// TODO: remove extern
-extern rtgui_font_t rtgui_font_asc16;
-extern rtgui_font_t rtgui_font_asc12;
-
 static rtgui_rect_t _mainwin_rect;
 static struct rt_mutex _screen_lock;
 
@@ -68,7 +64,7 @@ rt_err_t rtgui_system_server_init(void) {
     do {
         ret = rt_mutex_init(&_screen_lock, "screen", RT_IPC_FLAG_FIFO);
         if (RT_EOK != ret) break;
-        ret = rt_mb_init(&ack_sync, "ack",ack_pool, SYNC_ACK_NUMBER,
+        ret = rt_mb_init(&ack_sync, "ack", ack_pool, SYNC_ACK_NUMBER,
             RT_IPC_FLAG_FIFO);
         if (RT_EOK != ret) break;
 

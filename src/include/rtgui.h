@@ -81,13 +81,13 @@ extern "C" {
 #define TO_WIN(obj)                         \
     CAST(obj, _WIN_METADATA, rtgui_win_t)
 
-#define _UI_MIN(x, y)                       (((x)<(y))?(x):(y))
-#define _UI_MAX(x, y)                       (((x)>(y))?(x):(y))
-#define _UI_BITBYTES(bits)                  ((bits + 7)/8)
-#define _UI_ABS(x)                          ((x)>=0? (x):-(x))
+#define _MIN(x, y)                          (((x) < (y)) ? (x) : (y))
+#define _UI_MAX(x, y)                       (((x) > (y)) ? (x) : (y))
+#define _BIT2BYTE(bits)                     ((bits + 7) >> 3)
+#define _UI_ABS(x)                          (((x) >= 0) ? (x) : -(x))
 
-#define rtgui_rect_width(r)                 ((r).x2 - (r).x1)
-#define rtgui_rect_height(r)                ((r).y2 - (r).y1)
+#define RECT_W(r)                           ((r).x2 - (r).x1 + 1)
+#define RECT_H(r)                           ((r).y2 - (r).y1 + 1)
 
 /* Global variables ----------------------------------------------------------*/
 extern struct rt_mempool *rtgui_event_pool;

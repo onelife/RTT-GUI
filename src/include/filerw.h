@@ -46,30 +46,31 @@ extern "C" {
 #define RTGUI_FILE_SEEK_CUR 1
 #define RTGUI_FILE_SEEK_END 2
 
-struct rtgui_filerw
-{
-    int (*seek)(struct rtgui_filerw *context, rt_off_t offset, int whence);
-    int (*read)(struct rtgui_filerw *context, void *buffer, rt_size_t size, rt_size_t count);
-    int (*write)(struct rtgui_filerw *context, const void *buffer, rt_size_t size, rt_size_t count);
-    int (*tell)(struct rtgui_filerw *context);
-    int (*eof)(struct rtgui_filerw *context);
-    int (*close)(struct rtgui_filerw *context);
-};
 typedef struct rtgui_filerw rtgui_filerw_t;
 
-struct rtgui_filerw *rtgui_filerw_create_file(const char *filename, const char *mode);
-struct rtgui_filerw *rtgui_filerw_create_mem(const rt_uint8_t *mem, rt_size_t size);
+struct rtgui_filerw
+{
+    int (*seek)(rtgui_filerw_t *context, rt_off_t offset, int whence);
+    int (*read)(rtgui_filerw_t *context, void *buffer, rt_size_t size, rt_size_t count);
+    int (*write)(rtgui_filerw_t *context, const void *buffer, rt_size_t size, rt_size_t count);
+    int (*tell)(rtgui_filerw_t *context);
+    int (*eof)(rtgui_filerw_t *context);
+    int (*close)(rtgui_filerw_t *context);
+};
 
-int rtgui_filerw_seek(struct rtgui_filerw *context, rt_off_t offset, int whence);
-int rtgui_filerw_read(struct rtgui_filerw *context, void *buffer, rt_size_t size, rt_size_t count);
-int rtgui_filerw_write(struct rtgui_filerw *context, const void *buffer, rt_size_t size, rt_size_t count);
-int rtgui_filerw_tell(struct rtgui_filerw *context);
-int rtgui_filerw_eof(struct rtgui_filerw *context);
-int rtgui_filerw_close(struct rtgui_filerw *context);
+rtgui_filerw_t *rtgui_filerw_create_file(const char *filename, const char *mode);
+rtgui_filerw_t *rtgui_filerw_create_mem(const rt_uint8_t *mem, rt_size_t size);
+
+int rtgui_filerw_seek(rtgui_filerw_t *context, rt_off_t offset, int whence);
+int rtgui_filerw_read(rtgui_filerw_t *context, void *buffer, rt_size_t size, rt_size_t count);
+int rtgui_filerw_write(rtgui_filerw_t *context, const void *buffer, rt_size_t size, rt_size_t count);
+int rtgui_filerw_tell(rtgui_filerw_t *context);
+int rtgui_filerw_eof(rtgui_filerw_t *context);
+int rtgui_filerw_close(rtgui_filerw_t *context);
 int rtgui_filerw_unlink(const char *filename);
 
 /* get memory data from filerw memory object */
-const rt_uint8_t *rtgui_filerw_mem_getdata(struct rtgui_filerw *context);
+const rt_uint8_t *rtgui_filerw_mem_getdata(rtgui_filerw_t *context);
 
 #ifdef __cplusplus
 }

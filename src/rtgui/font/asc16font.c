@@ -299,7 +299,7 @@ static rtgui_font_bitmap_t _asc16 = {
     255                 /* last char */
 };
 
-rtgui_font_t rtgui_font_asc16 = {
+const rtgui_font_t rtgui_font_asc16 = {
     "asc",              /* family */
     16,                 /* height */
     1,                  /* refer count */

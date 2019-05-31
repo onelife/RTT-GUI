@@ -11,12 +11,12 @@ static rt_bool_t show_demo(rtgui_win_t *win) {
   rtgui_rect_t rect;
 
   dc = rtgui_dc_begin_drawing(TO_WIDGET(win));
-  if (!dc)
-  {
+  if (!dc) {
     rt_kprintf("no dc\n");
     return RT_FALSE;
   }
   rtgui_dc_get_rect(dc, &rect);
+  rt_kprintf("*** rect (%d, %d) (%d, %d)\n", rect.x1, rect.y1, rect.x2, rect.y2);
 
   /* draw circular */
   {
@@ -30,20 +30,25 @@ static rt_bool_t show_demo(rtgui_win_t *win) {
   }
 
   /* draw image */
-  // {
-  //     rtgui_rect_t draw_rect;
-  //     struct rtgui_image *img;
+  {
+    rtgui_image_t *img;
+    rtgui_rect_t draw_rect;
 
-  //     img = rtgui_image_create_from_mem("png", _picture_png, sizeof(_picture_png), RT_TRUE);
-  //     if (img != RT_NULL)
-  //     {
-  //         draw_rect.x1 = rect.x2 / 2 + (rect.x2 / 2 - img->w) / 2;
-  //         draw_rect.y1 = (rect.y2 / 2 - img->h) / 2;
-  //         draw_rect.x2 = draw_rect.x1 + img->w;
-  //         draw_rect.y2 = draw_rect.y1 + img->h;
-  //         rtgui_image_blit(img, dc, &draw_rect);
-  //     }
-  // }
+    img = rtgui_image_create_from_file("bmp", "/logo.bmp", RT_FALSE);
+    // img = rtgui_image_create_from_mem("png", _picture_png, sizeof(_picture_png), RT_TRUE);
+    if (img) {
+      draw_rect.x1 = 10;
+      draw_rect.y1 = 10;
+      draw_rect.x2 = draw_rect.x1 + img->w;
+      draw_rect.y2 = draw_rect.y1 + img->h;
+      rt_kprintf("*** draw (%d, %d) (%d, %d)\n", draw_rect.x1, draw_rect.y1,
+        draw_rect.x2, draw_rect.y2);
+      rtgui_image_blit(img, dc, &draw_rect);
+      rtgui_image_destroy(img);
+    } else {
+      rt_kprintf("*** load img filed\n");
+    }
+  }
 
   /* draw text */
   {

@@ -28,19 +28,22 @@
 #include "include/image.h"
 #include "include/image_hdc.h"
 #include "include/image_container.h"
-
-#ifdef _WIN32
-# define strncasecmp  strnicmp
-#else
-# include <string.h>    // strncasecmp
+#ifdef GUIENGINE_IMAGE_BMP
+# include "include/image_bmp.h"
 #endif
+
+#ifdef RT_USING_ULOG
+# define LOG_LVL                    RTGUI_LOG_LEVEL
+# define LOG_TAG                    "GUI_IMG"
+# include "components/utilities/ulog/ulog.h"
+#else /* RT_USING_ULOG */
+# define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
+# define LOG_W                      LOG_E
+# define LOG_D                      LOG_E
+#endif /* RT_USING_ULOG */
 
 #ifdef GUIENGINE_IMAGE_XPM
 extern void rtgui_image_xpm_init(void);
-#endif
-
-#ifdef GUIENGINE_IMAGE_BMP
-#include "include/image_bmp.h"
 #endif
 
 #if (defined(GUIENGINE_IMAGE_JPEG) || defined(GUIENGINE_IMAGE_TJPGD))
@@ -58,68 +61,60 @@ void rtgui_system_image_init(void) {
         /* always support HDC image */
         rtgui_image_hdc_init();
     #endif
-
     #ifdef GUIENGINE_IMAGE_XPM
         rtgui_image_xpm_init();
     #endif
-
     #ifdef GUIENGINE_IMAGE_BMP
         rtgui_image_bmp_init();
     #endif
-
     #if (defined(GUIENGINE_IMAGE_JPEG) || defined(GUIENGINE_IMAGE_TJPGD))
         rtgui_image_jpeg_init();
     #endif
-
     #if defined(GUIENGINE_IMAGE_PNG) || defined(GUIENGINE_IMAGE_LODEPNG)
         rtgui_image_png_init();
     #endif
-
     #ifdef GUIENGINE_IMAGE_CONTAINER
         /* initialize image container */
         rtgui_system_image_container_init();
     #endif
 }
 
-static struct rtgui_image_engine *rtgui_image_get_engine(const char *type)
-{
+static rtgui_image_engine_t *rtgui_image_get_engine(const char *type) {
     rt_slist_t *node;
-    struct rtgui_image_engine *engine;
 
-    rt_slist_for_each(node, &_rtgui_system_image_list)
-    {
-        engine = rt_slist_entry(node, struct rtgui_image_engine, list);
+    rt_slist_for_each(node, &_rtgui_system_image_list) {
+        rtgui_image_engine_t *engine;
 
-        if (strncasecmp(engine->name, type, rt_strlen(engine->name)) == 0)
+        engine = rt_slist_entry(node, rtgui_image_engine_t, list);
+        if (!rt_strncmp(engine->name, type, rt_strlen(engine->name)))
             return engine;
     }
 
+    LOG_E("no engine for %s", type);
     return RT_NULL;
 }
 
-#if defined(GUIENGINE_USING_DFS_FILERW)
-struct rtgui_image_engine *rtgui_image_get_engine_by_filename(const char *fn)
-{
+#ifdef GUIENGINE_USING_DFS_FILERW
+
+rtgui_image_engine_t *rtgui_image_get_engine_by_filename(const char *fn) {
     rt_slist_t *node;
-    struct rtgui_image_engine *engine;
     const char *ext;
 
     ext = fn + rt_strlen(fn);
-    while (ext != fn)
-    {
-        if (*ext == '.')
-        {
-            ext ++;
+    while (ext != fn)  {
+        if (*ext == '.') {
+            ext++;
             break;
         }
-        ext --;
+        ext--;
     }
-    if (ext == fn) return RT_NULL; /* no ext */
+    if (ext == fn) return RT_NULL;  /* no ext */
 
-    rt_slist_for_each(node, &_rtgui_system_image_list)
-    {
-        engine = rt_slist_entry(node, struct rtgui_image_engine, list);
-        if (strncasecmp(engine->name, ext, rt_strlen(engine->name)) == 0)
+    rt_slist_for_each(node, &_rtgui_system_image_list) {
+        rtgui_image_engine_t *engine;
+
+        engine = rt_slist_entry(node, rtgui_image_engine_t, list);
+        if (!rt_strncmp(engine->name, ext, rt_strlen(engine->name)))
             return engine;
     }
 
@@ -127,48 +122,41 @@ struct rtgui_image_engine *rtgui_image_get_engine_by_filename(const char *fn)
 }
 RTM_EXPORT(rtgui_image_get_engine_by_filename);
 
-struct rtgui_image *rtgui_image_create_from_file(const char *type, const char *filename, rt_bool_t load)
-{
-    struct rtgui_filerw *filerw;
-    struct rtgui_image_engine *engine;
-    struct rtgui_image *image = RT_NULL;
+rtgui_image_t *rtgui_image_create_from_file(const char *type,
+    const char *filename, rt_bool_t load) {
+    rtgui_filerw_t *filerw;
+    rtgui_image_engine_t *engine;
+    rtgui_image_t *image = RT_NULL;
 
     /* create filerw context */
     filerw = rtgui_filerw_create_file(filename, "rb");
-    if (filerw == RT_NULL) return RT_NULL;
+    if (!filerw) return RT_NULL;
 
     /* get image engine */
     engine = rtgui_image_get_engine(type);
-    if (engine == RT_NULL)
-    {
+    if (!engine) {
         /* close filerw context */
         rtgui_filerw_close(filerw);
         return RT_NULL;
     }
 
-    if (engine->image_check(filerw) == RT_TRUE)
-    {
-        image = (struct rtgui_image *) rtgui_malloc(sizeof(struct rtgui_image));
-        if (image == RT_NULL)
-        {
+    if (engine->image_check(filerw)) {
+        image = (rtgui_image_t *)rtgui_malloc(sizeof(rtgui_image_t));
+        if (!image) {
             /* close filerw context */
             rtgui_filerw_close(filerw);
             return RT_NULL;
         }
 
         image->palette = RT_NULL;
-        if (engine->image_load(image, filerw, load) != RT_TRUE)
-        {
+        if (!engine->image_load(image, filerw, load)) {
             /* close filerw context */
             rtgui_filerw_close(filerw);
             return RT_NULL;
         }
-
         /* set image engine */
         image->engine = engine;
-    }
-    else
-    {
+    } else {
         rtgui_filerw_close(filerw);
     }
 
@@ -176,11 +164,11 @@ struct rtgui_image *rtgui_image_create_from_file(const char *type, const char *f
 }
 RTM_EXPORT(rtgui_image_create_from_file);
 
-struct rtgui_image *rtgui_image_create(const char *filename, rt_bool_t load)
+rtgui_image_t *rtgui_image_create(const char *filename, rt_bool_t load)
 {
-    struct rtgui_filerw *filerw;
-    struct rtgui_image_engine *engine;
-    struct rtgui_image *image = RT_NULL;
+    rtgui_filerw_t *filerw;
+    rtgui_image_engine_t *engine;
+    rtgui_image_t *image = RT_NULL;
 
     /* create filerw context */
     filerw = rtgui_filerw_create_file(filename, "rb");
@@ -202,7 +190,7 @@ struct rtgui_image *rtgui_image_create(const char *filename, rt_bool_t load)
 
     if (engine->image_check(filerw) == RT_TRUE)
     {
-        image = (struct rtgui_image *) rtgui_malloc(sizeof(struct rtgui_image));
+        image = (rtgui_image_t *) rtgui_malloc(sizeof(rtgui_image_t));
         if (image == RT_NULL)
         {
             rt_kprintf("out of memory\n");
@@ -232,13 +220,14 @@ struct rtgui_image *rtgui_image_create(const char *filename, rt_bool_t load)
     return image;
 }
 RTM_EXPORT(rtgui_image_create);
-#endif
 
-struct rtgui_image *rtgui_image_create_from_mem(const char *type, const rt_uint8_t *data, rt_size_t length, rt_bool_t load)
+#endif /* GUIENGINE_USING_DFS_FILERW */
+
+rtgui_image_t *rtgui_image_create_from_mem(const char *type, const rt_uint8_t *data, rt_size_t length, rt_bool_t load)
 {
-    struct rtgui_filerw *filerw;
-    struct rtgui_image_engine *engine;
-    struct rtgui_image *image = RT_NULL;
+    rtgui_filerw_t *filerw;
+    rtgui_image_engine_t *engine;
+    rtgui_image_t *image = RT_NULL;
 
     /* create filerw context */
     filerw = rtgui_filerw_create_mem(data, length);
@@ -255,7 +244,7 @@ struct rtgui_image *rtgui_image_create_from_mem(const char *type, const rt_uint8
 
     if (engine->image_check(filerw) == RT_TRUE)
     {
-        image = (struct rtgui_image *) rtgui_malloc(sizeof(struct rtgui_image));
+        image = (rtgui_image_t *) rtgui_malloc(sizeof(rtgui_image_t));
         if (image == RT_NULL)
         {
             /* close filerw context */
@@ -283,7 +272,7 @@ struct rtgui_image *rtgui_image_create_from_mem(const char *type, const rt_uint8
 }
 RTM_EXPORT(rtgui_image_create_from_mem);
 
-void rtgui_image_destroy(struct rtgui_image *image)
+void rtgui_image_destroy(rtgui_image_t *image)
 {
     RT_ASSERT(image != RT_NULL);
 
@@ -295,7 +284,7 @@ void rtgui_image_destroy(struct rtgui_image *image)
 RTM_EXPORT(rtgui_image_destroy);
 
 /* register an image engine */
-void rtgui_image_register_engine(struct rtgui_image_engine *engine)
+void rtgui_image_register_engine(rtgui_image_engine_t *engine)
 {
     RT_ASSERT(engine != RT_NULL);
 
@@ -303,65 +292,56 @@ void rtgui_image_register_engine(struct rtgui_image_engine *engine)
 }
 RTM_EXPORT(rtgui_image_register_engine);
 
-void rtgui_image_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
-{
-    rtgui_rect_t r;
-    RT_ASSERT(dc    != RT_NULL);
+void rtgui_image_blit(rtgui_image_t *img, rtgui_dc_t *dc,
+    rtgui_rect_t *rect) {
+    rtgui_rect_t dc_rect;
 
-    if (rtgui_dc_get_visible(dc) != RT_TRUE) return;
+    RT_ASSERT(dc != RT_NULL);
 
-    rtgui_dc_get_rect(dc, &r);
+    if (!rtgui_dc_get_visible(dc)) return;
+
+    rtgui_dc_get_rect(dc, &dc_rect);
 
     /* use rect of DC */
-    if (rect == RT_NULL)
-    {
-        rect = &r;
-    }
-    else
-    {
+    if (!rect) {
+        rect = &dc_rect;
+    } else {
         /* Don't modify x1, y1, they are handled in engine->image_blit. */
-        if (rect->x1 > r.x2)
-            return;
-        if (rect->y1 > r.y2)
-            return;
-
-        if (rect->x2 > r.x2)
-            rect->x2 = r.x2;
-        if (rect->y2 > r.y2)
-            rect->y2 = r.y2;
+        if (rect->x1 > dc_rect.x2) return;
+        if (rect->y1 > dc_rect.y2) return;
+        if (rect->x2 > dc_rect.x2) rect->x2 = dc_rect.x2;
+        if (rect->y2 > dc_rect.y2) rect->y2 = dc_rect.y2;
     }
 
-    if (image != RT_NULL && image->engine != RT_NULL)
-    {
-        /* use image engine to blit */
-        image->engine->image_blit(image, dc, rect);
+    if (img && img->engine) {
+        /* use img engine to blit */
+        img->engine->image_blit(img, dc, rect);
     }
 }
 RTM_EXPORT(rtgui_image_blit);
 
-struct rtgui_image_palette *rtgui_image_palette_create(rt_uint32_t ncolors)
-{
-    struct rtgui_image_palette *palette = RT_NULL;
+rtgui_image_palette_t *rtgui_image_palette_create(rt_uint32_t ncolors) {
+    rtgui_image_palette_t *palette = RT_NULL;
 
-    if (ncolors > 0)
-    {
-        palette = (struct rtgui_image_palette *) rtgui_malloc(sizeof(struct rtgui_image_palette) +
-                  sizeof(rtgui_color_t) * ncolors);
-        if (palette != RT_NULL) palette->colors = (rtgui_color_t *)(palette + 1);
+    if (ncolors > 0) {
+        palette = rtgui_malloc(
+            sizeof(rtgui_image_palette_t) + sizeof(rtgui_color_t) * ncolors);
+        if (palette)
+            palette->colors = (rtgui_color_t *)(palette + 1);
     }
 
     return palette;
 }
 RTM_EXPORT(rtgui_image_palette_create);
 
-void rtgui_image_get_rect(struct rtgui_image *image, rtgui_rect_t *rect)
+void rtgui_image_get_rect(rtgui_image_t *img, rtgui_rect_t *rect)
 {
-    RT_ASSERT(image != RT_NULL);
+    RT_ASSERT(img != RT_NULL);
     RT_ASSERT(rect  != RT_NULL);
 
     rect->x1 = 0;
     rect->y1 = 0;
-    rect->x2 = image->w;
-    rect->y2 = image->h;
+    rect->x2 = img->w;
+    rect->y2 = img->h;
 }
 RTM_EXPORT(rtgui_image_get_rect);

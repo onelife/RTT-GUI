@@ -36,7 +36,7 @@ struct rtgui_image_png
 {
     rt_bool_t is_loaded;
 
-    struct rtgui_filerw *filerw;
+    rtgui_filerw_t *filerw;
 
     /* png image information */
     png_structp png_ptr;
@@ -45,12 +45,12 @@ struct rtgui_image_png
     rt_uint8_t *pixels;
 };
 
-static rt_bool_t rtgui_image_png_check(struct rtgui_filerw *file);
-static rt_bool_t rtgui_image_png_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load);
-static void rtgui_image_png_unload(struct rtgui_image *image);
-static void rtgui_image_png_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
+static rt_bool_t rtgui_image_png_check(rtgui_filerw_t *file);
+static rt_bool_t rtgui_image_png_load(rtgui_image_t *image, rtgui_filerw_t *file, rt_bool_t load);
+static void rtgui_image_png_unload(rtgui_image_t *image);
+static void rtgui_image_png_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
-struct rtgui_image_engine rtgui_image_png_engine =
+rtgui_image_engine_t rtgui_image_png_engine =
 {
     "png",
     { RT_NULL },
@@ -62,7 +62,7 @@ struct rtgui_image_engine rtgui_image_png_engine =
 
 static void rtgui_image_png_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
 {
-    struct rtgui_filerw *filerw = (struct rtgui_filerw *)png_ptr->io_ptr;
+    rtgui_filerw_t *filerw = (rtgui_filerw_t *)png_ptr->io_ptr;
 
     rtgui_filerw_read(filerw, data, length, 1);
 }
@@ -131,7 +131,7 @@ static rt_bool_t rtgui_image_png_process(png_structp png_ptr, png_infop info_ptr
     return RT_TRUE;
 }
 
-static rt_bool_t rtgui_image_png_check(struct rtgui_filerw *file)
+static rt_bool_t rtgui_image_png_check(rtgui_filerw_t *file)
 {
     int start;
     rt_bool_t is_PNG;
@@ -165,7 +165,7 @@ static void _image_png_error_fn(png_structp png_ptr, png_const_charp error_messa
     rt_kprintf(error_message);
 }
 
-static rt_bool_t rtgui_image_png_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load)
+static rt_bool_t rtgui_image_png_load(rtgui_image_t *image, rtgui_filerw_t *file, rt_bool_t load)
 {
     png_uint_32 width;
     png_uint_32 height;
@@ -257,7 +257,7 @@ static rt_bool_t rtgui_image_png_load(struct rtgui_image *image, struct rtgui_fi
     return RT_TRUE;
 }
 
-static void rtgui_image_png_unload(struct rtgui_image *image)
+static void rtgui_image_png_unload(rtgui_image_t *image)
 {
     struct rtgui_image_png *png;
 
@@ -276,7 +276,7 @@ static void rtgui_image_png_unload(struct rtgui_image *image)
     }
 }
 
-static void rtgui_image_png_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
+static void rtgui_image_png_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
     rt_uint16_t x, y, w, h;
     rtgui_color_t *ptr;
@@ -294,8 +294,8 @@ static void rtgui_image_png_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgu
 
     png = (struct rtgui_image_png *) image->data;
 
-    w = _UI_MIN(image->w, rtgui_rect_width(*rect));
-    h = _UI_MIN(image->h, rtgui_rect_height(*rect));
+    w = _MIN(image->w, RECT_W(*rect));
+    h = _MIN(image->h, RECT_H(*rect));
 
     fg_maxsample = (1 << png->info_ptr->bit_depth) - 1;
 
@@ -425,12 +425,12 @@ void rtgui_image_png_init()
 #elif defined(GUIENGINE_IMAGE_LODEPNG)
 #include "lodepng.h"
 
-static rt_bool_t rtgui_image_png_check(struct rtgui_filerw *file);
-static rt_bool_t rtgui_image_png_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load);
-static void rtgui_image_png_unload(struct rtgui_image *image);
-static void rtgui_image_png_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
+static rt_bool_t rtgui_image_png_check(rtgui_filerw_t *file);
+static rt_bool_t rtgui_image_png_load(rtgui_image_t *image, rtgui_filerw_t *file, rt_bool_t load);
+static void rtgui_image_png_unload(rtgui_image_t *image);
+static void rtgui_image_png_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
-struct rtgui_image_engine rtgui_image_png_engine =
+rtgui_image_engine_t rtgui_image_png_engine =
 {
     "png",
     { RT_NULL },
@@ -440,7 +440,7 @@ struct rtgui_image_engine rtgui_image_png_engine =
     rtgui_image_png_blit,
 };
 
-static rt_bool_t rtgui_image_png_check(struct rtgui_filerw *file)
+static rt_bool_t rtgui_image_png_check(rtgui_filerw_t *file)
 {
     int start;
     rt_bool_t is_PNG;
@@ -469,7 +469,7 @@ static rt_bool_t rtgui_image_png_check(struct rtgui_filerw *file)
     return(is_PNG);
 }
 
-static rt_bool_t rtgui_image_png_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load)
+static rt_bool_t rtgui_image_png_load(rtgui_image_t *image, rtgui_filerw_t *file, rt_bool_t load)
 {
     unsigned int width;
     unsigned int height;
@@ -531,7 +531,7 @@ static rt_bool_t rtgui_image_png_load(struct rtgui_image *image, struct rtgui_fi
     return RT_TRUE;
 }
 
-static void rtgui_image_png_unload(struct rtgui_image *image)
+static void rtgui_image_png_unload(rtgui_image_t *image)
 {
     rt_uint8_t *pixels;
 
@@ -545,11 +545,11 @@ static void rtgui_image_png_unload(struct rtgui_image *image)
     }
 }
 
-static void rtgui_image_png_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
+static void rtgui_image_png_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rect_t *rect)
 {
     int x, y;
     int w, h;
-    struct rtgui_blit_info info = {0};
+    rtgui_blit_info_t info = {0};
     struct rtgui_graphic_driver *hw_driver = rtgui_graphic_driver_get_default();
 
     RT_ASSERT(image != RT_NULL && dc != RT_NULL && rect != RT_NULL);
@@ -560,8 +560,8 @@ static void rtgui_image_png_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgu
     /* this dc is not visible */
     if (rtgui_dc_get_visible(dc) != RT_TRUE) return;
 
-    w = _UI_MIN(image->w, rtgui_rect_width(*rect));
-    h = _UI_MIN(image->h, rtgui_rect_height(*rect));
+    w = _MIN(image->w, RECT_W(*rect));
+    h = _MIN(image->h, RECT_H(*rect));
 
     /* border checking */
     if (rect->x1 < 0)

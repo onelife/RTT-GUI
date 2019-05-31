@@ -104,15 +104,15 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
     }
 
     /* calculate the height for each spaces */
-    if (space_count && (rtgui_rect_height(*extent) > total_height)) {
+    if (space_count && (RECT_H(*extent) > total_height)) {
         space_height = \
-            (rtgui_rect_height(*extent) - total_height) / space_count;
+            (RECT_H(*extent) - total_height) / space_count;
     }
 
     /* init (x, y) and box width */
     next_x = extent->x1 + box->border_size;
     next_y = extent->y1 + box->border_size;
-    box_width = rtgui_rect_width(*extent) - box->border_size * 2;
+    box_width = RECT_W(*extent) - box->border_size * 2;
 
     /* layout each widget */
     rt_slist_for_each(node, &(box->container->children)) {
@@ -137,14 +137,14 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
             /* center */
             rt_uint32_t mid;
 
-            mid = box_width - rtgui_rect_width(*rect);
+            mid = box_width - RECT_W(*rect);
             mid = mid / 2;
 
             rect->x1 = next_x + mid;
             rect->x2 = next_x + box_width - mid;
         } else if (wgt->align & RTGUI_ALIGN_RIGHT) {
             /* right */
-            rect->x1 = next_x + box_width - rtgui_rect_width(*rect);
+            rect->x1 = next_x + box_width - RECT_W(*rect);
             rect->x2 = next_x + box_width;
         }
 
@@ -201,13 +201,13 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
 
     if (space_count) {
         /* calculate the height for each spaces */
-        space_width = (rtgui_rect_width(*extent) - total_width) / space_count;
+        space_width = (RECT_W(*extent) - total_width) / space_count;
     }
 
     /* init (x, y) and box height */
     next_x = extent->x1 + box->border_size;
     next_y = extent->y1 + box->border_size;
-    box_height = rtgui_rect_height(*extent) - (box->border_size << 1);
+    box_height = RECT_H(*extent) - (box->border_size << 1);
 
     /* layout each widget */
     rt_slist_for_each(node, &(box->container->children)) {
@@ -234,14 +234,14 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
             /* center */
             rt_uint32_t mid;
 
-            mid = box_height - rtgui_rect_height(*rect);
+            mid = box_height - RECT_H(*rect);
             mid = mid / 2;
 
             rect->y1 = next_y + mid;
             rect->y2 = next_y + box_height - mid;
         } else if (wgt->align & RTGUI_ALIGN_RIGHT) {
             /* right */
-            rect->y1 = next_y + box_height - rtgui_rect_height(*rect);
+            rect->y1 = next_y + box_height - RECT_H(*rect);
             rect->y2 = next_y + box_height;
         }
 

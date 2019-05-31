@@ -27,8 +27,7 @@
 #pragma pack(push)
 #pragma pack(2)
 
-struct rtgui_image_bmp_header
-{
+struct rtgui_image_bmp_header {
     /* The Win32 BMP file header (14 bytes) */
     rt_uint16_t bfType;
     rt_uint32_t bfSize;

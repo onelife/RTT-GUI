@@ -321,7 +321,7 @@ static void rtgui_dc_client_blit_line(rtgui_dc_t *self, int x1, int x2, int y, r
          * We need to adjust the offset when update widget clip!
          * Of course at ordinary times for 0. General */
         offset = owner->clip.extents.x1 - owner->extent.x1;
-        offset = offset * _UI_BITBYTES(hw_driver->bits_per_pixel);
+        offset = offset * _BIT2BYTE(hw_driver->bits_per_pixel);
         /* draw hline */
         hw_driver->ops->draw_raw_hline(line_data + offset, x1, x2, y);
     }
@@ -344,7 +344,7 @@ static void rtgui_dc_client_blit_line(rtgui_dc_t *self, int x1, int x2, int y, r
             if (rect->x2 < x2) draw_x2 = rect->x2;
 
             /* draw hline */
-            hw_driver->ops->draw_raw_hline(line_data + (draw_x1 - x1) * _UI_BITBYTES(hw_driver->bits_per_pixel), draw_x1, draw_x2, y);
+            hw_driver->ops->draw_raw_hline(line_data + (draw_x1 - x1) * _BIT2BYTE(hw_driver->bits_per_pixel), draw_x1, draw_x2, y);
         }
     }
 }

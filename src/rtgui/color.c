@@ -34,18 +34,17 @@ const rtgui_color_t high_light  = RTGUI_RGB(0xfc, 0xfc, 0xfc);
 const rtgui_color_t dark_grey   = RTGUI_RGB(0x7f, 0x7f, 0x7f);
 const rtgui_color_t light_grey  = RTGUI_RGB(0xc0, 0xc0, 0xc0);
 
-static const rt_uint8_t pixel_bits_table[] =
-{
-    1, /* mono */
-    2, /* 4 level for gray */
-    4, /* 16 level for gray */
-    8, /* RGB332 */
-    12, /* RGB444 */
-    16, /* RGB565 */
-    16, /* BGR565 */
-    18, /* RGB666 */
-    PKG_USING_RGB888_PIXEL_BITS, /* RGB888 */
-    32, /* ARGB888 */
+static const rt_uint8_t pixel_bits_table[] = {
+    1,      /* mono */
+    2,      /* 4 level for gray */
+    4,      /* 16 level for gray */
+    8,      /* RGB332 */
+    12,     /* RGB444 */
+    16,     /* RGB565 */
+    16,     /* BGR565 */
+    18,     /* RGB666 */
+    GUIENGINE_RGB888_PIXEL_BITS, /* RGB888 */
+    32,     /* ARGB888 */
 };
 
 rt_uint8_t rtgui_color_get_bits(rt_uint8_t pixel_format)
@@ -58,13 +57,11 @@ rt_uint8_t rtgui_color_get_bits(rt_uint8_t pixel_format)
 }
 RTM_EXPORT(rtgui_color_get_bits);
 
-rt_uint8_t rtgui_color_get_bpp(rt_uint8_t pixel_format)
-{
+rt_uint8_t rtgui_color_get_bpp(rt_uint8_t pixel_format) {
     rt_uint8_t bpp = 4;
 
-    if (pixel_format <= RTGRAPHIC_PIXEL_FORMAT_ARGB888)
-    {
-        bpp = _UI_BITBYTES(pixel_bits_table[pixel_format]);
+    if (pixel_format <= RTGRAPHIC_PIXEL_FORMAT_ARGB888) {
+        bpp = _BIT2BYTE(pixel_bits_table[pixel_format]);
     }
 
     return bpp;

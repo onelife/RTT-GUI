@@ -35,13 +35,13 @@
 extern int fastlz_decompress(const void *input, int length, void *output, int maxout);
 #endif
 
-static rt_bool_t rtgui_image_hdc_check(struct rtgui_filerw *file);
-static rt_bool_t rtgui_image_hdc_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load);
-static void rtgui_image_hdc_unload(struct rtgui_image *image);
-static void rtgui_image_hdc_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
-static void rtgui_image_hdcmm_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *dst_rect);
+static rt_bool_t rtgui_image_hdc_check(rtgui_filerw_t *file);
+static rt_bool_t rtgui_image_hdc_load(rtgui_image_t *image, rtgui_filerw_t *file, rt_bool_t load);
+static void rtgui_image_hdc_unload(rtgui_image_t *image);
+static void rtgui_image_hdc_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rect_t *rect);
+static void rtgui_image_hdcmm_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rect_t *dst_rect);
 
-struct rtgui_image_engine rtgui_image_hdc_engine =
+rtgui_image_engine_t rtgui_image_hdc_engine =
 {
     "hdc",
     { RT_NULL },
@@ -51,7 +51,7 @@ struct rtgui_image_engine rtgui_image_hdc_engine =
     rtgui_image_hdc_blit,
 };
 
-const struct rtgui_image_engine rtgui_image_hdcmm_engine =
+const rtgui_image_engine_t rtgui_image_hdcmm_engine =
 {
     "hdcmm",
     {RT_NULL},
@@ -61,7 +61,7 @@ const struct rtgui_image_engine rtgui_image_hdcmm_engine =
     rtgui_image_hdcmm_blit,
 };
 
-static rt_bool_t rtgui_image_hdc_check(struct rtgui_filerw *file)
+static rt_bool_t rtgui_image_hdc_check(rtgui_filerw_t *file)
 {
     int start;
     rt_bool_t is_HDC;
@@ -90,7 +90,7 @@ static rt_bool_t rtgui_image_hdc_check(struct rtgui_filerw *file)
     return (is_HDC);
 }
 
-static rt_bool_t rtgui_image_hdc_load(struct rtgui_image *image, struct rtgui_filerw *file, rt_bool_t load)
+static rt_bool_t rtgui_image_hdc_load(rtgui_image_t *image, rtgui_filerw_t *file, rt_bool_t load)
 {
     rt_uint32_t header[5];
     struct rtgui_image_hdc *hdc;
@@ -207,7 +207,7 @@ static rt_bool_t rtgui_image_hdc_load(struct rtgui_image *image, struct rtgui_fi
     return RT_TRUE;
 }
 
-static void rtgui_image_hdc_unload(struct rtgui_image *image)
+static void rtgui_image_hdc_unload(rtgui_image_t *image)
 {
     struct rtgui_image_hdc *hdc;
 
@@ -225,7 +225,7 @@ static void rtgui_image_hdc_unload(struct rtgui_image *image)
     }
 }
 
-static void rtgui_image_hdc_blit(struct rtgui_image *image,
+static void rtgui_image_hdc_blit(rtgui_image_t *image,
                                  rtgui_dc_t *dc,
                                  rtgui_rect_t *dst_rect)
 {
@@ -264,15 +264,15 @@ static void rtgui_image_hdc_blit(struct rtgui_image *image,
         return;
 
     /* the minimum rect */
-    w = _UI_MIN(image->w - xoff, rtgui_rect_width(*dst_rect));
-    h = _UI_MIN(image->h - yoff, rtgui_rect_height(*dst_rect));
+    w = _MIN(image->w - xoff, RECT_W(*dst_rect));
+    h = _MIN(image->h - yoff, RECT_H(*dst_rect));
 
     if (w == 0 || h == 0)
         return;
 
     if (hdc->pixels != RT_NULL)
     {
-        struct rtgui_image_info info;
+        rtgui_image_info_t info;
         rtgui_rect_t dest = *dst_rect;
         info.a = 255;
         info.pixels = hdc->pixels + hdc->pitch * yoff + hdc->byte_per_pixel * xoff;
@@ -315,7 +315,7 @@ static void rtgui_image_hdc_blit(struct rtgui_image *image,
     }
 }
 
-static void rtgui_image_hdcmm_blit(struct rtgui_image *image, rtgui_dc_t *dc, rtgui_rect_t *dst_rect)
+static void rtgui_image_hdcmm_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rect_t *dst_rect)
 {
     rt_uint8_t *ptr;
     rt_uint16_t y, w, h, xoff, yoff;
@@ -348,8 +348,8 @@ static void rtgui_image_hdcmm_blit(struct rtgui_image *image, rtgui_dc_t *dc, rt
         return;
 
     /* the minimum rect */
-    w = _UI_MIN(image->w - xoff, rtgui_rect_width(*dst_rect));
-    h = _UI_MIN(image->h - yoff, rtgui_rect_height(*dst_rect));
+    w = _MIN(image->w - xoff, RECT_W(*dst_rect));
+    h = _MIN(image->h - yoff, RECT_H(*dst_rect));
 
     /* get pixel pointer */
     ptr = hdc->pixels + hdc->pitch * yoff + hdc->byte_per_pixel * xoff;

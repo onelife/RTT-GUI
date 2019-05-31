@@ -96,6 +96,19 @@ extern const rtgui_font_engine_t bmp_font_engine;
 extern const rtgui_font_engine_t rtgui_hz_file_font_engine;
 extern const rtgui_font_engine_t hz_bmp_font_engine;
 
+#ifdef GUIENGINE_USING_FONT12
+extern const rtgui_font_t rtgui_font_asc12;
+# ifdef GUIENGINE_USING_FONTHZ
+extern const rtgui_font_t rtgui_font_hz12;
+# endif
+#endif
+#ifdef GUIENGINE_USING_FONT16
+extern const rtgui_font_t rtgui_font_asc16;
+# ifdef GUIENGINE_USING_FONTHZ
+extern const rtgui_font_t rtgui_font_hz16;
+# endif
+#endif
+
 /* Exported functions ------------------------------------------------------- */
 void rtgui_font_system_init(void);
 void rtgui_font_fd_uninstall(void);

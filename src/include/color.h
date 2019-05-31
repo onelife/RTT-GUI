@@ -26,6 +26,7 @@
 #define __RTGUI_COLOR_H__
 
 #include "./rtgui.h"
+#include "./blit.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,10 +53,10 @@ extern "C" {
         (((unsigned long)(rt_uint8_t)(a))<<24)))
 #define RTGUI_RGB(r, g, b)  RTGUI_ARGB(255, (r), (g), (b))
 
-#define RTGUI_RGB_B(c)  ((c) & 0xff)
-#define RTGUI_RGB_G(c)  (((c) >> 8)  & 0xff)
-#define RTGUI_RGB_R(c)  (((c) >> 16) & 0xff)
-#define RTGUI_RGB_A(c)  (((c) >> 24) & 0xff)
+#define RTGUI_RGB_A(c)  (((rt_uint32_t)(c) >> 24) & 0xff)
+#define RTGUI_RGB_R(c)  (((rt_uint32_t)(c) >> 16) & 0xff)
+#define RTGUI_RGB_G(c)  (((rt_uint32_t)(c) >> 8)  & 0xff)
+#define RTGUI_RGB_B(c)  ((rt_uint32_t)(c) & 0xff)
 
 extern const rtgui_color_t default_foreground;
 extern const rtgui_color_t default_background;
@@ -116,9 +117,10 @@ rt_inline rtgui_color_t rtgui_color_from_mono(rt_uint8_t pixel)
 
 /* convert rtgui color to RRRRRGGGGGGBBBBB */
 rt_inline rt_uint16_t rtgui_color_to_565(rtgui_color_t c) {
-    return (rt_uint16_t)(((RTGUI_RGB_R(c) >> 3) << 11) | \
-                         ((RTGUI_RGB_G(c) >> 2) << 5)  | \
-                          (RTGUI_RGB_B(c) >> 3));
+    rt_uint16_t color;
+
+    RGB565_FROM_RGB(color, RTGUI_RGB_R(c), RTGUI_RGB_G(c), RTGUI_RGB_B(c));
+    return color;
 }
 
 rt_inline rtgui_color_t rtgui_color_from_565(rt_uint16_t pixel) {

@@ -481,7 +481,7 @@ void rtgui_image_container_put(rtgui_image_item_t *item)
         hash_table_remove(image_hash_table, item->filename);
 
         /* destroy image and image item */
-        rt_free(item->filename);
+        rtgui_free(item->filename);
         rtgui_image_destroy(item->image);
         rtgui_free(item);
     }

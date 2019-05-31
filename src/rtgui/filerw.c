@@ -24,19 +24,28 @@
 #include "../include/rtgui.h"
 #include "../include/filerw.h"
 
+#ifdef RT_USING_ULOG
+# define LOG_LVL                    RTGUI_LOG_LEVEL
+# define LOG_TAG                    "GUI_FRW"
+# include "components/utilities/ulog/ulog.h"
+#else /* RT_USING_ULOG */
+# define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
+# define LOG_W                      LOG_E
+# define LOG_D                      LOG_E
+#endif /* RT_USING_ULOG */
+
 #ifdef GUIENGINE_USING_DFS_FILERW
 
 /* standard file read/write */
-struct rtgui_filerw_stdio
-{
+struct rtgui_filerw_stdio {
     /* inherit from rtgui_filerw */
-    struct rtgui_filerw _super;
+    rtgui_filerw_t _super;
 
     int fd;
     rt_bool_t eof;
 };
 
-static int stdio_seek(struct rtgui_filerw *context, rt_off_t offset, int whence)
+static int stdio_seek(rtgui_filerw_t *context, rt_off_t offset, int whence)
 {
     struct rtgui_filerw_stdio *stdio_filerw = (struct rtgui_filerw_stdio *)context;
     int stdio_whence[3] = {SEEK_SET, SEEK_CUR, SEEK_END};
@@ -49,7 +58,7 @@ static int stdio_seek(struct rtgui_filerw *context, rt_off_t offset, int whence)
     return lseek(stdio_filerw->fd, offset, stdio_whence[whence]);
 }
 
-static int stdio_read(struct rtgui_filerw *context, void *ptr, rt_size_t size, rt_size_t maxnum)
+static int stdio_read(rtgui_filerw_t *context, void *ptr, rt_size_t size, rt_size_t maxnum)
 {
     int result;
 
@@ -64,21 +73,21 @@ static int stdio_read(struct rtgui_filerw *context, void *ptr, rt_size_t size, r
     return result;
 }
 
-static int stdio_write(struct rtgui_filerw *context, const void *ptr, rt_size_t size, rt_size_t num)
+static int stdio_write(rtgui_filerw_t *context, const void *ptr, rt_size_t size, rt_size_t num)
 {
     struct rtgui_filerw_stdio *stdio_filerw = (struct rtgui_filerw_stdio *)context;
 
     return write(stdio_filerw->fd, (char *)ptr, size * num);
 }
 
-static int stdio_tell(struct rtgui_filerw *context)
+static int stdio_tell(rtgui_filerw_t *context)
 {
     struct rtgui_filerw_stdio *stdio_filerw = (struct rtgui_filerw_stdio *)context;
 
     return lseek(stdio_filerw->fd, 0, SEEK_CUR);
 }
 
-static int stdio_eof(struct rtgui_filerw *context)
+static int stdio_eof(rtgui_filerw_t *context)
 {
     int result;
     struct rtgui_filerw_stdio *stdio_filerw = (struct rtgui_filerw_stdio *)context;
@@ -89,7 +98,7 @@ static int stdio_eof(struct rtgui_filerw *context)
     return result;
 }
 
-static int stdio_close(struct rtgui_filerw *context)
+static int stdio_close(rtgui_filerw_t *context)
 {
     struct rtgui_filerw_stdio *stdio_filerw = (struct rtgui_filerw_stdio *)context;
 
@@ -110,12 +119,12 @@ static int stdio_close(struct rtgui_filerw *context)
 struct rtgui_filerw_mem
 {
     /* inherit from rtgui_filerw */
-    struct rtgui_filerw _super;
+    rtgui_filerw_t _super;
 
     const rt_uint8_t *mem_base, *mem_position, *mem_end;
 };
 
-static int mem_seek(struct rtgui_filerw *context, rt_off_t offset, int whence)
+static int mem_seek(rtgui_filerw_t *context, rt_off_t offset, int whence)
 {
     const rt_uint8_t *newpos;
     struct rtgui_filerw_mem *mem = (struct rtgui_filerw_mem *)context;
@@ -150,7 +159,7 @@ static int mem_seek(struct rtgui_filerw *context, rt_off_t offset, int whence)
     return mem->mem_position - mem->mem_base;
 }
 
-static int mem_read(struct rtgui_filerw *context, void *ptr, rt_size_t size, rt_size_t maxnum)
+static int mem_read(rtgui_filerw_t *context, void *ptr, rt_size_t size, rt_size_t maxnum)
 {
     int total_bytes;
     int mem_available;
@@ -172,26 +181,26 @@ static int mem_read(struct rtgui_filerw *context, void *ptr, rt_size_t size, rt_
     return (total_bytes / size);
 }
 
-static int mem_write(struct rtgui_filerw *context, const void *ptr, rt_size_t size, rt_size_t num)
+static int mem_write(rtgui_filerw_t *context, const void *ptr, rt_size_t size, rt_size_t num)
 {
     return 0; /* not support memory write */
 }
 
-static int mem_tell(struct rtgui_filerw *context)
+static int mem_tell(rtgui_filerw_t *context)
 {
     struct rtgui_filerw_mem *mem = (struct rtgui_filerw_mem *)context;
 
     return mem->mem_position - mem->mem_base;
 }
 
-static int mem_eof(struct rtgui_filerw *context)
+static int mem_eof(rtgui_filerw_t *context)
 {
     struct rtgui_filerw_mem *mem = (struct rtgui_filerw_mem *)context;
 
     return mem->mem_position >= mem->mem_end;
 }
 
-static int mem_close(struct rtgui_filerw *context)
+static int mem_close(rtgui_filerw_t *context)
 {
     struct rtgui_filerw_mem *mem = (struct rtgui_filerw_mem *)context;
 
@@ -204,7 +213,7 @@ static int mem_close(struct rtgui_filerw *context)
     return -1;
 }
 
-const rt_uint8_t *rtgui_filerw_mem_getdata(struct rtgui_filerw *context)
+const rt_uint8_t *rtgui_filerw_mem_getdata(rtgui_filerw_t *context)
 {
     struct rtgui_filerw_mem *mem = (struct rtgui_filerw_mem *)context;
 
@@ -247,25 +256,18 @@ static int parse_mode(const char *mode)
     }
 }
 
-struct rtgui_filerw *rtgui_filerw_create_file(const char *filename, const char *mode)
-{
+rtgui_filerw_t *rtgui_filerw_create_file(const char *filename,
+    const char *mode) {
     int fd;
     struct rtgui_filerw_stdio *rw;
 
     RT_ASSERT(filename != RT_NULL);
 
-    rw = RT_NULL;
-#ifdef _WIN32_NATIVE
-    fd = _open(filename, parse_mode(mode), 0);
-#else
     fd = open(filename, parse_mode(mode), 0);
-#endif
-
-    if (fd >= 0)
-    {
-        rw = (struct rtgui_filerw_stdio *) rtgui_malloc(sizeof(struct rtgui_filerw_stdio));
-        if (rw != RT_NULL)
-        {
+    if (fd >= 0) {
+        rw = (struct rtgui_filerw_stdio *)rtgui_malloc(
+            sizeof(struct rtgui_filerw_stdio));
+        if (rw) {
             rw->_super.seek  = stdio_seek;
             rw->_super.read  = stdio_read;
             rw->_super.write = stdio_write;
@@ -277,12 +279,9 @@ struct rtgui_filerw *rtgui_filerw_create_file(const char *filename, const char *
             rw->eof = RT_FALSE;
             return &(rw->_super);
         }
-
         close(fd);
-    }
-    else
-    {
-        //rt_kprintf("open:%s failed! errno=%d\n", filename, errno);
+    } else {
+        LOG_E("open %s failed (%d)", filename, fd);
     }
 
     return RT_NULL;
@@ -304,7 +303,7 @@ int rtgui_filerw_unlink(const char *filename)
 
 #endif
 
-struct rtgui_filerw *rtgui_filerw_create_mem(const rt_uint8_t *mem, rt_size_t size)
+rtgui_filerw_t *rtgui_filerw_create_mem(const rt_uint8_t *mem, rt_size_t size)
 {
     struct rtgui_filerw_mem *rw;
     RT_ASSERT(mem != RT_NULL);
@@ -327,42 +326,42 @@ struct rtgui_filerw *rtgui_filerw_create_mem(const rt_uint8_t *mem, rt_size_t si
     return &(rw->_super);
 }
 
-int rtgui_filerw_seek(struct rtgui_filerw *context, rt_off_t offset, int whence)
+int rtgui_filerw_seek(rtgui_filerw_t *context, rt_off_t offset, int whence)
 {
     RT_ASSERT(context != RT_NULL);
 
     return context->seek(context, offset, whence);
 }
 
-int rtgui_filerw_read(struct rtgui_filerw *context, void *buffer, rt_size_t size, rt_size_t count)
+int rtgui_filerw_read(rtgui_filerw_t *context, void *buffer, rt_size_t size, rt_size_t count)
 {
     RT_ASSERT(context != RT_NULL);
 
     return context->read(context, buffer, size, count);
 }
 
-int rtgui_filerw_write(struct rtgui_filerw *context, const void *buffer, rt_size_t size, rt_size_t count)
+int rtgui_filerw_write(rtgui_filerw_t *context, const void *buffer, rt_size_t size, rt_size_t count)
 {
     RT_ASSERT(context != RT_NULL);
 
     return context->write(context, buffer, size, count);
 }
 
-int rtgui_filerw_eof(struct rtgui_filerw *context)
+int rtgui_filerw_eof(rtgui_filerw_t *context)
 {
     RT_ASSERT(context != RT_NULL);
 
     return context->eof(context);
 }
 
-int rtgui_filerw_tell(struct rtgui_filerw *context)
+int rtgui_filerw_tell(rtgui_filerw_t *context)
 {
     RT_ASSERT(context != RT_NULL);
 
     return context->tell(context);
 }
 
-int rtgui_filerw_close(struct rtgui_filerw *context)
+int rtgui_filerw_close(rtgui_filerw_t *context)
 {
     int result;
 

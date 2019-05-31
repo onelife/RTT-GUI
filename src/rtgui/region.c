@@ -140,7 +140,7 @@ if (!(pReg)->data || (((pReg)->data->numRects + (n)) > (pReg)->data->size)) \
 if (((numRects) < ((reg)->data->size >> 1)) && ((reg)->data->size > 50)) \
 {                                    \
     rtgui_region_data_t * NewData;                           \
-    NewData = (rtgui_region_data_t *)rt_realloc((reg)->data, PIXREGION_SZOF(numRects));  \
+    NewData = (rtgui_region_data_t *)rtgui_realloc((reg)->data, PIXREGION_SZOF(numRects));  \
     if (NewData)                             \
     {                                    \
     NewData->size = (numRects);                  \
@@ -223,7 +223,7 @@ static rtgui_region_status_t rtgui_rect_alloc(rtgui_region_t *region, int n)
                 n = 250;
         }
         n += region->data->numRects;
-        data = (rtgui_region_data_t *)rt_realloc(region->data, PIXREGION_SZOF(n));
+        data = (rtgui_region_data_t *)rtgui_realloc(region->data, PIXREGION_SZOF(n));
         if (!data) return rtgui_break(region);
         region->data = data;
     }
@@ -1408,7 +1408,7 @@ rtgui_region_status_t rtgui_region_validate(rtgui_region_t *badreg,
         {
             /* Oops, allocate space for new region information */
             sizeRI <<= 1;
-            rit = (RegionInfo *) rt_realloc(ri, sizeRI * sizeof(RegionInfo));
+            rit = (RegionInfo *) rtgui_realloc(ri, sizeRI * sizeof(RegionInfo));
             if (!rit)
                 goto bail;
             ri = rit;
@@ -2096,8 +2096,8 @@ void rtgui_rect_move_to_align(const rtgui_rect_t *rect, rtgui_rect_t *to, int al
     int dw = 0, dh = 0;
 
     /* get delta width and height */
-    dw = rtgui_rect_width(*rect) - rtgui_rect_width(*to);
-    dh = rtgui_rect_height(*rect) - rtgui_rect_height(*to);
+    dw = RECT_W(*rect) - RECT_W(*to);
+    dh = RECT_H(*rect) - RECT_H(*to);
     //if (dw < 0) dw = 0;
     //if (dh < 0) dh = 0;
 

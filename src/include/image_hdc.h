@@ -28,7 +28,7 @@
 
 struct rtgui_image_hdcmm
 {
-    struct rtgui_image _super;
+    rtgui_image_t _super;
 
     /* hdc image information */
     rt_uint16_t byte_per_pixel;
@@ -49,11 +49,11 @@ struct rtgui_image_hdc
     rt_size_t   pixel_offset;
     rt_uint8_t *pixels;
 
-    struct rtgui_filerw *filerw;
+    rtgui_filerw_t *filerw;
 };
 
 void rtgui_image_hdc_init(void);
-extern const struct rtgui_image_engine rtgui_image_hdcmm_engine;
+extern const rtgui_image_engine_t rtgui_image_hdcmm_engine;
 
 #define HDC_HEADER_SIZE     (5 * 4)
 #define RTGUI_IMAGE_HDC_DEF(bpp, w, h, pixels)  \

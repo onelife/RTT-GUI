@@ -48,13 +48,6 @@ static rt_slist_t _font_list;
 static rtgui_font_t *_default_font;
 
 /* Imported variables --------------------------------------------------------*/
-extern rtgui_font_t rtgui_font_asc12;
-extern rtgui_font_t rtgui_font_asc16;
-#ifdef GUIENGINE_USING_FONTHZ
-    extern rtgui_font_t rtgui_font_hz12;
-    extern rtgui_font_t rtgui_font_hz16;
-#endif
-
 /* Private functions ---------------------------------------------------------*/
 /* Public functions ----------------------------------------------------------*/
 void rtgui_font_system_init(void) {

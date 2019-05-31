@@ -169,8 +169,8 @@ void rtgui_widget_set_rect(rtgui_widget_t *widget, const rtgui_rect_t *rect) {
     }
 
     /* reset min width and height */
-    widget->min_width  = rtgui_rect_width(widget->extent);
-    widget->min_height = rtgui_rect_height(widget->extent);
+    widget->min_width  = RECT_W(widget->extent);
+    widget->min_height = RECT_H(widget->extent);
 
     /* it's not empty, fini it */
     if (rtgui_region_not_empty(&(widget->clip))) {
