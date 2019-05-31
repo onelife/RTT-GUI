@@ -31,7 +31,7 @@
 
 #include "include/dc.h"
 #include "include/tree.h"
-#include "include/gb2312.h"
+// #include "include/gb2312.h"
 #ifdef RT_USING_DFS
 # include "components/dfs/include/dfs_posix.h"
 #endif

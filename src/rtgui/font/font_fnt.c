@@ -78,11 +78,11 @@ static void rtgui_fnt_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
         /* get position and width */
         if (!fnt->offset) {
             width = fnt->header.max_width;
-            position = (ch - fnt->header.first_char) * width * \
+            position = (ch - fnt->header._start) * width * \
                        ((fnt->header.height + 7) / 8);
         } else {
-            width = fnt->width[ch - fnt->header.first_char];
-            position = fnt->offset[ch - fnt->header.first_char];
+            width = fnt->width[ch - fnt->header._start];
+            position = fnt->offset[ch - fnt->header._start];
         }
 
         /* draw a character */
@@ -130,7 +130,7 @@ static void rtgui_fnt_font_get_metrics(rtgui_font_t *font, const char *text,
                 text += 1;
                 continue;
             }
-            rect->x2 += fnt->width[ch - fnt->header.first_char];
+            rect->x2 += fnt->width[ch - fnt->header._start];
         }
         text += 1;
     }
@@ -225,12 +225,12 @@ rtgui_font_t *rtgui_fnt_font_create(const char* filename,
         if (asc && asc_font) {
             asc->bmp = (const rt_uint8_t *)rtgui_malloc(fnt_header->asc_length);
             if (asc->bmp) {
-                asc->char_width = RT_NULL;
+                asc->_len = 0;
                 asc->offset = RT_NULL;
                 asc->width = fnt_header->w / 2;
                 asc->height = fnt_header->h;
-                asc->first_char = 0x00;
-                asc->last_char = 0xFF;
+                asc->_start = 0x00;
+                asc->_end = 0xFF;
 
                 lseek(fd, fnt_header->asc_offset, SEEK_SET);
                 if (fnt_header->asc_length != (rt_uint32_t) \
@@ -336,12 +336,12 @@ rtgui_font_t *rtgui_asc_fnt_font_create(const char* filename,
         if (asc && asc_font) {
             asc->bmp = (const rt_uint8_t *)rtgui_malloc(file_len);
             if (asc->bmp) {
-                asc->char_width = RT_NULL;
+                asc->_len = 0;
                 asc->offset = RT_NULL;
                 asc->width = font_size / 2;
                 asc->height = font_size;
-                asc->first_char = 0x00;
-                asc->last_char = 0xFF;
+                asc->_start = 0x00;
+                asc->_end = 0xFF;
 
                 if (file_len != read(fd, (void*)asc->bmp, file_len)) {
                     rtgui_free((void*)asc->bmp);
@@ -430,7 +430,7 @@ rtgui_font_t *fnt_font_create(const char* filename, const char* font_family)
     if (!readshort(fd, &fnt_header->ascent)) goto __exit;
     if (!readshort(fd, &fnt_header->depth)) goto __exit;
 
-    if (!readlong(fd, &fnt_header->first_char)) goto __exit;
+    if (!readlong(fd, &fnt_header->_start)) goto __exit;
     if (!readlong(fd, &fnt_header->default_char)) goto __exit;
     if (!readlong(fd, &fnt_header->size)) goto __exit;
     if (!readlong(fd, &fnt_header->nbits)) goto __exit;

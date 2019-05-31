@@ -54,7 +54,7 @@ static void rtgui_bitmap_font_draw_char(rtgui_font_bitmap_t *font,
     register rt_base_t i, j, word_bytes;
 
     /* check first and last char */
-    if ((ch < font->first_char) || (ch > font->last_char)) return;
+    if ((ch < font->_start) || (ch > font->_end)) return;
 
     /* get text style */
     style = rtgui_dc_get_gc(dc)->textstyle;
@@ -64,13 +64,13 @@ static void rtgui_bitmap_font_draw_char(rtgui_font_bitmap_t *font,
     x = rect->x1;
     y = rect->y1;
     /* get width */
-    if (font->char_width == RT_NULL)     {
+    if (font->_len == RT_NULL)     {
         word_bytes = (((font->width - 1) / 8) + 1);
         font_ptr = font->bmp + \
-                   (ch - font->first_char) * word_bytes * font->height;
+                   (ch - font->_start) * word_bytes * font->height;
     } else {
-        word_bytes = ((font->char_width[ch - font->first_char] - 1) / 8) + 1;
-        font_ptr = font->bmp + font->offset[ch - font->first_char];
+        word_bytes = ((font->_len/*[ch - font->_start]*/ - 1) / 8) + 1;
+        font_ptr = font->bmp + font->offset[ch - font->_start];
     }
     w = (font->width  + x > rect->x2) ? rect->x2 - rect->x1 : font->width;
     h = (font->height + y > rect->y2) ? rect->y2 - rect->y1 : font->height;
@@ -135,12 +135,12 @@ static void rtgui_bitmap_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
                         bmp_font, dc, *text, &text_rect);
 
                     /* move x to next character */
-                    if (!bmp_font->char_width)
+                    // if (!bmp_font->_len)
                         text_rect.x1 += bmp_font->width;
-                    else
-                        text_rect.x1 += \
-                            bmp_font->char_width[*text - bmp_font->first_char];
-                    text++;
+                    // else
+                    //     text_rect.x1 += \
+                    //         bmp_font->_len[*text - bmp_font->_start];
+                    // text++;
                 }
             }
         }
@@ -158,11 +158,11 @@ static void rtgui_bitmap_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
                         bmp_font, dc, *text, &text_rect);
 
                     /* move x to next character */
-                    if (!bmp_font->char_width)
+                    if (!bmp_font->_len)
                         text_rect.x1 += bmp_font->width;
                     else
                         text_rect.x1 += \
-                            bmp_font->char_width[*text - bmp_font->first_char];
+                            bmp_font->_len/*[*text - bmp_font->_start]*/;
                     text++;
                 }
             }
@@ -192,10 +192,10 @@ static void rtgui_bitmap_font_get_metrics(rtgui_font_t *font, const char *text,
 
         idx = 0;
         while (((rt_uint8_t)*(text + idx) < 0x80) && *(text + idx)) idx++;
-        if (bmp_font->char_width) {
+        if (bmp_font->_len) {
             /* get width for each character */
             while (*text && ((rt_uint8_t)*text < 0x80)) {
-                rect->x2 += bmp_font->char_width[*text - bmp_font->first_char];
+                rect->x2 += bmp_font->_len;//[*text - bmp_font->_start];
                 text++;
             }
         } else {

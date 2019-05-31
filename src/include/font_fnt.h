@@ -42,7 +42,7 @@ struct fnt_header {
     rt_uint16_t ascent;
     rt_uint16_t depth;
 
-    rt_uint32_t first_char;
+    rt_uint32_t _start;
     rt_uint32_t default_char;
     rt_uint32_t size;
     rt_uint32_t nbits;

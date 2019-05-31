@@ -51,13 +51,11 @@ static rtgui_font_t *_default_font;
 /* Private functions ---------------------------------------------------------*/
 /* Public functions ----------------------------------------------------------*/
 void rtgui_font_system_init(void) {
-    #ifdef GUIENGINE_USING_FONTHZ
-    # ifdef GUIENGINE_USING_FONT12
+    #if defined(GUIENGINE_USING_FONTHZ) && defined(GUIENGINE_USING_FONT12)
         struct rtgui_hz_file_font *hz12;
-    # endif
-    # ifdef GUIENGINE_USING_FONT16
+    #endif
+    #if defined(GUIENGINE_USING_FONTHZ) && defined(GUIENGINE_USING_FONT16)
         struct rtgui_hz_file_font *hz16;
-    # endif
     #endif
 
     rt_slist_init(&(_font_list));
@@ -66,33 +64,35 @@ void rtgui_font_system_init(void) {
     #ifdef GUIENGINE_USING_FONT12
         rtgui_font_system_add_font(&rtgui_font_asc12);
         _default_font = &rtgui_font_asc12;
-
-    # ifdef GUIENGINE_USING_FONTHZ
-        rtgui_font_system_add_font(&rtgui_font_hz12);
-        hz12 = rtgui_font_hz12.data;
-
-        if (hz12->fd < 0) {
-            rtgui_font_system_remove_font(&rtgui_font_hz12);
-        } else {
-            _default_font = &rtgui_font_hz12;
-        }
-    # endif
     #endif
 
     #ifdef GUIENGINE_USING_FONT16
         rtgui_font_system_add_font(&rtgui_font_asc16);
         _default_font = &rtgui_font_asc16;
+    #endif
 
-    # ifdef GUIENGINE_USING_FONTHZ
+    #if defined(GUIENGINE_USING_FONTHZ) && defined(GUIENGINE_USING_FONT12)
+        rtgui_font_system_add_font(&rtgui_font_hz12);
+        hz12 = rtgui_font_hz12.data;
+
+        if (hz12->fd < 0) {
+            rtgui_font_system_remove_font(&rtgui_font_hz12);
+            LOG_E("removed HZ12");
+        } else {
+            _default_font = &rtgui_font_hz12;
+        }
+    #endif
+
+    #if defined(GUIENGINE_USING_FONTHZ) && defined(GUIENGINE_USING_FONT16)
         rtgui_font_system_add_font(&rtgui_font_hz16);
         hz16 = rtgui_font_hz16.data;
 
         if (hz16->fd < 0) {
             rtgui_font_system_remove_font(&rtgui_font_hz16);
+            LOG_E("removed HZ16");
         } else {
             _default_font = &rtgui_font_hz16;
         }
-    # endif
     #endif
 
     LOG_D("default font %d", _default_font->height);
@@ -174,6 +174,7 @@ void rtgui_font_draw(rtgui_font_t *font, rtgui_dc_t *dc, const char *text,
     rt_ubase_t len, rtgui_rect_t *rect) {
     RT_ASSERT(font != RT_NULL);
 
+    LOG_D("text %x (%d)", text[0], len);
     if (font->engine && font->engine->font_draw_text)
         font->engine->font_draw_text(font, dc, text, len, rect);
 }
@@ -198,43 +199,3 @@ void rtgui_font_get_metrics(rtgui_font_t *font, const char *text,
         rt_memset(rect, 0, sizeof(rtgui_rect_t));
 }
 RTM_EXPORT(rtgui_font_get_metrics);
-
-/* GB18030 encoding:
- *          1st byte    2nd byte    3rd byte    4th byte
- *  1byte: 0x00~0x7F
- * 2bytes: 0x81~0xFE   0x40~0xFE
- * 4bytes: 0x81~0xFE   0x30~0x39   0x81~0xFE   0x30~0x39
- */
-struct rtgui_char_position _string_char_width(char *str, rt_size_t len,
-    rt_size_t offset) {
-    unsigned char *pc;
-    struct rtgui_char_position pos = {0, 0};
-
-    RT_ASSERT(offset < len);
-    pc = (unsigned char*)str;
-
-    while (pc <= ((unsigned char*)str + offset)) {
-        if (pc[0] < 0x80) {
-            pos.char_width = 1;
-        } else if (0x81 <= pc[0] && pc[0] <= 0xFE) {
-            if (0x40 <= pc[1] && pc[1] <= 0xFE) {
-                /* GBK */
-                pos.char_width = 2;
-            } else if (0x30 <= pc[1] && pc[1] <= 0x39) {
-                /* GB18030 */
-                pos.char_width = 4;
-            } else {
-                /* FIXME: unknown encoding */
-                RT_ASSERT(0);
-                pos.char_width = 1;
-            }
-        } else {
-            /* FIXME: unknown encoding */
-            RT_ASSERT(0);
-            pos.char_width = 1;
-        }
-        pc += pos.char_width;
-    }
-    pos.remain = pc - (unsigned char*)&str[offset];
-    return pos;
-}

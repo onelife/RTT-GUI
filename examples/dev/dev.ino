@@ -34,7 +34,7 @@ static rt_bool_t show_demo(rtgui_win_t *win) {
     rtgui_image_t *img;
     rtgui_rect_t draw_rect;
 
-    img = rtgui_image_create_from_file("bmp", "/logo.bmp", RT_FALSE);
+    img = rtgui_image_create_from_file("bmp", "/test/test_565.bmp", RT_FALSE);
     // img = rtgui_image_create_from_mem("png", _picture_png, sizeof(_picture_png), RT_TRUE);
     if (img) {
       draw_rect.x1 = 10;
@@ -54,7 +54,7 @@ static rt_bool_t show_demo(rtgui_win_t *win) {
   {
     rtgui_color_t fc;
     rtgui_rect_t draw_rect;
-    char *text_buf = "Hello RT-thread!";
+    char *text_buf = "万";
 
     fc = RTGUI_DC_FC(dc);
     RTGUI_DC_FC(dc) = RED;

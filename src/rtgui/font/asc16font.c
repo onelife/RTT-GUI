@@ -291,7 +291,7 @@ static const unsigned char _asc16_font[] = {
 
 static rtgui_font_bitmap_t _asc16 = {
     (const rt_uint8_t *)_asc16_font,    /* bmp */
-    RT_NULL,            /* each character width, NULL for fixed font */
+    2,            /* each character width, NULL for fixed font */
     RT_NULL,            /* offset for each character */
     8,                  /* width */
     16,                 /* height */

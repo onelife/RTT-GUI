@@ -52,14 +52,16 @@ struct rtgui_font_engine {
 /* bitmap font engine */
 struct rtgui_font_bitmap {
     const rt_uint8_t  *bmp;         /* bitmap font data */
-    const rt_uint8_t  *char_width;  /* each character width, NULL for fixed font */
+    rt_uint8_t  _len;         /* each character width, NULL for fixed font */
     const rt_uint32_t *offset;      /* offset for each character */
 
     rt_uint16_t width;              /* font width  */
     rt_uint16_t height;             /* font height */
 
-    rt_uint8_t first_char;
-    rt_uint8_t last_char;
+    rt_uint16_t _start;
+    rt_uint16_t _end;   //TODO: const
+    const rt_uint16_t _dft;
+    const rt_uint16_t size;
 };
 
 
@@ -80,15 +82,6 @@ struct rtgui_hz_file_font {
     int fd;
     /* font file name */
     const char *font_fn;
-};
-
-struct rtgui_char_position {
-    /* Keep the size of this struct within 4 bytes so it can be passed by
-     * value. */
-    /* How long this char is. */
-    rt_uint16_t char_width;
-    /* How many bytes remaining from current pointer. At least, it will be 1. */
-    rt_uint16_t remain;
 };
 
 /* Exported constants --------------------------------------------------------*/
@@ -125,12 +118,9 @@ void rtgui_font_draw(rtgui_font_t *font, rtgui_dc_t *dc, const char *text, rt_ub
 int  rtgui_font_get_string_width(rtgui_font_t *font, const char *text);
 void rtgui_font_get_metrics(rtgui_font_t *font, const char *text, rtgui_rect_t *rect);
 
-/*
- * @len the length of @str.
- * @offset the char offset on the string to check with.
- */
-struct rtgui_char_position _string_char_width(char *str, rt_size_t len,
-    rt_size_t offset);
+#ifdef GUIENGINE_USING_FONTHZ
+rt_uint16_t UnicodeToGB2312(rt_uint16_t unicode);
+#endif
 
 #ifdef __cplusplus
 }

@@ -23,9 +23,20 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/font.h"
-#include "include/dc.h"
 
 #ifdef GUIENGINE_USING_HZ_BMP
+#include "include/dc.h"
+
+#ifdef RT_USING_ULOG
+# define LOG_LVL                    RTGUI_LOG_LEVEL
+# define LOG_TAG                    "FNT_HZB"
+# include "components/utilities/ulog/ulog.h"
+#else /* RT_USING_ULOG */
+# define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
+# define LOG_D                      LOG_E
+#endif /* RT_USING_ULOG */
+
+
 /* Private function prototype ------------------------------------------------*/
 static void rtgui_hz_bitmap_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
     const char *text, rt_ubase_t len, rtgui_rect_t *rect);
@@ -34,13 +45,58 @@ static void rtgui_hz_bitmap_font_get_metrics(rtgui_font_t *font,
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-/* Imported variables --------------------------------------------------------*/
-#ifdef RTGUI_USING_FONT_COMPACT
-    extern rt_uint32_t rtgui_font_mph12(const rt_uint16_t key);
-    extern rt_uint32_t rtgui_font_mph16(const rt_uint16_t key);
-#endif
+#define UTF8_SIZE(byte0)                    \
+    (((byte0 & 0xF0) == 0xF0) ? 4 : (       \
+     ((byte0 & 0xF0) == 0xE0) ? 3 : (       \
+     ((byte0 & 0xF0) == 0xC0) ? 2 : (       \
+     1))))
+#define UTF8_TO_UNICODE(utf, sz)            \
+    (rt_uint16_t)                           \
+    ((sz == 1) ? (utf[0] & 0x7F) : (        \
+     (sz == 2) ? (((rt_uint16_t)(utf[0] & 0x1F) << 6) | (utf[1] & 0x3F)) : ( \
+     (sz == 3) ? (((rt_uint16_t)(utf[0] & 0x1F) << 12) | ((rt_uint16_t)(utf[1] & 0x3F) << 6) | (utf[2] & 0x3F)) : ( \
+     (((rt_uint16_t)(utf[0] & 0x1F) << 18) | ((rt_uint16_t)(utf[1] & 0x3F) << 12) | ((rt_uint16_t)(utf[2] & 0x3F) << 6) | (utf[3] & 0x3F))))))
+#define CONVERT_COLOR(fmt, c)            \
+    ((fmt = RTGRAPHIC_PIXEL_FORMAT_MONO) ? rtgui_color_to_mono(c) : ( \
+     (fmt = RTGRAPHIC_PIXEL_FORMAT_RGB565) ? rtgui_color_to_565(c) : ( \
+     (fmt = RTGRAPHIC_PIXEL_FORMAT_BGR565) ? rtgui_color_to_565p(c) : ( \
+     (fmt = RTGRAPHIC_PIXEL_FORMAT_RGB888) ? rtgui_color_to_888(c) : ( \
+     0)))))
+#define hw_drv()                    (rtgui_graphic_driver_get_default())
 
+/* Private variables ---------------------------------------------------------*/
+#ifdef GUIENGINE_USING_FONT12
+    #include "include/font/hz12font.h"
+
+    static const rtgui_font_bitmap_t _hz12 = {
+        .bmp = hz12_font,
+        ._len = 2,
+        .offset = RT_NULL,
+        .width = 12,
+        .height = 12,
+        ._start = 0xA1A1,
+        ._end = 0xF7FE,
+        ._dft = 0xA3BF - 0xA1A1,
+        .size = 18,
+    };
+#endif /* GUIENGINE_USING_FONT12 */
+#ifdef GUIENGINE_USING_FONT16
+    #include "include/font/hz16font.h"
+
+    static const rtgui_font_bitmap_t _hz16 = {
+        .bmp = hz16_font,
+        ._len = 2,
+        .offset = RT_NULL,
+        .width = 16,
+        .height = 16,
+        ._start = 0xA1A1,
+        ._end = 0xF7FE,
+        ._dft = 0xA3BF - 0xA1A1,
+        .size = 32,
+    };
+#endif /* GUIENGINE_USING_FONT16 */
+
+/* Imported variables --------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 const rtgui_font_engine_t hz_bmp_font_engine = {
     RT_NULL,
@@ -48,94 +104,126 @@ const rtgui_font_engine_t hz_bmp_font_engine = {
     rtgui_hz_bitmap_font_draw_text,
     rtgui_hz_bitmap_font_get_metrics
 };
+#ifdef GUIENGINE_USING_FONT12
+    const rtgui_font_t rtgui_font_hz12 = {
+        .family = "hz",
+        .height = 12,
+        .refer_count = 1,
+        .engine = &hz_bmp_font_engine,
+        .data = &_hz12,
+        .list = { RT_NULL },
+    };
+#endif /* GUIENGINE_USING_FONT12 */
+#ifdef GUIENGINE_USING_FONT16
+    const rtgui_font_t rtgui_font_hz16 = {
+        .family = "hz",
+        .height = 16,
+        .refer_count = 1,
+        .engine = &hz_bmp_font_engine,
+        .data = &_hz16,
+        .list = { RT_NULL },
+    };
+#endif /* GUIENGINE_USING_FONT16 */
 
 /* Private functions ---------------------------------------------------------*/
-#ifdef RTGUI_USING_FONT_COMPACT
+rt_inline const rt_uint8_t *_bmp_font_get_data(rtgui_font_bitmap_t *bmp_font,
+    rt_uint16_t code) {
+    rt_uint32_t offset;
 
-rt_inline const rt_uint8_t *_rtgui_hz_bitmap_get_font_ptr(
-    rtgui_font_bitmap_t *bmp_font, rt_uint8_t *str, rt_base_t font_bytes) {
-    rt_uint16_t cha = *(rt_uint16_t *)str;
-    int idx;
+    offset = code - bmp_font->_start;
 
-    if (bmp_font->height  == 16)
-        idx = rtgui_font_mph16(cha);
-    else // asume the height is 12
-        idx = rtgui_font_mph12(cha);
+    offset = (94 * (offset >> 8) + (offset & 0x00ff)) * bmp_font->size;
+    LOG_E("code %x offset %d %d", code, offset, bmp_font->size);
 
-    /* don't access beyond the data */
-    if (idx < 0) idx = 0;
-
-    /* get font pixel data */
-    return bmp_font->bmp + idx * font_bytes;
+    return bmp_font->bmp + offset;
 }
 
-#else /* RTGUI_USING_FONT_COMPACT */
-
-rt_inline const rt_uint8_t *_rtgui_hz_bitmap_get_font_ptr(
-    rtgui_font_bitmap_t *bmp_font, rt_uint8_t *str, rt_base_t font_bytes) {
-    rt_ubase_t sect, index;
-
-    /* calculate section and index */
-    sect  = *str - 0xA0;
-    index = *(str + 1) - 0xA0;
-
-    /* get font pixel data */
-    return bmp_font->bmp + (94 * (sect - 1) + (index - 1)) * font_bytes;
-}
-
-#endif /* RTGUI_USING_FONT_COMPACT */
-
-static void _rtgui_hz_bitmap_font_draw_text(rtgui_font_bitmap_t *bmp_font,
-    rtgui_dc_t *dc, const char *text, rt_ubase_t len, rtgui_rect_t *rect) {
-    rtgui_color_t bc;
+static void _bmp_font_draw_text(rtgui_font_bitmap_t *bmp_font, rtgui_dc_t *dc,
+    const char *_utf8, rt_ubase_t len, rtgui_rect_t *rect) {
+    rtgui_color_t fc, bc;
     rt_uint16_t style;
-    rt_uint8_t *str;
-    register rt_base_t h, word_bytes, font_bytes;
+    rt_uint8_t *lineBuf;
+    rt_uint32_t h, x, y;
 
     RT_ASSERT(bmp_font != RT_NULL);
 
+    fc = RTGUI_DC_FC(dc);
+    bc = RTGUI_DC_BC(dc);
     /* get text style */
     style = rtgui_dc_get_gc(dc)->textstyle;
-    bc = rtgui_dc_get_gc(dc)->background;
 
     /* drawing height */
-    h = ((bmp_font->height + rect->y1) > rect->y2) ? \
-        rect->y2 - rect->y1 : bmp_font->height;
-    word_bytes = (bmp_font->width + 7) / 8;
-    font_bytes = word_bytes * bmp_font->height;
+    h = _MIN(RECT_H(*rect), bmp_font->height);
 
-    str = (rt_uint8_t *)text;
-    while (len > 0 && rect->x1 < rect->x2) {
-        const rt_uint8_t *font_ptr;
-        register rt_base_t i, j, k;
+    lineBuf = RT_NULL;
 
-        /* get font pixel data */
-        font_ptr = _rtgui_hz_bitmap_get_font_ptr(bmp_font, str, font_bytes);
-        /* draw word */
-        for (i = 0; i < h; i++) {
-            for (j = 0; j < word_bytes; j++) {
-                for (k = 0; k < 8; k++) {
-                    if (((font_ptr[i * word_bytes + j] >> (7 - k)) & 0x01) && \
-                        ((rect->x1 + 8 * j + k) < rect->x2)) {
-                        rtgui_dc_draw_point(
-                            dc, rect->x1 + 8 * j + k, rect->y1 + i);
+    do {
+        rt_uint8_t hw_bytePP = _BIT2BYTE(hw_drv()->bits_per_pixel);
+        rt_uint32_t bufSize = bmp_font->width * hw_bytePP;
+        rt_uint8_t idx;
+
+        lineBuf = rtgui_malloc(bufSize);
+        if (!lineBuf) {
+            LOG_E("no mem to disp");
+            break;
+        }
+
+        idx = 0;
+        x = rect->x1;
+        y = rect->y1;
+        while ((x < rect->x2) && (idx < len)) {
+            /* get font data */
+            rt_uint8_t *utf8 = (rt_uint8_t *)_utf8 + idx;
+            LOG_E("utf %x %x %x %x", utf8[0], utf8[1], utf8[2], utf8[3]);
+            rt_uint8_t size = UTF8_SIZE(*utf8);
+            rt_uint16_t code = UnicodeToGB2312(UTF8_TO_UNICODE(utf8, size));
+            // LOG_E("size %d, code %x", size, code);
+            const rt_uint8_t *data = _bmp_font_get_data(bmp_font, code);
+            rt_int8_t oft = -1;
+            rt_uint8_t sft = 0;
+            rt_uint8_t lst_sft = 0;
+            rt_uint8_t bit, line;
+            // rtgui_color_t c;
+
+            /* draw a char */
+            for (line = 0; line < h; line++) {
+                rt_uint32_t w;
+
+                if ((x + bmp_font->width) > rect->x2) {
+                    w = rect->x2 - x;
+                } else {
+                    w = bmp_font->width;
+                }
+
+                /* draw a line */
+                for (bit = 0; bit < w; bit++) {
+                    sft = (bit + lst_sft) % 8;
+                    if (!sft) {
+                        // LOG_E("oft %d data %x", oft, data[oft+1]);
+                        oft++;
                     }
-                    else if (style & RTGUI_TEXTSTYLE_DRAW_BACKGROUND) {
-                        rtgui_dc_draw_color_point(
-                            dc, rect->x1 + 8 * j + k, rect->y1 + i, bc);
+                    if (data[oft] & (1 << (7 - sft))) {
+                        rtgui_dc_draw_point(dc, x + bit, y + line);
+                        LOG_E("line %d bit %d, x %d, y %d", line, bit, x + bit, y + line);
+                    } else if (style & RTGUI_TEXTSTYLE_DRAW_BACKGROUND) {
+                        rtgui_dc_draw_color_point(dc, x + bit, y + line, bc);
                     }
                 }
+                lst_sft = sft + 1;
+                    // c = (rtgui_color_t)CONVERT_COLOR(hw_drv()->pixel_format, fc);
+                    // rt_memcpy(lineBuf + idx, &c, hw_bytePP);
+                    // [j] = CONVERT_COLOR
             }
+            idx += size;
+            x += bmp_font->width;
         }
-        /* move x to next character */
-        rect->x1 += bmp_font->width;
-        str += 2;
-        len -= 2;
-    }
+    } while (0);
+
+    rtgui_free(lineBuf);
 }
 
 static void rtgui_hz_bitmap_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
-    const char *text, rt_ubase_t length, rtgui_rect_t *rect) {
+    const char *utf8, rt_ubase_t length, rtgui_rect_t *rect) {
     rt_uint32_t len;
     rtgui_font_t *efont;
     rtgui_font_bitmap_t *bmp_font = (rtgui_font_bitmap_t *)(font->data);
@@ -143,7 +231,7 @@ static void rtgui_hz_bitmap_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
 
     RT_ASSERT(dc != RT_NULL);
 
-    rtgui_font_get_metrics(rtgui_dc_get_gc(dc)->font, text, &text_rect);
+    rtgui_font_get_metrics(rtgui_dc_get_gc(dc)->font, utf8, &text_rect);
     rtgui_rect_move_to_align(rect, &text_rect, RTGUI_DC_TEXTALIGN(dc));
 
     /* get English font */
@@ -152,22 +240,22 @@ static void rtgui_hz_bitmap_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
 
     while (length > 0) {
         len = 0;
-        while (((rt_uint8_t)*(text + len) < 0x80) && *(text + len) && \
+        while (((rt_uint8_t)*(utf8 + len) < 0x80) && *(utf8 + len) && \
             (len < length)) {
             len++;
         }
         /* draw text with English font */
         if (len > 0) {
-            rtgui_font_draw(efont, dc, text, len, &text_rect);
-            text += len;
+            rtgui_font_draw(efont, dc, utf8, len, &text_rect);
+            utf8 += len;
             length -= len;
         }
 
         len = 0;
-        while (((rt_uint8_t)*(text + len) >= 0x80) && (len < length)) len++;
+        while (((rt_uint8_t)*(utf8 + len) >= 0x80) && (len < length)) len++;
         if (len > 0) {
-            _rtgui_hz_bitmap_font_draw_text(bmp_font, dc, text, len, &text_rect);
-            text += len;
+            _bmp_font_draw_text(bmp_font, dc, utf8, len, &text_rect);
+            utf8 += len;
             length -= len;
         }
     }
@@ -176,7 +264,7 @@ static void rtgui_hz_bitmap_font_draw_text(rtgui_font_t *font, rtgui_dc_t *dc,
 }
 
 static void rtgui_hz_bitmap_font_get_metrics(rtgui_font_t *font,
-    const char *text, rtgui_rect_t *rect) {
+    const char *utf8, rtgui_rect_t *rect) {
     rtgui_font_bitmap_t *bmp_font;
 
     RT_ASSERT(font->data != RT_NULL);
@@ -185,7 +273,7 @@ static void rtgui_hz_bitmap_font_get_metrics(rtgui_font_t *font,
     /* set metrics rect */
     rect->x1 = rect->y1 = 0;
     /* Chinese font is always fixed font */
-    rect->x2 = (rt_int16_t)(bmp_font->width * rt_strlen((const char *)text));
+    rect->x2 = (rt_int16_t)(bmp_font->width * rt_strlen((const char *)utf8));
     rect->y2 = bmp_font->height;
 }
 

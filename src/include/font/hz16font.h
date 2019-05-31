@@ -1,5 +1,5 @@
 /*
- * File      : hz16font.c
+ * File      : hz16font.h
  * This file is part of RT-Thread GUI Engine
  * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
  *
@@ -21,20 +21,9 @@
  * Date           Author       Notes
  * 2010-09-15     Bernard      first version
  */
-#include "include/font.h"
+#ifndef __HZ16FONT_H__
+#define __HZ16FONT_H__
 
-#if defined(GUIENGINE_USING_FONT16) && defined(GUIENGINE_USING_FONTHZ)
-
-#if !defined(GUIENGINE_USING_HZ_BMP) && !defined(GUIENGINE_USING_HZ_FILE)
-# error "Please enable GUIENGINE_USING_HZ_BMP or GUIENGINE_USING_HZ_FILE"
-#endif
-
-# if defined(GUIENGINE_USING_HZ_BMP)
-
-#  ifdef RTGUI_USING_FONT_COMPACT
-extern const unsigned char hz16_font[];
-
-#  else /* RTGUI_USING_FONT_COMPACT */
 const unsigned char hz16_font[] = {
     FONT_BMP_DATA_BEGIN
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -16766,47 +16755,4 @@ const unsigned char hz16_font[] = {
     FONT_BMP_DATA_END
 };
 
-#  endif /* RTGUI_USING_FONT_COMPACT */
-
-const rtgui_font_bitmap_t _hz16 = {
-    hz16_font,          /* bmp */
-    RT_NULL,            /* each character width, NULL for fixed font */
-    RT_NULL,            /* offset for each character */
-    16,                 /* width */
-    16,                 /* height */
-    0,                  /* first char */
-    255                 /* last char */
-};
-
-const rtgui_font_t rtgui_font_hz16 = {
-    "hz",               /* family */
-    16,                 /* height */
-    1,                  /* refer count */
-    &hz_bmp_font_engine,/* font engine */
-    (void *)&_hz16,     /* font private data */
-    { RT_NULL },
-};
-/* size = 267616 bytes */
-
-# elif defined(GUIENGINE_USING_HZ_FILE) /* GUIENGINE_USING_HZ_BMP */
-struct rtgui_hz_file_font _hz16 = {
-    {RT_NULL},          /* cache root       */
-    0,                  /* cache size       */
-    16,                 /* font size        */
-    32,                 /* font data size   */
-    -1,                 /* fd               */
-    "/resource/hzk16.fnt"   /* font_fn          */
-};
-
-const rtgui_font_t rtgui_font_hz16 = {
-    "hz",               /* family */
-    16,                 /* height */
-    1,                  /* refer count */
-    &rtgui_hz_file_font_engine,     /* font engine */
-    (void *)&_hz16,     /* font private data */
-    { RT_NULL },
-};
-
-# endif /* defined(GUIENGINE_USING_HZ_FILE) */
-
-#endif /* defined(GUIENGINE_USING_FONT16) && defined(GUIENGINE_USING_FONTHZ) */
+#endif /* __HZ16FONT_H__ */
