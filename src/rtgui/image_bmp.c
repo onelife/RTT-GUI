@@ -322,7 +322,7 @@ static rt_bool_t bmp_load_image(rtgui_image_t *img, rtgui_filerw_t *file,
             for (y = 0; y < img->h; y++) {
                 dst = bmp->pixels + (img->h - y - 1) * hw_drv()->pitch;
                 /* read a line */
-                if (bmp->pitch != rtgui_filerw_read(
+                if (bmp->pitch != (rt_uint32_t)rtgui_filerw_read(
                     file, lineBuf, 1, bmp->pitch)) {
                     LOG_E("read data failed");
                     err = -RT_EIO;
@@ -453,7 +453,7 @@ static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc,
             /* start to decode (the image is upside down) */
             for (y = 0; y < h; y++) {
                 /* read a line */
-                if (bmp->pitch != rtgui_filerw_read(
+                if (bmp->pitch != (rt_uint32_t)rtgui_filerw_read(
                     bmp->file, lineBuf, 1, bmp->pitch)) {
                     LOG_E("read data failed");
                     err = -RT_EIO;

@@ -49,10 +49,10 @@ extern "C" {
 #define DELETE_INSTANCE(obj)                rtgui_delete_instance(obj)
 
 #ifdef GUIENGIN_USING_CAST_CHECK
-# define CAST(obj, cls, _type)              \
+# define CAST_(obj, cls, _type)             \
     ((_type *)rtgui_object_cast_check(obj, cls, __FUNCTION__, __LINE__))
 #else
-# define CAST(obj, cls, _type)              ((_type *)(obj))
+# define CAST_(obj, cls, _type)             ((_type *)(obj))
 #endif
 
 #define SUPER_(obj)                         (obj->_super)

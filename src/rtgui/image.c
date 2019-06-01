@@ -46,7 +46,7 @@
 extern void rtgui_image_xpm_init(void);
 #endif
 
-#if (defined(GUIENGINE_IMAGE_JPEG) || defined(GUIENGINE_IMAGE_TJPGD))
+#ifdef GUIENGINE_IMAGE_JPEG
 extern void rtgui_image_jpeg_init(void);
 #endif
 #if defined(GUIENGINE_IMAGE_PNG) || defined(GUIENGINE_IMAGE_LODEPNG)
@@ -67,7 +67,7 @@ void rtgui_system_image_init(void) {
     #ifdef GUIENGINE_IMAGE_BMP
         rtgui_image_bmp_init();
     #endif
-    #if (defined(GUIENGINE_IMAGE_JPEG) || defined(GUIENGINE_IMAGE_TJPGD))
+    #ifdef GUIENGINE_IMAGE_JPEG
         rtgui_image_jpeg_init();
     #endif
     #if defined(GUIENGINE_IMAGE_PNG) || defined(GUIENGINE_IMAGE_LODEPNG)

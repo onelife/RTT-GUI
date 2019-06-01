@@ -28,6 +28,7 @@ void RT_GUI::begin(void) {
     RT_ASSERT(RT_EOK == ret);
     ret = rtgui_system_server_init();
     RT_ASSERT(RT_EOK == ret);
+    (void)ret;
 
     LOG_I("GUI server satrted");
 }

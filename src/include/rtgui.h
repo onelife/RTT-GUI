@@ -48,38 +48,38 @@ extern "C" {
 #define _OBJECT_METADATA                    CLASS_METADATA(object)
 #define IS_OBJECT(obj)                      IS_INSTANCE(obj, _OBJECT_METADATA)
 #define TO_OBJECT(obj)                      \
-    CAST(obj, _OBJECT_METADATA, rtgui_obj_t)
+    CAST_(obj, _OBJECT_METADATA, rtgui_obj_t)
 /* App */
 #define _APP_METADATA                       CLASS_METADATA(app)
 #define IS_APP(obj)                         IS_INSTANCE((obj), _APP_METADATA)
 #define TO_APP(obj)                         \
-    CAST(obj, _APP_METADATA, rtgui_app_t)
+    CAST_(obj, _APP_METADATA, rtgui_app_t)
 /* Box sizer */
 #define _BOX_METADATA                       CLASS_METADATA(box)
 #define IS_BOX(obj)                         IS_INSTANCE(obj, _BOX_METADATA)
 #define TO_BOX(obj)                         \
-    CAST(obj, _BOX_METADATA, rtgui_box_t)
+    CAST_(obj, _BOX_METADATA, rtgui_box_t)
 /* Widget */
 #define _WIDGET_METADATA                    CLASS_METADATA(widget)
 #define IS_WIDGET(obj)                      IS_INSTANCE(obj, _WIDGET_METADATA)
 #define TO_WIDGET(obj)                      \
-    CAST(obj, _WIDGET_METADATA, rtgui_widget_t)
+    CAST_(obj, _WIDGET_METADATA, rtgui_widget_t)
 /* Container */
 #define _CONTAINER_METADATA                 CLASS_METADATA(container)
 #define IS_CONTAINER(obj)                   \
     IS_INSTANCE((obj), _CONTAINER_METADATA)
 #define TO_CONTAINER(obj)                   \
-    CAST(obj, _CONTAINER_METADATA, rtgui_container_t)
+    CAST_(obj, _CONTAINER_METADATA, rtgui_container_t)
 /* Title */
 #define _TITLE_METADATA                     CLASS_METADATA(title)
 #define IS_TITLE(obj)                       IS_INSTANCE((obj), _TITLE_METADATA)
 #define TO_TITLE(obj)                       \
-    CAST(obj, _TITLE_METADATA, rtgui_title_t)
+    CAST_(obj, _TITLE_METADATA, rtgui_title_t)
 /* Window */
 #define _WIN_METADATA                       CLASS_METADATA(win)
 #define IS_WIN(obj)                         IS_INSTANCE((obj), _WIN_METADATA)
 #define TO_WIN(obj)                         \
-    CAST(obj, _WIN_METADATA, rtgui_win_t)
+    CAST_(obj, _WIN_METADATA, rtgui_win_t)
 
 #define _MIN(x, y)                          (((x) < (y)) ? (x) : (y))
 #define _UI_MAX(x, y)                       (((x) > (y)) ? (x) : (y))
