@@ -44,8 +44,8 @@
 #endif /* RT_USING_ULOG */
 
 /* Private function prototype ------------------------------------------------*/
-static rt_bool_t bmp_check_format(rtgui_filerw_t *file);
-static rt_bool_t bmp_load_image(rtgui_image_t *img,
+static rt_bool_t bmp_check(rtgui_filerw_t *file);
+static rt_bool_t bmp_load(rtgui_image_t *img,
     rtgui_filerw_t *file, rt_bool_t load);
 static void bmp_unload(rtgui_image_t *img);
 static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc,
@@ -76,21 +76,21 @@ typedef struct rtgui_image_bmp {
 /* In multiple of 12 and bigger than 48 */
 #define BMP_WORKING_BUFFER_SIZE     (384)
 #define BMP_MAX_SCALING_FACTOR      (10)
-#define hw_drv()                    (rtgui_graphic_driver_get_default())
+#define display()                   (rtgui_graphic_driver_get_default())
 
 /* Private variables ---------------------------------------------------------*/
 rtgui_image_engine_t bmp_engine = {
     "bmp",
     { RT_NULL },
-    bmp_check_format,
-    bmp_load_image,
+    bmp_check,
+    bmp_load,
     bmp_unload,
     bmp_blit,
 };
 
 /* Private functions ---------------------------------------------------------*/
 /* Public functions ----------------------------------------------------------*/
-static rt_bool_t bmp_check_format(rtgui_filerw_t *file) {
+static rt_bool_t bmp_check(rtgui_filerw_t *file) {
     rt_uint8_t buf[2];
     rt_bool_t is_bmp = RT_FALSE;
 
@@ -153,7 +153,7 @@ static rtgui_image_palette_t *bmp_load_palette(rtgui_filerw_t *file,
     return palette;
 }
 
-static rt_bool_t bmp_load_image(rtgui_image_t *img, rtgui_filerw_t *file,
+static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
     rt_bool_t load_body) {
     rtgui_image_bmp_t *bmp;
     rt_uint8_t *lineBuf;
@@ -243,7 +243,7 @@ static rt_bool_t bmp_load_image(rtgui_image_t *img, rtgui_filerw_t *file,
 
         /* get scale */
         while (scale < BMP_MAX_SCALING_FACTOR) {
-            if (hw_drv()->width > (bmp->w >> scale)) break;
+            if (display()->width > (bmp->w >> scale)) break;
             scale++;
         }
         if (scale >= BMP_MAX_SCALING_FACTOR) {
@@ -295,7 +295,7 @@ static rt_bool_t bmp_load_image(rtgui_image_t *img, rtgui_filerw_t *file,
 
             /* prepare to decode */
             blit_line = rtgui_get_blit_line_func(
-                bmp->pixel_format, hw_drv()->pixel_format);
+                bmp->pixel_format, display()->pixel_format);
             if (!blit_line) {
                 err = -RT_ERROR;
                 LOG_E("no blit func");
@@ -307,7 +307,7 @@ static rt_bool_t bmp_load_image(rtgui_image_t *img, rtgui_filerw_t *file,
                 LOG_E("no mem to read");
                 break;
             }
-            bmp->pixels = rtgui_malloc(img->h * hw_drv()->pitch);
+            bmp->pixels = rtgui_malloc(img->h * display()->pitch);
             if (!bmp->pixels) {
                 err = -RT_ENOMEM;
                 LOG_E("no mem to load");
@@ -320,7 +320,7 @@ static rt_bool_t bmp_load_image(rtgui_image_t *img, rtgui_filerw_t *file,
 
             /* start to decode (the image is upside down) */
             for (y = 0; y < img->h; y++) {
-                dst = bmp->pixels + (img->h - y - 1) * hw_drv()->pitch;
+                dst = bmp->pixels + (img->h - y - 1) * display()->pitch;
                 /* read a line */
                 if (bmp->pitch != (rt_uint32_t)rtgui_filerw_read(
                     file, lineBuf, 1, bmp->pitch)) {
@@ -362,7 +362,7 @@ static rt_bool_t bmp_load_image(rtgui_image_t *img, rtgui_filerw_t *file,
 
     /* release memory */
     if (lineBuf) rtgui_free(lineBuf);
-    if (RT_EOK != err) {
+    if ((RT_EOK != err) && bmp) {
         if (img->palette) rtgui_free(img->palette);
         if (bmp->pixels) rtgui_free(bmp->pixels);
         rtgui_free(bmp);
@@ -414,7 +414,7 @@ static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc,
 
             /* prepare to decode */
             blit_line = rtgui_get_blit_line_func(
-                bmp->pixel_format, hw_drv()->pixel_format);
+                bmp->pixel_format, display()->pixel_format);
             if (!blit_line) {
                 err = -RT_ERROR;
                 LOG_E("no blit func");
@@ -425,7 +425,7 @@ static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc,
                 LOG_E("no mem to read");
                 break;
             }
-            lineBuf2 = rtgui_malloc(hw_drv()->pitch);
+            lineBuf2 = rtgui_malloc(display()->pitch);
             if (!lineBuf2) {
                 err = -RT_ENOMEM;
                 LOG_E("no mem to decode");
@@ -494,7 +494,7 @@ static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc,
 
             /* output the image */
             for (y = 0; y < h; y++) {
-                ptr = bmp->pixels + (y * hw_drv()->pitch);
+                ptr = bmp->pixels + (y * display()->pitch);
                 dc->engine->blit_line(dc, dst_rect->x1, dst_rect->x1 + w + 1,
                     dst_rect->y1 + y, ptr);
             }
@@ -567,7 +567,7 @@ void screenshot(const char *filename) {
     rt_uint16_t *src;
     rt_uint32_t mask;
     struct rtgui_image_bmp_header bhr;
-    struct rtgui_graphic_driver *grp = hw_drv();
+    struct rtgui_graphic_driver *grp = display();
     #ifdef RGB_CONVERT_TO_BGR
         int j;
         rt_uint16_t *line_buf;

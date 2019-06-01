@@ -27,7 +27,13 @@
 #ifndef __GUICONFIG_H__
 #define __GUICONFIG_H__
 
+#ifndef CONFIG_ARDUINO
+# define CONFIG_ARDUINO
+#endif
+
 #define CONFIG_GUI_DEVICE_NAME              "ILI9341"
+#define CONFIG_JPEG_BUFFER_SIZE             (1024) 
+#define CONFIG_JPEG_OUTPUT_RGB565           (1)
 #define RTGUI_BIG_ENDIAN_OUTPUT
 
 

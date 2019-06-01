@@ -62,7 +62,7 @@ static void rtgui_hz_bitmap_font_get_metrics(rtgui_font_t *font,
      (fmt = RTGRAPHIC_PIXEL_FORMAT_BGR565) ? rtgui_color_to_565p(c) : ( \
      (fmt = RTGRAPHIC_PIXEL_FORMAT_RGB888) ? rtgui_color_to_888(c) : ( \
      0)))))
-#define hw_drv()                    (rtgui_graphic_driver_get_default())
+#define display()                   (rtgui_graphic_driver_get_default())
 
 /* Private variables ---------------------------------------------------------*/
 #ifdef GUIENGINE_USING_FONT12
@@ -158,7 +158,7 @@ static void _bmp_font_draw_text(rtgui_font_bitmap_t *bmp_font, rtgui_dc_t *dc,
     lineBuf = RT_NULL;
 
     do {
-        rt_uint8_t hw_bytePP = _BIT2BYTE(hw_drv()->bits_per_pixel);
+        rt_uint8_t hw_bytePP = _BIT2BYTE(display()->bits_per_pixel);
         rt_uint32_t bufSize = bmp_font->width * hw_bytePP;
         rt_uint8_t idx;
 
@@ -210,7 +210,7 @@ static void _bmp_font_draw_text(rtgui_font_bitmap_t *bmp_font, rtgui_dc_t *dc,
                     }
                 }
                 lst_sft = sft + 1;
-                    // c = (rtgui_color_t)CONVERT_COLOR(hw_drv()->pixel_format, fc);
+                    // c = (rtgui_color_t)CONVERT_COLOR(display()->pixel_format, fc);
                     // rt_memcpy(lineBuf + idx, &c, hw_bytePP);
                     // [j] = CONVERT_COLOR
             }
