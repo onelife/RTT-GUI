@@ -69,12 +69,13 @@ rt_err_t rtgui_system_server_init(void) {
         if (RT_EOK != ret) break;
 
         /* init image */
-        rtgui_system_image_init();  // TODO:return err
+        ret = rtgui_system_image_init();
+        if (RT_EOK != ret) break;
         /* init font */
         ret = rtgui_font_system_init();
         if (RT_EOK != ret) break;
         /* init rtgui server */
-        rtgui_topwin_init();
+        rtgui_topwin_init();  // TODO:return err
         rtgui_server_init();
         /* use driver rect for main window */
         rtgui_graphic_driver_get_rect(rtgui_graphic_driver_get_default(),

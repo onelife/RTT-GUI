@@ -34,7 +34,7 @@ extern "C" {
 #endif
 
 /* init rtgui image system */
-void rtgui_system_image_init(void);
+rt_err_t rtgui_system_image_init(void);
 
 #if defined(GUIENGINE_USING_DFS_FILERW)
 rtgui_image_engine_t *rtgui_image_get_engine_by_filename(const char *fn);
@@ -49,7 +49,7 @@ void rtgui_image_destroy(rtgui_image_t *image);
 void rtgui_image_get_rect(rtgui_image_t *image, rtgui_rect_t *rect);
 
 /* register an image engine */
-void rtgui_image_register_engine(rtgui_image_engine_t *engine);
+rt_err_t rtgui_image_register_engine(rtgui_image_engine_t *engine);
 
 /* blit an image on DC */
 void rtgui_image_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rect_t *rect);

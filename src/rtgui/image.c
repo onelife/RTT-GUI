@@ -47,7 +47,7 @@ extern void rtgui_image_xpm_init(void);
 #endif
 
 #ifdef GUIENGINE_IMAGE_JPEG
-extern void rtgui_image_jpeg_init(void);
+extern rt_err_t rtgui_image_jpeg_init(void);
 #endif
 #if defined(GUIENGINE_IMAGE_PNG) || defined(GUIENGINE_IMAGE_LODEPNG)
 extern void rtgui_image_png_init(void);
@@ -56,27 +56,37 @@ extern void rtgui_image_png_init(void);
 static rt_slist_t _rtgui_system_image_list = {RT_NULL};
 
 /* initialize rtgui image system */
-void rtgui_system_image_init(void) {
-    #ifdef GUIENGINE_USING_HDC
-        /* always support HDC image */
-        rtgui_image_hdc_init();
-    #endif
-    #ifdef GUIENGINE_IMAGE_XPM
-        rtgui_image_xpm_init();
-    #endif
-    #ifdef GUIENGINE_IMAGE_BMP
-        rtgui_image_bmp_init();
-    #endif
-    #ifdef GUIENGINE_IMAGE_JPEG
-        rtgui_image_jpeg_init();
-    #endif
-    #if defined(GUIENGINE_IMAGE_PNG) || defined(GUIENGINE_IMAGE_LODEPNG)
-        rtgui_image_png_init();
-    #endif
-    #ifdef GUIENGINE_IMAGE_CONTAINER
-        /* initialize image container */
-        rtgui_system_image_container_init();
-    #endif
+rt_err_t rtgui_system_image_init(void) {
+    rt_err_t ret = RT_EOK;
+
+    do {
+        #ifdef GUIENGINE_USING_HDC
+            /* always support HDC image */
+            rtgui_image_hdc_init();
+        #endif
+        #ifdef GUIENGINE_IMAGE_XPM
+            rtgui_image_xpm_init();
+        #endif
+        #ifdef GUIENGINE_IMAGE_BMP
+            ret = rtgui_image_bmp_init();
+            if (RT_EOK != ret) break;
+            LOG_D("BMP init");
+        #endif
+        #ifdef GUIENGINE_IMAGE_JPEG
+            ret = rtgui_image_jpeg_init();
+            if (RT_EOK != ret) break;
+            LOG_D("JPEG init");
+        #endif
+        #if defined(GUIENGINE_IMAGE_PNG) || defined(GUIENGINE_IMAGE_LODEPNG)
+            rtgui_image_png_init();
+        #endif
+        #ifdef GUIENGINE_IMAGE_CONTAINER
+            /* initialize image container */
+            rtgui_system_image_container_init();
+        #endif
+    } while (0);
+
+    return ret;
 }
 
 static rtgui_image_engine_t *rtgui_image_get_engine(const char *type) {
@@ -284,11 +294,11 @@ void rtgui_image_destroy(rtgui_image_t *image)
 RTM_EXPORT(rtgui_image_destroy);
 
 /* register an image engine */
-void rtgui_image_register_engine(rtgui_image_engine_t *engine)
-{
-    RT_ASSERT(engine != RT_NULL);
+rt_err_t rtgui_image_register_engine(rtgui_image_engine_t *engine) {
+    if (!engine) return -RT_EINVAL;
 
     rt_slist_append(&_rtgui_system_image_list, &(engine->list));
+    return RT_EOK;
 }
 RTM_EXPORT(rtgui_image_register_engine);
 

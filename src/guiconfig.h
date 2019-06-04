@@ -32,7 +32,7 @@
 #endif
 
 #define CONFIG_GUI_DEVICE_NAME              "ILI9341"
-#define CONFIG_JPEG_BUFFER_SIZE             (1024) 
+#define CONFIG_JPEG_BUFFER_SIZE             (4 * 1024) 
 #define CONFIG_JPEG_OUTPUT_RGB565           (1)
 #define RTGUI_BIG_ENDIAN_OUTPUT
 #define CONFIG_USING_FONT_FILE              (1)
@@ -67,7 +67,7 @@
 # define GUIENGINE_SVR_THREAD_TIMESLICE     (10)
 #endif
 #ifndef GUIENGIN_SVR_THREAD_STACK_SIZE
-# define GUIENGIN_SVR_THREAD_STACK_SIZE      (4 * 1024 )
+# define GUIENGIN_SVR_THREAD_STACK_SIZE     (4 * 1024)
 #endif
 
 // #define GUIENGIN_APP_THREAD_PRIORITY        25

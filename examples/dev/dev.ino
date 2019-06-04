@@ -35,7 +35,7 @@ static rt_bool_t show_demo(rtgui_win_t *win) {
     rtgui_rect_t draw_rect;
 
     img = rtgui_image_create_from_file("bmp", "/test/test_565.bmp", RT_FALSE);
-    // img = rtgui_image_create_from_mem("png", _picture_png, sizeof(_picture_png), RT_TRUE);
+    // img = rtgui_image_create_from_file("jpg", "/test/test9.jpg", RT_FALSE);
     if (img) {
       draw_rect.x1 = 10;
       draw_rect.y1 = 10;

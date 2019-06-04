@@ -6,11 +6,12 @@
 /*---------------------------------------------------------------------------*/
 /* System Configurations */
 
+#include "guiconfig.h"
+
+#define	JD_SZBUF		512	/* Size of stream input buffer */
 #ifdef CONFIG_ARDUINO
-#define	D_SZBUF			CONFIG_JPEG_BUFFER_SIZE
 #define	JD_FORMAT		CONFIG_JPEG_OUTPUT_RGB565
 #else
-#define	JD_SZBUF		512	/* Size of stream input buffer */
 #define JD_FORMAT		0	/* Output pixel format 0:RGB888 (3 BYTE/pix), 1:RGB565 (1 WORD/pix) */
 #endif
 #define	JD_USE_SCALE	1	/* Use descaling feature for output */

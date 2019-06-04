@@ -50,6 +50,6 @@ struct rtgui_image_bmp_header {
 };
 #pragma pack(pop)
 
-void rtgui_image_bmp_init(void);
+rt_err_t rtgui_image_bmp_init(void);
 
 #endif

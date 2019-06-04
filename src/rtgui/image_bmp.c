@@ -56,13 +56,13 @@ typedef struct rtgui_image_bmp {
     rt_bool_t is_loaded;
     rt_uint8_t *pixels;
     rtgui_filerw_t *file;
-    rt_uint32_t w, h;
     rt_uint32_t pixel_offset;
+    rt_uint32_t w, h;
     rt_uint8_t scale;
-    rt_uint8_t pad;
-    rt_uint8_t pixel_format;
     rt_uint8_t bit_per_pixel;
+    rt_uint8_t pixel_format;
     rt_uint32_t pitch;
+    rt_uint8_t pad;
 } rtgui_image_bmp_t;
 
 /* Private define ------------------------------------------------------------*/
@@ -89,7 +89,6 @@ rtgui_image_engine_t bmp_engine = {
 };
 
 /* Private functions ---------------------------------------------------------*/
-/* Public functions ----------------------------------------------------------*/
 static rt_bool_t bmp_check(rtgui_filerw_t *file) {
     rt_uint8_t buf[2];
     rt_bool_t is_bmp = RT_FALSE;
@@ -173,8 +172,9 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
             LOG_E("no mem for struct");
             break;
         }
-        img->palette = RT_NULL;
+        bmp->is_loaded = RT_FALSE;
         bmp->pixels = RT_NULL;
+        bmp->file = file;
 
         /* read header */
         err = -RT_EIO;
@@ -251,7 +251,6 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
         }
 
         /* set bmp info */
-        bmp->is_loaded = RT_FALSE;
         bmp->scale = scale;
         if (1 == bmp->bit_per_pixel) {
             bmp->pixel_format = RTGRAPHIC_PIXEL_FORMAT_MONO;
@@ -278,7 +277,6 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
             break;
         }
         bmp->pad = (bmp->pitch % 4) ? (4 - (bmp->pitch % 4)) : 0;
-        bmp->file = file;
         LOG_I("scale %d, pitch %d", bmp->scale, bmp->pitch);
 
         /* set image info */
@@ -399,9 +397,6 @@ static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc,
 
     do {
         rt_uint16_t w, h;
-
-        /* this dc is not visible */
-        if (!rtgui_dc_get_visible(dc)) break;
 
         /* the minimum rect */
         w = _MIN(img->w, RECT_W(*dst_rect));
@@ -671,9 +666,10 @@ FINSH_FUNCTION_EXPORT(screenshot, usage: screenshot(filename));
 # endif
 #endif
 
-void rtgui_image_bmp_init() {
+/* Public functions ----------------------------------------------------------*/
+rt_err_t rtgui_image_bmp_init(void) {
     /* register bmp on img system */
-    rtgui_image_register_engine(&bmp_engine);
+    return rtgui_image_register_engine(&bmp_engine);
 }
 
 #endif /* GUIENGINE_IMAGE_BMP */
