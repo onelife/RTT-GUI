@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 #include "./rtgui.h"
-#include "./font.h"
+#include "./font/font.h"
 #include "./driver.h"
 #include "./widgets/widget.h"
 

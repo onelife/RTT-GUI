@@ -24,13 +24,13 @@
  * 2019-05-15     onelife      refactor and rename to "arch.c"
  */
 
-#include "../include/rtgui.h"
-#include "../include/arch.h"
-#include "../include/app.h"
-#include "../include/image.h"
-#include "../include/font.h"
-#include "../include/types.h"
-#include "../include/widgets/window.h"
+#include "include/rtgui.h"
+#include "include/arch.h"
+#include "include/app.h"
+#include "include/image.h"
+#include "include/font/font.h"
+#include "include/types.h"
+#include "include/widgets/window.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    LOG_LVL_DBG
@@ -69,9 +69,10 @@ rt_err_t rtgui_system_server_init(void) {
         if (RT_EOK != ret) break;
 
         /* init image */
-        rtgui_system_image_init();
+        rtgui_system_image_init();  // TODO:return err
         /* init font */
-        rtgui_font_system_init();
+        ret = rtgui_font_system_init();
+        if (RT_EOK != ret) break;
         /* init rtgui server */
         rtgui_topwin_init();
         rtgui_server_init();

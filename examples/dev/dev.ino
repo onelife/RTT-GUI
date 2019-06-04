@@ -54,7 +54,7 @@ static rt_bool_t show_demo(rtgui_win_t *win) {
   {
     rtgui_color_t fc;
     rtgui_rect_t draw_rect;
-    char *text_buf = "万";
+    char *text_buf = "哈罗 RT-Thread!";
 
     fc = RTGUI_DC_FC(dc);
     RTGUI_DC_FC(dc) = RED;

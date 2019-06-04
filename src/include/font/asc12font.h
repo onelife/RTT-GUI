@@ -25,6 +25,8 @@
 #ifndef __ASC12FONT_H__
 #define __ASC12FONT_H__
 
+#include "guiconfig.h"
+
 /* Font information:
    name: DejaVuSans-Bold
    facename: -FreeType-DejaVu Sans-Bold-R-Normal--11-110-75-75-P-71-ISO10646-1
@@ -41,6 +43,7 @@
 */
 
 /* Font character bitmap data. */
+#ifdef RTGUI_USING_FONT_FILE
 static const unsigned char _font_bits[] = {
     /* Character 32 (0x20):
        width 4
@@ -3671,6 +3674,7 @@ static const unsigned char _font_bits[] = {
     0x10, 0x70, 0xe4, 0x00, 0xe4, 0x70, 0x10,
     0x00, 0x08, 0x0f, 0x07, 0x01, 0x00, 0x00,
 };
+#endif /* RTGUI_USING_FONT_FILE */
 
 /* Character->glyph mapping. */
 static const unsigned short _sysfont_offset[] = {

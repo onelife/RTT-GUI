@@ -22,11 +22,11 @@
  * 2009-10-16     Bernard      first version
  * 2013-08-31     Bernard      remove the default font setting.
  *                             (which set by theme)
+ * 2019-06-03     onelife      refactor
  */
 /* Includes ------------------------------------------------------------------*/
-#include "include/font.h"
+#include "include/font/font.h"
 #include "include/dc.h"
-#include "include/filerw.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -47,84 +47,83 @@ static rtgui_font_t *_default_font;
 /* Imported variables --------------------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /* Public functions ----------------------------------------------------------*/
-void rtgui_font_system_init(void) {
-    #if defined(GUIENGINE_USING_FONTHZ) && defined(GUIENGINE_USING_FONT12)
-        struct rtgui_hz_file_font *hz12;
-    #endif
-    #if defined(GUIENGINE_USING_FONTHZ) && defined(GUIENGINE_USING_FONT16)
-        struct rtgui_hz_file_font *hz16;
-    #endif
+rt_err_t rtgui_font_system_init(void) {
+    rt_err_t ret;
 
     rt_slist_init(&(_font_list));
     _default_font = RT_NULL;
+    ret = RT_EOK;
 
-    #ifdef GUIENGINE_USING_FONT12
-        rtgui_font_system_add_font(&rtgui_font_asc12);
-        _default_font = &rtgui_font_asc12;
-    #endif
+    do {
+        #ifdef GUIENGINE_USING_FONT12
+            ret = rtgui_font_system_add_font(&rtgui_font_asc12);
+            if (RT_EOK != ret) break;
+            _default_font = &rtgui_font_asc12;
+            LOG_D("add asc12");
 
-    #ifdef GUIENGINE_USING_FONT16
-        rtgui_font_system_add_font(&rtgui_font_asc16);
-        _default_font = &rtgui_font_asc16;
-    #endif
-
-    #if defined(GUIENGINE_USING_FONTHZ) && defined(GUIENGINE_USING_FONT12)
-        rtgui_font_system_add_font(&rtgui_font_hz12);
-        hz12 = rtgui_font_hz12.data;
-
-        if (hz12->fd < 0) {
-            rtgui_font_system_remove_font(&rtgui_font_hz12);
-            LOG_E("removed HZ12");
-        } else {
+        # ifdef GUIENGINE_USING_FONTHZ
+            ret = rtgui_font_system_add_font(&rtgui_font_hz12);
+            if (RT_EOK != ret) break;
             _default_font = &rtgui_font_hz12;
-        }
-    #endif
+            LOG_D("add hz12");
+        # endif
+        #endif
 
-    #if defined(GUIENGINE_USING_FONTHZ) && defined(GUIENGINE_USING_FONT16)
-        rtgui_font_system_add_font(&rtgui_font_hz16);
-        hz16 = rtgui_font_hz16.data;
+        #ifdef GUIENGINE_USING_FONT16
+            ret = rtgui_font_system_add_font(&rtgui_font_asc16);
+            if (RT_EOK != ret) break;
+            _default_font = &rtgui_font_asc16;
+            LOG_D("add asc16");
 
-        if (hz16->fd < 0) {
-            rtgui_font_system_remove_font(&rtgui_font_hz16);
-            LOG_E("removed HZ16");
-        } else {
+        # ifdef GUIENGINE_USING_FONTHZ
+            ret = rtgui_font_system_add_font(&rtgui_font_hz16);
+            if (RT_EOK != ret) break;
             _default_font = &rtgui_font_hz16;
-        }
-    #endif
+            LOG_D("add hz16");
+        # endif
+        #endif
+    } while (0);
 
-    LOG_D("default font %d", _default_font->height);
+    if (_default_font) {
+        LOG_D("_default_font %s%d", _default_font->family,
+            _default_font->height);
+    } else {
+        ret = -RT_ERROR;
+        LOG_E("no font!");
+    }
+
+    return ret;
 }
 
-void rtgui_font_fd_uninstall(void) {
-#ifdef GUIENGINE_USING_HZ_FILE
+void rtgui_font_close_all(void) {
     rt_slist_t *node;
     rtgui_font_t *font;
-    struct rtgui_hz_file_font *hz_file_font;
 
     rt_slist_for_each(node, &_font_list) {
         font = rt_slist_entry(node, rtgui_font_t, list);
-        if (font->engine == &rtgui_hz_file_font_engine) {
-            hz_file_font = font->data;
-            if (hz_file_font->fd >= 0) {
-                close(hz_file_font->fd);
-                hz_file_font->fd = -1;
-            }
+        if (font->engine->font_close) {
+            font->engine->font_close(font);
         }
     }
-#endif
 }
 
-void rtgui_font_system_add_font(rtgui_font_t *font) {
+rt_err_t rtgui_font_system_add_font(rtgui_font_t *font) {
+    rt_err_t ret = RT_EOK;
+
     rt_slist_init(&(font->list));
     rt_slist_append(&_font_list, &(font->list));
     /* init font */
-    if (font->engine->font_init) font->engine->font_init(font);
-    /* first refer, load it */
-    if (font->engine->font_load) font->engine->font_load(font);
+    if (font->engine->font_init) {
+        ret = font->engine->font_init(font);
+    }
+    return ret;
 }
 RTM_EXPORT(rtgui_font_system_add_font);
 
 void rtgui_font_system_remove_font(rtgui_font_t *font) {
+    if (font->engine->font_close) {
+        font->engine->font_close(font);
+    }
     rt_slist_remove(&_font_list, &(font->list));
 }
 RTM_EXPORT(rtgui_font_system_remove_font);
@@ -165,30 +164,139 @@ RTM_EXPORT(rtgui_font_derefer);
 /* draw a text */
 void rtgui_font_draw(rtgui_font_t *font, rtgui_dc_t *dc, const char *text,
     rt_ubase_t len, rtgui_rect_t *rect) {
+    rtgui_font_t *ascii, *non_ascii;
+    rtgui_rect_t text_rect;
+
     RT_ASSERT(font != RT_NULL);
 
-    LOG_D("text %x (%d)", text[0], len);
-    if (font->engine && font->engine->font_draw_text)
-        font->engine->font_draw_text(font, dc, text, len, rect);
+    rtgui_font_get_metrics(font, text, &text_rect);
+    rtgui_rect_move_to_align(rect, &text_rect, RTGUI_DC_TEXTALIGN(dc));
+
+    if (!rt_strcasecmp(font->family, "asc")) {
+        ascii = font;
+        #ifdef GUIENGINE_USING_FONTHZ
+            non_ascii = rtgui_font_refer("hz", font->height);
+        #else
+            non_ascii = RT_NULL;
+        #endif
+    } else {
+        ascii = rtgui_font_refer("asc", font->height);
+        non_ascii = font;
+    }
+
+    do {
+        rt_uint8_t idx = 0;
+
+        if (ascii && ascii->engine->font_open) {
+            if (RT_EOK != ascii->engine->font_open(ascii)) break;
+        }
+        if (non_ascii && non_ascii->engine->font_open) {
+            if (RT_EOK != non_ascii->engine->font_open(non_ascii)) break;
+        }
+
+        while ((rect->x1 < rect->x2) && (idx < len)) {
+            /* get font data */
+            rt_uint8_t *utf8 = (rt_uint8_t *)text + idx;
+            rt_uint8_t size = UTF8_SIZE(*utf8);
+            rt_uint16_t code;
+            rtgui_font_t *_font;
+
+            if (IS_ASCII(utf8, size) && ascii) {
+                code = UTF8_TO_UNICODE(utf8, size);
+                _font = ascii;
+            } else {
+                code = UnicodeToGB2312(UTF8_TO_UNICODE(utf8, size));
+                 _font = non_ascii;
+            }
+
+            /* draw a char */
+            rect->x1 += rtgui_font_draw_char(_font, dc, code, rect);
+            idx += size;
+        }
+
+        if (ascii && ascii->engine->font_close) {
+            ascii->engine->font_close(ascii);
+        }
+        if (non_ascii && non_ascii->engine->font_close) {
+            non_ascii->engine->font_close(non_ascii);
+        }
+
+    } while (0);
+
+    if (!rt_strcasecmp(font->family, "asc")) {
+        if (non_ascii) rtgui_font_derefer(non_ascii);
+    } else {
+        if (ascii) rtgui_font_derefer(ascii);
+    }
 }
 
-int rtgui_font_get_string_width(rtgui_font_t *font, const char *text) {
-    rtgui_rect_t rect;
+rt_uint8_t rtgui_font_draw_char(rtgui_font_t *font, rtgui_dc_t *dc,
+    rt_uint16_t code, rtgui_rect_t *rect) {
+    RT_ASSERT(font != RT_NULL);
 
-    /* get metrics */
-    rtgui_font_get_metrics(font, text, &rect);
-    return rect.x2 - rect.x1;
+    if (font->engine && font->engine->font_draw_char) {
+        return font->engine->font_draw_char(font, dc, code, rect);
+    }
+    return 0;
+}
+RTM_EXPORT(rtgui_font_draw_char);
+
+rt_uint8_t rtgui_font_get_width(rtgui_font_t *font, const char *text) {
+    RT_ASSERT(font != RT_NULL);
+
+    if (font->engine && font->engine->font_get_width)
+        return font->engine->font_get_width(font, text);
+    else
+        return 0;
+}
+RTM_EXPORT(rtgui_font_get_width);
+
+rt_uint32_t rtgui_font_get_string_width(rtgui_font_t *font, const char *text) {
+    rt_uint8_t *utf8 = (rt_uint8_t *)text;
+    rtgui_font_t *ascii, *non_ascii;
+    rt_uint8_t sz;
+    int w;
+
+    RT_ASSERT(font != RT_NULL);
+
+    if (!rt_strcasecmp(font->family, "asc")) {
+        ascii = font;
+        #ifdef GUIENGINE_USING_FONTHZ
+            non_ascii = rtgui_font_refer("hz", font->height);
+        #else
+            non_ascii = RT_NULL;
+        #endif
+    } else {
+        ascii = rtgui_font_refer("asc", font->height);
+        non_ascii = font;
+    }
+
+    w = 0;
+    while (*utf8) {
+        sz = UTF8_SIZE(*utf8);
+        if (IS_ASCII(utf8, sz) && ascii) {
+            w += rtgui_font_get_width(ascii, (const char *)utf8);
+        } else {
+            w += rtgui_font_get_width(non_ascii, (const char *)utf8);
+        }
+        utf8 += sz;
+    }
+
+    if (!rt_strcasecmp(font->family, "asc")) {
+        if (non_ascii) rtgui_font_derefer(non_ascii);
+    } else {
+        if (ascii) rtgui_font_derefer(ascii);
+    }
+
+    return w;
 }
 RTM_EXPORT(rtgui_font_get_string_width);
 
 void rtgui_font_get_metrics(rtgui_font_t *font, const char *text,
     rtgui_rect_t *rect) {
-    RT_ASSERT(font != RT_NULL);
-
-    if (font->engine && font->engine->font_get_metrics)
-        font->engine->font_get_metrics(font, text, rect);
-    else
-        /* no font engine found, set rect to zero */
-        rt_memset(rect, 0, sizeof(rtgui_rect_t));
+    rect->x1 = 0;
+    rect->x2 = rtgui_font_get_string_width(font, text);
+    rect->y1 = 0;
+    rect->y2 = font->height;
 }
 RTM_EXPORT(rtgui_font_get_metrics);

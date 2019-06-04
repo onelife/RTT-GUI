@@ -35,7 +35,7 @@
 #define CONFIG_JPEG_BUFFER_SIZE             (1024) 
 #define CONFIG_JPEG_OUTPUT_RGB565           (1)
 #define RTGUI_BIG_ENDIAN_OUTPUT
-
+#define CONFIG_USING_FONT_FILE              (1)
 
 #define RTGUI_MQ_SIZE                       (16)
 #define RTGUI_MB_SIZE                       (16)
@@ -47,13 +47,12 @@
 // #define RTGUI_OBJECT_TRACE
 #define RTGUI_EVENT_DEBUG
 
-// #define GUIENGINE_USING_FONT12
-#define GUIENGINE_USING_FONT16
-// #define GUIENGINE_USING_FONTHZ
+#define GUIENGINE_USING_FONT12
+// #define GUIENGINE_USING_FONT16
+#define GUIENGINE_USING_FONTHZ
 
-#ifdef GUIENGINE_USING_FONTHZ
-# define GUIENGINE_USING_HZ_BMP // todo(onelife) not working
-// #define GUIENGINE_USING_HZ_FILE
+#if CONFIG_USING_FONT_FILE
+# define RTGUI_USING_FONT_FILE
 #endif
 
 #define GUIENGINE_IMAGE_BMP

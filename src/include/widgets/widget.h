@@ -25,10 +25,9 @@
 #define __RTGUI_WIDGET_H__
 
 #include "../rtgui.h"
-// #include "../list.h"
 #include "../region.h"
 #include "../color.h"
-#include "../font.h"
+#include "../font/font.h"
 
 #ifdef __cplusplus
 extern "C" {

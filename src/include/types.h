@@ -75,10 +75,9 @@ typedef struct rtgui_line rtgui_line_t;
 typedef struct rtgui_region_data rtgui_region_data_t;
 typedef struct rtgui_region rtgui_region_t;
 
-struct rtgui_font_engine;
-struct rtgui_font_bitmap;
 typedef struct rtgui_font_engine rtgui_font_engine_t;
-typedef struct rtgui_font_bitmap rtgui_font_bitmap_t;
+typedef struct rtgui_fnt_font rtgui_fnt_font_t;
+typedef struct rtgui_bmp_font rtgui_bmp_font_t;
 typedef struct rtgui_font rtgui_font_t;
 
 struct rtgui_image_info;
@@ -150,12 +149,44 @@ typedef enum {
 } rtgui_region_status_t;
 
 /* font */
+struct rtgui_font_engine {
+    rt_err_t (*font_init)(rtgui_font_t *font);
+    rt_err_t (*font_open)(rtgui_font_t *font);
+    void (*font_close)(rtgui_font_t *font);
+    rt_uint8_t (*font_draw_char)(rtgui_font_t *font, rtgui_dc_t *dc,
+    rt_uint16_t code, rtgui_rect_t *rect);
+    rt_uint8_t (*font_get_width)(rtgui_font_t *font, const char *text);
+};
+
+struct rtgui_fnt_font {
+    void *data;
+    const rt_uint16_t *offset;
+    const rt_uint8_t *width;
+    #ifdef RTGUI_USING_FONT_FILE
+        const char *fname;
+        int fd;
+    #endif
+};
+
+struct rtgui_bmp_font {
+    void *data;
+    #ifdef RTGUI_USING_FONT_FILE
+        const char *fname;
+        int fd;
+    #endif
+};
+
 struct rtgui_font {
     char *family;                           /* font name */
-    rt_uint16_t height;                     /* font height */
-    rt_uint32_t refer_count;                /* refer count */
     const rtgui_font_engine_t *engine;      /* font engine */
+    const rt_uint16_t height;               /* font height */
+    const rt_uint16_t width;                /* font width */
+    const rt_uint16_t start;                /* start unicode */
+    const rt_uint16_t end;                  /* end unicode */
+    const rt_uint16_t dft;                  /* default unicode */
+    const rt_uint16_t size;                 /* char size in byte */
     void *data;                             /* font private data */
+    rt_uint32_t refer_count;                /* refer count */
     rt_slist_t list;                        /* the font list */
 };
 
