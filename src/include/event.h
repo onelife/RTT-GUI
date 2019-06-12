@@ -35,14 +35,42 @@ extern "C" {
 
 /* Exported defines ----------------------------------------------------------*/
 /* base event init */
-#define RTGUI_EVENT_INIT(evt, name)        \
+#define RTGUI_EVENT_REINIT(evt, name)       \
     do {                                    \
         extern rtgui_app_t* rtgui_app_self(void); \
         (evt)->base.type = RTGUI_EVENT_##name; \
         (evt)->base.user = 0;               \
-        (evt)->base.sender = rtgui_app_self(); \
+        (evt)->base.origin = rtgui_app_self(); \
         (evt)->base.ack = RT_NULL;          \
     } while (0)
+
+#define _CREATE_EVENT(evt, name, timeout)   \
+    do {                                    \
+        extern rtgui_app_t* rtgui_app_self(void); \
+        evt = rt_mp_alloc(rtgui_event_pool, timeout); \
+        if (!evt) {                         \
+            LOG_E("mp alloc err");          \
+            break;                          \
+        }                                   \
+        evt->base.type = RTGUI_EVENT_##name; \
+        evt->base.user = 0;                 \
+        evt->base.origin = rtgui_app_self(); \
+        evt->base.ack = RT_NULL;            \
+    } while (0)
+
+#ifdef RTGUI_EVENT_LOG
+# define RTGUI_CREATE_EVENT(evt, name, timeout) \
+    _CREATE_EVENT(evt, name, timeout);      \
+    LOG_I("Create %s @%p", rtgui_event_text(evt), evt)
+# define RTGUI_FREE_EVENT(evt)              \
+    rt_mp_free(evt);                        \
+    LOG_I("Free %s @%p", rtgui_event_text(evt), evt)
+#else
+# define RTGUI_CREATE_EVENT(evt, name, timeout) \
+    _CREATE_EVENT(name, timeout)
+# define RTGUI_FREE_EVENT(evt)              \
+    rt_mp_free(evt)
+#endif
 
 /* other window event init */
 #define RTGUI_EVENT_GET_RECT(e, i)          &(((rtgui_rect_t*)(e + 1))[i])
@@ -50,10 +78,10 @@ extern "C" {
 
 #define RTGUI_EVENT_VPAINT_REQ_INIT(e, win, cm) \
 do {                                        \
-    RTGUI_EVENT_INIT(e, VPAINT_REQ);        \
+    RTGUI_EVENT_REINIT(e, VPAINT_REQ);        \
     (e)->wid = win;                         \
     (e)->cmp = cm;                          \
-    (e)->sender = (e);                      \
+    (e)->origin = (e);                      \
     (e)->buffer = RT_NULL;                  \
     rt_completion_init((e)->cmp);           \
 } while (0)
@@ -61,7 +89,7 @@ do {                                        \
 /* gesture event init */
 #define RTGUI_EVENT_GESTURE_INIT(e, gtype)  \
     do {                                    \
-        RTGUI_EVENT_INIT(e, GESTURE);       \
+        RTGUI_EVENT_REINIT(e, GESTURE);       \
         (e)->type = gtype;                  \
     } while (0)
 
@@ -96,7 +124,7 @@ do {                                        \
 #define RTGUI_WIDGET_EVENT_INIT(e, t)       \
     do {                                    \
         (e)->type = (t);                    \
-        (e)->sender = RT_NULL;              \
+        (e)->origin = RT_NULL;              \
         (e)->ack = RT_NULL;                 \
     } while (0)
 #define RTGUI_SCROLL_LINEUP                 0x01
@@ -108,7 +136,7 @@ do {                                        \
 #define _RTGUI_EVENT_MV_INIT_TYPE(T)        \
 rt_inline void RTGUI_EVENT_MV_MODEL_##T##_INIT( \
     struct rtgui_event_mv_model *e) { \
-    RTGUI_EVENT_INIT(e, MV_MODEL); \
+    RTGUI_EVENT_REINIT(e, MV_MODEL); \
     e->base.user = RTGUI_MV_DATA_##T;   \
 }
 

@@ -41,7 +41,7 @@
 
 /* Private function prototype ------------------------------------------------*/
 static void _win_title_constructor(void *obj);
-static rt_bool_t _tile_event_handler(void *obj, rtgui_evt_generic_t *evt);
+static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt);
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -51,7 +51,7 @@ RTGUI_CLASS(
     CLASS_METADATA(widget),
     _win_title_constructor,
     RT_NULL,
-    _tile_event_handler,
+    _title_event_handler,
     sizeof(rtgui_title_t));
 
 /* Private functions ---------------------------------------------------------*/
@@ -61,11 +61,15 @@ static void _win_title_constructor(void *obj) {
     RTGUI_WIDGET_TEXTALIGN(win_t) = RTGUI_ALIGN_CENTER_VERTICAL;
 }
 
-static rt_bool_t _tile_event_handler(void *obj, rtgui_evt_generic_t *evt) {
+static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     rtgui_title_t *win_t;
     rtgui_widget_t *wgt;
     rt_bool_t done;
 
+    #ifdef RTGUI_EVENT_LOG
+        LOG_I("[TitleEVT] %s @%p from %s", rtgui_event_text(evt), evt,
+            evt->base.origin->mb->parent.parent.name);
+    #endif
     win_t = TO_TITLE(obj);
     wgt = TO_WIDGET(obj);
     if (!wgt->toplevel) {
@@ -74,7 +78,6 @@ static rt_bool_t _tile_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     }
     done = RT_FALSE;
 
-    LOG_I("title rx %x (%p) from %s", evt->base.type, evt, evt->base.sender->mb->parent.parent.name);
     switch (evt->base.type) {
     case RTGUI_EVENT_PAINT:
         rtgui_theme_draw_win(win_t);

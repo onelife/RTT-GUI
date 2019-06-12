@@ -514,7 +514,7 @@ typedef enum rtgui_evt_type {
 struct rtgui_evt_base {
     rtgui_evt_type_t type;
     rt_uint16_t user;
-    rtgui_app_t *sender;
+    rtgui_app_t *origin;
     rt_mailbox_t ack;
 };
 
@@ -619,7 +619,7 @@ struct rt_completion {
 
 struct rtgui_event_vpaint_req {
     _RTGUI_EVENT_WIN_ELEMENTS;
-    struct rtgui_event_vpaint_req *sender;
+    struct rtgui_event_vpaint_req *origin;
     struct rt_completion *cmp;
     rtgui_dc_t* buffer;
 };

@@ -114,7 +114,11 @@ static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     rtgui_widget_t *wgt = TO_WIDGET(obj);
     rt_bool_t done = RT_FALSE;
 
-    LOG_D("wgt rx %x (%p) from %s", evt->base.type, evt, evt->base.sender->mb->parent.parent.name);
+    #ifdef RTGUI_EVENT_LOG
+        LOG_I("[WgtEVT] %s @%p from %s", rtgui_event_text(evt), evt,
+            evt->base.origin->mb->parent.parent.name);
+    #endif
+
     switch (evt->base.type) {
     case RTGUI_EVENT_SHOW:
         done = rtgui_widget_onshow(obj, evt);
@@ -591,48 +595,44 @@ void rtgui_widget_update_clip(rtgui_widget_t *widget)
 RTM_EXPORT(rtgui_widget_update_clip);
 
 void rtgui_widget_show(struct rtgui_widget *wgt) {
-    if (!wgt) return;
-    if (!RTGUI_WIDGET_IS_HIDE(wgt)) return;
-    RTGUI_WIDGET_UNHIDE(wgt);
-    LOG_D("unhide %s", wgt->_super.cls->name);
-    if (!wgt->toplevel) return;
-    rtgui_widget_update_clip(wgt);
-    if (!EVENT_HANDLER(wgt)) return;
+    do {
+        rtgui_evt_generic_t *evt;
 
-    /* send RTGUI_EVENT_SHOW */
-    rtgui_evt_generic_t *evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-        rtgui_event_pool, RT_WAITING_FOREVER);
-    if (evt) {
-        RTGUI_EVENT_INIT(evt, SHOW);
+        if (!wgt) break;
+        if (!RTGUI_WIDGET_IS_HIDE(wgt)) break;
+        RTGUI_WIDGET_UNHIDE(wgt);
+        LOG_D("unhide %s", wgt->_super.cls->name);
+        if (!wgt->toplevel) break;
+        rtgui_widget_update_clip(wgt);
+        if (!EVENT_HANDLER(wgt)) break;
+
+        /* send RTGUI_EVENT_SHOW */
+        RTGUI_CREATE_EVENT(evt, SHOW, RT_WAITING_FOREVER);
+        if (!evt) break;
         (void)EVENT_HANDLER(wgt)(wgt, evt);
-        rt_mp_free(evt);
-    } else {
-        LOG_E("get mp err");
-        return;
-    }
+        RTGUI_FREE_EVENT(evt);
+    } while (0);
 }
 RTM_EXPORT(rtgui_widget_show);
 
 void rtgui_widget_hide(struct rtgui_widget *wgt) {
-    if (!wgt) return;
-    if (RTGUI_WIDGET_IS_HIDE(wgt)) return;
-    if (!wgt->toplevel) return;
-    if (!EVENT_HANDLER(wgt)) return;
+    do {
+        rtgui_evt_generic_t *evt;
 
-    /* send RTGUI_EVENT_HIDE */
-    rtgui_evt_generic_t *evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-        rtgui_event_pool, RT_WAITING_FOREVER);
-    if (evt) {
-        RTGUI_EVENT_INIT(evt, HIDE);
+        if (!wgt) break;
+        if (RTGUI_WIDGET_IS_HIDE(wgt)) break;
+        if (!wgt->toplevel) break;
+        if (!EVENT_HANDLER(wgt)) break;
+
+        /* send RTGUI_EVENT_HIDE */
+        RTGUI_CREATE_EVENT(evt, HIDE, RT_WAITING_FOREVER);
+        if (!evt) break;
         (void)EVENT_HANDLER(wgt)(wgt, evt);
-        rt_mp_free(evt);
-    } else {
-        LOG_E("get mp err");
-        return;
-    }
+        RTGUI_FREE_EVENT(evt);
 
-    RTGUI_WIDGET_HIDE(wgt);
-    LOG_D("hide %s", wgt->_super.cls->name);
+        RTGUI_WIDGET_HIDE(wgt);
+        LOG_D("hide %s", wgt->_super.cls->name);
+    } while (0);
 }
 RTM_EXPORT(rtgui_widget_hide);
 
@@ -730,24 +730,22 @@ void rtgui_widget_clip_return(rtgui_widget_t *wgt) {
 RTM_EXPORT(rtgui_widget_clip_return);
 
 void rtgui_widget_update(rtgui_widget_t *wgt) {
-    if (!wgt) return;
-
-    if (EVENT_HANDLER(wgt) && \
-        !(RTGUI_WIDGET_FLAG(wgt) & RTGUI_WIDGET_FLAG_IN_ANIM)) {
+    do {
         rtgui_evt_generic_t *evt;
 
+        if (!wgt) return;
+        if (!EVENT_HANDLER(wgt) || \
+            (RTGUI_WIDGET_FLAG(wgt) & RTGUI_WIDGET_FLAG_IN_ANIM))
+            break;
+
         /* send RTGUI_EVENT_PAINT */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
-        if (evt) {
-            RTGUI_EVENT_INIT(evt, PAINT);
-            evt->paint.wid = RT_NULL;
-            (void)EVENT_HANDLER(wgt)(wgt, evt);
-            rt_mp_free(evt);
-        } else {
-            LOG_E("get mp err");
-        }
-    }
+        RTGUI_CREATE_EVENT(evt, PAINT, RT_WAITING_FOREVER);
+        if (!evt) break;
+        LOG_I("update");
+        evt->paint.wid = RT_NULL;
+        (void)EVENT_HANDLER(wgt)(wgt, evt);
+        RTGUI_FREE_EVENT(evt);
+    } while (0);
 }
 RTM_EXPORT(rtgui_widget_update);
 

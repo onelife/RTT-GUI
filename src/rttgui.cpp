@@ -8,7 +8,8 @@
 
 extern "C" {
     #ifdef RT_USING_ULOG
-    # define LOG_TAG "RTT_GUI"
+    # define LOG_LVL                RTGUI_LOG_LEVEL
+    # define LOG_TAG                "RTT_GUI"
     # include "components/utilities/ulog/ulog.h"
     #else
     # define LOG_E(format, args...) rt_kprintf(format "\n", ##args)
@@ -26,12 +27,12 @@ void RT_GUI::begin(void) {
     RT_ASSERT(RT_NULL != dev);
     ret = rtgui_graphic_set_device(dev);
     RT_ASSERT(RT_EOK == ret);
-    ret = rtgui_system_server_init();
+    ret = rtgui_system_init();
     RT_ASSERT(RT_EOK == ret);
     (void)ret;
 
     LOG_I("GUI server satrted");
 }
 
-/* RT_Thread GUI instance */
+/* RT-Thread GUI instance */
 RT_GUI RTT_GUI;

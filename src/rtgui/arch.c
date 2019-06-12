@@ -23,42 +23,38 @@
  * 2016-03-23     Bernard      fix the default font initialization issue.
  * 2019-05-15     onelife      refactor and rename to "arch.c"
  */
-
+/* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 #include "include/arch.h"
 #include "include/app.h"
-#include "include/image.h"
-#include "include/font/font.h"
-#include "include/types.h"
-#include "include/widgets/window.h"
 
 #ifdef RT_USING_ULOG
-# define LOG_LVL                    LOG_LVL_DBG
-// # define LOG_LVL                   LOG_LVL_INFO
-# define LOG_TAG                    "GUI_SYS"
+# define LOG_LVL                    RTGUI_LOG_LEVEL
+# define LOG_TAG                    "GUI_ARC"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
+/* Private function prototype ------------------------------------------------*/
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+#ifndef RTGUI_EVENT_LOG
+# define rtgui_log_event(tgt, evt)
+#endif
 // #define RTGUI_MEM_TRACE
-
 #define SYNC_ACK_NUMBER             (1)
 
+/* Private variables ---------------------------------------------------------*/
+static struct rt_mutex _screen_lock;
 static struct rt_mailbox ack_sync;
 static rt_uint8_t ack_pool[SYNC_ACK_NUMBER];
-
-struct rt_mempool *rtgui_event_pool = RT_NULL;
-
-const rtgui_color_t default_foreground = RTGUI_RGB(0x00, 0x00, 0x00);
-const rtgui_color_t default_background = RTGUI_RGB(212, 208, 200);
-
 static rtgui_rect_t _mainwin_rect;
-static struct rt_mutex _screen_lock;
 
-
-rt_err_t rtgui_system_server_init(void) {
+/* Private functions ---------------------------------------------------------*/
+/* Public functions ----------------------------------------------------------*/
+rt_err_t rtgui_system_init(void) {
     rt_err_t ret;
 
     do {
@@ -67,24 +63,22 @@ rt_err_t rtgui_system_server_init(void) {
         ret = rt_mb_init(&ack_sync, "ack", ack_pool, SYNC_ACK_NUMBER,
             RT_IPC_FLAG_FIFO);
         if (RT_EOK != ret) break;
-
-        /* init image */
         ret = rtgui_system_image_init();
         if (RT_EOK != ret) break;
-        /* init font */
         ret = rtgui_font_system_init();
         if (RT_EOK != ret) break;
-        /* init rtgui server */
-        rtgui_topwin_init();  // TODO:return err
-        rtgui_server_init();
-        /* use driver rect for main window */
+        ret = rtgui_topwin_init();
+        if (RT_EOK != ret) break;
+        ret = rtgui_server_init();
+        if (RT_EOK != ret) break;
+        /* use h/w rect for main window */
         rtgui_graphic_driver_get_rect(rtgui_graphic_driver_get_default(),
             &_mainwin_rect);
     } while (0);
 
     return ret;
 }
-INIT_ENV_EXPORT(rtgui_system_server_init);
+INIT_ENV_EXPORT(rtgui_system_init);
 
 /************************************************************************/
 /* RTGUI Timer                                                          */
@@ -102,9 +96,9 @@ static void rtgui_time_out(void *param) {
     if (evt) {
         /* not in thread context */
         evt->timer.base.type = RTGUI_EVENT_TIMER;
-        evt->timer.base.sender = RT_NULL;
+        evt->timer.base.origin = RT_NULL;
         evt->timer.timer = timer;
-        ret = rtgui_send(timer->app, evt, RT_WAITING_NO);
+        ret = rtgui_request(timer->app, evt, RT_WAITING_NO);
         if (ret) {
             LOG_E("timer evt err [%d]", ret);
             return;
@@ -298,11 +292,8 @@ void rti_free_hook(void *ptr) {
         item_free = item;
     }
 }
-#endif
+#endif /* RTGUI_MEM_TRACE */
 
-//#define DEBUG_MEMLEAK
-
-#undef rtgui_malloc
 void *rtgui_malloc(rt_size_t size) {
     void *ptr;
 
@@ -315,16 +306,10 @@ void *rtgui_malloc(rt_size_t size) {
         if (RT_NULL != ptr) rti_malloc_hook(ptr, size);
     #endif
 
-    #ifdef DEBUG_MEMLEAK
-        LOG_D("alloc %p (%d) on %p %.*s\n", ptr, size,
-            __builtin_return_address(0), RT_NAME_MAX, rt_thread_self()->name);
-    #endif
-
     return ptr;
 }
 RTM_EXPORT(rtgui_malloc);
 
-#undef rtgui_realloc
 void *rtgui_realloc(void *ptr, rt_size_t size) {
     void *new_ptr;
 
@@ -338,21 +323,11 @@ void *rtgui_realloc(void *ptr, rt_size_t size) {
         new_ptr = rt_realloc(ptr, size);
     #endif
 
-    #ifdef DEBUG_MEMLEAK
-        LOG_D("realloc %p to %p (%d) on %p %*.s\n", ptr, new_ptr, size,
-            __builtin_return_address(0), RT_NAME_MAX, rt_thread_self()->name);
-    #endif
-
     return new_ptr;
 }
 RTM_EXPORT(rtgui_realloc);
 
-#undef rtgui_free
 void rtgui_free(void *ptr) {
-    #ifdef DEBUG_MEMLEAK
-        LOG_D("dealloc %p on %p\n", ptr, __builtin_return_address(0));
-    #endif
-
     #ifdef RTGUI_MEM_TRACE
         if (RT_NULL != ptr) rti_free_hook(ptr);
     #endif
@@ -372,177 +347,203 @@ void list_guimem(void) {
 FINSH_FUNCTION_EXPORT(list_guimem, display memory information);
 #endif
 
-/************************************************************************/
-/* RTGUI Event Dump                                                     */
-/************************************************************************/
-#ifdef RTGUI_EVENT_DEBUG
-    static void rtgui_event_dump(rtgui_app_t* app,
-        rtgui_evt_generic_t *evt) {
-        char *sender;
-
-        // if ((evt->base.type == RTGUI_EVENT_TIMER) ||
-        //     (evt->base.type == RTGUI_EVENT_UPDATE_BEGIN) ||
-        //     (evt->base.type == RTGUI_EVENT_MOUSE_MOTION) ||
-        //     (evt->base.type == RTGUI_EVENT_UPDATE_END)) {
-        //     /* don't dump timer event */
-        //     return;
-        // }
-
-        if (!evt->base.sender) {
-            sender = "NULL";
-        } else {
-            sender = (char *)evt->base.sender->name;
-        }
-
-        if (evt->base.type >= RTGUI_EVENT_COMMAND) {
-            rt_kprintf("[%-*.s] (%s) => [%-*.s]\n",  RT_NAME_MAX, sender,
-                "CMD ",  RT_NAME_MAX, app->name);
-            return;
-        } else {
-            rt_kprintf("[%-*.s] (%04x) => [%-*.s] { ", RT_NAME_MAX, sender,
-                evt->base.type, RT_NAME_MAX, app->name);
-        }
-
-        switch (evt->base.type) {
-        case RTGUI_EVENT_APP_CREATE:
-        case RTGUI_EVENT_APP_DESTROY:
-        case RTGUI_EVENT_APP_ACTIVATE:
-            rt_kprintf("<app> %s", evt->app_create.app->name);
-            break;
-
-        case RTGUI_EVENT_PAINT:
-            if (evt->paint.wid) {
-                rt_kprintf("<win> %s", evt->paint.wid->title);
-            }
-            break;
-
-        case RTGUI_EVENT_KBD:
-            if (evt->kbd.wid) {
-                rt_kprintf("<win> %s - %s", evt->kbd.wid->title,
-                    RTGUI_KBD_IS_UP(&evt->kbd) ? "up" : "down");
-            }
-            break;
-
-        case RTGUI_EVENT_CLIP_INFO:
-            if (evt->clip_info.wid) {
-                rt_kprintf("<win> %s", evt->clip_info.wid->title);
-            }
-            break;
-
-        case RTGUI_EVENT_WIN_CREATE:
-            rt_kprintf("<win> %s @%p (x1:%03d, y1:%03d, x2:%03d, y2:%03d)",
-                evt->win_create.wid->title, evt->win_create.wid,
-                TO_WIDGET(evt->win_create.wid)->extent.x1,
-                TO_WIDGET(evt->win_create.wid)->extent.y1,
-                TO_WIDGET(evt->win_create.wid)->extent.x2,
-                TO_WIDGET(evt->win_create.wid)->extent.y2);
-            break;
-
-        case RTGUI_EVENT_UPDATE_END:
-            rt_kprintf("(x1:%03d, y1:%03d, x2:%03d, y2:%03d)",
-                evt->update_end.rect.x1, evt->update_end.rect.y1,
-                evt->update_end.rect.x2, evt->update_end.rect.y2);
-            break;
-
-        case RTGUI_EVENT_WIN_ACTIVATE:
-        case RTGUI_EVENT_WIN_DESTROY:
-        case RTGUI_EVENT_WIN_CLOSE:
-        case RTGUI_EVENT_WIN_DEACTIVATE:
-        case RTGUI_EVENT_WIN_SHOW:
-        case RTGUI_EVENT_WIN_HIDE:
-        case RTGUI_EVENT_WIN_MODAL_ENTER:
-            if (evt->win_base.wid) {
-                rt_kprintf("<win> %s", evt->win_base.wid->title);
-            }
-            break;
-
-        case RTGUI_EVENT_WIN_MOVE:
-            if (evt->win_move.wid) {
-                rt_kprintf("<win> %s move (%03d, %03d)",
-                    evt->win_move.wid->title, evt->win_move.x, evt->win_move.y);
-            }
-            break;
-
-        case RTGUI_EVENT_WIN_RESIZE:
-            if (evt->win_resize.wid) {
-                rt_kprintf("<win> %s resize (x1:%d, y1:%d, x2:%d, y2:%d)",
-                    evt->win_resize.wid->title,
-                    TO_WIDGET(evt->win_resize.wid)->extent.x1,
-                    TO_WIDGET(evt->win_resize.wid)->extent.y1,
-                    TO_WIDGET(evt->win_resize.wid)->extent.x2,
-                    TO_WIDGET(evt->win_resize.wid)->extent.y2);
-            }
-            break;
-
-        case RTGUI_EVENT_MOUSE_BUTTON:
-        case RTGUI_EVENT_MOUSE_MOTION:
-            rt_kprintf("<mouse> (%03d, %03d) %s %s", evt->mouse.x, evt->mouse.y,
-                (evt->mouse.button & RTGUI_MOUSE_BUTTON_LEFT) ? "L" : "R",
-                (evt->mouse.button & RTGUI_MOUSE_BUTTON_DOWN) ? "down" : "up");
-            if (evt->mouse.wid) {
-                rt_kprintf(" on <win> %s", evt->mouse.wid->title);
-            }
-            break;
-
-        case RTGUI_EVENT_MONITOR_ADD:
-            if (RT_NULL != evt->monitor.wid) {
-                rt_kprintf("<win> %s monitor (x1:%d, y1:%d, x2:%d, y2:%d)",
-                    evt->monitor.wid->title,
-                    evt->monitor.rect.x1, evt->monitor.rect.y1,
-                    evt->monitor.rect.x2, evt->monitor.rect.y2);
-            }
-            break;
-
-        default:
-            break;
-        }
-        rt_kprintf(" }\n");
+/***************************************************************************//**
+ * Event Log
+ ******************************************************************************/
+#ifdef RTGUI_EVENT_LOG
+const char *rtgui_event_text(rtgui_evt_generic_t *evt) {
+    switch (evt->base.type) {
+    case RTGUI_EVENT_APP_CREATE:    return "<App>Create";
+    case RTGUI_EVENT_APP_DESTROY:   return "<App>Destory";
+    case RTGUI_EVENT_APP_ACTIVATE:  return "<App>Active";
+    /* WM event */
+    case RTGUI_EVENT_SET_WM:        return "<WM>Set";
+    /* win event */
+    case RTGUI_EVENT_WIN_CREATE:    return "<Win>Create";
+    case RTGUI_EVENT_WIN_DESTROY:   return "<Win>Destory";
+    case RTGUI_EVENT_WIN_SHOW:      return "<Win>Show";
+    case RTGUI_EVENT_WIN_HIDE:      return "<Win>Hide";
+    case RTGUI_EVENT_WIN_MOVE:      return "<Win>Move";
+    case RTGUI_EVENT_WIN_RESIZE:    return "<Win>Resize";
+    case RTGUI_EVENT_WIN_CLOSE:     return "<Win>Close";
+    case RTGUI_EVENT_WIN_ACTIVATE:  return "<Win>Active";
+    case RTGUI_EVENT_WIN_DEACTIVATE:    return "<Win>Deactive";
+    case RTGUI_EVENT_WIN_UPDATE_END:    return "<Win>UpdateEnd";
+    /* sent after window setup and before the app setup */
+    case RTGUI_EVENT_WIN_MODAL_ENTER:   return "<Win>ModelEnter";
+    /* widget event */
+    case RTGUI_EVENT_SHOW:          return "<EVT>Show";
+    case RTGUI_EVENT_HIDE:          return "<EVT>Hide";
+    case RTGUI_EVENT_PAINT:         return "<EVT>Paint";
+    case RTGUI_EVENT_FOCUSED:       return "<EVT>Focus";
+    case RTGUI_EVENT_SCROLLED:      return "<EVT>Scroll";
+    case RTGUI_EVENT_RESIZE:        return "<EVT>Resize";
+    case RTGUI_EVENT_SELECTED:      return "<EVT>Select";
+    case RTGUI_EVENT_UNSELECTED:    return "<EVT>Unselect";
+    case RTGUI_EVENT_MV_MODEL:      return "<EVT>MvModel";
+    case RTGUI_EVENT_UPDATE_TOPLVL: return "<EVT>UpdateTop";
+    case RTGUI_EVENT_UPDATE_BEGIN:  return "<EVT>UpdateBegin";
+    case RTGUI_EVENT_UPDATE_END:    return "<EVT>UpdateEnd";
+    case RTGUI_EVENT_MONITOR_ADD:   return "<EVT>MonitorAdd";
+    case RTGUI_EVENT_MONITOR_REMOVE:    return "<EVT>MonitorRemove";
+    case RTGUI_EVENT_TIMER:         return "<EVT>Timer";
+    /* virtual paint event (server -> client) */
+    case RTGUI_EVENT_VPAINT_REQ:    return "<EVT>VPaintReq";
+    /* clip rect information */
+    case RTGUI_EVENT_CLIP_INFO:     return "<EVT>ClipInfo";
+    /* mouse and keyboard event */
+    case RTGUI_EVENT_MOUSE_MOTION:  return "<Mouse>Motion";
+    case RTGUI_EVENT_MOUSE_BUTTON:  return "<Mouse>Button";
+    case RTGUI_EVENT_KBD:           return "<KBD>";
+    case RTGUI_EVENT_TOUCH:         return "<Touch>";
+    case RTGUI_EVENT_GESTURE:       return "<Gesture>";
+    case WBUS_NOTIFY_EVENT:         return "<WBUS>";
+    /* user command (at bottom) */
+    case RTGUI_EVENT_COMMAND:       return "<CMD>";
+    default:                        return "<?>";
     }
+}
 
-#else /* RTGUI_EVENT_DEBUG */
-# define rtgui_event_dump(app, evt)
+static void rtgui_log_event(rtgui_app_t* tgt, rtgui_evt_generic_t *evt) {
+    // if ((evt->base.type == RTGUI_EVENT_TIMER) ||
+    //     (evt->base.type == RTGUI_EVENT_UPDATE_BEGIN) ||
+    //     (evt->base.type == RTGUI_EVENT_MOUSE_MOTION) ||
+    //     (evt->base.type == RTGUI_EVENT_UPDATE_END)) {
+    //     /* don't dump timer event */
+    //     return;
+    // }
 
-#endif /* RTGUI_EVENT_DEBUG */
+    rt_kprintf("[%-*.s ===> %-*.s]%-*.s",
+        10, evt->base.origin ? (char *)evt->base.origin->name : "NULL",
+        10, tgt->name, 10, rtgui_event_text(evt));
 
-/************************************************************************/
-/* RTGUI IPC APIs                                                       */
-/************************************************************************/
-rt_err_t rtgui_send(rtgui_app_t* app, rtgui_evt_generic_t *evt,
+    switch (evt->base.type) {
+    case RTGUI_EVENT_APP_CREATE:
+    case RTGUI_EVENT_APP_DESTROY:
+    case RTGUI_EVENT_APP_ACTIVATE:
+        rt_kprintf(": %s", evt->app_create.app->name);
+        break;
+
+    case RTGUI_EVENT_PAINT:
+        rt_kprintf(": %s",
+            evt->paint.wid ? evt->paint.wid->title : "???");
+        break;
+
+    case RTGUI_EVENT_KBD:
+        rt_kprintf(": <%s> %s",
+            RTGUI_KBD_IS_UP(&evt->kbd) ? "up" : "down",
+            evt->kbd.wid ? evt->kbd.wid->title : "???");
+        break;
+
+    case RTGUI_EVENT_CLIP_INFO:
+        rt_kprintf(": %s",
+            evt->clip_info.wid ? evt->clip_info.wid->title : "???");
+        break;
+
+    case RTGUI_EVENT_WIN_CREATE:
+        rt_kprintf(": (%03d, %03d)-(%03d, %03d) %s @%p",
+            TO_WIDGET(evt->win_create.wid)->extent.x1,
+            TO_WIDGET(evt->win_create.wid)->extent.y1,
+            TO_WIDGET(evt->win_create.wid)->extent.x2,
+            TO_WIDGET(evt->win_create.wid)->extent.y2,
+            evt->win_create.wid->title, evt->win_create.wid);
+        break;
+
+    case RTGUI_EVENT_UPDATE_END:
+        rt_kprintf(": (%03d, %03d)-(%03d, %03d)",
+            evt->update_end.rect.x1, evt->update_end.rect.y1,
+            evt->update_end.rect.x2, evt->update_end.rect.y2);
+        break;
+
+    case RTGUI_EVENT_WIN_ACTIVATE:
+    case RTGUI_EVENT_WIN_DESTROY:
+    case RTGUI_EVENT_WIN_CLOSE:
+    case RTGUI_EVENT_WIN_DEACTIVATE:
+    case RTGUI_EVENT_WIN_SHOW:
+    case RTGUI_EVENT_WIN_HIDE:
+    case RTGUI_EVENT_WIN_MODAL_ENTER:
+        rt_kprintf(": %s",
+            evt->win_base.wid ? evt->win_base.wid->title : "???");
+        break;
+
+    case RTGUI_EVENT_WIN_MOVE:
+        rt_kprintf(": (%03d, %03d) %s",
+            evt->win_move.x, evt->win_move.y,
+            evt->win_move.wid ? evt->win_move.wid->title : "???");
+        break;
+
+    case RTGUI_EVENT_WIN_RESIZE:
+    rt_kprintf(": (%03d, %03d)-(%03d, %03d) %s",
+        TO_WIDGET(evt->win_resize.wid)->extent.x1,
+        TO_WIDGET(evt->win_resize.wid)->extent.y1,
+        TO_WIDGET(evt->win_resize.wid)->extent.x2,
+        TO_WIDGET(evt->win_resize.wid)->extent.y2,
+        evt->win_resize.wid ? evt->win_resize.wid->title : "???");
+        break;
+
+    case RTGUI_EVENT_MOUSE_BUTTON:
+    case RTGUI_EVENT_MOUSE_MOTION:
+        rt_kprintf("(%03d, %03d) <%s %s> %s", evt->mouse.x, evt->mouse.y,
+            (evt->mouse.button & RTGUI_MOUSE_BUTTON_LEFT) ? "L" : "R",
+            (evt->mouse.button & RTGUI_MOUSE_BUTTON_DOWN) ? "down" : "up",
+            evt->mouse.wid ? evt->mouse.wid->title : "???");
+        break;
+
+    case RTGUI_EVENT_MONITOR_ADD:
+        rt_kprintf(": (%03d, %03d)-(%03d, %03d) %s",
+            evt->monitor.rect.x1, evt->monitor.rect.y1,
+            evt->monitor.rect.x2, evt->monitor.rect.y2,
+            evt->monitor.wid ? evt->monitor.wid->title : "???");
+        break;
+
+    default:
+        break;
+    }
+    rt_kprintf("\n");
+}
+#endif /* RTGUI_EVENT_LOG */
+
+/***************************************************************************//**
+ * Server/Client API
+ ******************************************************************************/
+rt_err_t rtgui_request(rtgui_app_t* tgt, rtgui_evt_generic_t *evt,
     rt_int32_t timeout) {
     rt_err_t ret;
 
-    rtgui_event_dump(app, evt);
+    rtgui_log_event(tgt, evt);
 
     evt->base.ack = RT_NULL;
-    ret = rt_mb_send_wait(app->mb, (rt_ubase_t)evt, timeout);
+    ret = rt_mb_send_wait(tgt->mb, (rt_ubase_t)evt, timeout);
     if (ret) {
-        if (RTGUI_EVENT_TIMER != evt->base.type) {
-            LOG_E("tx evt %d to %s err %d", evt->base.type, app->name, ret);
-            rt_mp_free(evt);
-        }
+        LOG_E("tx evt %d to %s err [%d]", evt->base.type, tgt->name, ret);
+        RTGUI_FREE_EVENT(evt);
     }
 
+    #ifdef RTGUI_EVENT_LOG
+        LOG_I("[EVT] Request by MB");
+    #endif
     return ret;
 }
-RTM_EXPORT(rtgui_send);
+RTM_EXPORT(rtgui_request);
 
-rt_err_t rtgui_send_sync(rtgui_app_t* dst, rtgui_evt_generic_t *evt) {
+rt_err_t rtgui_request_sync(rtgui_app_t* dst, rtgui_evt_generic_t *evt) {
     rt_ubase_t ack;
     rt_err_t ret;
 
-    rtgui_event_dump(dst, evt);
+    rtgui_log_event(dst, evt);
     ret = RT_EOK;
 
     do {
         evt->base.ack = &ack_sync;
         ret = rt_mb_send(dst->mb, (rt_ubase_t)evt);
         if (ret) {
-            if (RTGUI_EVENT_TIMER != evt->base.type) {
-                LOG_E("tx sync %d err %d", evt->base.type, ret);
-                rt_mp_free(evt);
-            }
+            LOG_E("tx sync %d err %d", evt->base.type, ret);
+            RTGUI_FREE_EVENT(evt);
             break;
         }
+        #ifdef RTGUI_EVENT_LOG
+            LOG_I("[EVT] Sync request by MB");
+        #endif
 
         ret = rt_mb_recv(&ack_sync, &ack, RT_WAITING_FOREVER);
         if (ret) {
@@ -553,35 +554,44 @@ rt_err_t rtgui_send_sync(rtgui_app_t* dst, rtgui_evt_generic_t *evt) {
             LOG_E("ack err %d", ack);
             ret = -RT_ERROR;
         }
-        LOG_D("ack %d", ack);
+        #ifdef RTGUI_EVENT_LOG
+            LOG_I("[EVT] Sync response %d", ack);
+        #endif
     } while (0);
 
     return ret;
 }
-RTM_EXPORT(rtgui_send_sync);
+RTM_EXPORT(rtgui_request_sync);
 
-rt_err_t rtgui_ack(rtgui_evt_generic_t *evt, rt_uint32_t val) {
+rt_err_t rtgui_response(rtgui_evt_generic_t *evt, rt_uint32_t val) {
     if (!evt->base.ack) {
         LOG_W("no ack return");
         return RT_EOK;
     }
     return rt_mb_send(evt->base.ack, val);
 }
-RTM_EXPORT(rtgui_ack);
+RTM_EXPORT(rtgui_response);
 
-rt_err_t rtgui_recv(rtgui_app_t *app, rtgui_evt_generic_t **evt,
+rt_err_t rtgui_wait(rtgui_app_t *tgt, rtgui_evt_generic_t **evt,
     rt_int32_t timeout) {
-    return rt_mb_recv(app->mb, (rt_ubase_t *)evt, timeout);
-}
-RTM_EXPORT(rtgui_recv);
+    rt_err_t ret;
 
-rt_err_t rtgui_recv_filter(rtgui_app_t *app, rt_uint32_t type,
+    ret = rt_mb_recv(tgt->mb, (rt_ubase_t *)evt, timeout);
+    #ifdef RTGUI_EVENT_LOG
+        LOG_I("[EVT] Got response");
+    #endif
+
+    return ret;
+}
+RTM_EXPORT(rtgui_wait);
+
+rt_err_t rtgui_recv_filter(rtgui_app_t *tgt, rt_uint32_t type,
     rtgui_evt_generic_t **evt) {
     rt_err_t ret;
 
     do {
         rtgui_evt_generic_t *_evt;
-        ret = rtgui_recv(app, &_evt, RT_WAITING_FOREVER);
+        ret = rtgui_wait(tgt, &_evt, RT_WAITING_FOREVER);
         if (ret) {
             LOG_E("filter rx err [%d]", ret);
             break;
@@ -590,8 +600,8 @@ rt_err_t rtgui_recv_filter(rtgui_app_t *app, rt_uint32_t type,
             *evt = _evt;
             break;
         } else {
-            if (EVENT_HANDLER(app)) {
-                (void)EVENT_HANDLER(app)(app, _evt);
+            if (EVENT_HANDLER(tgt)) {
+                (void)EVENT_HANDLER(tgt)(tgt, _evt);
             }
         }
     } while (0);

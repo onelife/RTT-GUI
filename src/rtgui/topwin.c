@@ -77,9 +77,9 @@ static void rtgui_topwin_update_clip(void);
 static void rtgui_topwin_redraw(rtgui_rect_t *rect);
 static void _rtgui_topwin_activate_next(enum rtgui_topwin_flag);
 
-void rtgui_topwin_init(void) {
+rt_err_t rtgui_topwin_init(void) {
     /* initialize semaphore */
-    rt_sem_init(&_rtgui_topwin_lock, "wintree", 1, RT_IPC_FLAG_FIFO);
+    return rt_sem_init(&_rtgui_topwin_lock, "wintree", 1, RT_IPC_FLAG_FIFO);
 }
 
 static rtgui_topwin_t *rtgui_topwin_search_in_list(
@@ -123,8 +123,8 @@ rt_err_t rtgui_topwin_add(struct rtgui_event_win_create *event) {
         } else {
             topwin->extent = TO_WIDGET(event->wid)->extent;
         }
-        topwin->app = event->base.sender;
-        LOG_D("insert0 [%p] (%s)", event->wid, event->base.sender->name);
+        topwin->app = event->base.origin;
+        LOG_D("insert0 [%p] (%s)", event->wid, event->base.origin->name);
 
         if (RT_NULL == event->parent_window) {
             LOG_D("insert as top [%p] (%s)", topwin->wid, topwin->app->name);
@@ -383,31 +383,22 @@ rt_err_t rtgui_topwin_remove(rtgui_win_t *wid)
  * Suitable to be called when the first item is the window to be activated
  * already. */
 static void _rtgui_topwin_only_activate(rtgui_topwin_t *topwin) {
-    rtgui_evt_generic_t *evt;
-
     RT_ASSERT(topwin != RT_NULL);
-    if (topwin->flag & WINTITLE_NOFOCUS) return;
 
-    /* send RTGUI_EVENT_WIN_ACTIVATE */
-    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-        rtgui_event_pool, RT_WAITING_FOREVER);
-    if (evt) {
-        rt_err_t ret;
+    do {
+        rtgui_evt_generic_t *evt;
 
-        RTGUI_EVENT_INIT(evt, WIN_ACTIVATE);
+        if (topwin->flag & WINTITLE_NOFOCUS) break;
+
+        /* send RTGUI_EVENT_WIN_ACTIVATE */
+        RTGUI_CREATE_EVENT(evt, WIN_ACTIVATE, RT_WAITING_FOREVER);
+        if (!evt) break;
         evt->win_activate.wid = topwin->wid;
-        ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
-        if (ret) {
-            LOG_E("_active %s err [%d]", topwin->wid->title, ret);
-            return;
-        }
-    } else {
-        LOG_E("get mp err");
-        return;
-    }
+        if (rtgui_request(topwin->app, evt, RT_WAITING_FOREVER)) break;
 
-    topwin->flag |= WINTITLE_ACTIVATE;
-    LOG_D("_active %s", topwin->wid->title);
+        topwin->flag |= WINTITLE_ACTIVATE;
+        LOG_D("_active %s", topwin->wid->title);
+    } while (0);
 }
 
 /* activate next window in the same layer as flag. The flag has many other
@@ -424,30 +415,21 @@ static void _rtgui_topwin_activate_next(enum rtgui_topwin_flag flag) {
 /* this function does not update the clip(to avoid doubel clipping). So if the
  * tree has changed, make sure it has already updated outside. */
 static void _rtgui_topwin_deactivate(rtgui_topwin_t *topwin) {
-    rtgui_evt_generic_t *evt;
-
     RT_ASSERT(topwin != RT_NULL);
     RT_ASSERT(topwin->app != RT_NULL);
 
-    /* send RTGUI_EVENT_WIN_DEACTIVATE */
-    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-        rtgui_event_pool, RT_WAITING_FOREVER);
-    if (evt) {
-        rt_err_t ret;
-        RTGUI_EVENT_INIT(evt, WIN_DEACTIVATE);
-        evt->win_deactivate.wid = topwin->wid;
-        ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
-        if (ret) {
-            LOG_E("deactive %s err [%d]", topwin->wid->title, ret);
-            return;
-        }
-    } else {
-        LOG_E("get mp err");
-        return;
-    }
+    do {
+        rtgui_evt_generic_t *evt;
 
-    topwin->flag &= ~WINTITLE_ACTIVATE;
-    LOG_E("deactive %s", topwin->wid->title);
+        /* send RTGUI_EVENT_WIN_DEACTIVATE */
+        RTGUI_CREATE_EVENT(evt, WIN_DEACTIVATE, RT_WAITING_FOREVER);
+        if (!evt) break;
+        evt->win_deactivate.wid = topwin->wid;
+        if (rtgui_request(topwin->app, evt, RT_WAITING_FOREVER)) break;
+
+        topwin->flag &= ~WINTITLE_ACTIVATE;
+        LOG_E("deactive %s", topwin->wid->title);
+    } while (0);
 }
 
 /* Return 1 on the tree is truely moved. If the tree is already in position,
@@ -567,7 +549,7 @@ static void _rtgui_topwin_draw_tree(rtgui_topwin_t *topwin,
     }
 
     evt->paint.wid = topwin->wid;
-    rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
+    rtgui_request(topwin->app, evt, RT_WAITING_FOREVER);
     LOG_D("draw %s", topwin->wid->title);
 }
 
@@ -586,17 +568,13 @@ rt_err_t rtgui_topwin_activate_topwin(rtgui_topwin_t *topwin) {
         }
 
         /* send RTGUI_EVENT_PAINT */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
+        RTGUI_CREATE_EVENT(evt, PAINT, RT_WAITING_FOREVER);
         if (!evt) {
-            LOG_E("get mp err");
             ret = -RT_ENOMEM;
             break;
         }
-
-        RTGUI_EVENT_INIT(evt, PAINT);
         evt->win_activate.wid = topwin->wid;
-        ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
+        ret = rtgui_request(topwin->app, evt, RT_WAITING_FOREVER);
         if (ret) {
             LOG_E("active %s err [%d]", topwin->wid->title, ret);
             break;
@@ -829,21 +807,14 @@ rt_err_t rtgui_topwin_move(rtgui_evt_generic_t *evt) {
             rtgui_evt_generic_t *evt;
 
             /* send RTGUI_EVENT_PAINT */
-            evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                rtgui_event_pool, RT_WAITING_FOREVER);
-            if (evt) {
-                RTGUI_EVENT_INIT(evt, PAINT);
-                evt->paint.wid = topwin->wid;
-                ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
-                if (ret) {
-                    LOG_E("paint %s err [%d]", topwin->wid->title, ret);
-                    break;
-                }
-            } else {
-                LOG_E("get mp err");
+            RTGUI_CREATE_EVENT(evt, PAINT, RT_WAITING_FOREVER);
+            if (!evt) {
                 ret = -RT_ENOMEM;
                 break;
             }
+            evt->paint.wid = topwin->wid;
+            ret = rtgui_request(topwin->app, evt, RT_WAITING_FOREVER);
+            if (ret) break;
         }
     } while (0);
 
@@ -1004,13 +975,8 @@ static void rtgui_topwin_update_clip(void) {
     }
 
     /* send RTGUI_EVENT_CLIP_INFO */
-    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-        rtgui_event_pool, RT_WAITING_FOREVER);
-    if (!evt) {
-        LOG_E("get mp err");
-        return;
-    }
-    RTGUI_EVENT_INIT(evt, CLIP_INFO);
+    RTGUI_CREATE_EVENT(evt, CLIP_INFO, RT_WAITING_FOREVER);
+    if (!evt) return;
 
     while (topwin) {
         LOG_D("topwin %s (%s)", topwin->wid->title, topwin->wid->app->name);
@@ -1022,7 +988,7 @@ static void rtgui_topwin_update_clip(void) {
         rtgui_region_subtract_rect(
             &region_available, &region_available, &topwin->extent);
 
-        ret = rtgui_send(topwin->app, evt, RT_WAITING_FOREVER);
+        ret = rtgui_request(topwin->app, evt, RT_WAITING_FOREVER);
         if (ret) {
             LOG_E("active %s err [%d]", topwin->wid->title, ret);
             return;
@@ -1054,7 +1020,7 @@ static void _rtgui_topwin_redraw_tree(rt_list_t *list, rtgui_rect_t *rect,
         if (!rtgui_rect_is_intersect(rect, &(topwin->extent))) {
             evt->paint.wid = topwin->wid;
             // < XY do !!! >
-            //rtgui_send(topwin->app, evt);
+            //rtgui_request(topwin->app, evt);
         }
         _rtgui_topwin_redraw_tree(&topwin->child_list, rect, evt);
     }
@@ -1064,16 +1030,11 @@ static void rtgui_topwin_redraw(rtgui_rect_t *rect) {
     rtgui_evt_generic_t *evt;
 
     /* send RTGUI_EVENT_PAINT */
-    evt = rt_mp_alloc(rtgui_event_pool, RT_WAITING_FOREVER);
-    if (evt) {
-        RTGUI_EVENT_INIT(evt, PAINT);
-        evt->paint.wid = RT_NULL;
-        _rtgui_topwin_redraw_tree(&_rtgui_topwin_list, rect, evt);
-        rt_mp_free(evt);
-    } else {
-        LOG_E("get mp err");
-        return;
-    }
+    RTGUI_CREATE_EVENT(evt, PAINT, RT_WAITING_FOREVER);
+    if (!evt) return;
+    evt->paint.wid = RT_NULL;
+    _rtgui_topwin_redraw_tree(&_rtgui_topwin_list, rect, evt);
+    RTGUI_FREE_EVENT(evt);
 }
 
 /* a window enter modal mode will modal all the sibling window and parent

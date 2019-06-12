@@ -93,10 +93,10 @@ rt_bool_t rtgui_server_handle_mouse_motion(rtgui_evt_generic_t *evt) {
 
         /* send RTGUI_EVENT_MOUSE_MOTION */
         /* change owner to server */
-        RTGUI_EVENT_INIT(evt, MOUSE_MOTION);
+        RTGUI_EVENT_REINIT(evt, MOUSE_MOTION);
         evt->mouse.wid = topwin->wid;
         evt->mouse.win_acti_cnt = rtgui_app_get_win_acti_cnt();
-        rtgui_send(topwin->wid->app, evt, RT_WAITING_NO);
+        rtgui_request(topwin->wid->app, evt, RT_WAITING_NO);
         //TODO: topwin->wid->app? topwin->app?
         done = RT_FALSE;
     } while (0);
@@ -120,11 +120,11 @@ rt_bool_t rtgui_server_handle_mouse_btn(rtgui_evt_generic_t *evt) {
 
                 if (rtgui_winrect_moved_done(&rect, &win)) {
                     /* send RTGUI_EVENT_WIN_MOVE */
-                    RTGUI_EVENT_INIT(evt, WIN_MOVE);
+                    RTGUI_EVENT_REINIT(evt, WIN_MOVE);
                     evt->win_move.wid = win;
                     evt->win_move.x = rect.x1;
                     evt->win_move.y = rect.y1;
-                    rtgui_send(win->app, evt, RT_WAITING_NO);
+                    rtgui_request(win->app, evt, RT_WAITING_NO);
                     done = RT_FALSE;
                     break;
                 }
@@ -133,7 +133,7 @@ rt_bool_t rtgui_server_handle_mouse_btn(rtgui_evt_generic_t *evt) {
 
         /* send RTGUI_EVENT_MOUSE_BUTTON */
         /* change owner to server */
-        RTGUI_EVENT_INIT(evt, MOUSE_BUTTON);
+        RTGUI_EVENT_REINIT(evt, MOUSE_BUTTON);
         /* set cursor position */
         rtgui_mouse_set_position(evt->mouse.x, evt->mouse.y);
 
@@ -149,7 +149,7 @@ rt_bool_t rtgui_server_handle_mouse_btn(rtgui_evt_generic_t *evt) {
 
         evt->mouse.wid = topwin->wid;
         evt->mouse.win_acti_cnt = rtgui_app_get_win_acti_cnt();
-        rtgui_send(topwin->app, evt, RT_WAITING_NO);
+        rtgui_request(topwin->app, evt, RT_WAITING_NO);
         done = RT_FALSE;
     } while (0);
 
@@ -201,11 +201,11 @@ rt_bool_t rtgui_server_handle_kbd(rtgui_evt_generic_t *evt) {
 
         /* send RTGUI_EVENT_KBD */
         /* change owner to server */
-        RTGUI_EVENT_INIT(evt, KBD);
+        RTGUI_EVENT_REINIT(evt, KBD);
         /* send to focus window */
         evt->kbd.wid = topwin->wid;
         evt->kbd.win_acti_cnt = rtgui_app_get_win_acti_cnt();
-        rtgui_send(topwin->app, evt, RT_WAITING_NO);
+        rtgui_request(topwin->app, evt, RT_WAITING_NO);
         done = RT_FALSE;
     }
 
@@ -217,13 +217,13 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     rt_bool_t done = RT_TRUE;
     (void)obj;
 
-    LOG_I("srv rx %x (%p) from %s", evt->base.type, evt, evt->base.sender->mb->parent.parent.name);
+    LOG_I("srv rx %x (%p) from %s", evt->base.type, evt, evt->base.origin->mb->parent.parent.name);
     switch (evt->base.type) {
     case RTGUI_EVENT_APP_CREATE:
     case RTGUI_EVENT_APP_DESTROY:
         if (_wm_app) {
             /* forward to wm */
-            rtgui_send(_wm_app, evt, RT_WAITING_FOREVER);
+            rtgui_request(_wm_app, evt, RT_WAITING_FOREVER);
             done = RT_FALSE;
         }
         break;
@@ -333,9 +333,9 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     }
 
     if (done && evt) {
-        rtgui_ack(evt, ack);
+        rtgui_response(evt, ack);
         LOG_I("srv free %p [%d]", evt, ack);
-        rt_mp_free(evt);
+        RTGUI_FREE_EVENT(evt);
     }
     return done;    // who care server handler return value?
 }
@@ -367,7 +367,7 @@ static void rtgui_server_entry(void *pram) {
 
 rt_err_t rtgui_server_post_event(rtgui_evt_generic_t *evt) {
     if (_srv_app) {
-        return rtgui_send(_srv_app, evt, RT_WAITING_FOREVER);
+        return rtgui_request(_srv_app, evt, RT_WAITING_FOREVER);
     } else {
         LOG_E("post bf srv start");
         return -RT_ENOSYS;
@@ -376,7 +376,7 @@ rt_err_t rtgui_server_post_event(rtgui_evt_generic_t *evt) {
 
 rt_err_t rtgui_server_post_event_sync(rtgui_evt_generic_t *evt) {
     if (_srv_app) {
-        return rtgui_send_sync(_srv_app, evt);
+        return rtgui_request_sync(_srv_app, evt);
     } else {
         LOG_E("post sync bf srv start");
         return -RT_ENOSYS;
@@ -388,7 +388,7 @@ rtgui_app_t* rtgui_get_server(void) {
 }
 RTM_EXPORT(rtgui_get_server);
 
-void rtgui_server_init(void) {
+rt_err_t rtgui_server_init(void) {
     rt_thread_t tid;
 
     tid = rt_thread_create(
@@ -400,7 +400,8 @@ void rtgui_server_init(void) {
 
     if (!tid) {
         LOG_E("create srv err");
+        return -RT_ERROR;
     } else {
-        rt_thread_startup(tid);
+        return rt_thread_startup(tid);
     }
 }

@@ -168,11 +168,14 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     rt_bool_t done;
 
     if (!obj || !evt) return RT_FALSE;
+    #ifdef RTGUI_EVENT_LOG
+        LOG_I("[CntrEVT] %s @%p from %s", rtgui_event_text(evt), evt,
+            evt->base.origin->mb->parent.parent.name);
+    #endif
     cntr = TO_CONTAINER(obj);
     wgt = TO_WIDGET(obj);
     done = RT_FALSE;
 
-    LOG_I("cntr rx %x (%p) from %s", evt->base.type, evt, evt->base.sender->mb->parent.parent.name);
     switch (evt->base.type) {
     case RTGUI_EVENT_PAINT:
     {
@@ -270,15 +273,12 @@ void rtgui_container_add_child(rtgui_container_t *cntr,
             rtgui_evt_generic_t *evt;
 
             /* send RTGUI_EVENT_UPDATE_TOPLVL */
-            evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                rtgui_event_pool, RT_WAITING_FOREVER);
+            RTGUI_CREATE_EVENT(evt, UPDATE_TOPLVL, RT_WAITING_FOREVER);
             if (evt) {
-                RTGUI_EVENT_INIT(evt, UPDATE_TOPLVL);
                 evt->update_toplvl.toplvl = TO_WIDGET(cntr)->toplevel;
                 (void)EVENT_HANDLER(cntr)(cntr, evt);
-                rt_mp_free(evt);
+                RTGUI_FREE_EVENT(evt);
             } else {
-                LOG_E("get mp err");
                 return;
             }
         }

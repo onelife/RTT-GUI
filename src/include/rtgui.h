@@ -114,8 +114,8 @@ void *rtgui_object_cast_check(void *_obj, const rtgui_class_t *cls,
 
 /* RTGUI server definitions */
 /* top win manager init */
-void rtgui_topwin_init(void);
-void rtgui_server_init(void);
+rt_err_t rtgui_topwin_init(void);
+rt_err_t rtgui_server_init(void);
 
 void rtgui_server_set_show_win_hook(void (*hk)(void));
 void rtgui_server_set_act_win_hook(void (*hk)(void));

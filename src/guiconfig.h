@@ -45,7 +45,7 @@
 #define RTGUI_LOG_LEVEL                     (LOG_LVL_DBG)
 #define GUIENGIN_USING_CAST_CHECK
 // #define RTGUI_OBJECT_TRACE
-#define RTGUI_EVENT_DEBUG
+#define RTGUI_EVENT_LOG
 
 #define GUIENGINE_USING_FONT12
 // #define GUIENGINE_USING_FONT16
@@ -86,11 +86,4 @@
 # endif
 #endif
 
-#ifdef DEBUG_MEMLEAK
-# define rtgui_malloc     rt_malloc
-# define rtgui_realloc    rt_realloc
-# define rtgui_free       rt_free
-#endif
-
-#endif
-
+#endif /* __GUICONFIG_H__ */

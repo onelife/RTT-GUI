@@ -98,25 +98,15 @@ static void _rtgui_win_constructor(void *obj) {
 
 static void _rtgui_win_destructor(void *obj) {
     rtgui_win_t *win = obj;
+
     if (win->flag & RTGUI_WIN_FLAG_CONNECTED) {
         rtgui_evt_generic_t *evt;
-        rt_err_t ret;
 
         /* send RTGUI_EVENT_WIN_DESTROY */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                rtgui_event_pool, RT_WAITING_FOREVER);
-        if (evt) {
-            RTGUI_EVENT_INIT(evt, WIN_DESTROY);
-            evt->win_destroy.wid = win;
-            ret = rtgui_server_post_event_sync(evt);
-            if (ret) {
-                LOG_E("destroy %s err [%d]", win->title, ret);
-                return;
-            }
-        } else {
-            LOG_E("get mp err");
-            return;
-        }
+        RTGUI_CREATE_EVENT(evt, WIN_DESTROY, RT_WAITING_FOREVER);
+        if (!evt) return;
+        evt->win_destroy.wid = win;
+        if (rtgui_server_post_event_sync(evt)) return;
     }
 
     /* release field */
@@ -133,32 +123,34 @@ static void _rtgui_win_destructor(void *obj) {
     win->drawing = 0;
 }
 
-static rt_bool_t _rtgui_win_create_in_server(rtgui_win_t *win) {
-    rtgui_evt_generic_t *evt;
+static rt_err_t _rtgui_win_create_in_server(rtgui_win_t *win) {
     rt_err_t ret;
 
-    if (win->flag & RTGUI_WIN_FLAG_CONNECTED) return RT_TRUE;
+    do {
+        rtgui_evt_generic_t *evt;
 
-    /* send RTGUI_EVENT_WIN_CREATE */
-    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
-    if (evt) {
-        RTGUI_EVENT_INIT(evt, WIN_CREATE);
+        if (win->flag & RTGUI_WIN_FLAG_CONNECTED) {
+            ret = RT_EOK;
+            break;
+        }
+
+        /* send RTGUI_EVENT_WIN_CREATE */
+        RTGUI_CREATE_EVENT(evt, WIN_CREATE, RT_WAITING_FOREVER);
+        if (!evt) {
+            ret = -RT_ENOMEM;
+            break;
+        }
         evt->win_create.parent_window = win->parent_window;
         evt->win_create.wid = win;
         evt->win_create.base.user = win->style;
         ret = rtgui_server_post_event_sync(evt);
-        if (ret) {
-            LOG_E("create %s err [%d]", win->title, ret);
-            return RT_FALSE;
-        }
-    } else {
-        LOG_E("get mp err");
-        return RT_FALSE;
-    }
+        if (ret) break;
 
-    win->flag |= RTGUI_WIN_FLAG_CONNECTED;
-    return RT_TRUE;
+        win->flag |= RTGUI_WIN_FLAG_CONNECTED;
+        ret = RT_EOK;
+    } while (0);
+
+    return ret;
 }
 
 rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent_window,
@@ -213,13 +205,10 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent_window,
             win->outer_extent = *rect;
         }
 
-        if (!_rtgui_win_create_in_server(win)) {
-            ret = -RT_ERROR;
-            break;
-        }
+        ret = _rtgui_win_create_in_server(win);
+        if (ret) break;
 
         win->app->window_cnt++;
-        ret = RT_EOK;
     } while (0);
 
     return ret;
@@ -237,18 +226,14 @@ rt_err_t rtgui_win_fini(rtgui_win_t* win) {
             rtgui_evt_generic_t *evt;
 
             /* send RTGUI_EVENT_WIN_CLOSE */
-            evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                rtgui_event_pool, RT_WAITING_FOREVER);
-            if (evt) {
-                RTGUI_EVENT_INIT(evt, WIN_CLOSE);
-                evt->win_close.wid = win;
-                (void)_rtgui_win_deal_close(win, evt, RT_TRUE);
-                rt_mp_free(evt);
-            } else {
-                LOG_E("get mp err");
+            RTGUI_CREATE_EVENT(evt, WIN_CLOSE, RT_WAITING_FOREVER);
+            if (!evt) {
                 ret = -RT_ENOMEM;
                 break;
             }
+            evt->win_close.wid = win;
+            (void)_rtgui_win_deal_close(win, evt, RT_TRUE);
+            RTGUI_FREE_EVENT(evt);
 
             if (win->style & RTGUI_WIN_STYLE_DESTROY_ON_CLOSE) break;
         }
@@ -338,18 +323,12 @@ void rtgui_win_destroy(rtgui_win_t *win) {
         rtgui_evt_generic_t *evt;
 
         /* send RTGUI_EVENT_WIN_CLOSE */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                rtgui_event_pool, RT_WAITING_FOREVER);
-        if (evt) {
-            RTGUI_EVENT_INIT(evt, WIN_CLOSE);
-            evt->win_close.wid = win;
-            (void)_rtgui_win_deal_close(win, evt, RT_TRUE);
-            rt_mp_free(evt);
-            if (win->style & RTGUI_WIN_STYLE_DESTROY_ON_CLOSE) return;
-        } else {
-            LOG_E("get mp err");
-            return;
-        }
+        RTGUI_CREATE_EVENT(evt, WIN_CLOSE, RT_WAITING_FOREVER);
+        if (!evt) return;
+        evt->win_close.wid = win;
+        (void)_rtgui_win_deal_close(win, evt, RT_TRUE);
+        RTGUI_FREE_EVENT(evt);
+        if (win->style & RTGUI_WIN_STYLE_DESTROY_ON_CLOSE) return;
     }
 
     if (win->flag & RTGUI_WIN_FLAG_MODAL) {
@@ -369,15 +348,11 @@ rt_bool_t rtgui_win_close(rtgui_win_t *win) {
     rt_bool_t done = RT_FALSE;
 
     /* send RTGUI_EVENT_WIN_CLOSE */
-    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
+    RTGUI_CREATE_EVENT(evt, WIN_CLOSE, RT_WAITING_FOREVER);
     if (evt) {
-        RTGUI_EVENT_INIT(evt, WIN_CLOSE);
         evt->win_close.wid = win;
         done = _rtgui_win_deal_close(win, evt, RT_TRUE);
-        rt_mp_free(evt);
-    } else {
-        LOG_E("get mp err");
+        RTGUI_FREE_EVENT(evt);
     }
 
     return done;
@@ -385,34 +360,31 @@ rt_bool_t rtgui_win_close(rtgui_win_t *win) {
 RTM_EXPORT(rtgui_win_close);
 
 rt_err_t rtgui_win_enter_modal(rtgui_win_t *win) {
-    rtgui_evt_generic_t *evt;
     rt_err_t ret;
-    rt_base_t exit_code;
 
-    /* send RTGUI_EVENT_WIN_MODAL_ENTER */
-    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
-    if (evt) {
-        RTGUI_EVENT_INIT(evt, WIN_MODAL_ENTER);
+    do {
+        rtgui_evt_generic_t *evt;
+        rt_base_t exit_code;
+
+        /* send RTGUI_EVENT_WIN_MODAL_ENTER */
+        RTGUI_CREATE_EVENT(evt, WIN_MODAL_ENTER, RT_WAITING_FOREVER);
+        if (!evt) {
+            ret = -RT_ENOMEM;
+            break;
+        }
         evt->win_modal_enter.wid = win;
         ret = rtgui_server_post_event_sync(evt);
-        if (ret) {
-            LOG_E("enter modal %s err [%d]", win->title, ret);
-            return ret;
-        }
-    } else {
-        LOG_E("get mp err");
-        return -RT_ERROR;
-    }
+        if (ret) break;
 
-    LOG_D("enter modal %s", win->title);
-    win->flag |= RTGUI_WIN_FLAG_MODAL;
-    win->app_ref_count = win->app->ref_cnt + 1;
-    exit_code = rtgui_app_run(win->app);
-    LOG_E("modal %s ret %d", win->title, exit_code);
+        LOG_D("enter modal %s", win->title);
+        win->flag |= RTGUI_WIN_FLAG_MODAL;
+        win->app_ref_count = win->app->ref_cnt + 1;
+        exit_code = rtgui_app_run(win->app);
+        LOG_E("modal %s ret %d", win->title, exit_code);
 
-    win->flag &= ~RTGUI_WIN_FLAG_MODAL;
-    rtgui_win_hide(win);
+        win->flag &= ~RTGUI_WIN_FLAG_MODAL;
+        rtgui_win_hide(win);
+    } while (0);
 
     return ret;
 }
@@ -430,25 +402,18 @@ rt_err_t rtgui_win_do_show(rtgui_win_t *win) {
 
         /* if it does not register into server, create it in server */
         if (!(win->flag & RTGUI_WIN_FLAG_CONNECTED)) {
-            if (!_rtgui_win_create_in_server(win)) {
-                LOG_E("create %s err", win->title);
-                ret = -RT_ERROR;
-                break;
-            }
+            ret = _rtgui_win_create_in_server(win);
+            if (ret) break;
         }
         /* set window unhidden before notify the server */
         rtgui_widget_show(TO_WIDGET(win));
 
         /* send RTGUI_EVENT_WIN_SHOW */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                rtgui_event_pool, RT_WAITING_FOREVER);
+        RTGUI_CREATE_EVENT(evt, WIN_SHOW, RT_WAITING_FOREVER);
         if (!evt) {
-            LOG_E("get mp err");
-            ret = -RT_ERROR;
+            ret = -RT_ENOMEM;
             break;
         }
-
-        RTGUI_EVENT_INIT(evt, WIN_SHOW);
         evt->win_show.wid = win;
         ret = rtgui_server_post_event_sync(evt);
         if (ret) {
@@ -516,22 +481,10 @@ void rtgui_win_hide(rtgui_win_t *win) {
     }
 
     /* send RTGUI_EVENT_WIN_HIDE */
-    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
-    if (evt) {
-        rt_err_t ret;
-
-        RTGUI_EVENT_INIT(evt, WIN_HIDE);
-        evt->win_hide.wid = win;
-        ret = rtgui_server_post_event_sync(evt);
-        if (ret) {
-            LOG_E("hide %s err [%d]", win->title, ret);
-            return;
-        }
-    } else {
-        LOG_E("get mp err");
-        return;
-    }
+    RTGUI_CREATE_EVENT(evt, WIN_HIDE, RT_WAITING_FOREVER);
+    if (!evt) return;
+    evt->win_hide.wid = win;
+    if (rtgui_server_post_event_sync(evt)) return;
 
     rtgui_widget_hide(TO_WIDGET(win));
     win->flag &= ~RTGUI_WIN_FLAG_ACTIVATE;
@@ -539,23 +492,21 @@ void rtgui_win_hide(rtgui_win_t *win) {
 RTM_EXPORT(rtgui_win_hide);
 
 rt_err_t rtgui_win_activate(rtgui_win_t *win) {
-    rtgui_evt_generic_t *evt;
     rt_err_t ret;
 
-    /* send RTGUI_EVENT_WIN_ACTIVATE */
-    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
-    if (evt) {
-        RTGUI_EVENT_INIT(evt, WIN_ACTIVATE);
+    do {
+        rtgui_evt_generic_t *evt;
+
+        /* send RTGUI_EVENT_WIN_ACTIVATE */
+        RTGUI_CREATE_EVENT(evt, WIN_ACTIVATE, RT_WAITING_FOREVER);
+        if (!evt) {
+            ret = -RT_ENOMEM;
+            break;
+        }
         evt->win_activate.wid = win;
         ret = rtgui_server_post_event_sync(evt);
-        if (ret) {
-            LOG_E("create %s err [%d]", win->title, ret);
-        }
-    } else {
-        LOG_E("get mp err");
-        ret = -RT_ERROR;
-    }
+        if (ret) break;
+    } while (0);
 
     return ret;
 }
@@ -593,27 +544,16 @@ void rtgui_win_move(rtgui_win_t *win, int x, int y) {
 
     if (win->flag & RTGUI_WIN_FLAG_CONNECTED) {
         rtgui_evt_generic_t *evt;
-        rt_err_t ret;
 
         rtgui_widget_hide(TO_WIDGET(win));
 
         /* send RTGUI_EVENT_WIN_MOVE */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                rtgui_event_pool, RT_WAITING_FOREVER);
-        if (evt) {
-            RTGUI_EVENT_INIT(evt, WIN_MOVE);
-            evt->win_move.wid = win;
-            evt->win_move.x = x;
-            evt->win_move.y = y;
-            ret = rtgui_server_post_event_sync(evt);
-            if (ret) {
-                LOG_E("move %s err [%d]", win->title, ret);
-                return;
-            }
-        } else {
-            LOG_E("get mp err");
-            return;
-        }
+        RTGUI_CREATE_EVENT(evt, WIN_MOVE, RT_WAITING_FOREVER);
+        if (!evt) return;
+        evt->win_move.wid = win;
+        evt->win_move.x = x;
+        evt->win_move.y = y;
+        if (rtgui_server_post_event_sync(evt)) return;
     }
     rtgui_widget_show(TO_WIDGET(win));
 }
@@ -626,15 +566,12 @@ static rt_bool_t rtgui_win_ondraw(rtgui_win_t *win) {
         rtgui_evt_generic_t *evt;
 
         /* send RTGUI_EVENT_PAINT */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
+        LOG_I("ondraw");
+        RTGUI_CREATE_EVENT(evt, PAINT, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_INIT(evt, PAINT);
             evt->paint.wid = RT_NULL;
             done = SUPER_HANDLER(win)(win, evt);
-            rt_mp_free(evt);
-        } else {
-            LOG_E("get mp err");
+            RTGUI_FREE_EVENT(evt);
         }
     }
 
@@ -712,7 +649,11 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     rtgui_win_t *win = TO_WIN(obj);
     rt_bool_t done = RT_TRUE;
 
-    LOG_I("win rx %x (%p) from %s", evt->base.type, evt, evt->base.sender->mb->parent.parent.name);
+    #ifdef RTGUI_EVENT_LOG
+        LOG_I("[WinEVT] %s @%p from %s", rtgui_event_text(evt), evt,
+            evt->base.origin->mb->parent.parent.name);
+    #endif
+
     switch (evt->base.type) {
     case RTGUI_EVENT_WIN_SHOW:
         rtgui_win_do_show(win);
@@ -781,8 +722,8 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     #ifdef GUIENGIN_USING_VFRAMEBUFFER
         case RTGUI_EVENT_VPAINT_REQ:
-            evt->vpaint_req.sender->buffer = rtgui_win_get_drawing(win);
-            rt_completion_done(evt->vpaint_req.sender->cmp);
+            evt->vpaint_req.origin->buffer = rtgui_win_get_drawing(win);
+            rt_completion_done(evt->vpaint_req.origin->cmp);
             break;
     #endif
 
@@ -847,18 +788,11 @@ void rtgui_win_set_rect(rtgui_win_t *win, rtgui_rect_t *rect) {
         rtgui_evt_generic_t *evt;
 
         /* send RTGUI_EVENT_WIN_RESIZE */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                rtgui_event_pool, RT_WAITING_FOREVER);
+        RTGUI_CREATE_EVENT(evt, WIN_RESIZE, RT_WAITING_FOREVER);
         if (evt) {
-            rt_err_t ret;
-
-            RTGUI_EVENT_INIT(evt, WIN_RESIZE);
             evt->win_resize.wid = win;
             evt->win_resize.rect = *rect;
-            ret= rtgui_server_post_event(evt);
-            if (ret) {
-                LOG_E("resize %s err [%d]", win->title, ret);
-            }
+            rtgui_server_post_event(evt);
         }
     }
 }
@@ -988,7 +922,7 @@ rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
             rtgui_event_pool, RT_WAITING_FOREVER);
         if (evt) {
             RTGUI_EVENT_VPAINT_REQ_INIT(&evt->vpaint_req, win, &cmp);
-            ret = rtgui_send(win->app, evt, RT_WAITING_FOREVER);
+            ret = rtgui_request(win->app, evt, RT_WAITING_FOREVER);
             if (ret) {
                 LOG_E("vpaint req %s err [%d]", win->wid->title, ret);
                 return RT_NULL;

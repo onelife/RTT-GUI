@@ -1890,15 +1890,10 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
                 rtgui_evt_generic_t *evt;
                 rt_err_t ret;
                 /* send RTGUI_EVENT_UPDATE_BEGIN */
-                evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                    rtgui_event_pool, RT_WAITING_FOREVER);
-                if (!evt) {
-                    LOG_D("update mem err");
-                    break;
-                }
-                RTGUI_EVENT_INIT(evt, UPDATE_BEGIN);
+                RTGUI_CREATE_EVENT(evt, UPDATE_BEGIN, RT_WAITING_FOREVER);
+                if (!evt) break;
                 evt->update_begin.rect = TO_WIDGET(win)->extent;
-                LOG_D("post update %s", evt->base.sender->name);
+                LOG_D("post update %s", evt->base.origin->name);
                 ret = rtgui_server_post_event(evt);
                 if (ret) {
                     LOG_E("dc update err [%d]", ret);
@@ -1939,15 +1934,11 @@ void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
             rtgui_evt_generic_t *evt;
 
             /* send RTGUI_EVENT_WIN_UPDATE_END */
-            evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                rtgui_event_pool, RT_WAITING_FOREVER);
+            RTGUI_CREATE_EVENT(evt, WIN_UPDATE_END, RT_WAITING_FOREVER);
             if (evt) {
-                RTGUI_EVENT_INIT(evt, WIN_UPDATE_END);
                 evt->win_update.rect = win->drawing_rect;
                 (void)EVENT_HANDLER(win)(win, evt);
-                rt_mp_free(evt);
-            } else {
-                LOG_E("get mp err");
+                RTGUI_FREE_EVENT(evt);
             }
         }
 

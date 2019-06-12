@@ -153,19 +153,16 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
         }
 
         /* send RTGUI_EVENT_RESIZE */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
+        RTGUI_CREATE_EVENT(evt, RESIZE, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_INIT(evt, RESIZE);
             /* process resize event */
             evt->resize.x = rect->x1;
             evt->resize.y = rect->y1;
             evt->resize.w = rect->x2 - rect->x1;
             evt->resize.h = rect->y2 - rect->y1;
             (void)EVENT_HANDLER(wgt)(wgt, evt);
-            rt_mp_free(evt);
+            RTGUI_FREE_EVENT(evt);
         } else {
-            LOG_E("get mp err");
             return;
         }
 
@@ -250,19 +247,16 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
         }
 
         /* send RTGUI_EVENT_RESIZE */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
+        RTGUI_CREATE_EVENT(evt, RESIZE, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_INIT(evt, RESIZE);
             /* process resize event */
             evt->resize.x = rect->x1;
             evt->resize.y = rect->y1;
             evt->resize.w = rect->x2 - rect->x1;
             evt->resize.h = rect->y2 - rect->y1;
             (void)EVENT_HANDLER(wgt)(wgt, evt);
-            rt_mp_free(evt);
+            RTGUI_FREE_EVENT(evt);
         } else {
-            LOG_E("get mp err");
             return;
         }
 

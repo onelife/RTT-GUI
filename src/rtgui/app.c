@@ -52,6 +52,7 @@
         RT_ASSERT(app->mb != RT_NULL);          \
     } while (0)
 
+struct rt_mempool *rtgui_event_pool = RT_NULL;
 
 static void _app_constructor(void *obj);
 static void _app_destructor(void *obj);
@@ -138,15 +139,11 @@ static rtgui_app_t *_rtgui_app_create(const char *title, rtgui_evt_hdl_t evt_hdl
                 break;
             }
 
-            evt = (rtgui_evt_generic_t *)rt_mp_alloc(rtgui_event_pool, 0);
-            if (!evt) {
-                LOG_E("get mp err", title);
-                break;
-            }
             /* send RTGUI_EVENT_APP_CREATE */
-            RTGUI_EVENT_INIT(evt, APP_CREATE);
+            RTGUI_CREATE_EVENT(evt, APP_CREATE, 0);
+            if (!evt) break;
             evt->app_create.app = app;
-            if (rtgui_send_sync(srv, evt)) {
+            if (rtgui_request_sync(srv, evt)) {
                 LOG_E("create %s sync err", title);
                 break;
             }
@@ -186,12 +183,10 @@ void rtgui_app_destroy(rtgui_app_t *app) {
         rt_err_t ret;
 
         /* send RTGUI_EVENT_APP_DESTROY */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                rtgui_event_pool, RT_WAITING_FOREVER);
+        RTGUI_CREATE_EVENT(evt, APP_DESTROY, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_INIT(evt, APP_DESTROY);
             evt->app_destroy.app = app;
-            ret = rtgui_send_sync(srv, evt);
+            ret = rtgui_request_sync(srv, evt);
             if (ret) {
                 LOG_E("destroy %s err [%d]", app->name, ret);
                 return;
@@ -273,7 +268,10 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     RT_ASSERT(evt != RT_NULL);
 
     app = TO_APP(obj);
-    LOG_I("app rx %x (%p) from %s", evt->base.type, evt, evt->base.sender->mb->parent.parent.name);
+    #ifdef RTGUI_EVENT_LOG
+        LOG_I("[AppEVT] %s @%p from %s", rtgui_event_text(evt), evt,
+            evt->base.origin->mb->parent.parent.name);
+    #endif
 
     switch (evt->base.type) {
     case RTGUI_EVENT_KBD:
@@ -314,7 +312,7 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     case RTGUI_EVENT_APP_ACTIVATE:
         if (app->main_object) {
             /* send RTGUI_EVENT_WIN_SHOW */
-            RTGUI_EVENT_INIT(evt, WIN_SHOW);
+            RTGUI_EVENT_REINIT(evt, WIN_SHOW);
             evt->win_show.wid = (rtgui_win_t *)app->main_object;
             done = EVENT_HANDLER(app->main_object)(app->main_object, evt);
         } else {
@@ -374,7 +372,7 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     if (done && evt) {
         LOG_I("app free %p", evt);
-        rt_mp_free(evt);
+        RTGUI_FREE_EVENT(evt);
     }
 
     return done;
@@ -395,16 +393,16 @@ rt_inline void _rtgui_application_event_loop(rtgui_app_t *app) {
         LOG_D("%s mb: %d", app->name, app->mb->entry);
 
         if (app->on_idle) {
-            ret = rtgui_recv(app, &evt, RT_WAITING_NO);
-            LOG_I("loop1 %p from %s", evt, evt->base.sender->mb->parent.parent.name);
+            ret = rtgui_wait(app, &evt, RT_WAITING_NO);
+            LOG_I("loop1 %p from %s", evt, evt->base.origin->mb->parent.parent.name);
             if (RT_EOK == ret) {
                 (void)EVENT_HANDLER(app);
             } else if (-RT_ETIMEOUT == ret) {
                 app->on_idle(TO_OBJECT(app), RT_NULL);
             }
         } else {
-            ret = rtgui_recv(app, &evt, RT_WAITING_FOREVER);
-            LOG_I("loop2 %p from %s", evt, evt->base.sender->mb->parent.parent.name);
+            ret = rtgui_wait(app, &evt, RT_WAITING_FOREVER);
+            LOG_I("loop2 %p from %s", evt, evt->base.origin->mb->parent.parent.name);
             if (RT_EOK == ret) {
                 (void)EVENT_HANDLER(app)(app, evt);
             }
@@ -441,12 +439,10 @@ void rtgui_app_activate(rtgui_app_t *app) {
     rt_err_t ret;
 
     /* send RTGUI_EVENT_APP_ACTIVATE */
-    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
+    RTGUI_CREATE_EVENT(evt, APP_ACTIVATE, RT_WAITING_FOREVER);
     if (evt) {
-        RTGUI_EVENT_INIT(evt, APP_ACTIVATE);
         evt->app_activate.app = app;
-        ret = rtgui_send(app, evt, RT_WAITING_FOREVER);
+        ret = rtgui_request(app, evt, RT_WAITING_FOREVER);
         if (ret) {
             LOG_E("active %s err [%d]", app->name, ret);
             return;
@@ -472,14 +468,14 @@ void rtgui_app_sleep(rtgui_app_t *app, rt_uint32_t ms) {
 
         RT_ASSERT(current_cnt == app->ref_cnt);
         if (app->on_idle) {
-            ret = rtgui_recv(app, &evt, RT_WAITING_NO);
+            ret = rtgui_wait(app, &evt, RT_WAITING_NO);
             if (RT_EOK == ret) {
                 (void)EVENT_HANDLER(app)(app, evt);
             } else if (-RT_ETIMEOUT == ret) {
                 app->on_idle(TO_OBJECT(app), RT_NULL);
             }
         } else {
-            ret = rtgui_recv(app, &evt, timeout - current);
+            ret = rtgui_wait(app, &evt, timeout - current);
             if (RT_EOK == ret) {
                 (void)EVENT_HANDLER(app)(app, evt);
             }
@@ -496,12 +492,10 @@ void rtgui_app_close(rtgui_app_t *app) {
     rt_err_t ret;
 
     /* send RTGUI_EVENT_APP_DESTROY */
-    evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
+    RTGUI_CREATE_EVENT(evt, APP_DESTROY, RT_WAITING_FOREVER);
     if (evt) {
-        RTGUI_EVENT_INIT(evt, APP_DESTROY);
         evt->app_destroy.app = app;
-        ret = rtgui_send(app, evt, RT_WAITING_FOREVER);
+        ret = rtgui_request(app, evt, RT_WAITING_FOREVER);
         if (ret) {
             LOG_E("close %s err [%d]", app->name, ret);
             return;
@@ -527,12 +521,10 @@ rt_err_t rtgui_app_set_as_wm(rtgui_app_t *app) {
         rtgui_evt_generic_t *evt;
 
         /* send RTGUI_EVENT_SET_WM */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-                rtgui_event_pool, RT_WAITING_FOREVER);
+        RTGUI_CREATE_EVENT(evt, SET_WM, RT_WAITING_FOREVER);
         if (evt) {
-            RTGUI_EVENT_INIT(evt, SET_WM);
             evt->set_wm.app = app;
-            ret = rtgui_send_sync(srv, evt);
+            ret = rtgui_request_sync(srv, evt);
             if (ret) {
                 LOG_E("%s set WM err [%d]", app->name, ret);
                 return ret;
