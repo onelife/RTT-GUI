@@ -255,7 +255,7 @@ rt_inline rt_bool_t _app_dest_handler(
             return RT_FALSE;
         }
     } else {
-        LOG_E("evt %d no target", evt->base.type);
+        LOG_E("[AppEVT] %d no target", evt->base.type);
         return RT_FALSE;
     }
 }
@@ -267,11 +267,9 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     RT_ASSERT(obj != RT_NULL);
     RT_ASSERT(evt != RT_NULL);
 
+    EVT_LOG("[AppEVT] %s @%p from %s", rtgui_event_text(evt), evt,
+        evt->base.origin->mb->parent.parent.name);
     app = TO_APP(obj);
-    #ifdef RTGUI_EVENT_LOG
-        LOG_I("[AppEVT] %s @%p from %s", rtgui_event_text(evt), evt,
-            evt->base.origin->mb->parent.parent.name);
-    #endif
 
     switch (evt->base.type) {
     case RTGUI_EVENT_KBD:
@@ -316,7 +314,7 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
             evt->win_show.wid = (rtgui_win_t *)app->main_object;
             done = EVENT_HANDLER(app->main_object)(app->main_object, evt);
         } else {
-            LOG_W("%s without main_object", app->name);
+            LOG_W("[AppEVT] %s without main_object", app->name);
         }
         break;
 
@@ -370,8 +368,12 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
     }
 
+    EVT_LOG("[AppEVT] %s @%p from %s done %d", rtgui_event_text(evt), evt,
+        evt->base.origin->mb->parent.parent.name, done);
+    if (!done) {
+        LOG_W("[AppEVT] %p not done", evt);
+    }
     if (done && evt) {
-        LOG_I("app free %p", evt);
         RTGUI_FREE_EVENT(evt);
     }
 
@@ -387,14 +389,13 @@ rt_inline void _rtgui_application_event_loop(rtgui_app_t *app) {
         rt_err_t ret;
 
         if (current_cnt != app->ref_cnt) {
-            LOG_D("%s cnt %d %d", app->name, current_cnt, app->ref_cnt);
+            LOG_E("%s cnt %d != %d", app->name, current_cnt, app->ref_cnt);
         }
         evt = RT_NULL;
         LOG_D("%s mb: %d", app->name, app->mb->entry);
 
         if (app->on_idle) {
             ret = rtgui_wait(app, &evt, RT_WAITING_NO);
-            LOG_I("loop1 %p from %s", evt, evt->base.origin->mb->parent.parent.name);
             if (RT_EOK == ret) {
                 (void)EVENT_HANDLER(app);
             } else if (-RT_ETIMEOUT == ret) {
@@ -402,7 +403,6 @@ rt_inline void _rtgui_application_event_loop(rtgui_app_t *app) {
             }
         } else {
             ret = rtgui_wait(app, &evt, RT_WAITING_FOREVER);
-            LOG_I("loop2 %p from %s", evt, evt->base.origin->mb->parent.parent.name);
             if (RT_EOK == ret) {
                 (void)EVENT_HANDLER(app)(app, evt);
             }

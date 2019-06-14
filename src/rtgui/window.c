@@ -559,23 +559,13 @@ void rtgui_win_move(rtgui_win_t *win, int x, int y) {
 }
 RTM_EXPORT(rtgui_win_move);
 
-static rt_bool_t rtgui_win_ondraw(rtgui_win_t *win) {
-    rt_bool_t done = RT_FALSE;
-
+static rt_bool_t rtgui_win_ondraw(rtgui_win_t *win, rtgui_evt_generic_t *evt) {
     if (SUPER_HANDLER(win)) {
-        rtgui_evt_generic_t *evt;
-
-        /* send RTGUI_EVENT_PAINT */
-        LOG_I("ondraw");
-        RTGUI_CREATE_EVENT(evt, PAINT, RT_WAITING_FOREVER);
-        if (evt) {
-            evt->paint.wid = RT_NULL;
-            done = SUPER_HANDLER(win)(win, evt);
-            RTGUI_FREE_EVENT(evt);
-        }
+        LOG_I("ondraw, wid %p", evt->paint.wid);
+        evt->paint.wid = RT_NULL;
+        return SUPER_HANDLER(win)(win, evt);
     }
-
-    return done;
+    return RT_FALSE;
 }
 
 void rtgui_win_update_clip(rtgui_win_t *win) {
@@ -649,10 +639,8 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     rtgui_win_t *win = TO_WIN(obj);
     rt_bool_t done = RT_TRUE;
 
-    #ifdef RTGUI_EVENT_LOG
-        LOG_I("[WinEVT] %s @%p from %s", rtgui_event_text(evt), evt,
-            evt->base.origin->mb->parent.parent.name);
-    #endif
+    EVT_LOG("[WinEVT] %s @%p from %s", rtgui_event_text(evt), evt,
+        evt->base.origin->mb->parent.parent.name);
 
     switch (evt->base.type) {
     case RTGUI_EVENT_WIN_SHOW:
@@ -717,7 +705,7 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         if (win->_title_wgt) {
             rtgui_widget_update(TO_WIDGET(win->_title_wgt));
         }
-        (void)rtgui_win_ondraw(win);
+        (void)rtgui_win_ondraw(win, evt);
         break;
 
     #ifdef GUIENGIN_USING_VFRAMEBUFFER
@@ -776,7 +764,8 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
     }
 
-    LOG_D("win done %d", done);
+    EVT_LOG("[WinEVT] %s @%p from %s done %d", rtgui_event_text(evt), evt,
+        evt->base.origin->mb->parent.parent.name, done);
     return done;
 }
 

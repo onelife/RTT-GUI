@@ -34,7 +34,16 @@ extern "C" {
 #include "./kbddef.h"
 
 /* Exported defines ----------------------------------------------------------*/
-/* base event init */
+#ifdef RTGUI_EVENT_LOG
+# ifdef RT_USING_ULOG
+#  define EVT_LOG                           LOG_I
+# else
+#  define EVT_LOG(format, args...)          rt_kprintf(format "\n", ##args)
+# endif
+#else
+# define EVT_LOG(format, args...)
+#endif
+
 #define RTGUI_EVENT_REINIT(evt, name)       \
     do {                                    \
         extern rtgui_app_t* rtgui_app_self(void); \
@@ -47,7 +56,7 @@ extern "C" {
 #define _CREATE_EVENT(evt, name, timeout)   \
     do {                                    \
         extern rtgui_app_t* rtgui_app_self(void); \
-        evt = rt_mp_alloc(rtgui_event_pool, timeout); \
+        evt = (rtgui_evt_generic_t *)rt_mp_alloc(rtgui_event_pool, timeout); \
         if (!evt) {                         \
             LOG_E("mp alloc err");          \
             break;                          \
@@ -58,21 +67,15 @@ extern "C" {
         evt->base.ack = RT_NULL;            \
     } while (0)
 
-#ifdef RTGUI_EVENT_LOG
-# define RTGUI_CREATE_EVENT(evt, name, timeout) \
+#define RTGUI_CREATE_EVENT(evt, name, timeout) \
     _CREATE_EVENT(evt, name, timeout);      \
-    LOG_I("Create %s @%p", rtgui_event_text(evt), evt)
-# define RTGUI_FREE_EVENT(evt)              \
-    rt_mp_free(evt);                        \
-    LOG_I("Free %s @%p", rtgui_event_text(evt), evt)
-#else
-# define RTGUI_CREATE_EVENT(evt, name, timeout) \
-    _CREATE_EVENT(name, timeout)
-# define RTGUI_FREE_EVENT(evt)              \
-    rt_mp_free(evt)
-#endif
+    EVT_LOG("[EVT] Create %s @%p", rtgui_event_text(evt), evt)
 
-/* other window event init */
+#define RTGUI_FREE_EVENT(evt)               \
+    rt_mp_free(evt);                        \
+    EVT_LOG("[EVT] Free %s @%p", rtgui_event_text(evt), evt)
+
+/* other window event */
 #define RTGUI_EVENT_GET_RECT(e, i)          &(((rtgui_rect_t*)(e + 1))[i])
 
 
@@ -86,14 +89,14 @@ do {                                        \
     rt_completion_init((e)->cmp);           \
 } while (0)
 
-/* gesture event init */
+/* gesture event */
 #define RTGUI_EVENT_GESTURE_INIT(e, gtype)  \
     do {                                    \
         RTGUI_EVENT_REINIT(e, GESTURE);       \
         (e)->type = gtype;                  \
     } while (0)
 
-/* mouse event init */
+/* mouse event */
 #define RTGUI_MOUSE_BUTTON_LEFT             0x01
 #define RTGUI_MOUSE_BUTTON_RIGHT            0x02
 #define RTGUI_MOUSE_BUTTON_MIDDLE           0x03
@@ -109,12 +112,12 @@ do {                                        \
 #define RTGUI_KBD_IS_UP(e)                  ((e)->type == RTGUI_KEYUP)
 #define RTGUI_KBD_IS_DOWN(e)                ((e)->type == RTGUI_KEYDOWN)
 
-/* touch event init */
+/* touch event */
 #define RTGUI_TOUCH_UP                      0x01
 #define RTGUI_TOUCH_DOWN                    0x02
 #define RTGUI_TOUCH_MOTION                  0x03
 
-/* user command event init */
+/* user command */
 #define RTGUI_CMD_UNKNOWN                   0x00
 #define RTGUI_CMD_WM_CLOSE                  0x10
 #define RTGUI_CMD_USER_INT                  0x20

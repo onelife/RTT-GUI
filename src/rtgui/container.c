@@ -167,11 +167,11 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     struct rtgui_widget *wgt;
     rt_bool_t done;
 
-    if (!obj || !evt) return RT_FALSE;
-    #ifdef RTGUI_EVENT_LOG
-        LOG_I("[CntrEVT] %s @%p from %s", rtgui_event_text(evt), evt,
-            evt->base.origin->mb->parent.parent.name);
-    #endif
+    RT_ASSERT(obj != RT_NULL);
+    RT_ASSERT(evt != RT_NULL);
+
+    EVT_LOG("[CntrEVT] %s @%p from %s", rtgui_event_text(evt), evt,
+        evt->base.origin->mb->parent.parent.name);
     cntr = TO_CONTAINER(obj);
     wgt = TO_WIDGET(obj);
     done = RT_FALSE;
@@ -238,7 +238,8 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
     }
 
-    LOG_D("cntr done %d", done);
+    EVT_LOG("[CntrEVT] %s @%p from %s done %d", rtgui_event_text(evt), evt,
+        evt->base.origin->mb->parent.parent.name, done);
     return done;
 }
 

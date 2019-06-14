@@ -33,8 +33,8 @@ extern "C" {
 #include "./rtgui.h"
 
 /* Exported defines ----------------------------------------------------------*/
-#define rtgui_enter_critical    rt_enter_critical
-#define rtgui_exit_critical     rt_exit_critical
+#define rtgui_enter_critical        rt_enter_critical
+#define rtgui_exit_critical         rt_exit_critical
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/

@@ -166,8 +166,7 @@ rt_err_t rtgui_topwin_add(struct rtgui_event_win_create *event) {
     return ret;
 }
 
-static rtgui_topwin_t *_rtgui_topwin_get_root_win(
-    rtgui_topwin_t *topwin) {
+static rtgui_topwin_t *_rtgui_topwin_get_root_win(rtgui_topwin_t *topwin) {
     rtgui_topwin_t *parent;
 
     RT_ASSERT(topwin != RT_NULL);
@@ -554,7 +553,7 @@ static void _rtgui_topwin_draw_tree(rtgui_topwin_t *topwin,
 }
 
 rt_err_t rtgui_topwin_activate_topwin(rtgui_topwin_t *topwin) {
-    rt_err_t ret;
+    rt_err_t ret = RT_EOK;
 
     do {
         rtgui_evt_generic_t *evt;
@@ -567,16 +566,10 @@ rt_err_t rtgui_topwin_activate_topwin(rtgui_topwin_t *topwin) {
             break;
         }
 
-        /* send RTGUI_EVENT_PAINT */
+        /* create RTGUI_EVENT_PAINT */
         RTGUI_CREATE_EVENT(evt, PAINT, RT_WAITING_FOREVER);
         if (!evt) {
             ret = -RT_ENOMEM;
-            break;
-        }
-        evt->win_activate.wid = topwin->wid;
-        ret = rtgui_request(topwin->app, evt, RT_WAITING_FOREVER);
-        if (ret) {
-            LOG_E("active %s err [%d]", topwin->wid->title, ret);
             break;
         }
 
@@ -586,6 +579,7 @@ rt_err_t rtgui_topwin_activate_topwin(rtgui_topwin_t *topwin) {
              * "raised" but not "activated".
              */
             moved = _rtgui_topwin_raise_tree_from_root(topwin);
+            LOG_D("NOFOCUS moved %d", moved);
             rtgui_topwin_update_clip();
             /* send RTGUI_EVENT_PAINT */
             if (moved) {
@@ -594,14 +588,10 @@ rt_err_t rtgui_topwin_activate_topwin(rtgui_topwin_t *topwin) {
             } else {
                 _rtgui_topwin_draw_tree(topwin, evt);
             }
-            ret = RT_EOK;
             break;
         }
 
-        if (topwin->flag & WINTITLE_ACTIVATE) {
-            ret = RT_EOK;
-            break;
-        }
+        if (topwin->flag & WINTITLE_ACTIVATE) break;
 
         last_topwin = rtgui_topwin_get_focus();
         /* if topwin has the focus, it should have WINTITLE_ACTIVATE set and
@@ -609,6 +599,7 @@ rt_err_t rtgui_topwin_activate_topwin(rtgui_topwin_t *topwin) {
         RT_ASSERT(last_topwin != topwin);
 
         moved = _rtgui_topwin_raise_tree_from_root(topwin);
+        LOG_D("moved %d", moved);
         /* clip before active the window, so we could get right boarder region. */
         rtgui_topwin_update_clip();
 
@@ -629,7 +620,7 @@ rt_err_t rtgui_topwin_activate_topwin(rtgui_topwin_t *topwin) {
         }
     } while (0);
 
-    LOG_D("active %s", topwin->wid->title);
+    LOG_D("active %s, ret %d", topwin->wid->title, ret);
     return ret;
 }
 

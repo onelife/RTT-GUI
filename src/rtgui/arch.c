@@ -27,6 +27,7 @@
 #include "include/rtgui.h"
 #include "include/arch.h"
 #include "include/app.h"
+#include "include/image.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -331,7 +332,6 @@ void rtgui_free(void *ptr) {
     #ifdef RTGUI_MEM_TRACE
         if (RT_NULL != ptr) rti_free_hook(ptr);
     #endif
-
     rt_free(ptr);
 }
 RTM_EXPORT(rtgui_free);
@@ -519,9 +519,7 @@ rt_err_t rtgui_request(rtgui_app_t* tgt, rtgui_evt_generic_t *evt,
         RTGUI_FREE_EVENT(evt);
     }
 
-    #ifdef RTGUI_EVENT_LOG
-        LOG_I("[EVT] Request by MB");
-    #endif
+    EVT_LOG("[EVT] Request @%p", evt);
     return ret;
 }
 RTM_EXPORT(rtgui_request);
@@ -530,6 +528,7 @@ rt_err_t rtgui_request_sync(rtgui_app_t* dst, rtgui_evt_generic_t *evt) {
     rt_ubase_t ack;
     rt_err_t ret;
 
+    EVT_LOG("[EVT] Sync request @%p", evt);
     rtgui_log_event(dst, evt);
     ret = RT_EOK;
 
@@ -541,9 +540,6 @@ rt_err_t rtgui_request_sync(rtgui_app_t* dst, rtgui_evt_generic_t *evt) {
             RTGUI_FREE_EVENT(evt);
             break;
         }
-        #ifdef RTGUI_EVENT_LOG
-            LOG_I("[EVT] Sync request by MB");
-        #endif
 
         ret = rt_mb_recv(&ack_sync, &ack, RT_WAITING_FOREVER);
         if (ret) {
@@ -554,9 +550,7 @@ rt_err_t rtgui_request_sync(rtgui_app_t* dst, rtgui_evt_generic_t *evt) {
             LOG_E("ack err %d", ack);
             ret = -RT_ERROR;
         }
-        #ifdef RTGUI_EVENT_LOG
-            LOG_I("[EVT] Sync response %d", ack);
-        #endif
+        EVT_LOG("[EVT] Sync @%p ack %d", evt, ack);
     } while (0);
 
     return ret;
@@ -568,6 +562,7 @@ rt_err_t rtgui_response(rtgui_evt_generic_t *evt, rt_uint32_t val) {
         LOG_W("no ack return");
         return RT_EOK;
     }
+    EVT_LOG("[EVT] %p ack %d", evt, val);
     return rt_mb_send(evt->base.ack, val);
 }
 RTM_EXPORT(rtgui_response);
@@ -577,10 +572,7 @@ rt_err_t rtgui_wait(rtgui_app_t *tgt, rtgui_evt_generic_t **evt,
     rt_err_t ret;
 
     ret = rt_mb_recv(tgt->mb, (rt_ubase_t *)evt, timeout);
-    #ifdef RTGUI_EVENT_LOG
-        LOG_I("[EVT] Got response");
-    #endif
-
+    EVT_LOG("[EVT] Got @%p", *evt);
     return ret;
 }
 RTM_EXPORT(rtgui_wait);

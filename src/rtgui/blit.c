@@ -601,10 +601,11 @@ static void blit_line_rgb565_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *_src,
     rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
     rt_uint16_t *dst = (rt_uint16_t *)_dst;
     rt_uint16_t *src = (rt_uint16_t *)_src;
-    rt_uint8_t *end = src + len;
+    rt_uint8_t *end = _src + len;
     rt_uint8_t step = 1 << scale;
+    (void)palette;
 
-    for ( ; src < end; src += step) {
+    for ( ; src < (rt_uint16_t *)end; src += step) {
         #ifdef RTGUI_BIG_ENDIAN_OUTPUT
             *dst++ = (*src << 8) | (*src >> 8);
         #else

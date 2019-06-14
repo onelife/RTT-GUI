@@ -20,9 +20,9 @@
  * Change Logs:
  * Date           Author       Notes
  * 2009-10-04     Bernard      first version
- * 2019-05-15     onelife      Refactor
+ * 2019-05-15     onelife      refactor
  */
-
+/* Includes ------------------------------------------------------------------*/
 #include "../include/rtgui.h"
 #include "../include/app.h"
 #include "../include/driver.h"
@@ -41,13 +41,17 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-
+/* Private function prototype ------------------------------------------------*/
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
 static rtgui_app_t *_srv_app = RT_NULL;
 static rtgui_app_t *_wm_app = RT_NULL;
 static void (*_show_win_hook)(void) = RT_NULL;
 static void (*_act_win_hook)(void) = RT_NULL;
 
-
+/* Private functions ---------------------------------------------------------*/
+/* Public functions ----------------------------------------------------------*/
 void rtgui_server_set_show_win_hook(void (*hk)(void)) {
     _show_win_hook = hk;
 }
@@ -60,9 +64,8 @@ void rtgui_server_handle_update(rtgui_evt_generic_t *evt) {
     struct rtgui_graphic_driver *drv;
 
     drv = rtgui_graphic_driver_get_default();
-    if (drv) {
+    if (drv)
         rtgui_graphic_driver_screen_update(drv, &(evt->update_end.rect));
-    }
 }
 
 void rtgui_server_handle_monitor_add(rtgui_evt_generic_t *evt) {
@@ -113,22 +116,22 @@ rt_bool_t rtgui_server_handle_mouse_btn(rtgui_evt_generic_t *evt) {
 
     do {
         #ifdef RTGUI_USING_WINMOVE
-            if (rtgui_winrect_is_moved() && (evt->mouse.button & \
-                (RTGUI_MOUSE_BUTTON_LEFT | RTGUI_MOUSE_BUTTON_UP))) {
-                rtgui_win_t *win;
-                rtgui_rect_t rect;
+        if (rtgui_winrect_is_moved() && (evt->mouse.button & \
+            (RTGUI_MOUSE_BUTTON_LEFT | RTGUI_MOUSE_BUTTON_UP))) {
+            rtgui_win_t *win;
+            rtgui_rect_t rect;
 
-                if (rtgui_winrect_moved_done(&rect, &win)) {
-                    /* send RTGUI_EVENT_WIN_MOVE */
-                    RTGUI_EVENT_REINIT(evt, WIN_MOVE);
-                    evt->win_move.wid = win;
-                    evt->win_move.x = rect.x1;
-                    evt->win_move.y = rect.y1;
-                    rtgui_request(win->app, evt, RT_WAITING_NO);
-                    done = RT_FALSE;
-                    break;
-                }
+            if (rtgui_winrect_moved_done(&rect, &win)) {
+                /* send RTGUI_EVENT_WIN_MOVE */
+                RTGUI_EVENT_REINIT(evt, WIN_MOVE);
+                evt->win_move.wid = win;
+                evt->win_move.x = rect.x1;
+                evt->win_move.y = rect.y1;
+                rtgui_request(win->app, evt, RT_WAITING_NO);
+                done = RT_FALSE;
+                break;
             }
+        }
         #endif
 
         /* send RTGUI_EVENT_MOUSE_BUTTON */
@@ -217,7 +220,9 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     rt_bool_t done = RT_TRUE;
     (void)obj;
 
-    LOG_I("srv rx %x (%p) from %s", evt->base.type, evt, evt->base.origin->mb->parent.parent.name);
+    EVT_LOG("[SrvEVT] %s @%p from %s", rtgui_event_text(evt), evt,
+        evt->base.origin->mb->parent.parent.name);
+
     switch (evt->base.type) {
     case RTGUI_EVENT_APP_CREATE:
     case RTGUI_EVENT_APP_DESTROY:
@@ -327,14 +332,18 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     // TODO(onelife): RTGUI_EVENT_MONITOR_REMOVE?
 
     default:
-        LOG_E("bad event [%d]", evt->base.type);
+        LOG_E("[SrvEVT] bad event [%d]", evt->base.type);
         ack = RT_ERROR;
         break;
     }
 
+    EVT_LOG("[SrvEVT] %s @%p from %s done %d", rtgui_event_text(evt), evt,
+        evt->base.origin->mb->parent.parent.name, done);
+    if (!done) {
+        LOG_W("[SrvEVT] %p not done", evt);
+    }
     if (done && evt) {
         rtgui_response(evt, ack);
-        LOG_I("srv free %p [%d]", evt, ack);
         RTGUI_FREE_EVENT(evt);
     }
     return done;    // who care server handler return value?

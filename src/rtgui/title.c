@@ -66,14 +66,12 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     rtgui_widget_t *wgt;
     rt_bool_t done;
 
-    #ifdef RTGUI_EVENT_LOG
-        LOG_I("[TitleEVT] %s @%p from %s", rtgui_event_text(evt), evt,
-            evt->base.origin->mb->parent.parent.name);
-    #endif
+    EVT_LOG("[TitEVT] %s @%p from %s", rtgui_event_text(evt), evt,
+        evt->base.origin->mb->parent.parent.name);
     win_t = TO_TITLE(obj);
     wgt = TO_WIDGET(obj);
     if (!wgt->toplevel) {
-        LOG_E("%s no toplevel");
+        LOG_E("[TitEVT] %s no toplevel");
         return RT_FALSE;
     }
     done = RT_FALSE;
@@ -136,7 +134,8 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
     }
 
-    LOG_D("title done %d", done);
+    EVT_LOG("[TitEVT] %s @%p from %s done %d", rtgui_event_text(evt), evt,
+        evt->base.origin->mb->parent.parent.name, done);
     return done;
 }
 

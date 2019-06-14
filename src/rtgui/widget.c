@@ -114,10 +114,8 @@ static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     rtgui_widget_t *wgt = TO_WIDGET(obj);
     rt_bool_t done = RT_FALSE;
 
-    #ifdef RTGUI_EVENT_LOG
-        LOG_I("[WgtEVT] %s @%p from %s", rtgui_event_text(evt), evt,
-            evt->base.origin->mb->parent.parent.name);
-    #endif
+    EVT_LOG("[WdgEVT] %s @%p from %s", rtgui_event_text(evt), evt,
+        evt->base.origin->mb->parent.parent.name);
 
     switch (evt->base.type) {
     case RTGUI_EVENT_SHOW:
@@ -140,7 +138,8 @@ static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
     }
 
-    LOG_D("wgt done %d", done);
+    EVT_LOG("[WdgEVT] %s @%p from %s done %d", rtgui_event_text(evt), evt,
+        evt->base.origin->mb->parent.parent.name, done);
     return done;
 }
 
