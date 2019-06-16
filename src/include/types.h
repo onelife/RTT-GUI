@@ -126,26 +126,31 @@ extern "C" {
     RTM_EXPORT(_type *rtgui_get_##name)
 
 #define MEMBER_SETTER_PROTOTYPE(ctype, cname, mtype, mname) \
-    void rtgui_set_##cname##_##mname(ctype *obj, mtype val)
+    void rtgui_##cname##_set_##mname(ctype *obj, mtype val)
 #define MEMBER_GETTER_PROTOTYPE(ctype, cname, mtype, mname) \
-    mtype rtgui_get_##cname##_##mname(ctype *obj)
+    mtype rtgui_##cname##_get_##mname(ctype *obj)
 #define MEMBER_SETTER_GETTER_PROTOTYPE(ctype, cname, mtype, mname) \
     MEMBER_SETTER_PROTOTYPE(ctype, cname, mtype, mname); \
     MEMBER_GETTER_PROTOTYPE(ctype, cname, mtype, mname)
 #define RTGUI_MEMBER_SETTER(ctype, cname, mtype, mname) \
-    void rtgui_set_##cname##_##mname(ctype *obj, mtype val) { \
+    void rtgui_##cname##_set_##mname(ctype *obj, mtype val) { \
         if (obj) obj->mname = val;          \
     }                                       \
-    RTM_EXPORT(rtgui_set_##cname##_##mname)
+    RTM_EXPORT(rtgui_##cname##_set_##mname)
 #define RTGUI_MEMBER_GETTER(ctype, cname, mtype, mname) \
-    mtype rtgui_get_##cname##_##mname(ctype *obj) { \
+    mtype rtgui_##cname##_get_##mname(ctype *obj) { \
         RT_ASSERT(obj != RT_NULL);          \
         return obj->mname;                  \
     }                                       \
-    RTM_EXPORT(rtgui_get_##cname##_##mname)
+    RTM_EXPORT(rtgui_##cname##_get_##mname)
 #define RTGUI_MEMBER_SETTER_GETTER(ctype, cname, mtype, mname) \
     RTGUI_MEMBER_SETTER(ctype, cname, mtype, mname); \
     RTGUI_MEMBER_GETTER(ctype, cname, mtype, mname)
+
+#define APP_SETTER(mname)                   rtgui_app_set_##mname
+#define WIDGET_SETTER(mname)                rtgui_widget_set_##mname
+#define WIDGET_GETTER(mname)                rtgui_widget_get_##mname
+
 
 
 #define WIDGET_GET_ALIGN(w)                 (TO_WIDGET(w)->align)
@@ -406,8 +411,8 @@ struct rtgui_widget {
     rtgui_rect_t extent;
     rtgui_rect_t extent_visiable;           /* including children */
     rtgui_region_t clip;
-    rtgui_evt_hdl_t on_focus_in;
-    rtgui_evt_hdl_t on_focus_out;
+    rtgui_evt_hdl_t on_focus;
+    rtgui_evt_hdl_t on_unfocus;
     rtgui_gc_t gc;                          /* graphic context */
     rt_ubase_t dc_type;                     /* hardware device context */
     const struct rtgui_dc_engine *dc_engine;  // TODO(onelife): struct rtgui_dc

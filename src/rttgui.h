@@ -8,7 +8,7 @@
 
 extern "C" {
     #include "include/rtgui.h"
-    #include "include/app.h"
+    #include "include/app/app.h"
     #include "include/widgets/window.h"
     #include "include/image.h"
     #include "include/dc.h"

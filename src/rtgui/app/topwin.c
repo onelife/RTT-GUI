@@ -24,17 +24,15 @@
  * 2019-05-15     onelife      Refactor
  */
 /* Includes ------------------------------------------------------------------*/
-#include "../include/rtgui.h"
-#include "../include/widgets/topwin.h"
-#include "../include/widgets/mouse.h"
+#include "include/rtgui.h"
+#include "include/widgets/mouse.h"
 //#include <rtgui/rtgui_theme.h>
-#include "../include/widgets/window.h"
-#include "../include/widgets/container.h"
-#include "../include/image.h"
+#include "include/widgets/window.h"
+#include "include/widgets/container.h"
+#include "include/app/topwin.h"
 
 #ifdef RT_USING_ULOG
-# define LOG_LVL                    LOG_LVL_DBG
-// # define LOG_LVL                   LOG_LVL_INFO
+# define LOG_LVL                    RTGUI_LOG_LEVEL
 # define LOG_TAG                    "GUI_TOP"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
@@ -525,7 +523,7 @@ static void topwin_redraw(rtgui_rect_t *rect) {
     _topwin_redraw(&_topwin_list, rect);
 }
 
-static rtgui_obj_t* _get_obj_in_topwin(rtgui_topwin_t *top,
+static rtgui_obj_t* rtgui_topwin_get_object(rtgui_topwin_t *top,
     rtgui_app_t *app, rt_uint32_t id) {
     rtgui_obj_t *object;
     rt_list_t *node;
@@ -542,7 +540,7 @@ static rtgui_obj_t* _get_obj_in_topwin(rtgui_topwin_t *top,
         top_ = get_topwin_by_list(node);
         if (top_->app != app) continue;
 
-        object = _get_obj_in_topwin(top_, app, id);
+        object = rtgui_topwin_get_object(top_, app, id);
         if (object) return object;
     }
 
@@ -562,7 +560,7 @@ static rtgui_obj_t* _get_obj_in_topwin(rtgui_topwin_t *top,
 //         top = get_topwin_by_list(node);
 //         if (top->app != app) continue;
 
-//         obj = _get_obj_in_topwin(top, app, id);
+//         obj = rtgui_topwin_get_object(top, app, id);
 //         if (obj) return obj;
 //     }
 //     return RT_NULL;

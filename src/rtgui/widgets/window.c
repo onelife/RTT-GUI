@@ -25,9 +25,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 // #include "include/color.h"
-#include "include/app.h"
 #include "include/widgets/container.h"
 #include "include/widgets/window.h"
+#include "include/app/app.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -184,9 +184,8 @@ static rt_err_t _win_do_show(rtgui_win_t *win) {
             rtgui_widget_focus(TO_WIDGET(win));
         }
         /* set main window */
-        if (!win->app->main_win) {
-            rtgui_set_app_main_win(win->app, win);
-        }
+        if (!win->app->main_win)
+            APP_SETTER(main_win)(win->app, win);
 
         if (IS_WIN_FLAG(win, MODAL)) {
             ret = rtgui_win_enter_modal(win);
@@ -603,7 +602,7 @@ void rtgui_win_move(rtgui_win_t *win, int x, int y) {
 RTM_EXPORT(rtgui_win_move);
 
 void rtgui_win_update_clip(rtgui_win_t *win) {
-    struct rtgui_container *cnt;
+    rtgui_container_t *cnt;
     rt_slist_t *node;
 
     if (RT_NULL == win) return;
@@ -714,7 +713,7 @@ rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
         rtgui_widget_update(TO_WIDGET(win));
 
         /* get the extent of widget */
-        rtgui_widget_get_extent(TO_WIDGET(win), &rect);
+        rect = WIDGET_GETTER(extent)(TO_WIDGET(win));
 
         dc = rtgui_graphic_driver_get_rect_buffer(RT_NULL, &rect);
 

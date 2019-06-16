@@ -23,9 +23,9 @@
  * 2019-05-18     onelife      refactor
  */
 /* Includes ------------------------------------------------------------------*/
-#include "../include/rtgui.h"
-#include "../include/dc.h"
-#include "../include/widgets/box.h"
+#include "include/rtgui.h"
+#include "include/dc.h"
+#include "include/widgets/box.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -256,7 +256,7 @@ void rtgui_box_layout(rtgui_box_t *box) {
 
     if (box->container == RT_NULL) return;
 
-    rtgui_widget_get_extent(TO_WIDGET(box->container), &extent);
+    extent = WIDGET_GETTER(extent)(TO_WIDGET(box->container));
     if (box->orient & RTGUI_VERTICAL)
         rtgui_box_layout_vertical(box, &extent);
     else

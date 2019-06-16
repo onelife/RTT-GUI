@@ -24,12 +24,12 @@
  * 2019-05-15     onelife      refactor and rename to "app.c"
  */
 /* Includes ------------------------------------------------------------------*/
-#include "include/rthw.h" // rtt: rt_hw_interrupt_disable()
+#include "include/rthw.h" // rt_hw_interrupt_disable()
 
 #include "include/rtgui.h"
-#include "include/app.h"
 #include "include/widgets/window.h"
-#include "include/widgets/topwin.h"
+#include "include/app/topwin.h"
+#include "include/app/app.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -354,15 +354,15 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 rt_inline void _rtgui_application_event_loop(rtgui_app_t *app) {
-    rt_base_t current_cnt;
+    rt_ubase_t cur_cnt;
     rtgui_evt_generic_t *evt;
 
-    current_cnt = ++app->ref_cnt;
-    while (current_cnt <= app->ref_cnt) {
+    cur_cnt = ++app->ref_cnt;
+    while (cur_cnt <= app->ref_cnt) {
         rt_err_t ret;
 
-        if (current_cnt != app->ref_cnt) {
-            LOG_E("%s cnt %d != %d", app->name, current_cnt, app->ref_cnt);
+        if (cur_cnt != app->ref_cnt) {
+            LOG_E("%s cnt %d != %d", app->name, cur_cnt, app->ref_cnt);
         }
         evt = RT_NULL;
         LOG_D("%s mb: %d", app->name, app->mb->entry);
@@ -427,17 +427,17 @@ RTM_EXPORT(rtgui_app_activate);
 
 void rtgui_app_sleep(rtgui_app_t *app, rt_uint32_t ms) {
     rt_tick_t current, timeout;
-    rt_uint16_t current_cnt;
+    rt_uint16_t cur_cnt;
 
     current = rt_tick_get();
     timeout = current + (rt_tick_t)rt_tick_from_millisecond(ms);
 
-    current_cnt = ++app->ref_cnt;
-    while (current_cnt <= app->ref_cnt && (current < timeout)) {
+    cur_cnt = ++app->ref_cnt;
+    while (cur_cnt <= app->ref_cnt && (current < timeout)) {
         rtgui_evt_generic_t *evt;
         rt_err_t ret;
 
-        RT_ASSERT(current_cnt == app->ref_cnt);
+        RT_ASSERT(cur_cnt == app->ref_cnt);
         if (app->on_idle) {
             ret = rtgui_wait(app, &evt, RT_WAITING_NO);
             if (RT_EOK == ret) {

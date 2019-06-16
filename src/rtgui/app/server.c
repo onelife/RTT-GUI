@@ -23,17 +23,16 @@
  * 2019-05-15     onelife      refactor
  */
 /* Includes ------------------------------------------------------------------*/
-#include "../include/rtgui.h"
-#include "../include/app.h"
-#include "../include/driver.h"
+#include "include/rtgui.h"
+#include "include/driver.h"
 //#include <rtgui/touch.h>
-#include "../include/widgets/window.h"
-#include "../include/widgets/mouse.h"
-#include "../include/widgets/topwin.h"
+#include "include/widgets/window.h"
+#include "include/widgets/mouse.h"
+#include "include/app/topwin.h"
+#include "include/app/app.h"
 
 #ifdef RT_USING_ULOG
-# define LOG_LVL                    LOG_LVL_DBG
-// # define LOG_LVL                   LOG_LVL_INFO
+# define LOG_LVL                    RTGUI_LOG_LEVEL
 # define LOG_TAG                    "GUI_SVR"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */

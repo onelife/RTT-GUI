@@ -22,10 +22,10 @@
  * 2009-10-16     Bernard      first version
  */
 
-#include "../include/rtgui.h"
-#include "../include/widgets/mouse.h"
-#include "../include/region.h"
-#include "../include/driver.h"
+#include "include/rtgui.h"
+#include "include/region.h"
+#include "include/driver.h"
+#include "include/widgets/mouse.h"
 
 struct rtgui_cursor
 {

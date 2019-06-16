@@ -20,31 +20,36 @@
  * Change Logs:
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
+ * 2019-06-15     onelife      refactor
  */
 #ifndef __TO_CONTAINER_H__
 #define __TO_CONTAINER_H__
-
-#include "./widget.h"
-#include "./box.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* set layout box */
-void rtgui_container_set_box(struct rtgui_container *container, rtgui_box_t *box);
-void rtgui_container_layout(struct rtgui_container *container);
+/* Includes ------------------------------------------------------------------*/
+#include "./widget.h"
+#include "./box.h"
 
-void rtgui_container_add_child(rtgui_container_t *container, rtgui_widget_t *child);
-void rtgui_container_remove_child(rtgui_container_t *container, rtgui_widget_t *child);
-rtgui_widget_t *rtgui_container_get_first_child(rtgui_container_t *container);
-
+/* Exported defines ----------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Exported functions ------------------------------------------------------- */
 rt_bool_t rtgui_container_dispatch_mouse_event(rtgui_container_t *container,
     rtgui_evt_generic_t *event);
+void rtgui_container_add_child(rtgui_container_t *cntr, rtgui_widget_t *child);
+void rtgui_container_remove_child(rtgui_container_t *cntr,
+    rtgui_widget_t *child);
+rtgui_widget_t *rtgui_container_get_first_child(rtgui_container_t *cntr);
+void rtgui_container_set_box(rtgui_container_t *container, rtgui_box_t *box);
+void rtgui_container_layout(rtgui_container_t *container);
+rtgui_obj_t* rtgui_container_get_object(rtgui_container_t *cntr,
+    rt_uint32_t id);
 
-rtgui_obj_t* rtgui_container_get_object(struct rtgui_container *container, rt_uint32_t id);
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* __TO_CONTAINER_H__ */

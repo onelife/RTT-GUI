@@ -30,19 +30,19 @@
 extern "C" {
 #endif
 
-/*  true iff two Boxes overlap */
-#define EXTENTCHECK(r1,r2) \
-      (!( ((r1)->x2 <= (r2)->x1)  || \
-          ((r1)->x1 >= (r2)->x2)  || \
-          ((r1)->y2 <= (r2)->y1)  || \
-          ((r1)->y1 >= (r2)->y2) ) )
+/*  true if two rect overlap */
+#define IS_INTERSECT(r1, r2)  \
+    (!  ((r1)->x2 <= (r2)->x1)  || \
+        ((r1)->x1 >= (r2)->x2)  || \
+        ((r1)->y2 <= (r2)->y1)  || \
+        ((r1)->y1 >= (r2)->y2)  )
 
-/* true iff (x,y) is in Box */
-#define INBOX(r,x,y) \
-      ( ((r)->x2 > (x)) && \
-        ((r)->x1 <= (x)) && \
-        ((r)->y2 > (y)) && \
-        ((r)->y1 <= (y)) )
+/* true if (x,y) is inside rect */
+#define INSIDE(r, x, y)     \
+    (   ((r)->x2 >  (x))    && \
+        ((r)->x1 <= (x))    && \
+        ((r)->y2 >  (y))    && \
+        ((r)->y1 <= (y))    )
 
 /* true iff Box r1 contains Box r2 */
 #define SUBSUMES(r1,r2) \

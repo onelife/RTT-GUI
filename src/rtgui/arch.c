@@ -26,8 +26,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 #include "include/arch.h"
-#include "include/app.h"
 #include "include/image.h"
+#include "include/app/app.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL

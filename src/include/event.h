@@ -71,6 +71,9 @@ extern "C" {
     rt_mp_free(evt);                        \
     EVT_LOG("[EVT] Free %s @%p", rtgui_event_text(evt), evt)
 
+#define IS_EVENT_TYPE(e, tname)             \
+    ((e)->base.type == RTGUI_EVENT_##tname)
+
 /* other window event */
 #define RTGUI_EVENT_GET_RECT(e, i)          &(((rtgui_rect_t*)(e + 1))[i])
 

@@ -234,8 +234,7 @@ rt_inline void rtgui_dc_draw_hline(rtgui_dc_t *dc, int x1, int x2, int y)
 /*
  * fill a rect with background color
  */
-rt_inline void rtgui_dc_fill_rect(rtgui_dc_t *dc, rtgui_rect_t *rect)
-{
+rt_inline void rtgui_dc_fill_rect(rtgui_dc_t *dc, rtgui_rect_t *rect) {
     dc->engine->fill_rect(dc, rect);
 }
 
