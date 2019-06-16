@@ -51,7 +51,7 @@ static void rtgui_dc_client_blit_line(rtgui_dc_t *self, int x1, int x2, int y, r
 static void rtgui_dc_client_blit(rtgui_dc_t *dc, struct rtgui_point *dc_point, rtgui_dc_t *dest, rtgui_rect_t *rect);
 static rt_bool_t rtgui_dc_client_fini(rtgui_dc_t *dc);
 
-#define hw_driver               (rtgui_graphic_driver_get_default())
+#define hw_driver               (rtgui_get_graphic_device())
 #define dc_set_foreground(c)    dc->gc.foreground = c
 #define dc_set_background(c)    dc->gc.background = c
 #define _int_swap(x, y)         do {x ^= y; y ^= x; x ^= y;} while (0)
@@ -69,13 +69,12 @@ const struct rtgui_dc_engine dc_client_engine =
     rtgui_dc_client_fini,
 };
 
-void rtgui_dc_client_init(rtgui_widget_t *owner)
-{
+void rtgui_dc_client_init(rtgui_widget_t *owner) {
     rtgui_dc_t *dc;
 
     RT_ASSERT(owner != RT_NULL);
 
-    dc = RTGUI_WIDGET_DC(owner);
+    dc = WIDGET_GET_DC(owner);
     dc->type = RTGUI_DC_CLIENT;
     dc->engine = &dc_client_engine;
 }
@@ -85,7 +84,7 @@ rtgui_dc_t *rtgui_dc_client_create(rtgui_widget_t *owner)
     /* adjudge owner */
     if (owner == RT_NULL || owner->toplevel == RT_NULL) return RT_NULL;
 
-    return RTGUI_WIDGET_DC(owner);
+    return WIDGET_GET_DC(owner);
 }
 
 static rt_bool_t rtgui_dc_client_fini(rtgui_dc_t *dc)
@@ -107,7 +106,7 @@ static void rtgui_dc_client_draw_point(rtgui_dc_t *self, int x, int y)
     if (!rtgui_dc_get_visible(self)) return;
 
     /* get owner */
-    owner = rt_container_of(self, struct rtgui_widget, dc_type);
+    owner = rt_container_of(self, rtgui_widget_t, dc_type);
 
     x = x + owner->extent.x1;
     y = y + owner->extent.y1;
@@ -128,7 +127,7 @@ static void rtgui_dc_client_draw_color_point(rtgui_dc_t *self, int x, int y, rtg
     if (!rtgui_dc_get_visible(self)) return;
 
     /* get owner */
-    owner = rt_container_of(self, struct rtgui_widget, dc_type);
+    owner = rt_container_of(self, rtgui_widget_t, dc_type);
 
     x = x + owner->extent.x1;
     y = y + owner->extent.y1;
@@ -152,7 +151,7 @@ static void rtgui_dc_client_draw_vline(rtgui_dc_t *self, int x, int y1, int y2)
     if (!rtgui_dc_get_visible(self)) return;
 
     /* get owner */
-    owner = rt_container_of(self, struct rtgui_widget, dc_type);
+    owner = rt_container_of(self, rtgui_widget_t, dc_type);
 
     x  = x + owner->extent.x1;
     y1 = y1 + owner->extent.y1;
@@ -269,7 +268,7 @@ static void rtgui_dc_client_fill_rect(rtgui_dc_t *self, rtgui_rect_t *rect)
     if (!rtgui_dc_get_visible(self)) return;
 
     /* get owner */
-    owner = rt_container_of(self, struct rtgui_widget, dc_type);
+    owner = rt_container_of(self, rtgui_widget_t, dc_type);
 
     /* save foreground color */
     foreground = owner->gc.foreground;
@@ -296,7 +295,7 @@ static void rtgui_dc_client_blit_line(rtgui_dc_t *self, int x1, int x2, int y, r
     if (!rtgui_dc_get_visible(self)) return;
 
     /* get owner */
-    owner = rt_container_of(self, struct rtgui_widget, dc_type);
+    owner = rt_container_of(self, rtgui_widget_t, dc_type);
 
     /* convert logic to device */
     x1 = x1 + owner->extent.x1;

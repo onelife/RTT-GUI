@@ -1626,23 +1626,23 @@ RTM_EXPORT(rtgui_blit);
 void rtgui_image_info_blit(rtgui_image_info_t *image, rtgui_dc_t *dc,
     rtgui_rect_t *dc_rect) {
     rt_uint8_t bpp, hw_bpp;
-    struct rtgui_widget *owner;
+    rtgui_widget_t *owner;
     rtgui_blit_info_t info = { 0 };
     rtgui_rect_t dest_extent;
     struct rtgui_graphic_driver *hw_drv;
 
-    hw_drv = rtgui_graphic_driver_get_default();
+    hw_drv = rtgui_get_graphic_device();
     dest_extent = *dc_rect;
 
     if ((dc->type == RTGUI_DC_CLIENT) && hw_drv->framebuffer) {
         int index, num_rects;
         rtgui_rect_t *rects;
-        struct rtgui_region dest_region;
+        rtgui_region_t dest_region;
 
         bpp = rtgui_color_get_bpp(image->src_fmt);
         hw_bpp = rtgui_color_get_bpp(hw_drv->pixel_format);
 
-        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, rtgui_widget_t, dc_type);
         rtgui_widget_rect_to_device(owner, &dest_extent);
 
         /* get intersect region clip */
@@ -1680,7 +1680,7 @@ void rtgui_image_info_blit(rtgui_image_info_t *image, rtgui_dc_t *dc,
             rtgui_blit(&info);
         }
 
-        rtgui_region_fini(&dest_region);
+        rtgui_region_uninit(&dest_region);
     }
     else if ((dc->type == RTGUI_DC_HW) && hw_drv->framebuffer)
     {

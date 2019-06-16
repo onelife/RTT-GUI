@@ -66,7 +66,7 @@ rtgui_dc_t *rtgui_dc_buffer_create(int w, int h)
 {
     rt_uint8_t pixel_format;
 
-    pixel_format = rtgui_graphic_driver_get_default()->pixel_format;
+    pixel_format = rtgui_get_graphic_device()->pixel_format;
 
     /* create a dc_buffer with hardware driver pixel format */
     return rtgui_dc_buffer_create_pixformat(pixel_format, w, h);
@@ -481,7 +481,7 @@ static void rtgui_dc_buffer_blit(rtgui_dc_t *self,
         rtgui_blit_line_func blit_line;
         struct rtgui_graphic_driver *hw_driver;
 
-        hw_driver = rtgui_graphic_driver_get_default();
+        hw_driver = rtgui_get_graphic_device();
         /* prepare pixel line */
         pixels = _dc_get_pixel(dc, dc_point.x, dc_point.y);
 
@@ -490,7 +490,7 @@ static void rtgui_dc_buffer_blit(rtgui_dc_t *self,
             /* use rtgui_blit */
 
             rtgui_blit_info_t info = { 0 };
-            struct rtgui_widget *owner;
+            rtgui_widget_t *owner;
 
             if (self->type == RTGUI_DC_BUFFER)
                 info.a = dc->pixel_alpha;
@@ -524,14 +524,14 @@ static void rtgui_dc_buffer_blit(rtgui_dc_t *self,
             /* use rtgui_blit */
             rt_uint8_t bpp, hw_bpp;
             rtgui_blit_info_t info = { 0 };
-            struct rtgui_widget *owner;
-            struct rtgui_region dest_region;
+            rtgui_widget_t *owner;
+            rtgui_region_t dest_region;
             rtgui_rect_t dest_extent;
             int num_rects;
             rtgui_rect_t *rects;
 
             /* get owner */
-            owner = rt_container_of(dest, struct rtgui_widget, dc_type);
+            owner = rt_container_of(dest, rtgui_widget_t, dc_type);
 
             dest_extent = *dest_rect;
             rtgui_widget_rect_to_device(owner, &dest_extent);
@@ -580,7 +580,7 @@ static void rtgui_dc_buffer_blit(rtgui_dc_t *self,
                 rtgui_blit(&info);
             }
 
-            rtgui_region_fini(&dest_region);
+            rtgui_region_uninit(&dest_region);
         }
         else
         {
@@ -592,12 +592,12 @@ static void rtgui_dc_buffer_blit(rtgui_dc_t *self,
                                             rtgui_color_get_bpp(dc->pixel_format));
             if (hw_driver->framebuffer != RT_NULL)
             {
-                struct rtgui_widget* owner = RT_NULL;
+                rtgui_widget_t* owner = RT_NULL;
 
                 if (dest->type == RTGUI_DC_HW)
                     owner = ((struct rtgui_dc_hw*) dest)->owner;
                 else if (dest->type == RTGUI_DC_CLIENT)
-                    owner = rt_container_of(dest, struct rtgui_widget, dc_type);
+                    owner = rt_container_of(dest, rtgui_widget_t, dc_type);
                 else
                     RT_ASSERT(0);
 

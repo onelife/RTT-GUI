@@ -73,8 +73,8 @@ static void _deconstruct_instance(const rtgui_class_t *cls, void *obj) {
 
 static void _object_constructor(void *_obj) {
     rtgui_obj_t *obj = _obj;
+    RT_ASSERT(obj != RT_NULL);
 
-    if (!obj) return;
     obj->_super = 0;
     obj->flag = RTGUI_OBJECT_FLAG_VALID;
     obj->id = (rt_ubase_t)obj;
@@ -83,10 +83,9 @@ static void _object_constructor(void *_obj) {
 
 static void _object_destructor(void *_obj) {
     rtgui_obj_t *obj = _obj;
+    RT_ASSERT(obj != RT_NULL);
 
-    /* Any valid objest should both have valid flag _and_ valid cls. Only use
-     * flag is not enough because the chunk of memory may be reallocted to other
-     * object and thus the flag will become valid. */
+    /* a valid object must have both valid flag AND cls. */
     obj->cls = RT_NULL;
     obj->flag = RTGUI_OBJECT_FLAG_NONE;
     obj->evt_hdl = RT_NULL;
@@ -114,7 +113,6 @@ void *rtgui_create_instance(const rtgui_class_t *cls, rtgui_evt_hdl_t evt_hdl) {
             obj_info.max_alloc = obj_info.alloc_size;
         }
     #endif
-
     return _new;
 }
 
@@ -130,6 +128,7 @@ void rtgui_delete_instance(void *_obj) {
     LOG_D("delete ins %d", obj->cls->name);
     _deconstruct_instance(obj->cls, obj);
     rtgui_free(obj);
+    _obj = RT_NULL;
 }
 
 rt_bool_t rtgui_is_subclass_of(const rtgui_class_t *cls,
@@ -152,7 +151,7 @@ const rtgui_class_t *rtgui_class_of(void *_obj) {
  * If the object doesn't inherit from the specified cls, a warning
  * is displayed in the console but the object is returned anyway.
  *
- * @param object the object to cast
+ * @param _obj the object to cast
  * @param cls the cls to which we cast the object
  * @return Returns the object
  */

@@ -27,7 +27,6 @@
 //#include <rtgui/rtgui_theme.h>
 //#include "../server/mouse.h"
 #include "../include/widgets/window.h"
-#include "../include/widgets/title.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -40,7 +39,7 @@
 #endif /* RT_USING_ULOG */
 
 /* Private function prototype ------------------------------------------------*/
-static void _win_title_constructor(void *obj);
+static void _title_constructor(void *obj);
 static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt);
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,26 +48,27 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt);
 RTGUI_CLASS(
     title,
     CLASS_METADATA(widget),
-    _win_title_constructor,
+    _title_constructor,
     RT_NULL,
     _title_event_handler,
     sizeof(rtgui_title_t));
 
 /* Private functions ---------------------------------------------------------*/
-static void _win_title_constructor(void *obj) {
-    rtgui_title_t *win_t = obj;
-    TO_WIDGET(win_t)->flag = RTGUI_WIDGET_FLAG_DEFAULT;
-    RTGUI_WIDGET_TEXTALIGN(win_t) = RTGUI_ALIGN_CENTER_VERTICAL;
+static void _title_constructor(void *obj) {
+    rtgui_title_t *title_ = obj;
+
+    TO_WIDGET(title_)->flag = RTGUI_WIDGET_FLAG_DEFAULT;
+    WIDGET_GET_TEXTALIGN(title_) = RTGUI_ALIGN_CENTER_VERTICAL;
 }
 
 static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
-    rtgui_title_t *win_t;
+    rtgui_title_t *title_;
     rtgui_widget_t *wgt;
     rt_bool_t done;
 
     EVT_LOG("[TitEVT] %s @%p from %s", rtgui_event_text(evt), evt,
         evt->base.origin->mb->parent.parent.name);
-    win_t = TO_TITLE(obj);
+    title_ = TO_TITLE(obj);
     wgt = TO_WIDGET(obj);
     if (!wgt->toplevel) {
         LOG_E("[TitEVT] %s no toplevel");
@@ -78,26 +78,26 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     switch (evt->base.type) {
     case RTGUI_EVENT_PAINT:
-        rtgui_theme_draw_win(win_t);
+        rtgui_theme_draw_win(title_);
         break;
 
     case RTGUI_EVENT_MOUSE_BUTTON:
-        if (wgt->toplevel->style & RTGUI_WIN_STYLE_CLOSEBOX) {
+        if (IS_WIN_STYLE(wgt->toplevel, CLOSEBOX)) {
             if (evt->mouse.button & RTGUI_MOUSE_BUTTON_LEFT) {
                 rtgui_rect_t rect;
 
                 /* get close button rect (device value) */
-                rect.x1 = wgt->extent.x2 - WINTITLE_BORDER_SIZE - 3 - \
-                    WINTITLE_CB_WIDTH;
-                rect.y1 = wgt->extent.y1 + WINTITLE_BORDER_SIZE + 3;
-                rect.x2 = rect.x1 + WINTITLE_CB_WIDTH;
-                rect.y2 = rect.y1 + WINTITLE_CB_HEIGHT;
+                rect.x1 = wgt->extent.x2 - TITLE_BORDER_SIZE - 3 - \
+                    TITLE_CB_WIDTH;
+                rect.y1 = wgt->extent.y1 + TITLE_BORDER_SIZE + 3;
+                rect.x2 = rect.x1 + TITLE_CB_WIDTH;
+                rect.y2 = rect.y1 + TITLE_CB_HEIGHT;
 
                 if (evt->mouse.button & RTGUI_MOUSE_BUTTON_DOWN) {
                     if (rtgui_rect_contains_point(
                         &rect, evt->mouse.x, evt->mouse.y)) {
-                        wgt->toplevel->flag |= RTGUI_WIN_FLAG_CB_PRESSED;
-                        rtgui_theme_draw_win(win_t);
+                        WIN_FLAG_SET(wgt->toplevel, CB_PRESSED);
+                        rtgui_theme_draw_win(title_);
 
                 #ifdef RTGUI_USING_WINMOVE
                     } else {
@@ -105,13 +105,15 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
                 #endif
                     }
                 } else if (evt->mouse.button & RTGUI_MOUSE_BUTTON_UP) {
-                    if ((wgt->toplevel->flag & RTGUI_WIN_FLAG_CB_PRESSED) && \
+                    if (IS_WIN_FLAG(wgt->toplevel, CB_PRESSED) && \
                         (rtgui_rect_contains_point(
                             &rect, evt->mouse.x, evt->mouse.y))) {
-                        (void)rtgui_win_close(wgt->toplevel);
+                        RTGUI_EVENT_REINIT(evt, WIN_CLOSE);
+                        evt->win_close.wid = wgt->toplevel;
+                        (void)EVENT_HANDLER(wgt->toplevel)(wgt->toplevel, evt);
                     } else {
-                        wgt->toplevel->flag &= ~RTGUI_WIN_FLAG_CB_PRESSED;
-                        rtgui_theme_draw_win(win_t);
+                        WIN_FLAG_CLEAR(wgt->toplevel, CB_PRESSED);
+                        rtgui_theme_draw_win(title_);
                         #ifdef RTGUI_USING_WINMOVE
                             /* Reset the window movement state machine. */
                             (void)rtgui_winrect_moved_done(RT_NULL, RT_NULL);
@@ -128,8 +130,8 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
 
     default:
-        if (SUPER_HANDLER(win_t)) {
-            done = SUPER_HANDLER(win_t)(win_t, evt);
+        if (SUPER_HANDLER(title_)) {
+            done = SUPER_HANDLER(title_)(title_, evt);
         }
         break;
     }
@@ -140,15 +142,3 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 /* Public functions ----------------------------------------------------------*/
-rtgui_title_t *rtgui_win_title_create(rtgui_win_t *win, rtgui_evt_hdl_t evt_hdl) {
-    rtgui_title_t *win_t;
-
-    win_t = (rtgui_title_t *)CREATE_INSTANCE(title, evt_hdl);
-    if (win_t) TO_WIDGET(win_t)->toplevel = win;
-
-    return win_t;
-}
-
-void rtgui_win_title_destroy(rtgui_title_t *win_t) {
-    return rtgui_widget_destroy(TO_WIDGET(win_t));
-}

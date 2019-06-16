@@ -23,7 +23,7 @@
  * 2012-07-07     Bernard      move the send/recv message to the rtgui_system.c
  * 2019-05-15     onelife      refactor and rename to "app.c"
  */
-
+/* Includes ------------------------------------------------------------------*/
 #include "include/rthw.h" // rtt: rt_hw_interrupt_disable()
 
 #include "include/rtgui.h"
@@ -31,10 +31,8 @@
 #include "include/widgets/window.h"
 #include "include/widgets/topwin.h"
 
-
 #ifdef RT_USING_ULOG
-# define LOG_LVL                    LOG_LVL_DBG
-// # define LOG_LVL                   LOG_LVL_INFO
+# define LOG_LVL                    RTGUI_LOG_LEVEL
 # define LOG_TAG                    "GUI_APP"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
@@ -43,7 +41,9 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
 #define _rtgui_application_check(app)           \
     do {                                        \
         RT_ASSERT(app != RT_NULL);              \
@@ -52,11 +52,13 @@
         RT_ASSERT(app->mb != RT_NULL);          \
     } while (0)
 
-struct rt_mempool *rtgui_event_pool = RT_NULL;
-
+/* Private function prototypes -----------------------------------------------*/
 static void _app_constructor(void *obj);
 static void _app_destructor(void *obj);
 static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt);
+
+/* Private variables ---------------------------------------------------------*/
+struct rt_mempool *rtgui_event_pool = RT_NULL;
 
 RTGUI_CLASS(
     app,
@@ -66,166 +68,139 @@ RTGUI_CLASS(
     _app_event_handler,
     sizeof(rtgui_app_t));
 
-
+/* Private functions ---------------------------------------------------------*/
 static void _app_constructor(void *obj) {
     rtgui_app_t *app = obj;
 
-    app->name = RT_NULL;
     app->tid = RT_NULL;
+    app->main_win = RT_NULL;
+    app->name = RT_NULL;
+    app->flag = RTGUI_APP_FLAG_EXITED;
     app->mb = RT_NULL;
     app->icon = RT_NULL;
-    /* set EXITED so we can destroy an app that just created */
-    app->state_flag = RTGUI_APP_FLAG_EXITED;
-    app->ref_cnt = 0;
-    app->window_cnt = 0;
-    app->win_acti_cnt = 0;
-    app->exit_code = 0;
-    app->main_object = RT_NULL;
     app->on_idle = RT_NULL;
+    app->user_data = RT_NULL;
+    app->ref_cnt = 0;
+    app->win_cnt = 0;
+    app->act_cnt = 0;
+    app->exit_code = 0;
     LOG_D("app ctor");
 }
 
 static void _app_destructor(void *obj) {
     rtgui_app_t *app = obj;
 
-    RT_ASSERT(app != RT_NULL);
-
-    rtgui_free(app->name);
-    app->name = RT_NULL;
+    if (app->name) {
+        rtgui_free(app->name);
+        app->name = RT_NULL;
+    }
 }
 
-static rtgui_app_t *_rtgui_app_create(const char *title, rtgui_evt_hdl_t evt_hdl,
-    rt_bool_t is_srv) {
-    rt_thread_t self = rt_thread_self();
-    rtgui_app_t *app;
+rt_err_t rtgui_app_init(rtgui_app_t *app, const char *name, rt_bool_t is_srv) {
+    rt_err_t ret;
 
-    RT_ASSERT(self);
-    RT_ASSERT(!self->user_data); /* one thread one app only */
-    RT_ASSERT(title);
+    RT_ASSERT(name);
+    ret = RT_EOK;
 
     do {
-        /* create app */
-        app = (rtgui_app_t *)CREATE_INSTANCE(app, evt_hdl);
-        if (!app) {
-            LOG_E("create %s err", title);
+        rt_thread_t self = rt_thread_self();
+        if (!self) {
+            LOG_E("not thread contex");
+            ret = -RT_ERROR;
+            break;
+        }
+        if (!self->user_data) {
+            LOG_E("already has app");
+            ret = -RT_ERROR;
             break;
         }
         app->tid = self;
-        app->mb = rt_mb_create(title, RTGUI_MB_SIZE, RT_IPC_FLAG_FIFO);
-        if (!app->mb) {
-            LOG_E("mb %s mem err", title);
-            break;
-        }
-        app->name = rt_strdup(title);
+
+        app->name = rt_strdup(name);
         if (!app->name) {
             LOG_E("name mem err");
+            ret = -RT_ENOMEM;
             break;
         }
+        app->mb = rt_mb_create(name, RTGUI_MB_SIZE, RT_IPC_FLAG_FIFO);
+        if (!app->mb) {
+            LOG_E("mb %s mem err", name);
+            ret = -RT_ENOMEM;
+            break;
+        }
+        self->user_data = (rt_uint32_t)app;
 
         if (is_srv) {
-            rtgui_event_pool = rt_mp_create(title, RTGUI_EVENT_POOL_NUMBER,
+            rtgui_event_pool = rt_mp_create(name, RTGUI_EVENT_POOL_NUMBER,
                 sizeof(rtgui_evt_generic_t));
             if (!rtgui_event_pool) {
-                LOG_E("mp %s mem err", title);
+                LOG_E("mp %s mem err", name);
+                ret = -RT_ENOMEM;
                 break;
             }
         } else {
-            rtgui_app_t *srv;
+            rtgui_app_t *srv = rtgui_get_server();
             rtgui_evt_generic_t *evt;
 
-            srv = rtgui_get_server();
             if (!srv) {
-                LOG_E("srv not started");
+                LOG_E("srv not start");
+                ret = -RT_ERROR;
                 break;
             }
 
             /* send RTGUI_EVENT_APP_CREATE */
-            RTGUI_CREATE_EVENT(evt, APP_CREATE, 0);
-            if (!evt) break;
-            evt->app_create.app = app;
-            if (rtgui_request_sync(srv, evt)) {
-                LOG_E("create %s sync err", title);
+            RTGUI_CREATE_EVENT(evt, APP_CREATE, RT_WAITING_FOREVER);
+            if (!evt) {
+                ret = -RT_ENOMEM;
                 break;
             }
+            evt->app_create.app = app;
+            ret = rtgui_request_sync(srv, evt);
+            if (RT_EOK != ret) break;
         }
 
-        /* attach app to thread */
-        self->user_data = (rt_uint32_t)app;
-        LOG_D("create %s @%p", title, app);
-        return app;
+        LOG_D("create %s @%p", name, app);
     } while (0);
 
-    DELETE_INSTANCE(app);
-    return RT_NULL;
+    return ret;
 }
+RTM_EXPORT(rtgui_app_init);
 
-rtgui_app_t *rtgui_srv_create(const char *title, rtgui_evt_hdl_t evt_hdl) {
-    return _rtgui_app_create(title, evt_hdl, RT_TRUE);
-}
+void rtgui_app_uninit(rtgui_app_t *app) {
+    do {
+        rtgui_app_t *srv;
 
-rtgui_app_t *rtgui_app_create(const char *title, rtgui_evt_hdl_t evt_hdl) {
-    return _rtgui_app_create(title, evt_hdl, RT_FALSE);
-}
-RTM_EXPORT(rtgui_app_create);
-
-void rtgui_app_destroy(rtgui_app_t *app) {
-    rtgui_app_t *srv;
-
-    _rtgui_application_check(app);
-    if (!(app->state_flag & RTGUI_APP_FLAG_EXITED)) {
-        LOG_E("destroy bf stop %s", app->name);
-        return;
-    }
-
-    srv = rtgui_get_server();
-    if (srv != rtgui_app_self()) {
-        rtgui_evt_generic_t *evt;
-        rt_err_t ret;
-
-        /* send RTGUI_EVENT_APP_DESTROY */
-        RTGUI_CREATE_EVENT(evt, APP_DESTROY, RT_WAITING_FOREVER);
-        if (evt) {
-            evt->app_destroy.app = app;
-            ret = rtgui_request_sync(srv, evt);
-            if (ret) {
-                LOG_E("destroy %s err [%d]", app->name, ret);
-                return;
-            }
-        } else {
-            LOG_E("get mp err");
-            return;
+        if (!IS_APP_FLAG(app, EXITED)) {
+            LOG_E("uninit bf exit %s", app->name);
+            break;
         }
-    }
 
-    app->tid->user_data = 0;
-    rt_mb_delete(app->mb);
-    DELETE_INSTANCE(app);
+        srv = rtgui_get_server();
+        if (srv != rtgui_app_self()) {
+            rtgui_evt_generic_t *evt;
+
+            /* send RTGUI_EVENT_APP_DESTROY */
+            RTGUI_CREATE_EVENT(evt, APP_DESTROY, RT_WAITING_FOREVER);
+            if (!evt) break;
+            evt->app_destroy.app = app;
+            if (rtgui_request_sync(srv, evt)) break;
+        }
+
+        rt_mb_delete(app->mb);
+        app->tid->user_data = RT_NULL;
+        DELETE_INSTANCE(app);
+    } while (0);
 }
-RTM_EXPORT(rtgui_app_destroy);
+RTM_EXPORT(rtgui_app_uninit);
 
 rtgui_app_t *rtgui_app_self(void) {
-    rt_thread_t self;
-    rtgui_app_t *app;
-
-    /* get current thread */
-    self = rt_thread_self();
-    app = (rtgui_app_t *)(self->user_data);
-
-    return app;
+    rt_thread_t self = rt_thread_self();
+    if (!self) return RT_NULL;
+    return (rtgui_app_t *)(self->user_data);
 }
 RTM_EXPORT(rtgui_app_self);
 
-// void rtgui_app_set_onidle(rtgui_app_t *app, rtgui_idle_hdl_t onidle) {
-//     _rtgui_application_check(app);
-//     app->on_idle = onidle;
-// }
-// RTM_EXPORT(rtgui_app_set_onidle);
-
-// rtgui_idle_hdl_t rtgui_app_get_onidle(rtgui_app_t *app) {
-//     _rtgui_application_check(app);
-//     return app->on_idle;
-// }
-// RTM_EXPORT(rtgui_app_get_onidle);
+RTGUI_MEMBER_SETTER_GETTER(rtgui_app_t, app, rtgui_idle_hdl_t, on_idle);
 
 rt_inline rt_bool_t _app_dest_handler(
     rtgui_app_t *app, rtgui_evt_generic_t *evt) {
@@ -233,13 +208,11 @@ rt_inline rt_bool_t _app_dest_handler(
     (void)app;
 
     if (!evt->win_base.wid) return RT_FALSE;
-    if (evt->win_base.wid->magic != RTGUI_WIN_MAGIC) return RT_FALSE;
+    if (evt->win_base.wid->_magic != RTGUI_WIN_MAGIC) return RT_FALSE;
 
     /* this window has been closed. */
-    if (evt->win_base.wid && \
-        (evt->win_base.wid->flag & RTGUI_WIN_FLAG_CLOSED)) {
+    if (evt->win_base.wid && IS_WIN_FLAG(evt->win_base.wid, CLOSED))
         return RT_TRUE;
-    }
 
     /* The dest window may have been destroyed when this event arrived. Check
      * against this condition. NOTE: we cannot use the TO_OBJECT because it
@@ -273,26 +246,26 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     switch (evt->base.type) {
     case RTGUI_EVENT_KBD:
-        if (evt->kbd.win_acti_cnt == app->win_acti_cnt) {
+        if (evt->kbd.act_cnt == app->act_cnt) {
             done = _app_dest_handler(app, evt);
         }
         break;
 
     case RTGUI_EVENT_MOUSE_BUTTON:
     case RTGUI_EVENT_MOUSE_MOTION:
-        if (evt->mouse.win_acti_cnt == app->win_acti_cnt) {
+        if (evt->mouse.act_cnt == app->act_cnt) {
             done = _app_dest_handler(app, evt);
         }
         break;
 
     case RTGUI_EVENT_GESTURE:
-        if (evt->gesture.win_acti_cnt == app->win_acti_cnt) {
+        if (evt->gesture.act_cnt == app->act_cnt) {
             done = _app_dest_handler(app, evt);
         }
         break;
 
     case RTGUI_EVENT_WIN_ACTIVATE:
-        app->win_acti_cnt++;
+        app->act_cnt++;
         done = _app_dest_handler(app, evt);
         break;
 
@@ -308,13 +281,13 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
 
     case RTGUI_EVENT_APP_ACTIVATE:
-        if (app->main_object) {
+        if (app->main_win) {
             /* send RTGUI_EVENT_WIN_SHOW */
             RTGUI_EVENT_REINIT(evt, WIN_SHOW);
-            evt->win_show.wid = (rtgui_win_t *)app->main_object;
-            done = EVENT_HANDLER(app->main_object)(app->main_object, evt);
+            evt->win_show.wid = app->main_win;
+            done = EVENT_HANDLER(app->main_win)(app->main_win, evt);
         } else {
-            LOG_W("[AppEVT] %s without main_object", app->name);
+            LOG_W("[AppEVT] %s without main_win", app->name);
         }
         break;
 
@@ -353,7 +326,7 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         } else {
             rtgui_topwin_t *top = rtgui_topwin_get_focus();
             if (top) {
-                RT_ASSERT(top->flag & WINTITLE_ACTIVATE)
+                RT_ASSERT(top->flag & RTGUI_TOPWIN_FLAG_ACTIVATE)
                 /* send to focus window */
                 evt->command.wid = top->wid;
                 done = _app_dest_handler(app, evt);
@@ -411,17 +384,15 @@ rt_inline void _rtgui_application_event_loop(rtgui_app_t *app) {
 }
 
 rt_base_t rtgui_app_run(rtgui_app_t *app) {
-    _rtgui_application_check(app);
-    app->state_flag &= ~RTGUI_APP_FLAG_EXITED;
+    APP_FLAG_CLEAR(app, EXITED);
 
     LOG_D("loop %s ", app->name);
     _rtgui_application_event_loop(app);
 
     if (!app->ref_cnt) {
-        app->state_flag |= RTGUI_APP_FLAG_EXITED;
+        APP_FLAG_SET(app, EXITED);
         LOG_D("exit %s", app->name);
     }
-
     return app->exit_code;
 }
 RTM_EXPORT(rtgui_app_run);
@@ -541,26 +512,17 @@ rt_err_t rtgui_app_set_as_wm(rtgui_app_t *app) {
 }
 RTM_EXPORT(rtgui_app_set_as_wm);
 
-void rtgui_app_set_main_win(rtgui_app_t *app, rtgui_win_t *win) {
-    _rtgui_application_check(app);
-    app->main_object = TO_OBJECT(win);
-    LOG_D("%s main win: %s", app->name, win->title);
-}
-RTM_EXPORT(rtgui_app_set_main_win);
+/* Public functions ----------------------------------------------------------*/
+RTGUI_MEMBER_SETTER_GETTER(rtgui_app_t, app, rtgui_win_t*, main_win);
 
-rtgui_win_t *rtgui_app_get_main_win(rtgui_app_t *app) {
-    return TO_WIN(app->main_object);
-}
-RTM_EXPORT(rtgui_app_get_main_win);
-
-unsigned int rtgui_app_get_win_acti_cnt(void) {
+unsigned int rtgui_get_app_act_cnt(void) {
     rtgui_app_t *app;
 
-    app = rtgui_topwin_app_get_focus();
+    app = rtgui_topwin_get_focus_app();
     if (app) {
-        return app->win_acti_cnt;
+        return app->act_cnt;
     } else {
         return 0;
     }
 }
-RTM_EXPORT(rtgui_app_get_win_acti_cnt);
+RTM_EXPORT(rtgui_get_app_act_cnt);

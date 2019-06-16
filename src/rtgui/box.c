@@ -22,7 +22,7 @@
  * 2009-10-16     Bernard      first version
  * 2019-05-18     onelife      refactor
  */
-
+/* Includes ------------------------------------------------------------------*/
 #include "../include/rtgui.h"
 #include "../include/dc.h"
 #include "../include/widgets/box.h"
@@ -37,10 +37,13 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
 static void _box_constructor(void *obj);
 
-
+/* Private variables ---------------------------------------------------------*/
 RTGUI_CLASS(
     box,
     CLASS_METADATA(object),
@@ -49,7 +52,8 @@ RTGUI_CLASS(
     RT_NULL,
     sizeof(rtgui_box_t));
 
-
+/* Private functions ---------------------------------------------------------*/
+/* Public functions ----------------------------------------------------------*/
 static void _box_constructor(void *obj) {
     rtgui_box_t *box = obj;
 
@@ -58,25 +62,6 @@ static void _box_constructor(void *obj) {
     box->border_size = RTGUI_BORDER_DEFAULT_WIDTH;
     box->container = RT_NULL;
 }
-
-rtgui_box_t *rtgui_box_create(int orientation, int border_size) {
-    rtgui_box_t *box;
-
-    box = (rtgui_box_t *)CREATE_INSTANCE(box, RT_NULL);
-    if (box != RT_NULL)
-    {
-        box->orient = orientation;
-        box->border_size = border_size;
-    }
-
-    return box;
-}
-RTM_EXPORT(rtgui_box_create);
-
-void rtgui_box_destroy(rtgui_box_t *box) {
-    DELETE_INSTANCE(box);
-}
-RTM_EXPORT(rtgui_box_destroy);
 
 static void rtgui_box_layout_vertical(rtgui_box_t *box,
     rtgui_rect_t *extent) {
@@ -94,7 +79,7 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
 
     rt_slist_for_each(node, &(box->container->children)) {
         rtgui_widget_t *wgt = \
-            rt_slist_entry(node, struct rtgui_widget, sibling);
+            rt_slist_entry(node, rtgui_widget_t, sibling);
         if (wgt->align & RTGUI_ALIGN_STRETCH) {
             space_count ++;
         } else {
@@ -118,7 +103,7 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
     rt_slist_for_each(node, &(box->container->children)) {
         rtgui_rect_t *rect;
         rtgui_widget_t *wgt = \
-            rt_slist_entry(node, struct rtgui_widget, sibling);
+            rt_slist_entry(node, rtgui_widget_t, sibling);
 
         /* get extent of widget */
         rect = &(wgt->extent);
@@ -187,7 +172,7 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
 
     rt_slist_for_each(node, &(box->container->children)) {
         rtgui_widget_t *wgt = \
-            rt_slist_entry(node, struct rtgui_widget, sibling);
+            rt_slist_entry(node, rtgui_widget_t, sibling);
         if (wgt->align & RTGUI_ALIGN_STRETCH) {
             space_count ++;
         } else {
@@ -210,7 +195,7 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
     rt_slist_for_each(node, &(box->container->children)) {
         rtgui_rect_t *rect;
         rtgui_widget_t *wgt = \
-            rt_slist_entry(node, struct rtgui_widget, sibling);
+            rt_slist_entry(node, rtgui_widget_t, sibling);
 
         /* get extent of widget */
         rect = &(wgt->extent);
@@ -272,16 +257,14 @@ void rtgui_box_layout(rtgui_box_t *box) {
     if (box->container == RT_NULL) return;
 
     rtgui_widget_get_extent(TO_WIDGET(box->container), &extent);
-    if (box->orient & RTGUI_VERTICAL) {
+    if (box->orient & RTGUI_VERTICAL)
         rtgui_box_layout_vertical(box, &extent);
-    } else {
+    else
         rtgui_box_layout_horizontal(box, &extent);
-    }
 
     /* update box and its children clip */
-    if (!RTGUI_WIDGET_IS_HIDE(TO_WIDGET(box->container))) {
+    if (IS_WIDGET_FLAG(box->container, SHOWN))
         rtgui_widget_update_clip(TO_WIDGET(box->container));
-    }
 }
 RTM_EXPORT(rtgui_box_layout);
 
@@ -292,19 +275,13 @@ void rtgui_box_layout_rect(rtgui_box_t *box, rtgui_rect_t *rect)
     if (box->container == RT_NULL) return;
 
     if (box->orient & RTGUI_VERTICAL)
-    {
         rtgui_box_layout_vertical(box, rect);
-    }
     else
-    {
         rtgui_box_layout_horizontal(box, rect);
-    }
 
     /* update box and its children clip */
-    if (!RTGUI_WIDGET_IS_HIDE(TO_WIDGET(box->container)))
-    {
+    if (IS_WIDGET_FLAG(box->container, SHOWN))
         rtgui_widget_update_clip(TO_WIDGET(box->container));
-    }
 }
 RTM_EXPORT(rtgui_box_layout_rect);
 

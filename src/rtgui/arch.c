@@ -51,10 +51,13 @@
 static struct rt_mutex _screen_lock;
 static struct rt_mailbox ack_sync;
 static rt_uint8_t ack_pool[SYNC_ACK_NUMBER];
-static rtgui_rect_t _mainwin_rect;
+
+static rtgui_rect_t _main_win_rect;
 
 /* Private functions ---------------------------------------------------------*/
 /* Public functions ----------------------------------------------------------*/
+RTGUI_STRUCT_SETTER_GETTER(mainwin_rect, rtgui_rect_t, _main_win_rect);
+
 rt_err_t rtgui_system_init(void) {
     rt_err_t ret;
 
@@ -68,13 +71,11 @@ rt_err_t rtgui_system_init(void) {
         if (RT_EOK != ret) break;
         ret = rtgui_font_system_init();
         if (RT_EOK != ret) break;
-        ret = rtgui_topwin_init();
-        if (RT_EOK != ret) break;
         ret = rtgui_server_init();
         if (RT_EOK != ret) break;
         /* use h/w rect for main window */
-        rtgui_graphic_driver_get_rect(rtgui_graphic_driver_get_default(),
-            &_mainwin_rect);
+        rtgui_graphic_driver_get_rect(rtgui_get_graphic_device(),
+            &_main_win_rect);
     } while (0);
 
     return ret;
@@ -602,18 +603,8 @@ rt_err_t rtgui_recv_filter(rtgui_app_t *tgt, rt_uint32_t type,
 }
 RTM_EXPORT(rtgui_recv_filter);
 
-void rtgui_set_mainwin_rect(rtgui_rect_t *rect) {
-    _mainwin_rect = *rect;
-}
-RTM_EXPORT(rtgui_set_mainwin_rect);
-
-void rtgui_get_mainwin_rect(rtgui_rect_t *rect) {
-    *rect = _mainwin_rect;
-}
-RTM_EXPORT(rtgui_get_mainwin_rect);
-
 void rtgui_get_screen_rect(rtgui_rect_t *rect) {
-    rtgui_graphic_driver_get_rect(rtgui_graphic_driver_get_default(), rect);
+    rtgui_graphic_driver_get_rect(rtgui_get_graphic_device(), rect);
 }
 RTM_EXPORT(rtgui_get_screen_rect);
 

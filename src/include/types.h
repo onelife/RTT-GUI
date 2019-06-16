@@ -68,7 +68,124 @@ extern "C" {
 #define SUPER_HANDLER(obj)                  \
     (CLASS_(obj)->_super ? CLASS_(obj)->_super->evt_hdl : RT_NULL)
 
+#define SETTER_PROTOTYPE(name, _type)       \
+    void rtgui_set_##name(_type val)
+#define GETTER_PROTOTYPE(name, _type)       \
+    _type rtgui_get_##name(void)
+#define SETTER_GETTER_PROTOTYPE(name, _type) \
+    SETTER_PROTOTYPE(name, _type);          \
+    GETTER_PROTOTYPE(name, _type)
+#define RTGUI_SETTER(name, _type, reso)     \
+    void rtgui_set_##name(_type val) {      \
+        reso = val;                         \
+    }                                       \
+    RTM_EXPORT(rtgui_set_##name)
+#define RTGUI_GETTER(name, _type, reso)     \
+    _type rtgui_get_##name(void) {          \
+        return reso;                        \
+    }                                       \
+    RTM_EXPORT(rtgui_get_##name)
+#define RTGUI_SETTER_GETTER(name, _type, reso) \
+    RTGUI_SETTER(name, _type, reso);        \
+    RTGUI_GETTER(name, _type, reso)
+
+#define STRUCT_SETTER_PROTOTYPE(name, _type) \
+    void rtgui_set_##name(_type *val)
+#define STRUCT_GETTER_PROTOTYPE(name, _type) \
+    void rtgui_get_##name(_type *val)
+#define STRUCT_SETTER_GETTER_PROTOTYPE(name, _type) \
+    STRUCT_SETTER_PROTOTYPE(name, _type);   \
+    STRUCT_GETTER_PROTOTYPE(name, _type)
+#define RTGUI_STRUCT_SETTER(name, _type, reso) \
+    void rtgui_set_##name(_type *val) {     \
+        reso = *val;                        \
+    }                                       \
+    RTM_EXPORT(rtgui_set_##name)
+#define RTGUI_STRUCT_GETTER(name, _type, reso)     \
+    void rtgui_get_##name(_type *val) {     \
+        *val = reso;                        \
+    }                                       \
+    RTM_EXPORT(rtgui_get_##name)
+#define RTGUI_STRUCT_SETTER_GETTER(name, _type, reso) \
+    RTGUI_STRUCT_SETTER(name, _type, reso);        \
+    RTGUI_STRUCT_GETTER(name, _type, reso)
+
+#define REFERENCE_SETTER_PROTOTYPE(name, _type) \
+    _type *rtgui_set_##name(void)
+#define REFERENCE_GETTER_PROTOTYPE(name, _type) \
+    _type *rtgui_get_##name(void)
+#define RTGUI_REFERENCE_SETTER(name, _type, ref) \
+    void rtgui_set_##name(_type *val) {         \
+        ref = val;                         \
+    }                                       \
+    RTM_EXPORT(_type *rtgui_set_##name)
+#define RTGUI_REFERENCE_GETTER(name, _type, ref) \
+    _type *rtgui_get_##name(void) {         \
+        return ref;                         \
+    }                                       \
+    RTM_EXPORT(_type *rtgui_get_##name)
+
+#define MEMBER_SETTER_PROTOTYPE(ctype, cname, mtype, mname) \
+    void rtgui_set_##cname##_##mname(ctype *obj, mtype val)
+#define MEMBER_GETTER_PROTOTYPE(ctype, cname, mtype, mname) \
+    mtype rtgui_get_##cname##_##mname(ctype *obj)
+#define MEMBER_SETTER_GETTER_PROTOTYPE(ctype, cname, mtype, mname) \
+    MEMBER_SETTER_PROTOTYPE(ctype, cname, mtype, mname); \
+    MEMBER_GETTER_PROTOTYPE(ctype, cname, mtype, mname)
+#define RTGUI_MEMBER_SETTER(ctype, cname, mtype, mname) \
+    void rtgui_set_##cname##_##mname(ctype *obj, mtype val) { \
+        if (obj) obj->mname = val;          \
+    }                                       \
+    RTM_EXPORT(rtgui_set_##cname##_##mname)
+#define RTGUI_MEMBER_GETTER(ctype, cname, mtype, mname) \
+    mtype rtgui_get_##cname##_##mname(ctype *obj) { \
+        RT_ASSERT(obj != RT_NULL);          \
+        return obj->mname;                  \
+    }                                       \
+    RTM_EXPORT(rtgui_get_##cname##_##mname)
+#define RTGUI_MEMBER_SETTER_GETTER(ctype, cname, mtype, mname) \
+    RTGUI_MEMBER_SETTER(ctype, cname, mtype, mname); \
+    RTGUI_MEMBER_GETTER(ctype, cname, mtype, mname)
+
+
+#define WIDGET_GET_ALIGN(w)                 (TO_WIDGET(w)->align)
+#define WIDGET_GET_BORDER(w)                (TO_WIDGET(w)->border)
+#define WIDGET_GET_BORDER_STYLE(w)          (TO_WIDGET(w)->border_style)
+#define WIDGET_GET_FOREGROUND(w)            (TO_WIDGET(w)->gc.foreground)
+#define WIDGET_GET_BACKGROUND(w)            (TO_WIDGET(w)->gc.background)
+#define WIDGET_GET_TEXTALIGN(w)             (TO_WIDGET(w)->gc.textalign)
+#define WIDGET_GET_FONT(w)                  (TO_WIDGET(w)->gc.font)
+#define WIDGET_GET_DC(w)                    ((rtgui_dc_t *)&((w)->dc_type))
+
+#define WIDGET_GET_FLAG(w)                  (TO_WIDGET(w)->flag)
+#define WIDGET_FLAG_CLEAR(w, fname)         WIDGET_GET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_##fname
+#define WIDGET_FLAG_SET(w, fname)           WIDGET_GET_FLAG(w) |= RTGUI_WIDGET_FLAG_##fname
+#define IS_WIDGET_FLAG(w, fname)            (WIDGET_GET_FLAG(w) & RTGUI_WIDGET_FLAG_##fname)
+
+#define WIN_GET_FLAG(w)                     (TO_WIN(w)->flag)
+#define WIN_FLAG_CLEAR(w, fname)            WIN_GET_FLAG(w) &= ~RTGUI_WIN_FLAG_##fname
+#define WIN_FLAG_SET(w, fname)              WIN_GET_FLAG(w) |= RTGUI_WIN_FLAG_##fname
+#define IS_WIN_FLAG(w, fname)               (WIN_GET_FLAG(w) & RTGUI_WIN_FLAG_##fname)
+
+#define WIN_GET_STYLE(w)                    (TO_WIN(w)->style)
+#define WIN_STYLE_CLEAR(w, sname)           WIN_GET_STYLE(w) &= ~RTGUI_WIN_STYLE_##sname
+#define WIN_STYLE_SET(w, sname)             WIN_GET_STYLE(w) |= RTGUI_WIN_STYLE_##sname
+#define IS_WIN_STYLE(w, sname)              (WIN_GET_STYLE(w) & RTGUI_WIN_STYLE_##sname)
+
+#define APP_GET_FLAG(a)                     (TO_APP(a)->flag)
+#define APP_FLAG_CLEAR(a, fname)            APP_GET_FLAG(a) &= ~RTGUI_APP_FLAG_##fname
+#define APP_FLAG_SET(a, fname)              APP_GET_FLAG(a) |= RTGUI_APP_FLAG_##fname
+#define IS_APP_FLAG(a, fname)               (APP_GET_FLAG(a) & RTGUI_APP_FLAG_##fname)
+
+#define TOPWIN_GET_FLAG(t)                  (t->flag)
+#define TOPWIN_FLAG_CLEAR(t, fname)         TOPWIN_GET_FLAG(t) &= ~RTGUI_TOPWIN_FLAG_##fname
+#define TOPWIN_FLAG_SET(t, fname)           TOPWIN_GET_FLAG(t) |= RTGUI_TOPWIN_FLAG_##fname
+#define IS_TOPWIN_FLAG(t, fname)            (TOPWIN_GET_FLAG(t) & RTGUI_TOPWIN_FLAG_##fname)
+
 /* Exported types ------------------------------------------------------------*/
+struct rtgui_graphic_driver;
+typedef struct rtgui_graphic_driver rtgui_graphic_driver_t;
+
 typedef struct rtgui_rect rtgui_rect_t;
 typedef struct rtgui_point rtgui_point_t;
 typedef struct rtgui_line rtgui_line_t;
@@ -96,14 +213,14 @@ typedef struct rtgui_dc rtgui_dc_t;
 
 typedef struct rtgui_class rtgui_class_t;
 typedef struct rtgui_obj rtgui_obj_t;
-typedef struct rtgui_app rtgui_app_t;
-typedef struct rtgui_box rtgui_box_t;
 typedef struct rtgui_container rtgui_container_t;
+typedef struct rtgui_box rtgui_box_t;
 typedef struct rtgui_widget rtgui_widget_t;
 typedef struct rtgui_title rtgui_title_t;
 typedef struct rtgui_win rtgui_win_t;
-typedef struct rtgui_topwin rtgui_topwin_t;
+typedef struct rtgui_app rtgui_app_t;
 typedef struct rtgui_timer rtgui_timer_t;
+typedef struct rtgui_topwin rtgui_topwin_t;
 
 typedef struct rtgui_evt_base rtgui_evt_base_t;
 typedef struct rtgui_event_timer rtgui_event_timer_t;
@@ -114,6 +231,7 @@ typedef void (*rtgui_destructor_t)(rtgui_class_t *obj);
 typedef rt_bool_t (*rtgui_evt_hdl_t)(void *obj, rtgui_evt_generic_t *evt);
 typedef void (*rtgui_idle_hdl_t)(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
 typedef void (*rtgui_timeout_hdl_t)(rtgui_timer_t *timer, void *parameter);
+typedef void (*rtgui_hook_t)(void);
 
 /* coordinate point */
 struct rtgui_point {
@@ -263,63 +381,36 @@ struct rtgui_obj {
     rt_ubase_t id;
 };
 
-/* app */
-typedef enum rtgui_app_flag {
-    RTGUI_APP_FLAG_EXITED                   = 0x04,
-    RTGUI_APP_FLAG_SHOWN                    = 0x08,
-    RTGUI_APP_FLAG_KEEP                     = 0x80,
-} rtgui_app_flag_t;
-
-struct rtgui_app {
-    rtgui_obj_t _super;
-    char *name;
-    rt_thread_t tid;
-    rt_mailbox_t mb;
-    rt_base_t ref_cnt;
-    rt_base_t exit_code;
-    rtgui_image_t *icon;
-    rtgui_app_flag_t state_flag;
-    /* if not RT_NULL, the main_object is the one will be activated when the
-     * app recieves activate event. By default, it is the first window shown in
-     * the app. */
-    rtgui_obj_t *main_object;
-    rtgui_idle_hdl_t on_idle;
-    unsigned int window_cnt;
-    unsigned int win_acti_cnt;              /* activate count */
-    void *user_data;
-};
-
-/* box sizer */
-struct rtgui_box {
-    rtgui_obj_t _super;
-    rt_uint16_t orient;
-    rt_uint16_t border_size;
-    rtgui_container_t *container;
-};
-
 /* widget */
+typedef enum rtgui_widget_flag {
+    RTGUI_WIDGET_FLAG_DEFAULT               = 0x0000,
+    RTGUI_WIDGET_FLAG_SHOWN                 = 0x0001,
+    RTGUI_WIDGET_FLAG_DISABLE               = 0x0002,
+    RTGUI_WIDGET_FLAG_FOCUS                 = 0x0004,
+    RTGUI_WIDGET_FLAG_TRANSPARENT           = 0x0008,
+    RTGUI_WIDGET_FLAG_FOCUSABLE             = 0x0010,
+    RTGUI_WIDGET_FLAG_DC_VISIBLE            = 0x0100,
+    RTGUI_WIDGET_FLAG_IN_ANIM               = 0x0200,
+} rtgui_win_widget_t;
+
 struct rtgui_widget {
-    rtgui_obj_t _super;                     /* _super class */
+    rtgui_obj_t _super;                     /* super class */
     rtgui_widget_t *parent;                 /* parent widget */
     rtgui_win_t *toplevel;                  /* parent window */
-    rt_slist_t sibling;                   /* children and sibling */
-
-    rt_int32_t flag;
-    rt_ubase_t dc_type;                     /* hardware device context */
-    const struct rtgui_dc_engine *dc_engine;
-    rtgui_gc_t gc;                          /* graphic context */
-    rtgui_rect_t extent;
-    rtgui_rect_t extent_visiable;           /* including children */
-    rtgui_region_t clip;
-
-    rt_int16_t min_width, min_height;
+    rt_slist_t sibling;                     /* children and sibling */
+    rtgui_win_widget_t flag;
     rt_int32_t align;
     rt_uint16_t border;
     rt_uint16_t border_style;
-
+    rt_int16_t min_width, min_height;
+    rtgui_rect_t extent;
+    rtgui_rect_t extent_visiable;           /* including children */
+    rtgui_region_t clip;
     rtgui_evt_hdl_t on_focus_in;
     rtgui_evt_hdl_t on_focus_out;
-
+    rtgui_gc_t gc;                          /* graphic context */
+    rt_ubase_t dc_type;                     /* hardware device context */
+    const struct rtgui_dc_engine *dc_engine;  // TODO(onelife): struct rtgui_dc
     rt_uint32_t user_data;
 };
 
@@ -330,18 +421,39 @@ struct rtgui_container {
     rt_slist_t children;
 };
 
+/* box sizer */
+struct rtgui_box {
+    rtgui_obj_t _super;
+    rt_uint16_t orient;
+    rt_uint16_t border_size;
+    rtgui_container_t *container;
+};
+
 /* title */
 struct rtgui_title {
-    struct rtgui_widget _super;
+    rtgui_widget_t _super;
 };
 
 /* window */
+typedef enum rtgui_win_style {
+    RTGUI_WIN_STYLE_NO_FOCUS                = 0x0001,  /* non-focused window */
+    RTGUI_WIN_STYLE_NO_TITLE                = 0x0002,  /* no title window */
+    RTGUI_WIN_STYLE_NO_BORDER               = 0x0004,  /* no border window */
+    RTGUI_WIN_STYLE_CLOSEBOX                = 0x0008,  /* window has the close button */
+    RTGUI_WIN_STYLE_MINIBOX                 = 0x0010,  /* window has the mini button */
+    RTGUI_WIN_STYLE_DESTROY_ON_CLOSE        = 0x0020,  /* window is destroyed when closed */
+    RTGUI_WIN_STYLE_ONTOP                   = 0x0040,  /* window is in the top layer */
+    RTGUI_WIN_STYLE_ONBTM                   = 0x0080,  /* window is in the bottom layer */
+    RTGUI_WIN_STYLE_MAINWIN                 = 0x0106,  /* window is a main window */
+    RTGUI_WIN_STYLE_DEFAULT                 = RTGUI_WIN_STYLE_CLOSEBOX | RTGUI_WIN_STYLE_MINIBOX,
+} rtgui_win_style_t;
+
 typedef enum rtgui_win_flag {
     RTGUI_WIN_FLAG_INIT                     = 0x00,
     RTGUI_WIN_FLAG_MODAL                    = 0x01,
     RTGUI_WIN_FLAG_CLOSED                   = 0x02,
     RTGUI_WIN_FLAG_ACTIVATE                 = 0x04,
-    RTGUI_WIN_FLAG_UNDER_MODAL              = 0x08,  /* (modaled by other) */
+    RTGUI_WIN_FLAG_IN_MODAL                 = 0x08,  /* (modaled by other) */
     RTGUI_WIN_FLAG_CONNECTED                = 0x10,
     /* connected to server */
     /* window is event_key dispatcher(dispatch it to the focused widget in
@@ -363,27 +475,21 @@ typedef enum rtgui_modal_code {
 } rtgui_modal_code_t;
 
 struct rtgui_win {
-    rtgui_container_t _super;               /* _super class */
+    rtgui_container_t _super;               /* super class */
+    rtgui_win_t *parent;                    /* parent window */
+    rtgui_app_t *app;
+    char *title;
+    rtgui_win_style_t style;
+    rtgui_win_flag_t flag;
+    rtgui_modal_code_t modal;
     rt_base_t update;                       /* update count */
     rt_base_t drawing;                      /* drawing count */
     rtgui_rect_t drawing_rect;
-    rtgui_win_t *parent_window;             /* parent window */
-
-    struct rtgui_region outer_clip;
     rtgui_rect_t outer_extent;
-
-    rtgui_widget_t *focused_widget;
-
-    rtgui_app_t *app;
-    rt_uint16_t style;
-    rtgui_win_flag_t flag;
-    rtgui_modal_code_t modal_code;
-
-    rtgui_widget_t *last_mevent_widget;     /* last mouse event handler */
-
-    char *title;
-    rtgui_title_t *_title_wgt;
-
+    rtgui_region_t outer_clip;
+    rtgui_title_t *_title;
+    rtgui_widget_t *focused;
+    rtgui_widget_t *last_mouse;             /* last mouse event handler */
     rtgui_evt_hdl_t on_activate;
     rtgui_evt_hdl_t on_deactivate;
     rtgui_evt_hdl_t on_close;
@@ -395,15 +501,36 @@ struct rtgui_win {
      * this function other than handle EVENT_KBD in evt_hdl.
      */
     rtgui_evt_hdl_t on_key;
-
     void *user_data;
-
-    /* private data */
+    /* PRIVATE */
     rt_err_t (*_do_show)(rtgui_win_t *win);
-    /* app ref_cnt */
-    rt_uint16_t app_ref_count;
-    /* win magic flag, magic value is 0xA5A55A5A */
-    rt_uint32_t magic;
+    rt_uint16_t _ref_count;                 /* app _ref_cnt */
+    rt_uint32_t _magic;                     /* 0xA5A55A5A */
+};
+
+/* app */
+typedef enum rtgui_app_flag {
+    RTGUI_APP_FLAG_INIT                     = 0x04,
+    RTGUI_APP_FLAG_EXITED                   = RTGUI_APP_FLAG_INIT,
+    RTGUI_APP_FLAG_SHOWN                    = 0x08,
+    RTGUI_APP_FLAG_KEEP                     = 0x80,
+} rtgui_app_flag_t;
+
+struct rtgui_app {
+    rtgui_obj_t _super;
+    rt_thread_t tid;
+    rtgui_win_t *main_win;
+    char *name;
+    rtgui_app_flag_t flag;
+    rt_mailbox_t mb;
+    rtgui_image_t *icon;
+    rtgui_idle_hdl_t on_idle;
+    void *user_data;
+    /* PRIVATE */
+    rt_ubase_t ref_cnt;
+    rt_ubase_t win_cnt;
+    rt_ubase_t act_cnt;                     /* activate count */
+    rt_base_t exit_code;
 };
 
 /* timer */
@@ -422,40 +549,35 @@ struct rtgui_timer {
     void *user_data;
 };
 
-/* top window at server side */
-enum rtgui_topwin_flag {
-    WINTITLE_INIT                           =  0x00,
-    WINTITLE_ACTIVATE                       =  0x01,
-    WINTITLE_NOFOCUS                        =  0x02,
+/* top window (server side) */
+typedef enum rtgui_topwin_flag {
+    RTGUI_TOPWIN_FLAG_INIT                  = 0x0000,
+    RTGUI_TOPWIN_FLAG_ACTIVATE              = 0x0001,
+    RTGUI_TOPWIN_FLAG_NO_FOCUS              = 0x0002,
     /* window is hidden by default */
-    WINTITLE_SHOWN                          =  0x04,
+    RTGUI_TOPWIN_FLAG_SHOWN                 = 0x0004,
     /* window is modaled by other window */
-    WINTITLE_MODALED                        =  0x08,
+    RTGUI_TOPWIN_FLAG_DONE_MODAL            = 0x0008,
     /* window is modaling other window */
-    WINTITLE_MODALING                       = 0x100,
-    WINTITLE_ONTOP                          = 0x200,
-    WINTITLE_ONBTM                          = 0x400,
-};
+    RTGUI_TOPWIN_FLAG_IN_MODAL              = 0x0100,
+    RTGUI_TOPWIN_FLAG_ONTOP                 = 0x0200,
+    RTGUI_TOPWIN_FLAG_ONBTM                 = 0x0400,
+} rtgui_topwin_flag_t;
 
 struct rtgui_topwin {
-    /* the window flag */
-    enum rtgui_topwin_flag flag;
-    /* event mask */
-    rt_uint32_t mask;
-    rtgui_title_t *title;
-    /* the window id */
-    rtgui_win_t *wid;
-    /* which app I belong */
     rtgui_app_t *app;
-    /* the extent information */
+    rtgui_win_t *wid;                       /* window id */
     rtgui_rect_t extent;
+    rtgui_topwin_flag_t flag;
     rtgui_topwin_t *parent;
-    /* we need to iterate the topwin list with usual order(get target window)
-     * or reversely(painting). So it's better to use a double linked list */
+    /* we need to iterate the topwin list with normal order (get target window)
+     * and reverse order (painting). */
     rt_list_t list;
-    rt_list_t child_list;
-    /* the monitor rect list */
-    rt_slist_t monitor_list;
+    rt_list_t children;
+    rtgui_title_t *title;                   // TODO: ?
+    /* event mask */
+    rt_uint32_t mask;                       // TODO: ?
+    rt_slist_t monitor_list;                /* monitor rect list */
 };
 
 /* event */
@@ -513,7 +635,7 @@ typedef enum rtgui_evt_type {
 /* base event */
 struct rtgui_evt_base {
     rtgui_evt_type_t type;
-    rt_uint16_t user;
+    rt_uint16_t user;   // TODO(onelife): Not used?
     rtgui_app_t *origin;
     rt_mailbox_t ack;
 };
@@ -644,7 +766,7 @@ enum rtgui_gesture_type {
 struct rtgui_event_gesture {
     _RTGUI_EVENT_WIN_ELEMENTS;
     enum rtgui_gesture_type type;
-    rt_uint32_t win_acti_cnt;               /* window activate count */
+    rt_uint32_t act_cnt;               /* window activate count */
 };
 
 /* mouse and keyboard event */
@@ -656,12 +778,12 @@ struct rtgui_event_mouse {
     /* id of touch session(from down to up). Different session should have
      * different id. id should never be 0. */
     rt_uint32_t id;
-    rt_uint32_t win_acti_cnt;               /* window activate count */
+    rt_uint32_t act_cnt;               /* window activate count */
 };
 
 struct rtgui_event_kbd {
     _RTGUI_EVENT_WIN_ELEMENTS;
-    rt_uint32_t win_acti_cnt;               /* window activate count */
+    rt_uint32_t act_cnt;               /* window activate count */
     rt_uint16_t type;                       /* key down or up */
     rt_uint16_t key;                        /* current key */
     rt_uint16_t mod;                        /* current key modifiers */

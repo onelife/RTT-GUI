@@ -110,7 +110,7 @@ static rt_bool_t rtgui_image_hdc_load(rtgui_image_t *image, rtgui_filerw_t *file
     if (header[3] == 0)
     {
         /* 0.x version */
-        hdc->pixel_format = rtgui_graphic_driver_get_default()->pixel_format;
+        hdc->pixel_format = rtgui_get_graphic_device()->pixel_format;
     }
     else if (header[3] == 1)
     {

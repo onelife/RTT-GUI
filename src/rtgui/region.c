@@ -165,18 +165,17 @@ void rtgui_region_init_rect(rtgui_region_t *region,
     region->data = RT_NULL;
 }
 
-void rtgui_region_init_with_extents(rtgui_region_t *region, const rtgui_rect_t *extents)
-{
+void rtgui_region_init_with_extents(rtgui_region_t *region,
+    const rtgui_rect_t *extents) {
     region->extents = *extents;
     region->data = RT_NULL;
 }
 
-void rtgui_region_fini(rtgui_region_t *region)
-{
+void rtgui_region_uninit(rtgui_region_t *region) {
     good(region);
     freeData(region);
 }
-RTM_EXPORT(rtgui_region_fini);
+RTM_EXPORT(rtgui_region_uninit);
 
 int rtgui_region_num_rects(rtgui_region_t *region)
 {

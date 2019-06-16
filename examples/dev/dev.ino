@@ -97,17 +97,17 @@ static void rt_gui_demo_entry(void *param) {
   (void)param;
 
   /* create gui app */
-  app = rtgui_app_create("gui_demo", RT_NULL);
+  CREATE_APP_INSTANCE(app, RT_NULL, "gui_demo");
   if (!app) {
     rt_kprintf("create app failed\n");
     return;
   }
   rt_kprintf("*** create app ok\n");
 
-  main_win = rtgui_mainwin_create(RT_NULL, dc_event_handler,
-                                  "UiWindow", RTGUI_WIN_STYLE_NO_TITLE);
+  CREATE_MAIN_WIN(main_win, dc_event_handler, RT_NULL,
+    "UiWindow", RTGUI_WIN_STYLE_NO_TITLE);
   if (!main_win) {
-    rtgui_app_destroy(app);
+    rtgui_app_uninit(app);
     rt_kprintf("create mainwin failed\n");
     return;
   }
@@ -116,8 +116,8 @@ static void rt_gui_demo_entry(void *param) {
 
   rtgui_app_run(app);
   rt_kprintf("*** app_run done\n");
-  rtgui_win_destroy(main_win);
-  rtgui_app_destroy(app);
+  DELETE_WIN_INSTANCE(main_win);
+  rtgui_app_uninit(app);
 }
 
 

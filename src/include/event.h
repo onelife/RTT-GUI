@@ -55,16 +55,12 @@ extern "C" {
 
 #define _CREATE_EVENT(evt, name, timeout)   \
     do {                                    \
-        extern rtgui_app_t* rtgui_app_self(void); \
         evt = (rtgui_evt_generic_t *)rt_mp_alloc(rtgui_event_pool, timeout); \
         if (!evt) {                         \
             LOG_E("mp alloc err");          \
             break;                          \
         }                                   \
-        evt->base.type = RTGUI_EVENT_##name; \
-        evt->base.user = 0;                 \
-        evt->base.origin = rtgui_app_self(); \
-        evt->base.ack = RT_NULL;            \
+        RTGUI_EVENT_REINIT(evt, name);      \
     } while (0)
 
 #define RTGUI_CREATE_EVENT(evt, name, timeout) \

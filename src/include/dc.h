@@ -121,7 +121,7 @@ rtgui_dc_t *rtgui_dc_buffer_create_from_dc(rtgui_dc_t* dc);
 void rtgui_dc_buffer_set_alpha(rtgui_dc_t* dc, rt_uint8_t pixel_alpha);
 
 /* create a widget dc */
-rtgui_dc_t *rtgui_dc_widget_create(struct rtgui_widget * owner);
+rtgui_dc_t *rtgui_dc_widget_create(rtgui_widget_t * owner);
 
 /* begin and end a drawing */
 rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner);

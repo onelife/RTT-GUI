@@ -112,17 +112,13 @@ const rtgui_class_t *rtgui_class_of(void *_obj);
 void *rtgui_object_cast_check(void *_obj, const rtgui_class_t *cls,
     const char *func, int line);
 
-/* RTGUI server definitions */
-/* top win manager init */
-rt_err_t rtgui_topwin_init(void);
+/* server */
+REFERENCE_GETTER_PROTOTYPE(server, rtgui_app_t);
+SETTER_PROTOTYPE(server_show_win_hook, rtgui_hook_t);
+SETTER_PROTOTYPE(server_act_win_hook, rtgui_hook_t);
 rt_err_t rtgui_server_init(void);
-
-void rtgui_server_set_show_win_hook(void (*hk)(void));
-void rtgui_server_set_act_win_hook(void (*hk)(void));
-
-/* post an event to server */
-rt_err_t rtgui_server_post_event(rtgui_evt_generic_t *evt);
-rt_err_t rtgui_server_post_event_sync(rtgui_evt_generic_t *evt);
+rt_err_t rtgui_send_request(rtgui_evt_generic_t *evt);
+rt_err_t rtgui_send_request_sync(rtgui_evt_generic_t *evt);
 
 #ifdef __cplusplus
 }

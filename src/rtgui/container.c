@@ -22,7 +22,7 @@
  * 2009-10-16     Bernard      first version
  * 2010-09-24     Bernard      fix cntr destroy issue
  */
-
+/* Includes ------------------------------------------------------------------*/
 #include "../include/rtgui.h"
 #include "../include/dc.h"
 #include "../include/widgets/container.h"
@@ -39,7 +39,10 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
 static void _container_constructor(void *obj);
 static void _container_destructor(void *obj);
 static rt_bool_t _container_event_handler(void *obj,
@@ -47,7 +50,7 @@ static rt_bool_t _container_event_handler(void *obj,
 static rt_bool_t rtgui_container_dispatch_event(rtgui_container_t *cntr,
     rtgui_evt_generic_t *evt);
 
-
+/* Private variables ---------------------------------------------------------*/
 RTGUI_CLASS(
     container,
     CLASS_METADATA(widget),
@@ -57,23 +60,48 @@ RTGUI_CLASS(
     sizeof(struct rtgui_container));
 RTM_EXPORT(_rtgui_container);
 
-
+/* Private functions ---------------------------------------------------------*/
 static void _container_constructor(void *obj) {
     rtgui_container_t *cntr = obj;
 
-    rt_slist_init(&(cntr->children));
-    cntr->layout_box = RT_NULL;
+    /* set super fields */
+    WIDGET_FLAG_SET(obj, FOCUSABLE);
 
-    TO_WIDGET(cntr)->flag |= RTGUI_WIDGET_FLAG_FOCUSABLE;
+    cntr->layout_box = RT_NULL;
+    rt_slist_init(&(cntr->children));
+}
+
+static void _container_destruct_children(rtgui_container_t *cntr) {
+    rt_slist_t *node = cntr->children.next;
+
+    while (node != RT_NULL) {
+        rtgui_widget_t *child = rt_slist_entry(node, rtgui_widget_t, sibling);
+
+        /* unset parent */
+        child->parent = RT_NULL;
+
+        if (IS_CONTAINER(child))
+            _container_destruct_children(TO_CONTAINER(child));
+
+        /* remove from child list */
+        rt_slist_remove(&(cntr->children), &(child->sibling));
+        DELETE_INSTANCE(child);
+
+        node = cntr->children.next;
+    }
+    cntr->children.next = RT_NULL;
+
+    /* update clip region */
+    rtgui_win_update_clip(TO_WIN(TO_WIDGET(cntr)->toplevel));
 }
 
 static void _container_destructor(void *obj) {
     rtgui_container_t *cntr = obj;
-    rtgui_container_destroy_children(cntr);
 
-    if (cntr->layout_box) {
+    _container_destruct_children(cntr);
+
+    if (cntr->layout_box)
         DELETE_INSTANCE(cntr->layout_box);
-    }
 }
 
 static rt_bool_t rtgui_container_dispatch_event(rtgui_container_t *cntr,
@@ -81,11 +109,12 @@ static rt_bool_t rtgui_container_dispatch_event(rtgui_container_t *cntr,
     rt_bool_t done;
 
     done = RT_FALSE;
+
     do {
         rt_slist_t *node;
         rtgui_evt_type_t mask;
 
-        if (!(cntr->_super.flag & RTGUI_WIDGET_FLAG_SHOWN)) {
+        if (!IS_WIDGET_FLAG(cntr, SHOWN)) {
             done = RT_TRUE;
             break;
         }
@@ -93,7 +122,7 @@ static rt_bool_t rtgui_container_dispatch_event(rtgui_container_t *cntr,
         mask = evt->base.type & RTGUI_EVENT_PAINT;
         rt_slist_for_each(node, &(cntr->children)) {
             rtgui_widget_t *wgt = \
-                rt_slist_entry(node, struct rtgui_widget, sibling);
+                rt_slist_entry(node, rtgui_widget_t, sibling);
 
             if (mask && !EXTENTCHECK(&cntr->_super.extent, &wgt->extent)) {
             // if ((wgt->extent.x1 > _wgt->extent.x2) || \
@@ -121,8 +150,8 @@ rt_bool_t rtgui_container_broadcast_event(struct rtgui_container *cntr,
     rt_slist_t *node;
 
     rt_slist_for_each(node, &(cntr->children)) {
-        struct rtgui_widget *wgt = \
-            rt_slist_entry(node, struct rtgui_widget, sibling);
+        rtgui_widget_t *wgt = \
+            rt_slist_entry(node, rtgui_widget_t, sibling);
 
         if (EVENT_HANDLER(wgt)) {
             return EVENT_HANDLER(wgt)(wgt, evt);
@@ -135,24 +164,22 @@ RTM_EXPORT(rtgui_container_broadcast_event);
 
 rt_bool_t rtgui_container_dispatch_mouse_event(rtgui_container_t *cntr,
     rtgui_evt_generic_t *evt) {
-    struct rtgui_widget *last_focus;
+    rtgui_widget_t *last_focus;
     rt_slist_t *node;
     rt_bool_t done;
 
-    last_focus = TO_WIDGET(cntr)->toplevel->focused_widget;
+    last_focus = TO_WIDGET(cntr)->toplevel->focused;
     done = RT_FALSE;
 
     rt_slist_for_each(node, &(cntr->children)) {
-        struct rtgui_widget *wgt = \
-            rt_slist_entry(node, struct rtgui_widget, sibling);
+        rtgui_widget_t *wgt = rt_slist_entry(node, rtgui_widget_t, sibling);
 
         if (!rtgui_rect_contains_point(
             &(wgt->extent), evt->mouse.x, evt->mouse.y)) {
-            if ((last_focus != wgt) && RTGUI_WIDGET_IS_FOCUSABLE(wgt)) {
+            if ((last_focus != wgt) && IS_WIDGET_FLAG(wgt, FOCUSABLE))
                 rtgui_widget_focus(wgt);
-            }
             if (EVENT_HANDLER(wgt)) {
-                done =EVENT_HANDLER(wgt)(wgt, evt);
+                done = EVENT_HANDLER(wgt)(wgt, evt);
                 if (done) break;
             }
         }
@@ -164,7 +191,7 @@ RTM_EXPORT(rtgui_container_dispatch_mouse_event);
 
 static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     struct rtgui_container *cntr;
-    struct rtgui_widget *wgt;
+    rtgui_widget_t *wgt;
     rt_bool_t done;
 
     RT_ASSERT(obj != RT_NULL);
@@ -243,11 +270,6 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     return done;
 }
 
-void rtgui_container_destroy(rtgui_container_t *cntr) {
-    rtgui_widget_destroy(TO_WIDGET(cntr));
-}
-RTM_EXPORT(rtgui_container_destroy);
-
 /*
  * This function will add a child to a cntr wgt
  * Note: this function will not change the wgt layout
@@ -286,14 +308,13 @@ void rtgui_container_add_child(rtgui_container_t *cntr,
 
         /* update window clip */
         top = TO_WIDGET(cntr)->toplevel;
-        if ((top->flag & RTGUI_WIN_FLAG_CONNECTED) && \
-            (TO_WIDGET(top)->flag & RTGUI_WIDGET_FLAG_SHOWN)) {
+        if (IS_WIN_FLAG(top, CONNECTED) && IS_WIDGET_FLAG(top, SHOWN))
             rtgui_win_update_clip(TO_WIN(TO_WIDGET(cntr)->toplevel));
-        }
     }
 }
 RTM_EXPORT(rtgui_container_add_child);
 
+/* Public functions ----------------------------------------------------------*/        
 /* remove a child to wgt */
 void rtgui_container_remove_child(rtgui_container_t *cntr,
     rtgui_widget_t *child) {
@@ -312,46 +333,6 @@ void rtgui_container_remove_child(rtgui_container_t *cntr,
 }
 RTM_EXPORT(rtgui_container_remove_child);
 
-/* destroy all children of cntr */
-void rtgui_container_destroy_children(rtgui_container_t *cntr)
-{
-    rt_slist_t *node;
-
-    if (cntr == RT_NULL)
-        return;
-
-    node = cntr->children.next;
-    while (node != RT_NULL)
-    {
-        rtgui_widget_t *child = rt_slist_entry(node, rtgui_widget_t, sibling);
-
-        if (IS_CONTAINER(child))
-        {
-            /* break parent firstly */
-            child->parent = RT_NULL;
-
-            /* destroy children of child */
-            rtgui_container_destroy_children(TO_CONTAINER(child));
-        }
-
-        /* remove wgt from parent's children list */
-        rt_slist_remove(&(cntr->children), &(child->sibling));
-
-        /* set parent and toplevel wgt */
-        child->parent = RT_NULL;
-
-        /* destroy object and remove from parent */
-        DELETE_INSTANCE(child);
-
-        node = cntr->children.next;
-    }
-
-    cntr->children.next = RT_NULL;
-
-    /* update wgt clip */
-    rtgui_win_update_clip(TO_WIN(TO_WIDGET(cntr)->toplevel));
-}
-RTM_EXPORT(rtgui_container_destroy_children);
 
 rtgui_widget_t *rtgui_container_get_first_child(rtgui_container_t *cntr)
 {
@@ -392,7 +373,7 @@ rtgui_obj_t* rtgui_container_get_object(struct rtgui_container *cntr,
     rt_slist_for_each(node, &(cntr->children))
     {
         rtgui_obj_t *o;
-        o = TO_OBJECT(rt_slist_entry(node, struct rtgui_widget, sibling));
+        o = TO_OBJECT(rt_slist_entry(node, rtgui_widget_t, sibling));
 
         if (o->id == id)
             return o;

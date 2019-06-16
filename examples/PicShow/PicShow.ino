@@ -74,17 +74,17 @@ static void picShow_entry(void *param) {
   (void)param;
 
   /* create app */
-  picShow = rtgui_app_create("PicShow", RT_NULL);
+  CREATE_APP_INSTANCE(picShow, RT_NULL, "PicShow");
   if (!picShow) {
     rt_kprintf("Create app failed!\n");
     return;
   }
 
   /* create win */
-  win = rtgui_mainwin_create(RT_NULL, picShow_handler, "PicWin",
-    RTGUI_WIN_STYLE_NO_BORDER | RTGUI_WIN_STYLE_NO_TITLE);
+  CREATE_MAIN_WIN(win, picShow_handler, RT_NULL,
+    "PicWin", RTGUI_WIN_STYLE_NO_BORDER | RTGUI_WIN_STYLE_NO_TITLE);
   if (!win) {
-    rtgui_app_destroy(picShow);
+    rtgui_app_uninit(picShow);
     rt_kprintf("Create main win failed!\n");
     return;
   }
@@ -97,9 +97,9 @@ static void picShow_entry(void *param) {
   //     return;
   // }
 
-  // RTGUI_WIDGET_TEXTALIGN(RTGUI_WIDGET(label)) = RTGUI_ALIGN_LEFT;
-  // RTGUI_WIDGET_BACKGROUND(RTGUI_WIDGET(label)) = white;
-  // RTGUI_WIDGET_FOREGROUND(RTGUI_WIDGET(label)) = blue;
+  // WIDGET_GET_TEXTALIGN(RTGUI_WIDGET(label)) = RTGUI_ALIGN_LEFT;
+  // WIDGET_GET_BACKGROUND(RTGUI_WIDGET(label)) = white;
+  // WIDGET_GET_FOREGROUND(RTGUI_WIDGET(label)) = blue;
 
   //   rect2.x1 = rect1.x1;
   //   rect2.y1 = rect1.y1;
@@ -112,8 +112,8 @@ static void picShow_entry(void *param) {
   rtgui_win_show(win, RT_FALSE);
   rtgui_app_run(picShow);
 
-  rtgui_win_destroy(win);
-  rtgui_app_destroy(picShow);
+  DELETE_WIN_INSTANCE(win);
+  rtgui_app_uninit(picShow);
 }
 
 
@@ -166,7 +166,7 @@ void loop() {
     }
   }
 
-  while (!picShow || (picShow->state_flag & RTGUI_APP_FLAG_EXITED)) {
+  while (!picShow || IS_APP_FLAG(picShow, EXITED)) {
     rt_kprintf("Waiting app\n");
     rt_thread_sleep(100);
   }

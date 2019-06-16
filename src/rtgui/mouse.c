@@ -138,7 +138,7 @@ static void rtgui_winrect_show(void);
 #define WIN_MOVE_BORDER 4
 void rtgui_mouse_init(void)
 {
-    const struct rtgui_graphic_driver *gd = rtgui_graphic_driver_get_default();
+    const struct rtgui_graphic_driver *gd = rtgui_get_graphic_device();
 
     if (_rtgui_cursor != RT_NULL) rtgui_mouse_fini();
 
@@ -346,12 +346,12 @@ static void rtgui_cursor_restore()
     cursor_ptr = _rtgui_cursor->cursor_saved;
 
     height = (_rtgui_cursor->cy + _rtgui_cursor->cursor_image->h <
-              rtgui_graphic_driver_get_default()->height) ? _rtgui_cursor->cursor_image->h :
-             rtgui_graphic_driver_get_default()->height - _rtgui_cursor->cy;
+              rtgui_get_graphic_device()->height) ? _rtgui_cursor->cursor_image->h :
+             rtgui_get_graphic_device()->height - _rtgui_cursor->cy;
 
     cursor_pitch = (_rtgui_cursor->cx + _rtgui_cursor->cursor_image->w <
-                    rtgui_graphic_driver_get_default()->width) ? _rtgui_cursor->cursor_pitch :
-                   (rtgui_graphic_driver_get_default()->width - _rtgui_cursor->cx) * _rtgui_cursor->bpp;
+                    rtgui_get_graphic_device()->width) ? _rtgui_cursor->cursor_pitch :
+                   (rtgui_get_graphic_device()->width - _rtgui_cursor->cx) * _rtgui_cursor->bpp;
 
     for (idx = 0; idx < height; idx ++)
     {
@@ -373,12 +373,12 @@ static void rtgui_cursor_save()
     cursor_ptr = _rtgui_cursor->cursor_saved;
 
     height = (_rtgui_cursor->cy + _rtgui_cursor->cursor_image->h <
-              rtgui_graphic_driver_get_default()->height) ? _rtgui_cursor->cursor_image->h :
-             rtgui_graphic_driver_get_default()->height - _rtgui_cursor->cy;
+              rtgui_get_graphic_device()->height) ? _rtgui_cursor->cursor_image->h :
+             rtgui_get_graphic_device()->height - _rtgui_cursor->cy;
 
     cursor_pitch = (_rtgui_cursor->cx + _rtgui_cursor->cursor_image->w <
-                    rtgui_graphic_driver_get_default()->width) ? _rtgui_cursor->cursor_pitch :
-                   (rtgui_graphic_driver_get_default()->width - _rtgui_cursor->cx) * _rtgui_cursor->bpp;
+                    rtgui_get_graphic_device()->width) ? _rtgui_cursor->cursor_pitch :
+                   (rtgui_get_graphic_device()->width - _rtgui_cursor->cx) * _rtgui_cursor->bpp;
 
     for (idx = 0; idx < height; idx ++)
     {
@@ -399,7 +399,7 @@ static void rtgui_cursor_show()
     void (*set_pixel)(rtgui_color_t * c, int x, int y);
 
     ptr = (rtgui_color_t *) _rtgui_cursor->cursor_image->data;
-    set_pixel = rtgui_graphic_driver_get_default()->ops->set_pixel;
+    set_pixel = rtgui_get_graphic_device()->ops->set_pixel;
 
     rtgui_mouse_get_cursor_rect(&rect);
     rtgui_rect_move(&rect, _rtgui_cursor->cx, _rtgui_cursor->cy);
@@ -421,7 +421,7 @@ static void rtgui_cursor_show()
     }
 
     /* update rect */
-    rtgui_graphic_driver_screen_update(rtgui_graphic_driver_get_default(), &rect);
+    rtgui_graphic_driver_screen_update(rtgui_get_graphic_device(), &rect);
 }
 #endif
 
@@ -433,9 +433,9 @@ void rtgui_winrect_set(rtgui_win_t *win)
 
     /* set win rect */
     _rtgui_cursor->win_rect =
-        win->_title_wgt == RT_NULL ?
+        win->_title == RT_NULL ?
         TO_WIDGET(win)->extent :
-        TO_WIDGET(win->_title_wgt)->extent;
+        TO_WIDGET(win->_title)->extent;
 
     _rtgui_cursor->win = win;
 }
@@ -474,13 +474,13 @@ static void rtgui_winrect_show()
     void (*set_pixel)(rtgui_color_t * c, int x, int y);
 
     c = black;
-    set_pixel = rtgui_graphic_driver_get_default()->ops->set_pixel;
+    set_pixel = rtgui_get_graphic_device()->ops->set_pixel;
 
     win_rect = _rtgui_cursor->win_rect;
     win_rect_inner = win_rect;
     rtgui_rect_inflate(&win_rect_inner, -WIN_MOVE_BORDER);
 
-    rtgui_graphic_driver_get_rect(rtgui_graphic_driver_get_default(),
+    rtgui_graphic_driver_get_rect(rtgui_get_graphic_device(),
                                   &screen_rect);
     rtgui_rect_intersect(&screen_rect, &win_rect);
     rtgui_rect_intersect(&screen_rect, &win_rect_inner);
@@ -514,7 +514,7 @@ static void rtgui_winrect_show()
     }
 
     /* update rect */
-    rtgui_graphic_driver_screen_update(rtgui_graphic_driver_get_default(), &win_rect);
+    rtgui_graphic_driver_screen_update(rtgui_get_graphic_device(), &win_rect);
 }
 
 #define display_direct_memcpy(src, dest, src_pitch, dest_pitch, height, len)    \
@@ -534,7 +534,7 @@ static void rtgui_winrect_restore()
     driver_fb = rtgui_graphic_driver_get_framebuffer(RT_NULL);
     win_rect = _rtgui_cursor->win_rect;
 
-    rtgui_graphic_driver_get_rect(rtgui_graphic_driver_get_default(),
+    rtgui_graphic_driver_get_rect(rtgui_get_graphic_device(),
                                   &screen_rect);
     rtgui_rect_intersect(&screen_rect, &win_rect);
 
@@ -579,7 +579,7 @@ static void rtgui_winrect_save()
     driver_fb = rtgui_graphic_driver_get_framebuffer(RT_NULL);
     win_rect = _rtgui_cursor->win_rect;
 
-    rtgui_graphic_driver_get_rect(rtgui_graphic_driver_get_default(),
+    rtgui_graphic_driver_get_rect(rtgui_get_graphic_device(),
                                   &screen_rect);
     rtgui_rect_intersect(&screen_rect, &win_rect);
 

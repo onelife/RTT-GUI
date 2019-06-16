@@ -23,7 +23,7 @@
  * 2010-06-26     Bernard      add user_data to widget structure
  * 2013-10-07     Bernard      remove the win_check in update_clip.
  */
-
+/* Includes ------------------------------------------------------------------*/
 #include "../include/rtgui.h"
 #include "../include/dc.h"
 #include "../include/widgets/widget.h"
@@ -31,8 +31,7 @@
 #include "../include/widgets/container.h"
 
 #ifdef RT_USING_ULOG
-# define LOG_LVL                    LOG_LVL_DBG
-// # define LOG_LVL                   LOG_LVL_INFO
+# define LOG_LVL                    RTGUI_LOG_LEVEL
 # define LOG_TAG                    "GUI_WGT"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
@@ -40,74 +39,67 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
 static void _widget_constructor(void *obj);
 static void _widget_destructor(void *obj);
 static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt);
 
+/* Private variables ---------------------------------------------------------*/
 RTGUI_CLASS(
     widget,
     CLASS_METADATA(object),
     _widget_constructor,
     _widget_destructor,
     _widget_event_handler,
-    sizeof(struct rtgui_widget));
+    sizeof(rtgui_widget_t));
 RTM_EXPORT(_rtgui_widget);
 
-
+/* Private functions ---------------------------------------------------------*/
+/* Public functions ----------------------------------------------------------*/
 static void _widget_constructor(void *obj) {
-    rtgui_widget_t *widget = obj;
-    if (!widget) return;
+    rtgui_widget_t *wgt = obj;
 
-    /* set widget as shown */
-    widget->flag = RTGUI_WIDGET_FLAG_SHOWN;
+    /* init widget*/
+    wgt->parent = RT_NULL;
+    wgt->toplevel = RT_NULL;
+    rt_slist_init(&(wgt->sibling));
 
-    /* init list */
-    rt_slist_init(&(widget->sibling));
+    wgt->flag = RTGUI_WIDGET_FLAG_SHOWN;
+    wgt->align = RTGUI_ALIGN_LEFT | RTGUI_ALIGN_TOP;
+    // border, border_style
+    wgt->min_width = wgt->min_height = 0;
+    rt_memset(&(wgt->extent), 0x0, sizeof(wgt->extent));
+    rt_memset(&(wgt->extent_visiable), 0x0, sizeof(wgt->extent_visiable));
+    rtgui_region_init_with_extents(&wgt->clip, &wgt->extent);
 
-    /* init gc */
-    widget->gc.foreground = default_foreground;
-    widget->gc.background = default_background;
-    widget->gc.font = rtgui_font_default();
-    widget->gc.textstyle = RTGUI_TEXTSTYLE_NORMAL;
-    widget->gc.textalign = RTGUI_ALIGN_LEFT | RTGUI_ALIGN_TOP;
-    widget->align = RTGUI_ALIGN_LEFT | RTGUI_ALIGN_TOP;
+    wgt->on_focus_in   = RT_NULL;
+    wgt->on_focus_out  = RT_NULL;
 
-    /* clear the garbage value of extent and clip */
-    rt_memset(&(widget->extent), 0x0, sizeof(widget->extent));
-    rt_memset(&(widget->extent_visiable), 0x0, sizeof(widget->extent_visiable));
-    widget->min_width = widget->min_height = 0;
-    rtgui_region_init_with_extents(&widget->clip, &widget->extent);
+    wgt->gc.foreground = default_foreground;
+    wgt->gc.background = default_background;
+    wgt->gc.textstyle = RTGUI_TEXTSTYLE_NORMAL;
+    wgt->gc.textalign = RTGUI_ALIGN_LEFT | RTGUI_ALIGN_TOP;
+    wgt->gc.font = rtgui_font_default();
+    rtgui_dc_client_init(wgt);
 
-    /* set parent and toplevel root */
-    widget->parent        = RT_NULL;
-    widget->toplevel      = RT_NULL;
-
-    /* some common event handler */
-    widget->on_focus_in   = RT_NULL;
-    widget->on_focus_out  = RT_NULL;
-
-    /* init user data private to 0 */
-    widget->user_data = 0;
-
-    /* init hardware dc */
-    rtgui_dc_client_init(widget);
+    wgt->user_data = 0;
 }
 
 static void _widget_destructor(void *obj) {
-    rtgui_widget_t *widget = obj;
-    if (widget == RT_NULL) return;
+    rtgui_widget_t *wgt = obj;
 
-    if (widget->parent != RT_NULL && IS_CONTAINER(widget->parent))
-    {
-        /* remove widget from parent's children list */
-        rt_slist_remove(&(TO_CONTAINER(widget->parent)->children), &(widget->sibling));
-
-        widget->parent = RT_NULL;
+    /* remove from child list */
+    if (wgt->parent && IS_CONTAINER(wgt->parent)) {
+        rt_slist_remove(&(TO_CONTAINER(wgt->parent)->children),
+            &(wgt->sibling));
+        wgt->parent = RT_NULL;
     }
 
-    /* fini clip region */
-    rtgui_region_fini(&(widget->clip));
+    /* uninit clip region */
+    rtgui_region_uninit(&(wgt->clip));
 }
 
 static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt) {
@@ -143,67 +135,51 @@ static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     return done;
 }
 
-
-// rtgui_widget_t *rtgui_widget_create(const rtgui_class_t *widget_type) {
-//     struct rtgui_widget *widget;
-
-//     widget = TO_WIDGET(rtgui_object_create(widget_type));
-
-//     return widget;
-// }
-// RTM_EXPORT(rtgui_widget_create);
-
-void rtgui_widget_destroy(rtgui_widget_t *widget)
-{
-    DELETE_INSTANCE(widget);
-}
-RTM_EXPORT(rtgui_widget_destroy);
-
-void rtgui_widget_set_rect(rtgui_widget_t *widget, const rtgui_rect_t *rect) {
-    if (!widget || !rect) return;
+void rtgui_widget_set_rect(rtgui_widget_t *wgt, const rtgui_rect_t *rect) {
+    if (!wgt || !rect) return;
 
     /* update extent rectangle */
-    widget->extent = *rect;
+    wgt->extent = *rect;
     /* set the visiable extern as extern */
-    widget->extent_visiable = *rect;
-    if (IS_CONTAINER(widget)) {
+    wgt->extent_visiable = *rect;
+    if (IS_CONTAINER(wgt)) {
         /* re-do layout */
-        rtgui_container_layout(TO_CONTAINER(widget));
+        rtgui_container_layout(TO_CONTAINER(wgt));
     }
 
     /* reset min width and height */
-    widget->min_width  = RECT_W(widget->extent);
-    widget->min_height = RECT_H(widget->extent);
+    wgt->min_width  = RECT_W(wgt->extent);
+    wgt->min_height = RECT_H(wgt->extent);
 
     /* it's not empty, fini it */
-    if (rtgui_region_not_empty(&(widget->clip))) {
-        rtgui_region_fini(&(widget->clip));
+    if (rtgui_region_not_empty(&(wgt->clip))) {
+        rtgui_region_uninit(&(wgt->clip));
     }
 
     /* reset clip info */
-    rtgui_region_init_with_extents(&(widget->clip), rect);
-    if (widget->parent && widget->toplevel) {
-        if ((void*)widget->parent == (void*)widget->toplevel) {
-            rtgui_win_update_clip(widget->toplevel);
+    rtgui_region_init_with_extents(&(wgt->clip), rect);
+    if (wgt->parent && wgt->toplevel) {
+        if ((void*)wgt->parent == (void*)wgt->toplevel) {
+            rtgui_win_update_clip(wgt->toplevel);
         } else {
             /* update widget clip */
-            rtgui_widget_update_clip(widget->parent);
+            rtgui_widget_update_clip(wgt->parent);
         }
     }
 
     /* move to a logic position if it's a container widget */
-    if (IS_CONTAINER(widget)) {
+    if (IS_CONTAINER(wgt)) {
         int delta_x, delta_y;
 
-        delta_x = rect->x1 - widget->extent.x1;
-        delta_y = rect->y1 - widget->extent.y1;
+        delta_x = rect->x1 - wgt->extent.x1;
+        delta_y = rect->y1 - wgt->extent.y1;
 
-        rtgui_widget_move_to_logic(widget, delta_x, delta_y);
+        rtgui_widget_move_to_logic(wgt, delta_x, delta_y);
     }
 }
 RTM_EXPORT(rtgui_widget_set_rect);
 
-void rtgui_widget_set_rectangle(rtgui_widget_t *widget, int x, int y, int width, int height)
+void rtgui_widget_set_rectangle(rtgui_widget_t *wgt, int x, int y, int width, int height)
 {
     rtgui_rect_t rect;
 
@@ -212,72 +188,72 @@ void rtgui_widget_set_rectangle(rtgui_widget_t *widget, int x, int y, int width,
     rect.x2 = x + width;
     rect.y2 = y + height;
 
-    rtgui_widget_set_rect(widget, &rect);
+    rtgui_widget_set_rect(wgt, &rect);
 }
 RTM_EXPORT(rtgui_widget_set_rectangle);
 
-void rtgui_widget_set_parent(rtgui_widget_t *widget, rtgui_widget_t *parent)
+void rtgui_widget_set_parent(rtgui_widget_t *wgt, rtgui_widget_t *parent)
 {
     /* set parent and toplevel widget */
-    widget->parent = parent;
+    wgt->parent = parent;
 }
 RTM_EXPORT(rtgui_widget_set_parent);
 
-void rtgui_widget_get_extent(rtgui_widget_t *widget, rtgui_rect_t *rect)
+void rtgui_widget_get_extent(rtgui_widget_t *wgt, rtgui_rect_t *rect)
 {
-    RT_ASSERT(widget != RT_NULL);
+    RT_ASSERT(wgt != RT_NULL);
     RT_ASSERT(rect != RT_NULL);
 
-    *rect = widget->extent;
+    *rect = wgt->extent;
 }
 RTM_EXPORT(rtgui_widget_get_extent);
 
-void rtgui_widget_set_minsize(rtgui_widget_t *widget, int width, int height)
+void rtgui_widget_set_minsize(rtgui_widget_t *wgt, int width, int height)
 {
-    RT_ASSERT(widget != RT_NULL);
-    widget->min_width = width;
-    widget->min_height = height;
+    RT_ASSERT(wgt != RT_NULL);
+    wgt->min_width = width;
+    wgt->min_height = height;
 }
 RTM_EXPORT(rtgui_widget_set_minsize);
 
-void rtgui_widget_set_minwidth(rtgui_widget_t *widget, int width)
+void rtgui_widget_set_minwidth(rtgui_widget_t *wgt, int width)
 {
-    RT_ASSERT(widget != RT_NULL);
+    RT_ASSERT(wgt != RT_NULL);
 
-    widget->min_width = width;
+    wgt->min_width = width;
 }
 RTM_EXPORT(rtgui_widget_set_minwidth);
 
-void rtgui_widget_set_minheight(rtgui_widget_t *widget, int height)
+void rtgui_widget_set_minheight(rtgui_widget_t *wgt, int height)
 {
-    RT_ASSERT(widget != RT_NULL);
+    RT_ASSERT(wgt != RT_NULL);
 
-    widget->min_height = height;
+    wgt->min_height = height;
 }
 RTM_EXPORT(rtgui_widget_set_minheight);
 
-static void _widget_move(struct rtgui_widget* widget, int dx, int dy)
-{
+static void _widget_move(rtgui_widget_t* wgt, int dx, int dy) {
     rt_slist_t *node;
     rtgui_widget_t *child, *parent;
 
-	rtgui_rect_move(&(widget->extent), dx, dy);
+    rtgui_rect_move(&(wgt->extent), dx, dy);
 
     /* handle visiable extent */
-    widget->extent_visiable = widget->extent;
-    parent = widget->parent;
+    wgt->extent_visiable = wgt->extent;
+    parent = wgt->parent;
     /* we should find out the none-transparent parent */
-    while (parent != RT_NULL && parent->flag & RTGUI_WIDGET_FLAG_TRANSPARENT) parent = parent->parent;
-    if (widget->parent)
-        rtgui_rect_intersect(&(widget->parent->extent_visiable), &(widget->extent_visiable));
+    while (parent && IS_WIDGET_FLAG(parent, TRANSPARENT))
+        parent = parent->parent;
+    if (wgt->parent)
+        rtgui_rect_intersect(&(wgt->parent->extent_visiable), &(wgt->extent_visiable));
 
     /* reset clip info */
-    rtgui_region_init_with_extents(&(widget->clip), &(widget->extent));
+    rtgui_region_init_with_extents(&(wgt->clip), &(wgt->extent));
 
     /* move each child */
-    if (IS_CONTAINER(widget))
+    if (IS_CONTAINER(wgt))
     {
-        rt_slist_for_each(node, &(TO_CONTAINER(widget)->children))
+        rt_slist_for_each(node, &(TO_CONTAINER(wgt)->children))
         {
             child = rt_slist_entry(node, rtgui_widget_t, sibling);
 
@@ -289,16 +265,16 @@ static void _widget_move(struct rtgui_widget* widget, int dx, int dy)
 /*
  * This function moves widget and its children to a logic point
  */
-void rtgui_widget_move_to_logic(rtgui_widget_t *widget, int dx, int dy)
+void rtgui_widget_move_to_logic(rtgui_widget_t *wgt, int dx, int dy)
 {
     rtgui_rect_t rect;
     rtgui_widget_t *parent;
 
-    if (widget == RT_NULL)
+    if (wgt == RT_NULL)
         return;
 
     /* give clip of this widget back to parent */
-    parent = widget->parent;
+    parent = wgt->parent;
     if (parent != RT_NULL)
     {
         /* get the parent rect, even if it's a transparent parent. */
@@ -306,33 +282,33 @@ void rtgui_widget_move_to_logic(rtgui_widget_t *widget, int dx, int dy)
     }
 
     /* we should find out the none-transparent parent */
-    while (parent != RT_NULL && parent->flag & RTGUI_WIDGET_FLAG_TRANSPARENT) parent = parent->parent;
-    if (parent != RT_NULL)
-    {
+    while (parent && IS_WIDGET_FLAG(parent, TRANSPARENT))
+        parent = parent->parent;
+    if (parent) {
         /* reset clip info */
-        rtgui_region_init_with_extents(&(widget->clip), &(widget->extent));
-        rtgui_region_intersect_rect(&(widget->clip), &(widget->clip), &rect);
+        rtgui_region_init_with_extents(&(wgt->clip), &(wgt->extent));
+        rtgui_region_intersect_rect(&(wgt->clip), &(wgt->clip), &rect);
 
         /* give back the extent */
-        rtgui_region_union(&(parent->clip), &(parent->clip), &(widget->clip));
+        rtgui_region_union(&(parent->clip), &(parent->clip), &(wgt->clip));
     }
 
     /* move this widget (and its children if it's a container) to destination point */
-    _widget_move(widget, dx, dy);
+    _widget_move(wgt, dx, dy);
     /* update this widget */
-    rtgui_widget_update_clip(widget);
+    rtgui_widget_update_clip(wgt);
 }
 RTM_EXPORT(rtgui_widget_move_to_logic);
 
-void rtgui_widget_get_rect(rtgui_widget_t *widget, rtgui_rect_t *rect)
+void rtgui_widget_get_rect(rtgui_widget_t *wgt, rtgui_rect_t *rect)
 {
-    RT_ASSERT(widget != RT_NULL);
+    RT_ASSERT(wgt != RT_NULL);
 
     if (rect != RT_NULL)
     {
         rect->x1 = rect->y1 = 0;
-        rect->x2 = widget->extent.x2 - widget->extent.x1;
-        rect->y2 = widget->extent.y2 - widget->extent.y1;
+        rect->x2 = wgt->extent.x2 - wgt->extent.x1;
+        rect->y2 = wgt->extent.y2 - wgt->extent.y1;
     }
 }
 RTM_EXPORT(rtgui_widget_get_rect);
@@ -340,194 +316,176 @@ RTM_EXPORT(rtgui_widget_get_rect);
 /**
  * set widget draw style
  */
-void rtgui_widget_set_border(rtgui_widget_t *widget, rt_uint32_t style)
+void rtgui_widget_set_border(rtgui_widget_t *wgt, rt_uint32_t style)
 {
-    RT_ASSERT(widget != RT_NULL);
+    RT_ASSERT(wgt != RT_NULL);
 
-    widget->border_style = style;
+    wgt->border_style = style;
     switch (style)
     {
     case RTGUI_BORDER_NONE:
-        widget->border = 0;
+        wgt->border = 0;
         break;
     case RTGUI_BORDER_SIMPLE:
     case RTGUI_BORDER_UP:
     case RTGUI_BORDER_DOWN:
-        widget->border = 1;
+        wgt->border = 1;
         break;
     case RTGUI_BORDER_STATIC:
     case RTGUI_BORDER_RAISE:
     case RTGUI_BORDER_SUNKEN:
     case RTGUI_BORDER_BOX:
     case RTGUI_BORDER_EXTRA:
-        widget->border = 2;
+        wgt->border = 2;
         break;
     default:
-        widget->border = 2;
+        wgt->border = 2;
         break;
     }
 }
 RTM_EXPORT(rtgui_widget_set_border);
 
-void rtgui_widget_set_onfocus(rtgui_widget_t *widget, rtgui_evt_hdl_t handler)
+void rtgui_widget_set_onfocus(rtgui_widget_t *wgt, rtgui_evt_hdl_t handler)
 {
-    RT_ASSERT(widget != RT_NULL);
+    RT_ASSERT(wgt != RT_NULL);
 
-    widget->on_focus_in = handler;
+    wgt->on_focus_in = handler;
 }
 RTM_EXPORT(rtgui_widget_set_onfocus);
 
-void rtgui_widget_set_onunfocus(rtgui_widget_t *widget, rtgui_evt_hdl_t handler)
+void rtgui_widget_set_onunfocus(rtgui_widget_t *wgt, rtgui_evt_hdl_t handler)
 {
-    RT_ASSERT(widget != RT_NULL);
+    RT_ASSERT(wgt != RT_NULL);
 
-    widget->on_focus_out = handler;
+    wgt->on_focus_out = handler;
 }
 RTM_EXPORT(rtgui_widget_set_onunfocus);
 
 /**
  * @brief Focuses the widget. The focused widget is the widget which can receive the keyboard events
- * @param widget a widget
+ * @param wgt a widget
  * @note The widget has to be attached to a toplevel widget, otherwise it will have no effect
  */
-void rtgui_widget_focus(rtgui_widget_t *widget) {
-    struct rtgui_widget *old_focus;
+void rtgui_widget_focus(rtgui_widget_t *wgt) {
+    rtgui_widget_t *old_focus;
 
-    RT_ASSERT(widget != RT_NULL);
-    RT_ASSERT(widget->toplevel != RT_NULL);
-    if (!RTGUI_WIDGET_IS_FOCUSABLE(widget) || !RTGUI_WIDGET_IS_ENABLE(widget))
+    RT_ASSERT(wgt != RT_NULL);
+    RT_ASSERT(wgt->toplevel != RT_NULL);
+    if (!IS_WIDGET_FLAG(wgt, FOCUSABLE) || IS_WIDGET_FLAG(wgt, DISABLE))
         return;
 
-    old_focus = TO_WIN(widget->toplevel)->focused_widget;
-    if (old_focus == widget) return; /* it's the same focused widget */
+    old_focus = TO_WIN(wgt->toplevel)->focused;
+    if (old_focus == wgt) return; /* it's the same focused widget */
 
     /* unfocused the old widget */
     if (RT_NULL != old_focus) {
         rtgui_widget_unfocus(old_focus);
     }
 
-    /* set widget as focused */
-    widget->flag |= RTGUI_WIDGET_FLAG_FOCUS;
-    TO_WIN(widget->toplevel)->focused_widget = widget;
+    WIDGET_FLAG_SET(wgt, FOCUS);
+    TO_WIN(wgt->toplevel)->focused = wgt;
 
     /* invoke on focus in call back */
-    if (RT_NULL != widget->on_focus_in) {
-        widget->on_focus_in(TO_OBJECT(widget), RT_NULL);
+    if (RT_NULL != wgt->on_focus_in) {
+        wgt->on_focus_in(TO_OBJECT(wgt), RT_NULL);
     }
-    LOG_D("focus %s", widget->_super.cls->name);
+    LOG_D("focus %s", wgt->_super.cls->name);
 }
 RTM_EXPORT(rtgui_widget_focus);
 
 /**
  * @brief Unfocused the widget
- * @param widget a widget
+ * @param wgt a widget
  */
-void rtgui_widget_unfocus(rtgui_widget_t *widget) {
+void rtgui_widget_unfocus(rtgui_widget_t *wgt) {
+    rt_slist_t *node;
 
-    RT_ASSERT(widget != RT_NULL);
-    if (!widget->toplevel || !RTGUI_WIDGET_IS_FOCUSED(widget)) return;
+    if (!wgt->toplevel || !IS_WIDGET_FLAG(wgt, FOCUS)) return;
 
-    widget->flag &= ~RTGUI_WIDGET_FLAG_FOCUS;
+    WIDGET_FLAG_CLEAR(wgt, FOCUS);
+    if (wgt->on_focus_out)
+        wgt->on_focus_out(TO_OBJECT(wgt), RT_NULL);
+    TO_WIN(wgt->toplevel)->focused = RT_NULL;
 
-    if (RT_NULL != widget->on_focus_out) {
-        widget->on_focus_out(TO_OBJECT(widget), RT_NULL);
-    }
-    TO_WIN(widget->toplevel)->focused_widget = RT_NULL;
-
+    LOG_D("unfocus %d", wgt->_super.id);
     /* Ergodic constituent widget, make child loss of focus */
-    if (IS_CONTAINER(widget)) {
-        rt_slist_t *node;
+    if (!IS_CONTAINER(wgt)) return;
 
-        rt_slist_for_each(node, &(TO_CONTAINER(widget)->children)) {
-            rtgui_widget_t *child = \
-                rt_slist_entry(node, rtgui_widget_t, sibling);
+    rt_slist_for_each(node, &(TO_CONTAINER(wgt)->children)) {
+        rtgui_widget_t *child = rt_slist_entry(node, rtgui_widget_t, sibling);
+        if (!IS_WIDGET_FLAG(child, SHOWN)) continue;
 
-            if (RTGUI_WIDGET_IS_HIDE(child)) continue;
-            rtgui_widget_unfocus(child);
-        }
+        rtgui_widget_unfocus(child);
     }
-    LOG_D("unfocus %d", widget->_super.id);
 }
 RTM_EXPORT(rtgui_widget_unfocus);
 
-void rtgui_widget_point_to_device(rtgui_widget_t *widget,
-    rtgui_point_t *point) {
-    RT_ASSERT(widget != RT_NULL);
+void rtgui_widget_point_to_device(rtgui_widget_t *wgt, rtgui_point_t *point) {
+    RT_ASSERT(wgt != RT_NULL);
 
-    if (RT_NULL != point) {
-        point->x += widget->extent.x1;
-        point->y += widget->extent.y1;
+    if (point) {
+        point->x += wgt->extent.x1;
+        point->y += wgt->extent.y1;
     }
 }
 RTM_EXPORT(rtgui_widget_point_to_device);
 
-void rtgui_widget_rect_to_device(rtgui_widget_t *widget, rtgui_rect_t *rect)
-{
-    RT_ASSERT(widget != RT_NULL);
+void rtgui_widget_rect_to_device(rtgui_widget_t *wgt, rtgui_rect_t *rect) {
+    RT_ASSERT(wgt != RT_NULL);
 
-    if (rect != RT_NULL)
-    {
-        rect->x1 += widget->extent.x1;
-        rect->x2 += widget->extent.x1;
-
-        rect->y1 += widget->extent.y1;
-        rect->y2 += widget->extent.y1;
+    if (rect) {
+        rect->x1 += wgt->extent.x1;
+        rect->x2 += wgt->extent.x1;
+        rect->y1 += wgt->extent.y1;
+        rect->y2 += wgt->extent.y1;
     }
 }
 RTM_EXPORT(rtgui_widget_rect_to_device);
 
-void rtgui_widget_point_to_logic(rtgui_widget_t *widget, rtgui_point_t *point)
-{
-    RT_ASSERT(widget != RT_NULL);
+void rtgui_widget_point_to_logic(rtgui_widget_t *wgt, rtgui_point_t *point) {
+    RT_ASSERT(wgt != RT_NULL);
 
-    if (point != RT_NULL)
-    {
-        point->x -= widget->extent.x1;
-        point->y -= widget->extent.y1;
+    if (point) {
+        point->x -= wgt->extent.x1;
+        point->y -= wgt->extent.y1;
     }
 }
 RTM_EXPORT(rtgui_widget_point_to_logic);
 
-void rtgui_widget_rect_to_logic(rtgui_widget_t *widget, rtgui_rect_t *rect)
-{
-    RT_ASSERT(widget != RT_NULL);
+void rtgui_widget_rect_to_logic(rtgui_widget_t *wgt, rtgui_rect_t *rect) {
+    RT_ASSERT(wgt != RT_NULL);
 
-    if (rect != RT_NULL)
-    {
-        rect->x1 -= widget->extent.x1;
-        rect->x2 -= widget->extent.x1;
-
-        rect->y1 -= widget->extent.y1;
-        rect->y2 -= widget->extent.y1;
+    if (rect) {
+        rect->x1 -= wgt->extent.x1;
+        rect->x2 -= wgt->extent.x1;
+        rect->y1 -= wgt->extent.y1;
+        rect->y2 -= wgt->extent.y1;
     }
 }
 RTM_EXPORT(rtgui_widget_rect_to_logic);
 
-rtgui_win_t *rtgui_widget_get_toplevel(rtgui_widget_t *widget)
-{
-    rtgui_widget_t *r;
+rtgui_win_t *rtgui_widget_get_toplevel(rtgui_widget_t *_wgt) {
+    rtgui_widget_t *wgt = _wgt;
 
-    RT_ASSERT(widget != RT_NULL);
+    RT_ASSERT(wgt != RT_NULL);
 
-    if (widget->toplevel)
-        return widget->toplevel;
+    if (wgt->toplevel)
+        return wgt->toplevel;
 
-    rt_kprintf("widget->toplevel not properly set\n");
-    r = widget;
+    LOG_W("wgt->toplevel not properly set");
     /* get the toplevel widget */
-    while (r->parent != RT_NULL)
-        r = r->parent;
-
+    while (wgt->parent)
+        wgt = wgt->parent;
     /* set toplevel */
-    widget->toplevel = TO_WIN(r);
+    wgt->toplevel = TO_WIN(wgt);
 
-    return TO_WIN(r);
+    return TO_WIN(wgt);
 }
 RTM_EXPORT(rtgui_widget_get_toplevel);
 
 rt_bool_t rtgui_widget_onupdate_toplvl(rtgui_obj_t *obj,
     rtgui_evt_generic_t *evt) {
-    struct rtgui_widget *wgt = TO_WIDGET(obj);
+    rtgui_widget_t *wgt = TO_WIDGET(obj);
 
     wgt->toplevel = evt->update_toplvl.toplvl;
     return RT_FALSE;
@@ -537,42 +495,38 @@ RTM_EXPORT(rtgui_widget_onupdate_toplvl);
 /*
  * This function updates the clip info of widget
  */
-void rtgui_widget_update_clip(rtgui_widget_t *widget)
-{
+void rtgui_widget_update_clip(rtgui_widget_t *wgt) {
     rtgui_rect_t rect;
     rt_slist_t *node;
     rtgui_widget_t *parent;
 
     /* no widget or widget is hide, no update clip */
-    if (widget == RT_NULL || RTGUI_WIDGET_IS_HIDE(widget) || widget->parent == RT_NULL || rtgui_widget_is_in_animation(widget))
+    if (!wgt || !IS_WIDGET_FLAG(wgt, SHOWN) || !wgt->parent || \
+        rtgui_widget_is_in_animation(wgt))
         return;
 
-    parent = widget->parent;
+    parent = wgt->parent;
     /* reset visiable extent */
-    widget->extent_visiable = widget->extent;
-    rtgui_rect_intersect(&(parent->extent_visiable), &(widget->extent_visiable));
+    wgt->extent_visiable = wgt->extent;
+    rtgui_rect_intersect(&(parent->extent_visiable), &(wgt->extent_visiable));
 
     rect = parent->extent_visiable;
     /* reset clip to extent */
-    rtgui_region_reset(&(widget->clip), &(widget->extent));
+    rtgui_region_reset(&(wgt->clip), &(wgt->extent));
     /* limit widget extent in parent extent */
-    rtgui_region_intersect_rect(&(widget->clip), &(widget->clip), &rect);
+    rtgui_region_intersect_rect(&(wgt->clip), &(wgt->clip), &rect);
 
     /* get the no transparent parent */
-    while (parent != RT_NULL && parent->flag & RTGUI_WIDGET_FLAG_TRANSPARENT)
-    {
+    while (parent && IS_WIDGET_FLAG(parent, TRANSPARENT))
         parent = parent->parent;
-    }
-    if (parent != RT_NULL)
-    {
+    if (parent) {
         /* give my clip back to parent */
-        rtgui_region_union(&(parent->clip), &(parent->clip), &(widget->clip));
+        rtgui_region_union(&(parent->clip), &(parent->clip), &(wgt->clip));
 
         /* subtract widget clip in parent clip */
-        if (!(widget->flag & RTGUI_WIDGET_FLAG_TRANSPARENT) && IS_CONTAINER(parent))
-        {
-            rtgui_region_subtract_rect(&(parent->clip), &(parent->clip), &(widget->extent_visiable));
-        }
+        if (!IS_WIDGET_FLAG(wgt, TRANSPARENT) && IS_CONTAINER(parent))
+            rtgui_region_subtract_rect(&(parent->clip), &(parent->clip),
+                &(wgt->extent_visiable));
     }
 
     /*
@@ -580,10 +534,10 @@ void rtgui_widget_update_clip(rtgui_widget_t *widget)
      */
 
     /* if it's a container object, update the clip info of children */
-    if (IS_CONTAINER(widget))
+    if (IS_CONTAINER(wgt))
     {
         rtgui_widget_t *child;
-        rt_slist_for_each(node, &(TO_CONTAINER(widget)->children))
+        rt_slist_for_each(node, &(TO_CONTAINER(wgt)->children))
         {
             child = rt_slist_entry(node, rtgui_widget_t, sibling);
 
@@ -593,13 +547,13 @@ void rtgui_widget_update_clip(rtgui_widget_t *widget)
 }
 RTM_EXPORT(rtgui_widget_update_clip);
 
-void rtgui_widget_show(struct rtgui_widget *wgt) {
+void rtgui_widget_show(rtgui_widget_t *wgt) {
     do {
         rtgui_evt_generic_t *evt;
 
         if (!wgt) break;
-        if (!RTGUI_WIDGET_IS_HIDE(wgt)) break;
-        RTGUI_WIDGET_UNHIDE(wgt);
+        if (IS_WIDGET_FLAG(wgt, SHOWN)) break;
+        WIDGET_FLAG_SET(wgt, SHOWN);
         LOG_D("unhide %s", wgt->_super.cls->name);
         if (!wgt->toplevel) break;
         rtgui_widget_update_clip(wgt);
@@ -614,12 +568,12 @@ void rtgui_widget_show(struct rtgui_widget *wgt) {
 }
 RTM_EXPORT(rtgui_widget_show);
 
-void rtgui_widget_hide(struct rtgui_widget *wgt) {
+void rtgui_widget_hide(rtgui_widget_t *wgt) {
     do {
         rtgui_evt_generic_t *evt;
 
         if (!wgt) break;
-        if (RTGUI_WIDGET_IS_HIDE(wgt)) break;
+        if (!IS_WIDGET_FLAG(wgt, SHOWN)) break;
         if (!wgt->toplevel) break;
         if (!EVENT_HANDLER(wgt)) break;
 
@@ -629,7 +583,7 @@ void rtgui_widget_hide(struct rtgui_widget *wgt) {
         (void)EVENT_HANDLER(wgt)(wgt, evt);
         RTGUI_FREE_EVENT(evt);
 
-        RTGUI_WIDGET_HIDE(wgt);
+        WIDGET_FLAG_CLEAR(wgt, SHOWN);
         LOG_D("hide %s", wgt->_super.cls->name);
     } while (0);
 }
@@ -637,13 +591,12 @@ RTM_EXPORT(rtgui_widget_hide);
 
 rt_bool_t rtgui_widget_onshow(rtgui_obj_t *obj,
     rtgui_evt_generic_t *evt) {
-    struct rtgui_widget *wgt = TO_WIDGET(obj);
+    rtgui_widget_t *wgt = TO_WIDGET(obj);
     (void)evt;
 
-    if (!(wgt->flag & RTGUI_WIDGET_FLAG_SHOWN)) {
+    if (!IS_WIDGET_FLAG(wgt, SHOWN))
         return RT_FALSE;
-    }
-    if (!(wgt->flag & RTGUI_WIDGET_FLAG_TRANSPARENT)) {
+    if (!IS_WIDGET_FLAG(wgt, TRANSPARENT)) {
         rtgui_widget_clip_parent(wgt);
         return RT_TRUE;
     }
@@ -653,31 +606,29 @@ RTM_EXPORT(rtgui_widget_onshow);
 
 rt_bool_t rtgui_widget_onhide(rtgui_obj_t *obj,
     rtgui_evt_generic_t *evt) {
-    struct rtgui_widget *wgt = TO_WIDGET(obj);
+    rtgui_widget_t *wgt = TO_WIDGET(obj);
     (void)evt;
 
-    if (!(wgt->flag & RTGUI_WIDGET_FLAG_SHOWN)) {
+    if (!IS_WIDGET_FLAG(wgt, SHOWN))
         return RT_FALSE;
-    }
     rtgui_widget_clip_return(wgt);
     return RT_FALSE;
 }
 RTM_EXPORT(rtgui_widget_onhide);
 
-rtgui_color_t rtgui_widget_get_parent_foreground(rtgui_widget_t *wgt)
-{
+rtgui_color_t rtgui_widget_get_parent_foreground(rtgui_widget_t *wgt) {
     rtgui_widget_t *parent;
 
     /* get parent widget */
     parent = wgt->parent;
     if (parent == RT_NULL)
-        return RTGUI_WIDGET_FOREGROUND(wgt);
+        return WIDGET_GET_FOREGROUND(wgt);
 
-    while (parent->parent != RT_NULL && (RTGUI_WIDGET_FLAG(parent) & RTGUI_WIDGET_FLAG_TRANSPARENT))
+    while (parent->parent && IS_WIDGET_FLAG(parent, TRANSPARENT))
         parent = parent->parent;
 
     /* get parent's color */
-    return RTGUI_WIDGET_FOREGROUND(parent);
+    return WIDGET_GET_FOREGROUND(parent);
 }
 RTM_EXPORT(rtgui_widget_get_parent_foreground);
 
@@ -688,13 +639,13 @@ rtgui_color_t rtgui_widget_get_parent_background(rtgui_widget_t *wgt)
     /* get parent widget */
     parent = wgt->parent;
     if (parent == RT_NULL)
-        return RTGUI_WIDGET_BACKGROUND(wgt);
+        return WIDGET_GET_BACKGROUND(wgt);
 
-    while (parent->parent != RT_NULL && (RTGUI_WIDGET_FLAG(parent) & RTGUI_WIDGET_FLAG_TRANSPARENT))
+    while (parent->parent != RT_NULL && IS_WIDGET_FLAG(parent, TRANSPARENT))
         parent = parent->parent;
 
     /* get parent's color */
-    return RTGUI_WIDGET_BACKGROUND(parent);
+    return WIDGET_GET_BACKGROUND(parent);
 }
 RTM_EXPORT(rtgui_widget_get_parent_background);
 
@@ -703,7 +654,7 @@ void rtgui_widget_clip_parent(rtgui_widget_t *wgt) {
 
     /* get the no transparent parent */
     while (parent) {
-        if (!(parent->flag & RTGUI_WIDGET_FLAG_TRANSPARENT)) break;
+        if (!IS_WIDGET_FLAG(parent, TRANSPARENT)) break;
         parent = parent->parent;
     }
     /* clip the widget extern from parent */
@@ -718,7 +669,7 @@ void rtgui_widget_clip_return(rtgui_widget_t *wgt) {
 
     /* get the no transparent parent */
     while (parent) {
-        if (!(parent->flag & RTGUI_WIDGET_FLAG_TRANSPARENT)) break;
+        if (!IS_WIDGET_FLAG(parent, TRANSPARENT)) break;
         parent = parent->parent;
     }
     /* give clip back to parent */
@@ -733,9 +684,7 @@ void rtgui_widget_update(rtgui_widget_t *wgt) {
         rtgui_evt_generic_t *evt;
 
         if (!wgt) return;
-        if (!EVENT_HANDLER(wgt) || \
-            (RTGUI_WIDGET_FLAG(wgt) & RTGUI_WIDGET_FLAG_IN_ANIM))
-            break;
+        if (!EVENT_HANDLER(wgt) || IS_WIDGET_FLAG(wgt, IN_ANIM)) break;
 
         /* send RTGUI_EVENT_PAINT */
         RTGUI_CREATE_EVENT(evt, PAINT, RT_WAITING_FOREVER);
@@ -785,15 +734,10 @@ rtgui_widget_t *rtgui_widget_get_prev_sibling(rtgui_widget_t *wgt)
 }
 RTM_EXPORT(rtgui_widget_get_prev_sibling);
 
-rt_bool_t rtgui_widget_is_in_animation(rtgui_widget_t *wgt)
-{
+rt_bool_t rtgui_widget_is_in_animation(rtgui_widget_t *wgt) {
     /* check the visible of widget */
-    while (wgt != RT_NULL)
-    {
-        if (wgt->flag & RTGUI_WIDGET_FLAG_IN_ANIM)
-        {
-            return RT_TRUE;
-        }
+    while (wgt != RT_NULL) {
+        if (IS_WIDGET_FLAG(wgt, IN_ANIM)) return RT_TRUE;
         wgt = wgt->parent;
     }
     return RT_FALSE;
@@ -803,21 +747,21 @@ RTM_EXPORT(rtgui_widget_is_in_animation);
 #ifdef RTGUI_WIDGET_DEBUG
 #include <rtgui/widgets/label.h>
 #include <rtgui/widgets/button.h>
-void rtgui_widget_dump(rtgui_widget_t *widget)
+void rtgui_widget_dump(rtgui_widget_t *wgt)
 {
     rtgui_obj_t *obj;
 
-    obj = TO_OBJECT(widget);
-    rt_kprintf("widget cls: %s ", obj->cls->name);
+    obj = TO_OBJECT(wgt);
+    rt_kprintf("wgt cls: %s ", obj->cls->name);
 
-    if (IS_WIN(widget) == RT_TRUE)
-        rt_kprintf(":%s ", TO_WIN(widget)->title);
-    else if ((RTGUI_IS_LABEL(widget) == RT_TRUE) || (RTGUI_IS_BUTTON(widget) == RT_TRUE))
-        rt_kprintf(":%s ", RTGUI_LABEL(widget)->text);
+    if (IS_WIN(wgt) == RT_TRUE)
+        rt_kprintf(":%s ", TO_WIN(wgt)->title);
+    else if ((RTGUI_IS_LABEL(wgt) == RT_TRUE) || (RTGUI_IS_BUTTON(wgt) == RT_TRUE))
+        rt_kprintf(":%s ", RTGUI_LABEL(wgt)->text);
 
-    rt_kprintf("extent(%d, %d) - (%d, %d)\n", widget->extent.x1,
-               widget->extent.y1, widget->extent.x2, widget->extent.y2);
-    // rtgui_region_dump(&(widget->clip));
+    rt_kprintf("extent(%d, %d) - (%d, %d)\n", wgt->extent.x1,
+               wgt->extent.y1, wgt->extent.x2, wgt->extent.y2);
+    // rtgui_region_dump(&(wgt->clip));
 }
 #endif
 

@@ -30,9 +30,30 @@
 extern "C" {
 #endif
 
-rtgui_app_t *rtgui_srv_create(const char *name, rtgui_evt_hdl_t evt_hdl);
-rtgui_app_t *rtgui_app_create(const char *name, rtgui_evt_hdl_t evt_hdl);
-void rtgui_app_destroy(rtgui_app_t *app);
+#define CREATE_SERVER_INSTANCE(obj, hdl, name) \
+    do {                                    \
+        obj = (rtgui_app_t *)CREATE_INSTANCE(app, hdl); \
+        if (!obj) break;                    \
+        if (rtgui_app_init(obj, name, RT_TRUE)) \
+            DELETE_INSTANCE(obj);           \
+    } while (0)
+
+#define CREATE_APP_INSTANCE(obj, hdl, name) \
+    do {                                    \
+        obj = (rtgui_app_t *)CREATE_INSTANCE(app, hdl); \
+        if (!obj) break;                    \
+        if (rtgui_app_init(obj, name, RT_FALSE)) \
+            DELETE_INSTANCE(obj);           \
+    } while (0)
+
+#define DELETE_APP_INSTANCE(obj)            rtgui_app_uninit(obj)
+
+
+MEMBER_SETTER_GETTER_PROTOTYPE(rtgui_app_t, app, rtgui_idle_hdl_t, on_idle);
+
+rt_err_t rtgui_app_init(rtgui_app_t *app, const char *name, rt_bool_t is_srv);
+void rtgui_app_uninit(rtgui_app_t *app);
+
 rt_base_t rtgui_app_run(rtgui_app_t *app);
 void rtgui_app_exit(rtgui_app_t *app, rt_uint16_t code);
 void rtgui_app_activate(rtgui_app_t *app);
@@ -41,10 +62,11 @@ void rtgui_app_sleep(rtgui_app_t *app, rt_uint32_t ms);
 /* return the rtgui_app struct on current thread */
 rtgui_app_t *rtgui_app_self(void);
 rt_err_t rtgui_app_set_as_wm(rtgui_app_t *app);
-void rtgui_app_set_main_win(rtgui_app_t *app, rtgui_win_t *win);
-rtgui_win_t* rtgui_app_get_main_win(rtgui_app_t *app);
+
+MEMBER_SETTER_GETTER_PROTOTYPE(rtgui_app_t, app, rtgui_win_t*, main_win);
+
 /* get the topwin belong app window activate count */
-unsigned int rtgui_app_get_win_acti_cnt(void);
+unsigned int rtgui_get_app_act_cnt(void);
 
 #ifdef __cplusplus
 }

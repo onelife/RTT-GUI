@@ -33,49 +33,6 @@
 extern "C" {
 #endif
 
-#define RTGUI_WIDGET_FLAG_DEFAULT       0x0000
-#define RTGUI_WIDGET_FLAG_SHOWN         0x0001
-#define RTGUI_WIDGET_FLAG_DISABLE       0x0002
-#define RTGUI_WIDGET_FLAG_FOCUS         0x0004
-#define RTGUI_WIDGET_FLAG_TRANSPARENT   0x0008
-#define RTGUI_WIDGET_FLAG_FOCUSABLE     0x0010
-#define RTGUI_WIDGET_FLAG_DC_VISIBLE    0x0100
-#define RTGUI_WIDGET_FLAG_IN_ANIM       0x0200
-
-/* rtgui widget attribute */
-#define RTGUI_WIDGET_FOREGROUND(w)      (TO_WIDGET(w)->gc.foreground)
-#define RTGUI_WIDGET_BACKGROUND(w)      (TO_WIDGET(w)->gc.background)
-#define RTGUI_WIDGET_TEXTALIGN(w)       (TO_WIDGET(w)->gc.textalign)
-#define RTGUI_WIDGET_FONT(w)            (TO_WIDGET(w)->gc.font)
-#define RTGUI_WIDGET_FLAG(w)            (TO_WIDGET(w)->flag)
-#define RTGUI_WIDGET_ALIGN(w)           (TO_WIDGET(w)->align)
-#define RTGUI_WIDGET_BORDER(w)          (TO_WIDGET(w)->border)
-#define RTGUI_WIDGET_BORDER_STYLE(w)    (TO_WIDGET(w)->border_style)
-
-#define RTGUI_WIDGET_UNHIDE(w)          RTGUI_WIDGET_FLAG(w) |= RTGUI_WIDGET_FLAG_SHOWN
-#define RTGUI_WIDGET_HIDE(w)            RTGUI_WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_SHOWN
-#define RTGUI_WIDGET_IS_HIDE(w)         (!(RTGUI_WIDGET_FLAG(w) & RTGUI_WIDGET_FLAG_SHOWN))
-
-#define RTGUI_WIDGET_ENABLE(w)          RTGUI_WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_DISABLE
-#define RTGUI_WIDGET_DISABLE(w)         RTGUI_WIDGET_FLAG(w) |= RTGUI_WIDGET_FLAG_DISABLE
-#define RTGUI_WIDGET_IS_ENABLE(w)       (!((RTGUI_WIDGET_FLAG(w) & RTGUI_WIDGET_FLAG_DISABLE)))
-
-#define RTGUI_WIDGET_UNFOCUS(w)         RTGUI_WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_FOCUS
-#define RTGUI_WIDGET_FOCUS(w)           RTGUI_WIDGET_FLAG(w) |= RTGUI_WIDGET_FLAG_FOCUS
-#define RTGUI_WIDGET_IS_FOCUSED(w)      (RTGUI_WIDGET_FLAG(w) & RTGUI_WIDGET_FLAG_FOCUS)
-
-#define RTGUI_WIDGET_IS_FOCUSABLE(w)    (RTGUI_WIDGET_FLAG(w) & RTGUI_WIDGET_FLAG_FOCUSABLE)
-#define RTGUI_WIDGET_SET_UNFOCUSABLE(w) RTGUI_WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_FOCUSABLE
-
-#define RTGUI_WIDGET_IS_DC_VISIBLE(w)   (RTGUI_WIDGET_FLAG(w) & RTGUI_WIDGET_FLAG_DC_VISIBLE)
-#define RTGUI_WIDGET_DC_SET_VISIBLE(w)  (RTGUI_WIDGET_FLAG(w) |= RTGUI_WIDGET_FLAG_DC_VISIBLE)
-#define RTGUI_WIDGET_DC_SET_UNVISIBLE(w) (RTGUI_WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_DC_VISIBLE)
-#define RTGUI_WIDGET_DC(w)              ((rtgui_dc_t*)&((w)->dc_type))
-
-
-// rtgui_widget_t *rtgui_widget_create(const rtgui_class_t *widget_type);
-void rtgui_widget_destroy(rtgui_widget_t *widget);
-
 /* focus and unfocus */
 void rtgui_widget_focus(rtgui_widget_t *widget);
 void rtgui_widget_unfocus(rtgui_widget_t *widget);
@@ -148,5 +105,4 @@ void rtgui_widget_dump(rtgui_widget_t *widget);
 }
 #endif
 
-#endif
-
+#endif /* __RTGUI_WIDGET_H__ */

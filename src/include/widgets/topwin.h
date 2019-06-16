@@ -26,46 +26,35 @@
 
 #include "../rtgui.h"
 #include "../region.h"
-#include "./title.h"
 
 /* add or remove a top win */
-rt_err_t rtgui_topwin_add(struct rtgui_event_win_create *event);
-rt_err_t rtgui_topwin_remove(rtgui_win_t *wid);
-rt_err_t rtgui_topwin_activate(struct rtgui_event_win_activate *event);
-rt_err_t rtgui_topwin_activate_topwin(rtgui_topwin_t *win);
-
+rt_err_t rtgui_topwin_add(rtgui_app_t *app, rtgui_win_t *win,
+    rtgui_win_t *parent);
+rt_err_t rtgui_topwin_remove(rtgui_win_t *win);
+rt_err_t rtgui_topwin_activate(rtgui_topwin_t *win);
+rt_err_t rtgui_topwin_activate_win(rtgui_win_t *win);
 /* show a window */
-rt_err_t rtgui_topwin_show(struct rtgui_event_win *event);
+rt_err_t rtgui_topwin_show(rtgui_win_t *win);
 /* hide a window */
-rt_err_t rtgui_topwin_hide(struct rtgui_event_win *event);
+rt_err_t rtgui_topwin_hide(rtgui_win_t *win);
 /* move a window */
-rt_err_t rtgui_topwin_move(rtgui_evt_generic_t *event);
+rt_err_t rtgui_topwin_move(rtgui_win_t *win, rt_int16_t x, rt_int16_t y);
 /* resize a window */
-void rtgui_topwin_resize(rtgui_win_t *wid, rtgui_rect_t *r);
+void rtgui_topwin_resize(rtgui_win_t *win, rtgui_rect_t *r);
 /* a window is entering modal mode */
-rt_err_t rtgui_topwin_modal_enter(struct rtgui_event_win_modal_enter *event);
-
+rt_err_t rtgui_topwin_modal_enter(rtgui_win_t *win);
 /* get window at (x, y) */
-rtgui_topwin_t *rtgui_topwin_get_wnd(int x, int y);
-rtgui_topwin_t *rtgui_topwin_get_wnd_no_modaled(int x, int y);
-
-//void rtgui_topwin_deactivate_win(rtgui_topwin_t* win);
-
-/* window title */
-void rtgui_topwin_title_ondraw(rtgui_topwin_t *win);
-void rtgui_topwin_title_onmouse(rtgui_topwin_t *win, struct rtgui_event_mouse *event);
-
+rtgui_topwin_t *rtgui_topwin_get_with_modal_at(int x, int y);
+rtgui_topwin_t *rtgui_topwin_get_at(int x, int y);
 /* monitor rect */
-void rtgui_topwin_append_monitor_rect(rtgui_win_t *wid, rtgui_rect_t *rect);
-void rtgui_topwin_remove_monitor_rect(rtgui_win_t *wid, rtgui_rect_t *rect);
-
+void rtgui_topwin_append_monitor_rect(rtgui_win_t *win, rtgui_rect_t *rect);
+void rtgui_topwin_remove_monitor_rect(rtgui_win_t *win, rtgui_rect_t *rect);
 /* get the topwin that is currently focused */
 rtgui_topwin_t *rtgui_topwin_get_focus(void);
-
 /* get the topwin which app I belong */
-rtgui_app_t *rtgui_topwin_app_get_focus(void);
+rtgui_app_t *rtgui_topwin_get_focus_app(void);
+rtgui_topwin_t *rtgui_topwin_get_shown(void);
+rtgui_win_t* rtgui_topwin_get_shown_win(void);
+rtgui_win_t* rtgui_topwin_get_next_shown_win(void);
 
-rtgui_topwin_t *rtgui_topwin_get_topmost_window_shown_all(void);
-
-#endif
-
+#endif /* __RTGUI_TOPWIN_H__ */

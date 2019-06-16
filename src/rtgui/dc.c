@@ -31,7 +31,6 @@
 #include "../include/rtgui.h"
 #include "../include/dc.h"
 #include "../include/widgets/window.h"
-#include "../include/widgets/title.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -1552,7 +1551,7 @@ void rtgui_dc_set_gc(rtgui_dc_t *dc, rtgui_gc_t *gc)
     {
         rtgui_widget_t *owner;
         /* get owner */
-        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, rtgui_widget_t, dc_type);
         owner->gc = *gc;
         break;
     }
@@ -1592,7 +1591,7 @@ rtgui_gc_t *rtgui_dc_get_gc(rtgui_dc_t *dc)
     {
         rtgui_widget_t *owner;
         /* get owner */
-        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, rtgui_widget_t, dc_type);
         gc = &owner->gc;
         break;
     }
@@ -1629,20 +1628,18 @@ rt_bool_t rtgui_dc_get_visible(rtgui_dc_t *dc) {
         switch (dc->type) {
         case RTGUI_DC_CLIENT:
             {
-                rtgui_widget_t *owner = \
-                    rt_container_of(dc, rtgui_widget_t, dc_type);
-                if (!RTGUI_WIDGET_IS_DC_VISIBLE(owner)) {
+                rtgui_widget_t *owner = rt_container_of(dc, rtgui_widget_t,
+                    dc_type);
+                if (!IS_WIDGET_FLAG(owner, DC_VISIBLE))
                     ret = RT_FALSE;
-                }
             }
             break;
 
         case RTGUI_DC_HW:
             {
                 struct rtgui_dc_hw *dc_hw = (struct rtgui_dc_hw *)dc;
-                if (!RTGUI_WIDGET_IS_DC_VISIBLE(dc_hw->owner)) {
+                if (!IS_WIDGET_FLAG(dc_hw->owner, DC_VISIBLE))
                     ret = RT_FALSE;
-                }
             }
             break;
 
@@ -1660,8 +1657,7 @@ RTM_EXPORT(rtgui_dc_get_visible);
 /*
  * get rect of dc
  */
-void rtgui_dc_get_rect(rtgui_dc_t *dc, rtgui_rect_t *rect)
-{
+void rtgui_dc_get_rect(rtgui_dc_t *dc, rtgui_rect_t *rect) {
     RT_ASSERT(dc != RT_NULL);
 
     switch (dc->type)
@@ -1670,7 +1666,7 @@ void rtgui_dc_get_rect(rtgui_dc_t *dc, rtgui_rect_t *rect)
     {
         rtgui_widget_t *owner;
         /* get owner */
-        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, rtgui_widget_t, dc_type);
         /* we should return the clipped rectangular information */
         rect->x1 = owner->clip.extents.x1 - owner->extent.x1;
         rect->y1 = owner->clip.extents.y1 - owner->extent.y1;
@@ -1723,7 +1719,7 @@ rt_uint8_t rtgui_dc_get_pixel_format(rtgui_dc_t *dc)
     {
         struct rtgui_graphic_driver *hw_driver;
 
-        hw_driver = rtgui_graphic_driver_get_default();
+        hw_driver = rtgui_get_graphic_device();
         pixel_fmt = hw_driver->pixel_format;
         break;
     }
@@ -1751,7 +1747,7 @@ void rtgui_dc_logic_to_device(rtgui_dc_t *dc, struct rtgui_point *point)
     {
         rtgui_widget_t *owner;
         /* get owner */
-        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, rtgui_widget_t, dc_type);
         point->x += owner->extent.x1;
         point->y += owner->extent.y1;
         break;
@@ -1782,7 +1778,7 @@ void rtgui_dc_rect_to_device(rtgui_dc_t *dc, rtgui_rect_t *rect)
     {
         rtgui_widget_t *owner;
         /* get owner */
-        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, rtgui_widget_t, dc_type);
 
         rtgui_rect_move(rect, owner->extent.x1, owner->extent.y1);
         break;
@@ -1816,7 +1812,7 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
     LOG_D("dc begin");
     do {
         rtgui_win_t *win;
-        struct rtgui_widget *parent, *widget;
+        rtgui_widget_t *parent, *widget;
 
         win = owner->toplevel;
         if (!win) {
@@ -1824,7 +1820,7 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
             break;
         }
 
-        if (!(win->flag & RTGUI_WIN_FLAG_ACTIVATE)) {
+        if (!IS_WIN_FLAG(win, ACTIVATE)) {
             if ((win->outer_clip.extents.x1 == win->outer_clip.extents.x2) || \
                 (win->outer_clip.extents.y1 == win->outer_clip.extents.y2)) {
                 break;
@@ -1847,12 +1843,12 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
         /* always drawing on the virtual mode */
         if (!rtgui_graphic_driver_is_vmode()) {
             /* set the initial visible as true */
-            RTGUI_WIDGET_DC_SET_VISIBLE(owner);
+            WIDGET_FLAG_SET(owner, DC_VISIBLE);
             /* check the visible of widget */
             widget = owner;
             while (widget) {
-                if (RTGUI_WIDGET_IS_HIDE(widget)) {
-                    RTGUI_WIDGET_DC_SET_UNVISIBLE(owner);
+                if (!IS_WIDGET_FLAG(widget, SHOWN)) {
+                    WIDGET_FLAG_CLEAR(owner, DC_VISIBLE);
                     win->drawing--;
                     break;
                 }
@@ -1894,7 +1890,7 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
                 if (!evt) break;
                 evt->update_begin.rect = TO_WIDGET(win)->extent;
                 LOG_D("post update %s", evt->base.origin->name);
-                ret = rtgui_server_post_event(evt);
+                ret = rtgui_send_request(evt);
                 if (ret) {
                     LOG_E("dc update err [%d]", ret);
                 }
@@ -1908,7 +1904,7 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
 RTM_EXPORT(rtgui_dc_begin_drawing);
 
 void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
-    struct rtgui_widget *owner;
+    rtgui_widget_t *owner;
     rtgui_win_t *win;
 
     RT_ASSERT(dc != RT_NULL);
@@ -1916,7 +1912,7 @@ void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
     LOG_D("dc end");
     /* get owner */
     if (dc->type == RTGUI_DC_CLIENT)
-        owner = rt_container_of(dc, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dc, rtgui_widget_t, dc_type);
     else if (dc->type == RTGUI_DC_HW)
         owner = ((struct rtgui_dc_hw *)dc)->owner;
     else return ; /* bad DC type */
@@ -1951,7 +1947,7 @@ void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
 
             /* update screen */
             rtgui_graphic_driver_screen_update(
-                rtgui_graphic_driver_get_default(), &(owner->extent));
+                rtgui_get_graphic_device(), &(owner->extent));
 
             if (!IS_TITLE(win)) {
                 /* send to server for window update */
@@ -1959,7 +1955,7 @@ void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
                 //RTGUI_EVENT_UPDATE_END_INIT(&(eupdate));
                 //eupdate.rect = owner->extent;
 
-                //rtgui_server_post_event((rtgui_evt_base_t *)&eupdate, sizeof(eupdate));
+                //rtgui_send_request((rtgui_evt_base_t *)&eupdate, sizeof(eupdate));
             }
         }
     }

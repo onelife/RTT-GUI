@@ -73,7 +73,7 @@ struct rtgui_graphic_driver
     const struct rtgui_graphic_ext_ops *ext_ops;
 };
 
-struct rtgui_graphic_driver *rtgui_graphic_driver_get_default(void);
+REFERENCE_GETTER_PROTOTYPE(graphic_device, rtgui_graphic_driver_t);
 
 void rtgui_graphic_driver_get_rect(const struct rtgui_graphic_driver *driver, rtgui_rect_t *rect);
 void rtgui_graphic_driver_screen_update(const struct rtgui_graphic_driver *driver, rtgui_rect_t *rect);
@@ -81,11 +81,6 @@ rt_uint8_t *rtgui_graphic_driver_get_framebuffer(const struct rtgui_graphic_driv
 
 rt_err_t rtgui_graphic_set_device(rt_device_t device);
 void rtgui_graphic_driver_set_framebuffer(void *fb);
-
-rt_inline struct rtgui_graphic_driver *rtgui_graphic_get_device()
-{
-    return rtgui_graphic_driver_get_default();
-}
 
 #ifdef RTGUI_USING_HW_CURSOR
 /*

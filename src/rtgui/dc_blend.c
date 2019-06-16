@@ -78,7 +78,7 @@
 #include "../include/dc_draw.h"
 #include "../include/color.h"
 
-#define hw_driver               (rtgui_graphic_driver_get_default())
+#define hw_driver               (rtgui_get_graphic_device())
 #define _int_swap(x, y)         do {x ^= y; y ^= x; x ^= y;} while (0)
 
 rt_inline rt_uint8_t _dc_get_bits_per_pixel(rtgui_dc_t* dc)
@@ -523,7 +523,7 @@ static void _do_draw_line(rtgui_dc_t * dst,
         rtgui_widget_t *owner;
 
         /* get owner */
-        owner = rt_container_of(dst, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dst, rtgui_widget_t, dc_type);
 
         x1 = x1 + owner->extent.x1;
         x2 = x2 + owner->extent.x1;
@@ -777,7 +777,7 @@ rtgui_dc_blend_point(rtgui_dc_t * dst, int x, int y, enum RTGUI_BLENDMODE blendM
         rtgui_rect_t rect;
 
         /* get owner */
-        owner = rt_container_of(dst, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dst, rtgui_widget_t, dc_type);
 
         x = x + owner->extent.x1;
         y = y + owner->extent.y1;
@@ -873,7 +873,7 @@ rtgui_dc_blend_points(rtgui_dc_t *dst, const rtgui_point_t *points, int count,
         rtgui_widget_t *owner;
         rtgui_rect_t rect;
 
-        owner = rt_container_of(dst, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dst, rtgui_widget_t, dc_type);
 
         for (i = 0; i < count; ++i)
         {
@@ -1438,7 +1438,7 @@ static void _do_blend_line(rtgui_dc_t * dst,
     if (dst->type == RTGUI_DC_CLIENT)
     {
         /* get owner */
-        owner = rt_container_of(dst, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dst, rtgui_widget_t, dc_type);
 
         x1 = x1 + owner->extent.x1;
         x2 = x2 + owner->extent.x1;
@@ -1733,7 +1733,7 @@ rtgui_dc_blend_fill_rect(rtgui_dc_t* dst, const rtgui_rect_t *rect,
         rtgui_rect_t draw_rect;
 
         /* get owner */
-        owner = rt_container_of(dst, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dst, rtgui_widget_t, dc_type);
 
         if (owner->clip.data == RT_NULL)
         {
@@ -1851,7 +1851,7 @@ rtgui_dc_blend_fill_rects(rtgui_dc_t * dst, const rtgui_rect_t *rects, int count
     if (dst->type == RTGUI_DC_CLIENT)
     {
         /* get owner */
-        owner = rt_container_of(dst, struct rtgui_widget, dc_type);
+        owner = rt_container_of(dst, rtgui_widget_t, dc_type);
     }
 
     for (i = 0; i < count; ++i)

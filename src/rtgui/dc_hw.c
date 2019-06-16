@@ -75,7 +75,7 @@ rtgui_dc_t *rtgui_dc_hw_create(rtgui_widget_t *owner)
         dc->_super.type = RTGUI_DC_HW;
         dc->_super.engine = &dc_hw_engine;
         dc->owner = owner;
-        dc->hw_driver = rtgui_graphic_driver_get_default();
+        dc->hw_driver = rtgui_get_graphic_device();
 
         return &(dc->_super);
     }

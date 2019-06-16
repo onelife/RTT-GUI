@@ -57,9 +57,8 @@ void *rtgui_realloc(void *ptr, rt_size_t size);
 const char *rtgui_event_text(rtgui_evt_generic_t *evt);
 #endif
 
-rtgui_app_t* rtgui_get_server(void);
-void rtgui_set_mainwin_rect(rtgui_rect_t *rect);
-void rtgui_get_mainwin_rect(rtgui_rect_t *rect);
+STRUCT_SETTER_GETTER_PROTOTYPE(mainwin_rect, rtgui_rect_t);
+
 void rtgui_get_screen_rect(rtgui_rect_t *rect);
 
 void rtgui_screen_lock(rt_int32_t timeout);
