@@ -26,7 +26,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 #include "include/arch.h"
-#include "include/image.h"
+#include "include/images/image.h"
 #include "include/app/app.h"
 
 #ifdef RT_USING_ULOG

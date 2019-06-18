@@ -335,7 +335,6 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 static void server_entry(void *pram) {
-    rt_err_t ret;
     (void)pram;
 
     /* create server app */

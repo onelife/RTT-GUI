@@ -29,8 +29,8 @@
 extern "C" {
 #endif
 
-#include "./rtgui.h"
-#include "./image.h"
+#include "include/rtgui.h"
+#include "include/images/image.h"
 
 #if defined(GUIENGINE_IMAGE_CONTAINER)
 /* image item in image container */

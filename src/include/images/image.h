@@ -24,10 +24,10 @@
 #ifndef __RTGUI_IMAGE_H__
 #define __RTGUI_IMAGE_H__
 
-#include "./types.h"
-#include "./dc.h"
-#include "./filerw.h"
-#include "./region.h"
+#include "include/types.h"
+#include "include/dc.h"
+#include "include/region.h"
+#include "include/filerw.h"
 
 #ifdef __cplusplus
 extern "C" {

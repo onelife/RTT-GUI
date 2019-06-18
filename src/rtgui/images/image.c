@@ -25,11 +25,13 @@
  */
 
 #include "include/rtgui.h"
-#include "include/image.h"
-#include "include/image_hdc.h"
+#include "include/images/image.h"
 #include "include/image_container.h"
 #ifdef GUIENGINE_IMAGE_BMP
-# include "include/image_bmp.h"
+# include "include/images/image_bmp.h"
+#endif
+#ifdef GUIENGINE_USING_HDC
+#include "include/images/image_hdc.h"
 #endif
 
 #ifdef RT_USING_ULOG

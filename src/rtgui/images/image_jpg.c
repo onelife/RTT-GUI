@@ -24,15 +24,13 @@
  * 2019-06-01     onelife      keep TJpgDec only
  */
 /* Includes ------------------------------------------------------------------*/
-#include "../include/rtgui.h"
+#include "include/rtgui.h"
 
 #ifdef GUIENGINE_IMAGE_JPEG
 
-#include "tjpgd/tjpgd.h"
-
-#include "include/rtgui.h"
-#include "include/image.h"
 #include "include/blit.h"
+#include "include/images/image.h"
+#include "tjpgd/tjpgd.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL

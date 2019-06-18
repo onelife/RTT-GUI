@@ -21,13 +21,15 @@
  * Date           Author       Notes
  * 2010-09-15     Bernard      first version
  */
-#include "../include/rtgui.h"
-#include "../include/dc.h"
-#include "../include/image.h"
-#include "../include/image_hdc.h"
-#include "../include/blit.h"
+#include "include/rtgui.h"
 
 #ifdef GUIENGINE_USING_HDC
+
+#include "include/dc.h"
+#include "include/blit.h"
+#include "include/images/image.h"
+#include "include/images/image_hdc.h"
+
 
 #define HDC_MAGIC_LEN       4
 
@@ -367,4 +369,4 @@ void rtgui_image_hdc_init()
     rtgui_image_register_engine(&rtgui_image_hdc_engine);
 }
 
-#endif
+#endif /* GUIENGINE_USING_HDC */

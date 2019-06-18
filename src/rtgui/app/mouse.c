@@ -25,11 +25,14 @@
 #include "include/rtgui.h"
 #include "include/region.h"
 #include "include/driver.h"
+#ifdef RTGUI_USING_MOUSE_CURSOR
+#include "include/images/image.h"
+#endif
 #include "include/app/mouse.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
-# define LOG_TAG                    "APP_MOS"
+# define LOG_TAG                    "SRV_MOS"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
@@ -313,29 +316,23 @@ void rtgui_mouse_set_cursor_enable(rt_bool_t enable)
 }
 
 /* set current cursor image */
-void rtgui_mouse_set_cursor(rtgui_image_t *cursor)
-{
+void rtgui_mouse_set_cursor(rtgui_image_t *cursor) {
+    // TODO
+    (void)cursor;
 }
 
-void rtgui_mouse_get_cursor_rect(rtgui_rect_t *rect)
-{
-    if (rect != RT_NULL)
-    {
+void rtgui_mouse_get_cursor_rect(rtgui_rect_t *rect) {
+    if (rect)
         *rect = _cursor->rect;
-    }
 }
 
-void rtgui_mouse_show_cursor()
-{
-    if (_cursor->show_cursor == RT_FALSE)
-        return;
+void rtgui_mouse_show_cursor(void) {
+    if (!_cursor->show_cursor) return;
 
-    _cursor->show_cursor_count ++;
-    if (_cursor->show_cursor_count == 1)
-    {
+    _cursor->show_cursor_count++;
+    if (_cursor->show_cursor_count == 1) {
         /* save show mouse area */
         rtgui_cursor_save();
-
         /* show mouse cursor */
         rtgui_cursor_show();
     }

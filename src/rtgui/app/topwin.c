@@ -33,7 +33,7 @@
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
-# define LOG_TAG                    "GUI_TOP"
+# define LOG_TAG                    "SRV_TOP"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)

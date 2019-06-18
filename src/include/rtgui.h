@@ -38,10 +38,10 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "guiconfig.h"
-#include "./types.h"
-#include "./event.h"
-#include "./arch.h"
-#include "./driver.h"
+#include "include/types.h"
+#include "include/event.h"
+#include "include/arch.h"
+#include "include/driver.h"
 
 /* Exported defines ----------------------------------------------------------*/
 /* Object */

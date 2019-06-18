@@ -27,7 +27,7 @@
 
 #ifdef GUIENGINE_IMAGE_XPM
 
-#include "include/image.h"
+#include "include/images/image.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL

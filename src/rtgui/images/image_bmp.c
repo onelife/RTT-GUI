@@ -29,8 +29,8 @@
 #ifdef GUIENGINE_IMAGE_BMP
 
 #include "include/blit.h"
-#include "include/image.h"
-#include "include/image_bmp.h"
+#include "include/images/image.h"
+#include "include/images/image_bmp.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
