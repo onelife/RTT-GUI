@@ -46,11 +46,11 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-#include "../include/rtgui.h"
-#include "../include/blit.h"
-#include "../include/color.h"
-#include "../include/region.h"
-#include "../include/dc.h"
+#include "include/rtgui.h"
+#include "include/dc.h"
+#include "include/color.h"
+#include "include/region.h"
+#include "include/blit.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -1629,7 +1629,7 @@ void rtgui_image_info_blit(rtgui_image_info_t *image, rtgui_dc_t *dc,
     rtgui_widget_t *owner;
     rtgui_blit_info_t info = { 0 };
     rtgui_rect_t dest_extent;
-    struct rtgui_graphic_driver *hw_drv;
+    rtgui_graphic_driver_t *hw_drv;
 
     hw_drv = rtgui_get_graphic_device();
     dest_extent = *dc_rect;

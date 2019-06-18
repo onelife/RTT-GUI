@@ -381,55 +381,51 @@ void rtgui_dc_draw_byte(rtgui_dc_t *dc, int x, int y, int h, const rt_uint8_t *d
 }
 RTM_EXPORT(rtgui_dc_draw_byte);
 
-void rtgui_dc_draw_word(rtgui_dc_t *dc, int x, int y, int h, const rt_uint8_t *data)
-{
+void rtgui_dc_draw_word(rtgui_dc_t *dc, int x, int y, int h,
+    const rt_uint8_t *data) {
     rtgui_dc_draw_mono_bmp(dc, x, y, 16, h, data);
 }
 RTM_EXPORT(rtgui_dc_draw_word);
 
-void rtgui_dc_draw_border(rtgui_dc_t *dc, rtgui_rect_t *rect, int flag)
-{
-    rtgui_rect_t r;
+void rtgui_dc_draw_border(rtgui_dc_t *dc, rtgui_rect_t *_rect, int flag) {
+    rtgui_rect_t rect;
     rtgui_color_t color;
 
-    if (dc == RT_NULL) return ;
-
-    /* save old color */
+    if (!dc) return;
+    rect = *_rect;
     color = RTGUI_DC_FC(dc);
 
-    r = *rect;
-    switch (flag)
-    {
+    switch (flag) {
     case RTGUI_BORDER_RAISE:
-        rtgui_dc_draw_shaded_rect(dc, &r, high_light, black);
-        rtgui_rect_inflate(&r, -1);
-        rtgui_dc_draw_shaded_rect(dc, &r, light_grey, dark_grey);
+        rtgui_dc_draw_shaded_rect(dc, &rect, high_light, black);
+        rtgui_rect_inflate(&rect, -1);
+        rtgui_dc_draw_shaded_rect(dc, &rect, light_grey, dark_grey);
         break;
 
     case RTGUI_BORDER_SUNKEN:
-        rtgui_dc_draw_shaded_rect(dc, &r, dark_grey, high_light);
-        rtgui_rect_inflate(&r, -1);
-        rtgui_dc_draw_shaded_rect(dc, &r, black, light_grey);
+        rtgui_dc_draw_shaded_rect(dc, &rect, dark_grey, high_light);
+        rtgui_rect_inflate(&rect, -1);
+        rtgui_dc_draw_shaded_rect(dc, &rect, black, light_grey);
         break;
 
     case RTGUI_BORDER_BOX:
-        rtgui_dc_draw_shaded_rect(dc, &r, dark_grey, high_light);
-        rtgui_rect_inflate(&r, -1);
-        rtgui_dc_draw_shaded_rect(dc, &r, high_light, dark_grey);
+        rtgui_dc_draw_shaded_rect(dc, &rect, dark_grey, high_light);
+        rtgui_rect_inflate(&rect, -1);
+        rtgui_dc_draw_shaded_rect(dc, &rect, high_light, dark_grey);
         break;
 
     case RTGUI_BORDER_STATIC:
-        rtgui_dc_draw_shaded_rect(dc, &r, dark_grey, high_light);
+        rtgui_dc_draw_shaded_rect(dc, &rect, dark_grey, high_light);
         break;
 
     case RTGUI_BORDER_EXTRA:
         RTGUI_DC_FC(dc) = light_grey;
-        rtgui_dc_draw_rect(dc, &r);
+        rtgui_dc_draw_rect(dc, &rect);
         break;
 
     case RTGUI_BORDER_SIMPLE:
         RTGUI_DC_FC(dc) = black;
-        rtgui_dc_draw_rect(dc, &r);
+        rtgui_dc_draw_rect(dc, &rect);
         break;
 
     default:
@@ -1622,35 +1618,19 @@ RTM_EXPORT(rtgui_dc_get_gc);
  * get visible status of dc
  */
 rt_bool_t rtgui_dc_get_visible(rtgui_dc_t *dc) {
-    rt_bool_t ret = RT_TRUE;
+    if (rtgui_graphic_driver_is_vmode()) return RT_TRUE;
 
-    if (!rtgui_graphic_driver_is_vmode()) {
-        switch (dc->type) {
-        case RTGUI_DC_CLIENT:
-            {
-                rtgui_widget_t *owner = rt_container_of(dc, rtgui_widget_t,
-                    dc_type);
-                if (!IS_WIDGET_FLAG(owner, DC_VISIBLE))
-                    ret = RT_FALSE;
-            }
-            break;
+    switch (dc->type) {
+    case RTGUI_DC_CLIENT:
+        return IS_WIDGET_FLAG(
+            rt_container_of(dc, rtgui_widget_t, dc_type), DC_VISIBLE);
 
-        case RTGUI_DC_HW:
-            {
-                struct rtgui_dc_hw *dc_hw = (struct rtgui_dc_hw *)dc;
-                if (!IS_WIDGET_FLAG(dc_hw->owner, DC_VISIBLE))
-                    ret = RT_FALSE;
-            }
-            break;
+    case RTGUI_DC_HW:
+        return IS_WIDGET_FLAG(((struct rtgui_dc_hw *)dc)->owner, DC_VISIBLE);
 
-        default:
-            /* use default value */
-            break;
-        }
+    default:
+        return RT_TRUE;
     }
-
-    LOG_D("visible %d", ret);
-    return ret;
 }
 RTM_EXPORT(rtgui_dc_get_visible);
 
@@ -1717,7 +1697,7 @@ rt_uint8_t rtgui_dc_get_pixel_format(rtgui_dc_t *dc)
     case RTGUI_DC_CLIENT:
     case RTGUI_DC_HW:
     {
-        struct rtgui_graphic_driver *hw_driver;
+        rtgui_graphic_driver_t *hw_driver;
 
         hw_driver = rtgui_get_graphic_device();
         pixel_fmt = hw_driver->pixel_format;
@@ -1800,7 +1780,7 @@ void rtgui_dc_rect_to_device(rtgui_dc_t *dc, rtgui_rect_t *rect)
 }
 RTM_EXPORT(rtgui_dc_rect_to_device);
 
-extern struct rt_mutex cursor_mutex;
+extern struct rt_mutex cursor_lock;
 extern void rtgui_mouse_show_cursor(void);
 extern void rtgui_mouse_hide_cursor(void);
 
@@ -1877,7 +1857,7 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
 
         } else if (win->drawing == 1 && !rtgui_graphic_driver_is_vmode()) {
             #ifdef RTGUI_USING_MOUSE_CURSOR
-                rt_mutex_take(&cursor_mutex, RT_WAITING_FOREVER);
+                rt_mutex_take(&cursor_lock, RT_WAITING_FOREVER);
                 rtgui_mouse_hide_cursor();
             #endif
 
@@ -1940,7 +1920,7 @@ void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
 
         if (!rtgui_graphic_driver_is_vmode() && !win->update && update) {
             #ifdef RTGUI_USING_MOUSE_CURSOR
-                rt_mutex_release(&cursor_mutex);
+                rt_mutex_release(&cursor_lock);
                 /* show cursor */
                 rtgui_mouse_show_cursor();
             #endif

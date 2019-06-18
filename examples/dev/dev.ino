@@ -34,7 +34,7 @@ static rt_bool_t show_demo(rtgui_win_t *win) {
     rtgui_image_t *img;
     rtgui_rect_t draw_rect;
 
-    img = rtgui_image_create_from_file("bmp", "/test/test_565.bmp", RT_FALSE);
+    img = rtgui_image_create_from_file("bmp", "/pic/test_565.bmp", RT_FALSE);
     // img = rtgui_image_create_from_file("jpg", "/test/test9.jpg", RT_FALSE);
     if (img) {
       draw_rect.x1 = 10;
@@ -54,7 +54,7 @@ static rt_bool_t show_demo(rtgui_win_t *win) {
   {
     rtgui_color_t fc;
     rtgui_rect_t draw_rect;
-    char *text_buf = "哈罗 RT-Thread!";
+    const char text_buf[] = "哈罗 RT-Thread!";
 
     fc = RTGUI_DC_FC(dc);
     RTGUI_DC_FC(dc) = RED;
@@ -104,8 +104,8 @@ static void rt_gui_demo_entry(void *param) {
   }
   rt_kprintf("*** create app ok\n");
 
-  CREATE_MAIN_WIN(main_win, dc_event_handler, RT_NULL,
-    "UiWindow", RTGUI_WIN_STYLE_NO_TITLE);
+  CREATE_MAIN_WIN(main_win, dc_event_handler, RT_NULL, "UiWindow",
+    RTGUI_WIN_STYLE_DEFAULT);
   if (!main_win) {
     rtgui_app_uninit(app);
     rt_kprintf("create mainwin failed\n");

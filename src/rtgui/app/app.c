@@ -109,7 +109,7 @@ rt_err_t rtgui_app_init(rtgui_app_t *app, const char *name, rt_bool_t is_srv) {
             ret = -RT_ERROR;
             break;
         }
-        if (!self->user_data) {
+        if (self->user_data) {
             LOG_E("already has app");
             ret = -RT_ERROR;
             break;

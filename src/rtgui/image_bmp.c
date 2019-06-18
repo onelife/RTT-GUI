@@ -28,7 +28,6 @@
 
 #ifdef GUIENGINE_IMAGE_BMP
 
-#include "include/dc.h"
 #include "include/blit.h"
 #include "include/image.h"
 #include "include/image_bmp.h"
@@ -45,11 +44,10 @@
 
 /* Private function prototype ------------------------------------------------*/
 static rt_bool_t bmp_check(rtgui_filerw_t *file);
-static rt_bool_t bmp_load(rtgui_image_t *img,
-    rtgui_filerw_t *file, rt_bool_t load);
+static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
+    rt_bool_t load);
 static void bmp_unload(rtgui_image_t *img);
-static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc,
-    rtgui_rect_t *rect);
+static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
 /* Private typedef -----------------------------------------------------------*/
 typedef struct rtgui_image_bmp {
@@ -562,7 +560,7 @@ void screenshot(const char *filename) {
     rt_uint16_t *src;
     rt_uint32_t mask;
     struct rtgui_image_bmp_header bhr;
-    struct rtgui_graphic_driver *grp = display();
+    rtgui_graphic_driver_t *grp = display();
     #ifdef RGB_CONVERT_TO_BGR
         int j;
         rt_uint16_t *line_buf;
@@ -668,7 +666,7 @@ FINSH_FUNCTION_EXPORT(screenshot, usage: screenshot(filename));
 
 /* Public functions ----------------------------------------------------------*/
 rt_err_t rtgui_image_bmp_init(void) {
-    /* register bmp on img system */
+    /* register bmp engine */
     return rtgui_image_register_engine(&bmp_engine);
 }
 

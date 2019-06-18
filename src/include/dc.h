@@ -70,7 +70,7 @@ struct rtgui_dc_hw
 {
     rtgui_dc_t _super;
     rtgui_widget_t *owner;
-    const struct rtgui_graphic_driver *hw_driver;
+    const rtgui_graphic_driver_t *hw_driver;
 };
 
 /**
@@ -210,24 +210,22 @@ rt_inline void rtgui_dc_draw_point(rtgui_dc_t *dc, int x, int y)
 /*
  * draw a color point on dc
  */
-rt_inline void rtgui_dc_draw_color_point(rtgui_dc_t *dc, int x, int y, rtgui_color_t color)
-{
+rt_inline void rtgui_dc_draw_color_point(rtgui_dc_t *dc, int x, int y, 
+    rtgui_color_t color) {
     dc->engine->draw_color_point(dc, x, y, color);
 }
 
 /*
  * draw a vertical line on dc
  */
-rt_inline void rtgui_dc_draw_vline(rtgui_dc_t *dc, int x, int y1, int y2)
-{
+rt_inline void rtgui_dc_draw_vline(rtgui_dc_t *dc, int x, int y1, int y2) {
     dc->engine->draw_vline(dc, x, y1, y2);
 }
 
 /*
  * draw a horizontal line on dc
  */
-rt_inline void rtgui_dc_draw_hline(rtgui_dc_t *dc, int x1, int x2, int y)
-{
+rt_inline void rtgui_dc_draw_hline(rtgui_dc_t *dc, int x1, int x2, int y) {
     dc->engine->draw_hline(dc, x1, x2, y);
 }
 

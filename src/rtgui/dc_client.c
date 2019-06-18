@@ -142,12 +142,11 @@ static void rtgui_dc_client_draw_color_point(rtgui_dc_t *self, int x, int y, rtg
 /*
  * draw a logic vertical line on device
  */
-static void rtgui_dc_client_draw_vline(rtgui_dc_t *self, int x, int y1, int y2)
-{
-    register rt_uint32_t idx;
+static void rtgui_dc_client_draw_vline(rtgui_dc_t *self,
+    int x, int y1, int y2) {
     rtgui_widget_t *owner;
 
-    if (self == RT_NULL) return;
+    if (!self) return;
     if (!rtgui_dc_get_visible(self)) return;
 
     /* get owner */
@@ -158,8 +157,7 @@ static void rtgui_dc_client_draw_vline(rtgui_dc_t *self, int x, int y1, int y2)
     y2 = y2 + owner->extent.y1;
     if (y1 > y2) _int_swap(y1, y2);
 
-    if (owner->clip.data == RT_NULL)
-    {
+    if (!owner->clip.data) {
         rtgui_rect_t *rect;
 
         rect = &(owner->clip.extents);
@@ -173,11 +171,10 @@ static void rtgui_dc_client_draw_vline(rtgui_dc_t *self, int x, int y1, int y2)
 
         /* draw vline */
         hw_driver->ops->draw_vline(&(owner->gc.foreground), x, y1, y2);
-    }
-    else
-    {
-        for (idx = 0; idx < rtgui_region_num_rects(&(owner->clip)); idx ++)
-        {
+    } else {
+        register rt_uint32_t idx;
+
+        for (idx = 0; idx < rtgui_region_num_rects(&(owner->clip)); idx++) {
             rtgui_rect_t *rect;
             register rt_base_t draw_y1, draw_y2;
 
@@ -193,7 +190,8 @@ static void rtgui_dc_client_draw_vline(rtgui_dc_t *self, int x, int y1, int y2)
             if (rect->y2 < y2) draw_y2 = rect->y2;
 
             /* draw vline */
-            hw_driver->ops->draw_vline(&(owner->gc.foreground), x, draw_y1, draw_y2);
+            hw_driver->ops->draw_vline(&(owner->gc.foreground), x,
+                draw_y1, draw_y2);
         }
     }
 }
@@ -204,8 +202,6 @@ static void rtgui_dc_client_draw_vline(rtgui_dc_t *self, int x, int y1, int y2)
 static void rtgui_dc_client_draw_hline(rtgui_dc_t *self,
     int x1, int x2, int y) {
     rtgui_widget_t *owner;
-    register rt_uint32_t idx;
-    rtgui_rect_t *rect;
 
     if (!self) return;
     if (!rtgui_dc_get_visible(self)) return;
@@ -220,6 +216,8 @@ static void rtgui_dc_client_draw_hline(rtgui_dc_t *self,
     y  = y + owner->extent.y1;
 
     if (!owner->clip.data) {
+        rtgui_rect_t *rect;
+
         rect = &(owner->clip.extents);
 
         /* calculate vline intersect */
@@ -233,8 +231,10 @@ static void rtgui_dc_client_draw_hline(rtgui_dc_t *self,
         LOG_D("hw hline1");
         hw_driver->ops->draw_hline(&(owner->gc.foreground), x1, x2, y);
     } else {
-        rt_uint32_t num = rtgui_region_num_rects(&(owner->clip));
-        for (idx = 0; idx < num; idx++) {
+        register rt_uint32_t idx;
+
+        for (idx = 0; idx < rtgui_region_num_rects(&(owner->clip)); idx++) {
+            rtgui_rect_t *rect;
             register rt_base_t draw_x1, draw_x2;
 
             rect = ((rtgui_rect_t *)(owner->clip.data + idx + 1));
@@ -249,15 +249,13 @@ static void rtgui_dc_client_draw_hline(rtgui_dc_t *self,
             if (rect->x2 < x2) draw_x2 = rect->x2;
 
             /* draw hline */
-            LOG_D("hw hline2");
             hw_driver->ops->draw_hline(&(owner->gc.foreground),
                 draw_x1, draw_x2, y);
         }
     }
 }
 
-static void rtgui_dc_client_fill_rect(rtgui_dc_t *self, rtgui_rect_t *rect)
-{
+static void rtgui_dc_client_fill_rect(rtgui_dc_t *self, rtgui_rect_t *rect) {
     rtgui_color_t foreground;
     register rt_base_t idx;
     rtgui_widget_t *owner;

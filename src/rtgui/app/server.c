@@ -27,9 +27,9 @@
 #include "include/driver.h"
 //#include <rtgui/touch.h>
 #include "include/widgets/window.h"
-#include "include/widgets/mouse.h"
-#include "include/app/topwin.h"
 #include "include/app/app.h"
+#include "include/app/topwin.h"
+#include "include/app/mouse.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -335,6 +335,7 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 static void server_entry(void *pram) {
+    rt_err_t ret;
     (void)pram;
 
     /* create server app */
@@ -345,7 +346,6 @@ static void server_entry(void *pram) {
     }
 
     /* init mouse and show */
-    rtgui_mouse_init();
     #ifdef RTGUI_USING_MOUSE_CURSOR
         rtgui_mouse_show_cursor();
     #endif
@@ -365,19 +365,29 @@ RTGUI_SETTER(server_act_win_hook, rtgui_hook_t, _act_win_hook);
 
 rt_err_t rtgui_server_init(void) {
     rt_thread_t tid;
+    rt_err_t ret;
 
-    tid = rt_thread_create(
-        "rtgui",
-        server_entry, RT_NULL,
-        GUIENGIN_SVR_THREAD_STACK_SIZE,
-        GUIENGINE_SVR_THREAD_PRIORITY,
-        GUIENGINE_SVR_THREAD_TIMESLICE);
+    do {
+        ret = rtgui_mouse_init();
+        if (RT_EOK != ret) break;
 
-    if (tid)
-        return rt_thread_startup(tid);
+        tid = rt_thread_create(
+            "rtgui",
+            server_entry, RT_NULL,
+            GUIENGIN_SVR_THREAD_STACK_SIZE,
+            GUIENGINE_SVR_THREAD_PRIORITY,
+            GUIENGINE_SVR_THREAD_TIMESLICE);
+        if (!tid) {
+            ret = -RT_ENOMEM;
+            break;
+        }
+        rt_thread_startup(tid);
+    } while (0);
 
-    LOG_E("create srv err");
-    return -RT_ERROR;
+    if (RT_EOK != ret) {
+        LOG_E("create srv err");
+    }
+    return ret;
 }
 
 rt_err_t rtgui_send_request(rtgui_evt_generic_t *evt) {

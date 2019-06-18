@@ -177,13 +177,11 @@ void rtgui_region_uninit(rtgui_region_t *region) {
 }
 RTM_EXPORT(rtgui_region_uninit);
 
-int rtgui_region_num_rects(rtgui_region_t *region)
-{
+int rtgui_region_num_rects(rtgui_region_t *region) {
     return PIXREGION_NUM_RECTS(region);
 }
 
-rtgui_rect_t *rtgui_region_rects(rtgui_region_t *region)
-{
+rtgui_rect_t *rtgui_region_rects(rtgui_region_t *region) {
     return PIXREGION_RECTS(region);
 }
 
@@ -468,9 +466,9 @@ rtgui_op(
     short       ybot;           /* Bottom of intersection        */
     short       ytop;           /* Top of intersection       */
     rtgui_region_data_t        *oldData;            /* Old data for newReg       */
-    int         prevBand;           /* Index of start of
+    rt_uint32_t prevBand;           /* Index of start of
                              * previous band in newReg       */
-    int         curBand;            /* Index of start of current
+    rt_uint32_t curBand;            /* Index of start of current
                              * band in newReg            */
     rtgui_rect_t *r1BandEnd;            /* End of current band in r1     */
     rtgui_rect_t *r2BandEnd;            /* End of current band in r2     */
@@ -573,38 +571,29 @@ rtgui_op(
          * bands between the current position and the next place it overlaps
          * the other, this entire loop will be passed through n times.
          */
-        if (r1y1 < r2y1)
-        {
-            if (appendNon1)
-            {
+        if (r1y1 < r2y1) {
+            if (appendNon1) {
                 top = RTGUI_MAX(r1y1, ybot);
                 bot = RTGUI_MIN(r1->y2, r2y1);
-                if (top < bot)
-                {
+                if (top < bot) {
                     curBand = newReg->data->numRects;
                     rtgui_region_appendNonO(newReg, r1, r1BandEnd, top, bot);
                     Coalesce(newReg, prevBand, curBand);
                 }
             }
             ytop = r2y1;
-        }
-        else if (r2y1 < r1y1)
-        {
-            if (appendNon2)
-            {
+        } else if (r2y1 < r1y1) {
+            if (appendNon2) {
                 top = RTGUI_MAX(r2y1, ybot);
                 bot = RTGUI_MIN(r2->y2, r1y1);
-                if (top < bot)
-                {
+                if (top < bot) {
                     curBand = newReg->data->numRects;
                     rtgui_region_appendNonO(newReg, r2, r2BandEnd, top, bot);
                     Coalesce(newReg, prevBand, curBand);
                 }
             }
             ytop = r1y1;
-        }
-        else
-        {
+        } else {
             ytop = r1y1;
         }
 
@@ -613,8 +602,7 @@ rtgui_op(
          * intersect if ybot > ytop
          */
         ybot = RTGUI_MIN(r1->y2, r2->y2);
-        if (ybot > ytop)
-        {
+        if (ybot > ytop) {
             curBand = newReg->data->numRects;
             if ((* overlapFunc)(newReg, r1, r1BandEnd, r2, r2BandEnd, ytop, ybot,
                                 pOverlap) == RTGUI_REGION_STATUS_FAILURE)
@@ -628,9 +616,7 @@ rtgui_op(
          */
         if (r1->y2 == ybot) r1 = r1BandEnd;
         if (r2->y2 == ybot) r2 = r2BandEnd;
-
-    }
-    while (r1 != r1End && r2 != r2End);
+    } while (r1 != r1End && r2 != r2End);
 
     /*
      * Deal with whichever region (if any) still has rectangles left.
@@ -640,29 +626,25 @@ rtgui_op(
      * regardless of how many bands, into one final append to the list.
      */
 
-    if ((r1 != r1End) && appendNon1)
-    {
+    if ((r1 != r1End) && appendNon1) {
         /* Do first nonOverlap1Func call, which may be able to coalesce */
         FindBand(r1, r1BandEnd, r1End, r1y1);
 
-        if (RTGUI_MAX(r1y1, ybot) < r1->y2)
-        {
+        if (RTGUI_MAX(r1y1, ybot) < r1->y2) {
             curBand = newReg->data->numRects;
             rtgui_region_appendNonO(newReg, r1, r1BandEnd, RTGUI_MAX(r1y1, ybot), r1->y2);
             Coalesce(newReg, prevBand, curBand);
             /* Just append the rest of the boxes  */
             AppendRegions(newReg, r1BandEnd, r1End);
         }
-    }
-    else if ((r2 != r2End) && appendNon2)
-    {
+    } else if ((r2 != r2End) && appendNon2) {
         /* Do first nonOverlap2Func call, which may be able to coalesce */
         FindBand(r2, r2BandEnd, r2End, r2y1);
 
-        if (RTGUI_MAX(r2y1, ybot) < r2->y2)
-        {
+        if (RTGUI_MAX(r2y1, ybot) < r2->y2) {
             curBand = newReg->data->numRects;
-            rtgui_region_appendNonO(newReg, r2, r2BandEnd, RTGUI_MAX(r2y1, ybot), r2->y2);
+            rtgui_region_appendNonO(newReg, r2, r2BandEnd,
+                RTGUI_MAX(r2y1, ybot), r2->y2);
             Coalesce(newReg, prevBand, curBand);
             /* Append rest of boxes */
             AppendRegions(newReg, r2BandEnd, r2End);
@@ -673,19 +655,14 @@ rtgui_op(
         rtgui_free(oldData);
 
     numRects = newReg->data->numRects;
-    if (!numRects)
-    {
+    if (!numRects) {
         freeData(newReg);
         newReg->data = &rtgui_region_emptydata;
-    }
-    else if (numRects == 1)
-    {
+    } else if (numRects == 1) {
         newReg->extents = *PIXREGION_BOXPTR(newReg);
         freeData(newReg);
         newReg->data = (rtgui_region_data_t *)RT_NULL;
-    }
-    else
-    {
+    } else {
         DOWNSIZE(newReg, numRects);
     }
 
@@ -1281,16 +1258,13 @@ static void QuickSortRects(rtgui_rect_t rects[], int numRects)
  *-----------------------------------------------------------------------
  */
 rtgui_region_status_t rtgui_region_validate(rtgui_region_t *badreg,
-        int *pOverlap)
-{
+    int *pOverlap) {
     /* Descriptor for regions under construction  in Step 2. */
-    typedef struct
-    {
-        rtgui_region_t   reg;
-        int     prevBand;
-        int     curBand;
-    }
-    RegionInfo;
+    typedef struct {
+        rtgui_region_t  reg;
+        rt_uint32_t     prevBand;
+        rt_uint32_t     curBand;
+    } RegionInfo;
 
     int numRects;   /* Original numRects for badreg     */
     RegionInfo *ri;     /* Array of current regions         */
@@ -1306,28 +1280,22 @@ rtgui_region_status_t rtgui_region_validate(rtgui_region_t *badreg,
     rtgui_region_status_t ret = RTGUI_REGION_STATUS_SUCCESS;
 
     *pOverlap = RTGUI_REGION_STATUS_FAILURE;
-    if (!badreg->data)
-    {
+    if (!badreg->data) {
         good(badreg);
         return RTGUI_REGION_STATUS_SUCCESS;
     }
     numRects = badreg->data->numRects;
-    if (!numRects)
-    {
+    if (!numRects) {
         if (PIXREGION_NAR(badreg))
             return RTGUI_REGION_STATUS_FAILURE;
         good(badreg);
         return RTGUI_REGION_STATUS_SUCCESS;
     }
-    if (badreg->extents.x1 < badreg->extents.x2)
-    {
-        if ((numRects) == 1)
-        {
+    if (badreg->extents.x1 < badreg->extents.x2) {
+        if ((numRects) == 1) {
             freeData(badreg);
-            badreg->data = (rtgui_region_data_t *) RT_NULL;
-        }
-        else
-        {
+            badreg->data = RT_NULL;
+        } else {
             DOWNSIZE(badreg, numRects);
         }
         good(badreg);
@@ -1505,6 +1473,7 @@ rtgui_region_subtractO(
 {
     rtgui_rect_t   *pNextRect;
     int     x1;
+    (void)pOverlap;
 
     x1 = r1->x1;
 
@@ -2130,8 +2099,7 @@ void rtgui_rect_move_to_align(const rtgui_rect_t *rect, rtgui_rect_t *to, int al
 }
 RTM_EXPORT(rtgui_rect_move_to_align);
 
-void rtgui_rect_inflate(rtgui_rect_t *rect, int d)
-{
+void rtgui_rect_inflate(rtgui_rect_t *rect, int d) {
     rect->x1 -= d;
     rect->x2 += d;
     rect->y1 -= d;

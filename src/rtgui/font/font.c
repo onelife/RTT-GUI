@@ -220,7 +220,6 @@ void rtgui_font_draw(rtgui_font_t *font, rtgui_dc_t *dc, const char *text,
         if (non_ascii && non_ascii->engine->font_close) {
             non_ascii->engine->font_close(non_ascii);
         }
-
     } while (0);
 
     if (!rt_strcasecmp(font->family, "asc")) {
@@ -234,9 +233,8 @@ rt_uint8_t rtgui_font_draw_char(rtgui_font_t *font, rtgui_dc_t *dc,
     rt_uint16_t code, rtgui_rect_t *rect) {
     RT_ASSERT(font != RT_NULL);
 
-    if (font->engine && font->engine->font_draw_char) {
+    if (font->engine && font->engine->font_draw_char)
         return font->engine->font_draw_char(font, dc, code, rect);
-    }
     return 0;
 }
 RTM_EXPORT(rtgui_font_draw_char);

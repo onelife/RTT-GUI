@@ -45,7 +45,6 @@
 #ifdef GUIENGINE_IMAGE_XPM
 extern void rtgui_image_xpm_init(void);
 #endif
-
 #ifdef GUIENGINE_IMAGE_JPEG
 extern rt_err_t rtgui_image_jpeg_init(void);
 #endif
@@ -66,6 +65,7 @@ rt_err_t rtgui_system_image_init(void) {
         #endif
         #ifdef GUIENGINE_IMAGE_XPM
             rtgui_image_xpm_init();
+            LOG_D("XPM init");
         #endif
         #ifdef GUIENGINE_IMAGE_BMP
             ret = rtgui_image_bmp_init();
@@ -233,8 +233,8 @@ RTM_EXPORT(rtgui_image_create);
 
 #endif /* GUIENGINE_USING_DFS_FILERW */
 
-rtgui_image_t *rtgui_image_create_from_mem(const char *type, const rt_uint8_t *data, rt_size_t length, rt_bool_t load)
-{
+rtgui_image_t *rtgui_image_create_from_mem(const char *type,
+    const rt_uint8_t *data, rt_size_t length, rt_bool_t load) {
     rtgui_filerw_t *filerw;
     rtgui_image_engine_t *engine;
     rtgui_image_t *image = RT_NULL;
@@ -245,37 +245,34 @@ rtgui_image_t *rtgui_image_create_from_mem(const char *type, const rt_uint8_t *d
 
     /* get image engine */
     engine = rtgui_image_get_engine(type);
-    if (engine == RT_NULL)
-    {
+    if (engine == RT_NULL) {
         /* close filerw context */
         rtgui_filerw_close(filerw);
+        LOG_E("no engine for %s", type);
         return RT_NULL;
     }
 
-    if (engine->image_check(filerw) == RT_TRUE)
-    {
+    if (engine->image_check(filerw) == RT_TRUE) {
         image = (rtgui_image_t *) rtgui_malloc(sizeof(rtgui_image_t));
-        if (image == RT_NULL)
-        {
+        if (image == RT_NULL) {
             /* close filerw context */
             rtgui_filerw_close(filerw);
             return RT_NULL;
         }
 
         image->palette = RT_NULL;
-        if (engine->image_load(image, filerw, load) != RT_TRUE)
-        {
+        if (engine->image_load(image, filerw, load) != RT_TRUE) {
             /* close filerw context */
             rtgui_filerw_close(filerw);
+            LOG_E("%s load err", type);
             return RT_NULL;
         }
 
         /* set image engine */
         image->engine = engine;
-    }
-    else
-    {
+    } else {
         rtgui_filerw_close(filerw);
+        LOG_E("%s check err", type);
     }
 
     return image;

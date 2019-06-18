@@ -287,7 +287,7 @@ static void rtgui_image_png_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rec
     rtgui_color_t color;
     rtgui_color_t c, bgcolor;
     int fc[3], bc[3];
-    struct rtgui_graphic_driver *hwdev = rtgui_get_graphic_device();
+    rtgui_graphic_driver_t *hwdev = rtgui_get_graphic_device();
 
     RT_ASSERT(image != RT_NULL && dc != RT_NULL && rect != RT_NULL);
     RT_ASSERT(image->data != RT_NULL);
@@ -550,7 +550,7 @@ static void rtgui_image_png_blit(rtgui_image_t *image, rtgui_dc_t *dc, rtgui_rec
     int x, y;
     int w, h;
     rtgui_blit_info_t info = {0};
-    struct rtgui_graphic_driver *hw_driver = rtgui_get_graphic_device();
+    rtgui_graphic_driver_t *hw_driver = rtgui_get_graphic_device();
 
     RT_ASSERT(image != RT_NULL && dc != RT_NULL && rect != RT_NULL);
     RT_ASSERT(image->data != RT_NULL);

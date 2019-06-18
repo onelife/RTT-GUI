@@ -371,7 +371,7 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     case RTGUI_EVENT_COMMAND:
     default:
-        if (SUPER_HANDLER(win)) 
+        if (SUPER_HANDLER(win))
             done = SUPER_HANDLER(win)(win, evt);
         break;
     }
@@ -400,22 +400,22 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
         }
         win->style = style;
 
-        if (!IS_WIN_STYLE(win, NO_TITLE) || !IS_WIN_STYLE(win, NO_BORDER)) {
-            rtgui_rect_t rect_fix = *rect;
+        if (!IS_WIN_STYLE(win, NO_BORDER) || !IS_WIN_STYLE(win, NO_TITLE)) {
+            rtgui_rect_t fixed = *rect;
 
-            win->_title = (rtgui_title_t *)CREATE_INSTANCE(title, RT_NULL);
+            win->_title = TO_TITLE(CREATE_INSTANCE(title, RT_NULL));
             if (!win->_title) {
-                LOG_E("create title %s failed", title);
+                LOG_E("create title %s err", title);
                 ret = -RT_ENOMEM;
                 break;
             }
             TO_WIDGET(win->_title)->toplevel = win;
 
             if (!IS_WIN_STYLE(win, NO_BORDER))
-                rtgui_rect_inflate(&rect_fix, TITLE_BORDER_SIZE);
+                rtgui_rect_inflate(&fixed, TITLE_BORDER_SIZE);
             if (!IS_WIN_STYLE(win, NO_TITLE))
-                rect_fix.y1 -= TITLE_HEIGHT;
-            rtgui_widget_set_rect(TO_WIDGET(win->_title), &rect_fix);
+                fixed.y1 -= TITLE_HEIGHT;
+            rtgui_widget_set_rect(TO_WIDGET(win->_title), &fixed);
             /* update title clip */
             rtgui_region_subtract_rect(
                 &(TO_WIDGET(win->_title)->clip),
@@ -424,8 +424,8 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
 
             /* always show title */
             rtgui_widget_show(TO_WIDGET(win->_title));
-            rtgui_region_init_with_extents(&win->outer_clip, &rect_fix);
-            win->outer_extent = rect_fix;
+            rtgui_region_init_with_extents(&win->outer_clip, &fixed);
+            win->outer_extent = fixed;
         } else {
             rtgui_region_init_with_extents(&win->outer_clip, rect);
             win->outer_extent = *rect;
@@ -658,8 +658,8 @@ RTM_EXPORT(rtgui_win_set_rect);
 
 void rtgui_win_set_title(rtgui_win_t *win, const char *title) {
     /* send title to server */
-    if (IS_WIN_FLAG(win, CONNECTED)) {
-    }
+    // if (IS_WIN_FLAG(win, CONNECTED)) {
+    // }
 
     /* modify in local side */
     if (win->title) {
@@ -765,8 +765,8 @@ RTM_EXPORT(rtgui_win_get_drawing);
 #endif /* GUIENGIN_USING_VFRAMEBUFFER */
 
 /* window drawing */
-void rtgui_theme_draw_win(rtgui_title_t *win_t) {
-    if (!win_t) return;
+void rtgui_theme_draw_win(rtgui_title_t *title) {
+    if (!title) return;
 
     do {
         rtgui_win_t *win;
@@ -775,7 +775,7 @@ void rtgui_theme_draw_win(rtgui_title_t *win_t) {
         rtgui_rect_t box_rect = {0, 0, TITLE_CB_WIDTH, TITLE_CB_HEIGHT};
         rt_uint16_t index, r, g, b, delta;
 
-        win = TO_WIDGET(win_t)->toplevel;
+        win = TO_WIDGET(title)->toplevel;
         if (!win->_title) {
             LOG_E("no title");
             break;
@@ -792,8 +792,8 @@ void rtgui_theme_draw_win(rtgui_title_t *win_t) {
         rtgui_widget_get_rect(TO_WIDGET(win->_title), &rect);
 
         /* draw border */
-        LOG_D("draw border");
         if (!IS_WIN_STYLE(win, NO_BORDER)) {
+            LOG_W("draw border");
             rect.x2 -= 1;
             rect.y2 -= 1;
             WIDGET_GET_FOREGROUND(win->_title) = RTGUI_RGB(212, 208, 200);
@@ -817,66 +817,67 @@ void rtgui_theme_draw_win(rtgui_title_t *win_t) {
         }
 
         /* draw title */
-        if (IS_WIN_STYLE(win, NO_TITLE)) break;
-        LOG_D("draw title");
+        if (!IS_WIN_STYLE(win, NO_TITLE)) {
+            LOG_W("draw title");
+            #define RGB_FACTOR  4
 
-        #define RGB_FACTOR  4
+            if (IS_WIN_FLAG(win, ACTIVATE)) {
+                r = 10 << RGB_FACTOR;
+                g = 36 << RGB_FACTOR;
+                b = 106 << RGB_FACTOR;
+                delta = (150 << RGB_FACTOR) / (rect.x2 - rect.x1);
+            } else {
+                r = 128 << RGB_FACTOR;
+                g = 128 << RGB_FACTOR;
+                b = 128 << RGB_FACTOR;
+                delta = (64 << RGB_FACTOR) / (rect.x2 - rect.x1);
+            }
 
-        if (IS_WIN_FLAG(win, ACTIVATE)) {
-            r = 10 << RGB_FACTOR;
-            g = 36 << RGB_FACTOR;
-            b = 106 << RGB_FACTOR;
-            delta = (150 << RGB_FACTOR) / (rect.x2 - rect.x1);
-        } else {
-            r = 128 << RGB_FACTOR;
-            g = 128 << RGB_FACTOR;
-            b = 128 << RGB_FACTOR;
-            delta = (64 << RGB_FACTOR) / (rect.x2 - rect.x1);
-        }
+            for (index = rect.x1; index < rect.x2 + 1; index++) {
+                WIDGET_GET_FOREGROUND(win->_title) = RTGUI_RGB(
+                    (r >> RGB_FACTOR), (g >> RGB_FACTOR), (b >> RGB_FACTOR));
+                rtgui_dc_draw_vline(dc, index, rect.y1, rect.y2);
+                r += delta;
+                g += delta;
+                b += delta;
+            }
 
-        for (index = rect.x1; index < rect.x2 + 1; index ++) {
-            WIDGET_GET_FOREGROUND(win->_title) = RTGUI_RGB(
-                (r>>RGB_FACTOR), (g>>RGB_FACTOR), (b>>RGB_FACTOR));
-            rtgui_dc_draw_vline(dc, index, rect.y1, rect.y2);
-            r += delta;
-            g += delta;
-            b += delta;
-        }
+            #undef RGB_FACTOR
 
-        #undef RGB_FACTOR
+            if (IS_WIN_FLAG(win, ACTIVATE))
+                WIDGET_GET_FOREGROUND(win->_title) = white;
+            else
+                WIDGET_GET_FOREGROUND(win->_title) = RTGUI_RGB(212, 208, 200);
 
-        if (IS_WIN_FLAG(win, ACTIVATE)) {
-            WIDGET_GET_FOREGROUND(win->_title) = white;
-        } else {
-            WIDGET_GET_FOREGROUND(win->_title) = RTGUI_RGB(212, 208, 200);
-        }
+            rect.x1 += 4;
+            rect.y1 += 2;
+            rect.y2 = rect.y1 + TITLE_CB_HEIGHT;
+            rtgui_dc_draw_text(dc, win->title, &rect);
 
-        rect.x1 += 4;
-        rect.y1 += 2;
-        rect.y2 = rect.y1 + TITLE_CB_HEIGHT;
-        rtgui_dc_draw_text(dc, win->title, &rect);
+            if (!IS_WIN_STYLE(win, CLOSEBOX)) break;
 
-        if (!IS_WIN_STYLE(win, CLOSEBOX)) break;
+            /* get close button rect */
+            rtgui_rect_move_to_align(&rect, &box_rect,
+                RTGUI_ALIGN_CENTER_VERTICAL | RTGUI_ALIGN_RIGHT);
+            box_rect.x1 -= 3;
+            box_rect.x2 -= 3;
+            rtgui_dc_fill_rect(dc, &box_rect);
 
-        /* get close button rect */
-        rtgui_rect_move_to_align(&rect, &box_rect,
-            RTGUI_ALIGN_CENTER_VERTICAL | RTGUI_ALIGN_RIGHT);
-        box_rect.x1 -= 3;
-        box_rect.x2 -= 3;
-        rtgui_dc_fill_rect(dc, &box_rect);
-
-        /* draw close box */
-        if (IS_WIN_FLAG(win, CB_PRESSED)) {
-            rtgui_dc_draw_border(dc, &box_rect, RTGUI_BORDER_SUNKEN);
-            WIDGET_GET_FOREGROUND(win->_title) = red;
-            rtgui_dc_draw_word(dc, box_rect.x1, box_rect.y1 + 6, 7, close_byte);
-        } else {
-            rtgui_dc_draw_border(dc, &box_rect, RTGUI_BORDER_RAISE);
-            WIDGET_GET_FOREGROUND(win->_title) = black;
-            rtgui_dc_draw_word(dc, box_rect.x1 - 1, box_rect.y1 + 5, 7, close_byte);
+            /* draw close box */
+            if (IS_WIN_FLAG(win, CB_PRESSED)) {
+                rtgui_dc_draw_border(dc, &box_rect, RTGUI_BORDER_SUNKEN);
+                WIDGET_GET_FOREGROUND(win->_title) = red;
+                rtgui_dc_draw_word(dc, box_rect.x1, box_rect.y1 + 6, 7,
+                    close_byte);
+            } else {
+                rtgui_dc_draw_border(dc, &box_rect, RTGUI_BORDER_RAISE);
+                WIDGET_GET_FOREGROUND(win->_title) = black;
+                rtgui_dc_draw_word(dc, box_rect.x1 - 1, box_rect.y1 + 5, 7,
+                    close_byte);
+            }
         }
 
         rtgui_dc_end_drawing(dc, 1);
-        LOG_D("draw theme done");
+        LOG_W("draw theme done");
     } while (0);
 }

@@ -116,14 +116,15 @@ extern "C" {
     _type *rtgui_get_##name(void)
 #define RTGUI_REFERENCE_SETTER(name, _type, ref) \
     void rtgui_set_##name(_type *val) {         \
-        ref = val;                         \
+        ref = val;                          \
     }                                       \
     RTM_EXPORT(_type *rtgui_set_##name)
 #define RTGUI_REFERENCE_GETTER(name, _type, ref) \
     _type *rtgui_get_##name(void) {         \
         return ref;                         \
-    }                                       \
-    RTM_EXPORT(_type *rtgui_get_##name)
+    }
+    // RTM_EXPORT(_type *rtgui_get_##name)
+#define GETTER(name)                        rtgui_get_##name
 
 #define MEMBER_SETTER_PROTOTYPE(ctype, cname, mtype, mname) \
     void rtgui_##cname##_set_##mname(ctype *obj, mtype val)

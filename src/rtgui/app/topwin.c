@@ -25,11 +25,11 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/widgets/mouse.h"
 //#include <rtgui/rtgui_theme.h>
-#include "include/widgets/window.h"
 #include "include/widgets/container.h"
+#include "include/widgets/window.h"
 #include "include/app/topwin.h"
+#include "include/app/mouse.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -523,55 +523,6 @@ static void topwin_redraw(rtgui_rect_t *rect) {
     _topwin_redraw(&_topwin_list, rect);
 }
 
-static rtgui_obj_t* rtgui_topwin_get_object(rtgui_topwin_t *top,
-    rtgui_app_t *app, rt_uint32_t id) {
-    rtgui_obj_t *object;
-    rt_list_t *node;
-
-    object = TO_OBJECT(top->wid);
-    if (object->id == id) return object;
-
-    object = rtgui_container_get_object(TO_CONTAINER(object), id);
-    if (object) return object;
-
-    rt_list_foreach(node, &top->children, next) {
-        rtgui_topwin_t *top_;
-
-        top_ = get_topwin_by_list(node);
-        if (top_->app != app) continue;
-
-        object = rtgui_topwin_get_object(top_, app, id);
-        if (object) return object;
-    }
-
-    return RT_NULL;
-}
-
-// rtgui_obj_t* rtgui_get_object(rtgui_app_t *app, rt_uint32_t id) {
-//     rtgui_obj_t *obj;
-//     rt_list_t *node;
-
-//     obj = TO_OBJECT(app);
-//     if (obj->id == id) return obj;
-
-//     rt_list_foreach(node, &_topwin_list, next) {
-//         rtgui_topwin_t *top;
-
-//         top = get_topwin_by_list(node);
-//         if (top->app != app) continue;
-
-//         obj = rtgui_topwin_get_object(top, app, id);
-//         if (obj) return obj;
-//     }
-//     return RT_NULL;
-// }
-// RTM_EXPORT(rtgui_get_object);
-
-// rtgui_obj_t* rtgui_get_self_object(rt_uint32_t id) {
-//     return rtgui_get_object(rtgui_app_self(), id);
-// }
-// RTM_EXPORT(rtgui_get_self_object);
-
 /* Public functions ----------------------------------------------------------*/
 /* add a window to window list[hide] */
 rt_err_t rtgui_topwin_add(rtgui_app_t *app, rtgui_win_t *win,
@@ -902,10 +853,10 @@ rt_err_t rtgui_topwin_modal_enter(rtgui_win_t *win) {
     top = _topwin_search_win_in_list(win, &_topwin_list);
     if (!top) return -RT_ERROR;
     if (IS_ROOT(top)) return RT_EOK;
-    /* modal window should be on top already */
-    RT_ASSERT(get_topwin_by_list(parent->children.next) == top);
 
     parent = top->parent;
+    /* modal window should be on top already */
+    RT_ASSERT(get_topwin_by_list(parent->children.next) == top);
 
     while (parent) {
         rt_list_t *node;
@@ -1003,6 +954,55 @@ rtgui_win_t* rtgui_topwin_get_next_shown_win(void) {
     if (!top) return RT_NULL;
     return top->wid;
 }
+
+rtgui_obj_t* rtgui_topwin_get_object(rtgui_topwin_t *top,
+    rtgui_app_t *app, rt_uint32_t id) {
+    rtgui_obj_t *object;
+    rt_list_t *node;
+
+    object = TO_OBJECT(top->wid);
+    if (object->id == id) return object;
+
+    object = rtgui_container_get_object(TO_CONTAINER(object), id);
+    if (object) return object;
+
+    rt_list_foreach(node, &top->children, next) {
+        rtgui_topwin_t *top_;
+
+        top_ = get_topwin_by_list(node);
+        if (top_->app != app) continue;
+
+        object = rtgui_topwin_get_object(top_, app, id);
+        if (object) return object;
+    }
+
+    return RT_NULL;
+}
+
+// rtgui_obj_t* rtgui_get_object(rtgui_app_t *app, rt_uint32_t id) {
+//     rtgui_obj_t *obj;
+//     rt_list_t *node;
+
+//     obj = TO_OBJECT(app);
+//     if (obj->id == id) return obj;
+
+//     rt_list_foreach(node, &_topwin_list, next) {
+//         rtgui_topwin_t *top;
+
+//         top = get_topwin_by_list(node);
+//         if (top->app != app) continue;
+
+//         obj = rtgui_topwin_get_object(top, app, id);
+//         if (obj) return obj;
+//     }
+//     return RT_NULL;
+// }
+// RTM_EXPORT(rtgui_get_object);
+
+// rtgui_obj_t* rtgui_get_self_object(rt_uint32_t id) {
+//     return rtgui_get_object(rtgui_app_self(), id);
+// }
+// RTM_EXPORT(rtgui_get_self_object);
 
 
 #ifdef RT_USING_FINSH

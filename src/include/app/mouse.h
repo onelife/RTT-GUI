@@ -23,23 +23,21 @@
  */
 #ifndef __RTGUI_MOUSE_H__
 #define __RTGUI_MOUSE_H__
+/* Includes ------------------------------------------------------------------*/
+#include "include/rtgui.h"
 
-#include "../rtgui.h"
-#include "../image.h"
-#include "./window.h"
-
-struct rtgui_mouse_monitor
-{
-    /* event rect */
+struct rtgui_mouse_monitor {
     rtgui_rect_t rect;
-
-    /* node list */
     rt_slist_t list;
 };
 typedef struct rtgui_mouse_monitor rtgui_mouse_monitor_t;
 
-void rtgui_mouse_init(void);
-void rtgui_mouse_fini(void);
+/* Exported defines ----------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Exported functions ------------------------------------------------------- */
+rt_err_t rtgui_mouse_init(void);
+void rtgui_mouse_uninit(void);
 void rtgui_mouse_moveto(rt_uint32_t x, rt_uint32_t y);
 /* set cursor position */
 void rtgui_mouse_set_position(int x, int y);
@@ -64,4 +62,4 @@ void rtgui_mouse_monitor_append(rt_slist_t *head, rtgui_rect_t *rect);
 void rtgui_mouse_monitor_remove(rt_slist_t *head, rtgui_rect_t *rect);
 rt_bool_t rtgui_mouse_monitor_contains_point(rt_slist_t *head, int x, int y);
 
-#endif
+#endif /* __RTGUI_MOUSE_H__ */

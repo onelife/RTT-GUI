@@ -162,7 +162,7 @@ void loop() {
       rt_kprintf("JPEG: %s\n", path);
       break;
     } else {
-      rt_kprintf("Skip: %s\n", path);
+      rt_kprintf("Skip: %s (%s)\n", path, dirent->d_name);
     }
   }
 
