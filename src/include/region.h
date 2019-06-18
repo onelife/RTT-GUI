@@ -31,18 +31,32 @@ extern "C" {
 #endif
 
 /*  true if two rect overlap */
-#define IS_INTERSECT(r1, r2)  \
-    (!  ((r1)->x2 <= (r2)->x1)  || \
-        ((r1)->x1 >= (r2)->x2)  || \
-        ((r1)->y2 <= (r2)->y1)  || \
+#define IS_R_INTERSECT(r1, r2)      \
+    (  !((r1)->x2 <= (r2)->x1)  ||  \
+        ((r1)->x1 >= (r2)->x2)  ||  \
+        ((r1)->y2 <= (r2)->y1)  ||  \
         ((r1)->y1 >= (r2)->y2)  )
 
-/* true if (x,y) is inside rect */
-#define INSIDE(r, x, y)     \
-    (   ((r)->x2 >  (x))    && \
-        ((r)->x1 <= (x))    && \
-        ((r)->y2 >  (y))    && \
+/* true if (x, y) inside rect */
+#define IS_P_INSIDE(r, x, y)    \
+    (   ((r)->x2 >  (x))    &&  \
+        ((r)->x1 <= (x))    &&  \
+        ((r)->y2 >  (y))    &&  \
         ((r)->y1 <= (y))    )
+
+/* true if vline intersect rect */
+#define IS_VL_INTERSECT(r, x, y1, y2) \
+    (  !((r)->x1 >  ( x))   ||  \
+        ((r)->x2 <= ( x))   ||  \
+        ((r)->y2 <= (y1))   ||  \
+        ((r)->y1 >  (y2))   )
+
+/* true if hline intersect rect */
+#define IS_HL_INTERSECT(r, x1, x2, y) \
+    (  !((r)->y1 >  ( y))   ||  \
+        ((r)->y2 <= ( y))   ||  \
+        ((r)->x2 <= (x1))   ||  \
+        ((r)->x1 >  (x2))   )
 
 /* true iff Box r1 contains Box r2 */
 #define SUBSUMES(r1,r2) \

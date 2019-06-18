@@ -23,11 +23,13 @@
  */
 
 #include "../include/rtgui.h"
+
+#ifdef GUIENGINE_IMAGE_PNG
+
 #include "../include/blit.h"
 #include "../include/driver.h"
 #include "../include/image.h"
 
-#ifdef GUIENGINE_IMAGE_PNG
 #include "png.h"
 
 #define PNG_MAGIC_LEN       8

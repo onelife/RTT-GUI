@@ -23,6 +23,9 @@
  */
 
 #include "../include/rtgui.h"
+
+#ifdef RTGUI_USING_DC_BUFFER
+
 #include "../include/dc.h"
 #include "../include/blit.h"
 #include "../include/color.h"
@@ -39,7 +42,7 @@ static void rtgui_dc_buffer_blit_line(rtgui_dc_t *self, int x1, int x2, int y, r
 static void rtgui_dc_buffer_blit(rtgui_dc_t *self, struct rtgui_point *dc_point,
                                  rtgui_dc_t *dest, rtgui_rect_t *rect);
 
-const struct rtgui_dc_engine dc_buffer_engine =
+const rtgui_dc_engine_t dc_buffer_engine =
 {
     rtgui_dc_buffer_draw_point,
     rtgui_dc_buffer_draw_color_point,
@@ -716,5 +719,6 @@ void rtgui_dc_buffer_dump(rtgui_dc_t *self, char *fn)
         close(fd);
     }
 }
-#endif
+#endif /* RT_USING_DFS */
 
+#endif /* RTGUI_USING_DC_BUFFER */

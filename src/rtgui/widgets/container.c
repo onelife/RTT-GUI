@@ -122,7 +122,7 @@ static rt_bool_t _container_dispatch_event(rtgui_container_t *cntr,
         rtgui_widget_t *child = rt_slist_entry(node, rtgui_widget_t, sibling);
         /* check if intercepted for paint event */
         if (is_paint && \
-            !IS_INTERSECT(&(TO_WIDGET(cntr)->extent), &child->extent))
+            !IS_R_INTERSECT(&(TO_WIDGET(cntr)->extent), &child->extent))
             continue;
         if (EVENT_HANDLER(child)) {
             done = EVENT_HANDLER(child)(child, evt);

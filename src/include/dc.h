@@ -33,8 +33,6 @@ extern "C" {
 #include "./driver.h"
 #include "./widgets/widget.h"
 
-#define RTGUI_DC(dc)        ((rtgui_dc_t*)(dc))
-
 #ifndef M_PI
 #define M_PI    3.14159265358979323846
 #endif
@@ -66,8 +64,7 @@ struct rtgui_dc_engine {
  * hardware.
  *
  */
-struct rtgui_dc_hw
-{
+struct rtgui_dc_hw {
     rtgui_dc_t _super;
     rtgui_widget_t *owner;
     const rtgui_graphic_driver_t *hw_driver;
@@ -78,33 +75,21 @@ struct rtgui_dc_hw
  *
  * All the operations on this device context is reflected to the memory buffer.
  */
-struct rtgui_dc_buffer
-{
+struct rtgui_dc_buffer {
     rtgui_dc_t _super;
-
-    /* graphic context */
-    rtgui_gc_t gc;
-
-    /* pixel format */
-    rt_uint8_t pixel_format;
+    rtgui_gc_t gc;              /* graphic context */
+    rt_uint8_t pixel_format;    /* pixel format */
     rt_uint8_t blend_mode;		/* RTGUI_BLENDMODE: None/Blend/Add/Mod */
-
-    /* width and height */
     rt_uint16_t width, height;
-    /* pitch */
     rt_uint16_t pitch;
-
-#ifdef GUIENGINE_IMAGE_CONTAINER
-    /* image dc */
-    struct rtgui_image_item *image_item;
-#endif
-
-	/* pixel alpha */
+    #ifdef GUIENGINE_IMAGE_CONTAINER
+        struct rtgui_image_item *image_item;
+    #endif
     rt_uint8_t pixel_alpha;
-    /* pixel data */
     rt_uint8_t *pixel;
 };
 
+#define RTGUI_DC(dc)            ((rtgui_dc_t*)(dc))
 #define RTGUI_DC_FC(dc)         (rtgui_dc_get_gc(RTGUI_DC(dc))->foreground)
 #define RTGUI_DC_BC(dc)         (rtgui_dc_get_gc(RTGUI_DC(dc))->background)
 #define RTGUI_DC_FONT(dc)       (rtgui_dc_get_gc(RTGUI_DC(dc))->font)
@@ -270,5 +255,5 @@ void rtgui_dc_buffer_dump(rtgui_dc_t *self, char *fn);
 }
 #endif
 
-#endif
+#endif /* __RTGUI_DC_H__ */
 

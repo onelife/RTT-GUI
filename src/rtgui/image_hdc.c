@@ -22,12 +22,14 @@
  * 2010-09-15     Bernard      first version
  */
 #include "../include/rtgui.h"
+
+#ifdef GUIENGINE_USING_HDC
+
 #include "../include/dc.h"
 #include "../include/image.h"
 #include "../include/image_hdc.h"
 #include "../include/blit.h"
 
-#ifdef GUIENGINE_USING_HDC
 
 #define HDC_MAGIC_LEN       4
 

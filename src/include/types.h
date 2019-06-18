@@ -214,6 +214,8 @@ typedef struct rtgui_image rtgui_image_t;
 typedef struct rtgui_image_info rtgui_image_info_t;
 typedef struct rtgui_blit_info rtgui_blit_info_t;
 
+struct rtgui_dc_engine;
+typedef struct rtgui_dc_engine rtgui_dc_engine_t;
 typedef struct rtgui_gc rtgui_gc_t;
 typedef struct rtgui_dc rtgui_dc_t;
 
@@ -258,8 +260,7 @@ struct rtgui_rect {
 struct rtgui_region_data {
     rt_uint32_t size;
     rt_uint32_t numRects;
-    /* XXX: And why, exactly, do we have this bogus struct definition? */
-    /* rtgui_rect_t rects[size]; in memory but not explicitly declared */
+    // rtgui_rect_t rects[size];
 };
 
 struct rtgui_region {
@@ -348,12 +349,13 @@ struct rtgui_dc {
     /* type of device context */
     rt_uint32_t type;
     /* dc engine */
-    const struct rtgui_dc_engine *engine;
+    const rtgui_dc_engine_t *engine;
 };
 
 /* graphic context */
 struct rtgui_gc {
-    rtgui_color_t foreground, background;
+    rtgui_color_t foreground;
+    rtgui_color_t background;
     rt_uint16_t textstyle;
     rt_uint16_t textalign;
     rtgui_font_t *font;
@@ -416,7 +418,7 @@ struct rtgui_widget {
     rtgui_evt_hdl_t on_unfocus;
     rtgui_gc_t gc;                          /* graphic context */
     rt_ubase_t dc_type;                     /* hardware device context */
-    const struct rtgui_dc_engine *dc_engine;  // TODO(onelife): struct rtgui_dc
+    const rtgui_dc_engine_t *dc_engine;  // TODO(onelife): struct rtgui_dc
     rt_uint32_t user_data;
 };
 

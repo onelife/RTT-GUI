@@ -74,7 +74,7 @@ static void _widget_constructor(void *obj) {
     rt_memset(&(wgt->extent_visiable), 0x0, sizeof(wgt->extent_visiable));
     rtgui_region_init_with_extents(&wgt->clip, &wgt->extent);
 
-    wgt->on_focus   = RT_NULL;
+    wgt->on_focus = RT_NULL;
     wgt->on_unfocus  = RT_NULL;
 
     wgt->gc.foreground = default_foreground;
