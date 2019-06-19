@@ -21,39 +21,51 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
+/* Includes ------------------------------------------------------------------*/
 #include "../include/rtgui.h"
 #include "../include/region.h"
 
-/* #define good(reg) RT_ASSERT(rtgui_region16_valid(reg)) */
-#define good(reg)
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+#define INT16_MIN                           (-32767-1)
+#define INT16_MAX                           (32767)
 
-#define RTGUI_MIN(a,b) ((a) < (b) ? (a) : (b))
-#define RTGUI_MAX(a,b) ((a) > (b) ? (a) : (b))
-
-#define RTGUI_SHRT_MIN  (-32767-1)
-#define RTGUI_SHRT_MAX  32767
-
-#define PIXREGION_NIL(reg) ((reg)->data && !(reg)->data->numRects)
+// #define GOOD(rgn)                           RT_ASSERT(rtgui_region16_valid(rgn))
+#define GOOD(rgn)
 
 /* not a region */
-#define PIXREGION_NAR(reg)  ((reg)->data == &rtgui_brokendata)
-#define PIXREGION_NUM_RECTS(reg) ((reg)->data ? (reg)->data->numRects : 1)
-#define PIXREGION_SIZE(reg) ((reg)->data ? (reg)->data->size : 0)
-#define PIXREGION_RECTS(reg) ((reg)->data ? (rtgui_rect_t *)((reg)->data + 1) \
-                           : &(reg)->extents)
-#define PIXREGION_BOXPTR(reg) ((rtgui_rect_t *)((reg)->data + 1))
-#define PIXREGION_BOX(reg,i) (&PIXREGION_BOXPTR(reg)[i])
-#define PIXREGION_TOP(reg) PIXREGION_BOX(reg, (reg)->data->numRects)
-#define PIXREGION_END(reg) PIXREGION_BOX(reg, (reg)->data->numRects - 1)
-#define PIXREGION_SZOF(n) (sizeof(rtgui_region_data_t) + ((n) * sizeof(rtgui_rect_t)))
+#define REGION_NAR(rgn)                     ((rgn)->data == &_bad_region_data)
+#define REGION_NO_RECT(rgn)                 \
+    ((rgn)->data && !(rgn)->data->numRects)
+#define REGION_DATA_NUM_RECTS(rgn)          \
+    ((rgn)->data ? (rgn)->data->numRects : 1)
+#define REGION_DATA_SIZE(rgn)               \
+    ((rgn)->data ? (rgn)->data->size : 0)
+#define REGION_RECTS_PTR(rgn)               ((rtgui_rect_t *)((rgn)->data + 1))
+#define REGION_GET_RECTS(rgn)               \
+    ((rgn)->data ? REGION_RECTS_PTR(rgn) : &(rgn)->extents)
+#define REGION_RECT(rgn, i)                 (&REGION_RECTS_PTR(rgn)[i])
+#define REGION_NEXT_RECT(rgn)               \
+    REGION_RECT(rgn, (rgn)->data->numRects)
+#define REGION_LAST_RECT(rgn)               \
+    REGION_RECT(rgn, (rgn)->data->numRects - 1)
+#define REGION_SIZE_OF_RECTS(n)             \
+    (sizeof(rtgui_region_data_t) + ((n) * sizeof(rtgui_rect_t)))
 
-rtgui_rect_t rtgui_empty_rect = {0, 0, 0, 0};
-rtgui_point_t rtgui_empty_point = {0, 0};
-
-static rtgui_region_data_t rtgui_region_emptydata = {0, 0};
-static rtgui_region_data_t  rtgui_brokendata = {0, 0};
-
-static rtgui_region_status_t rtgui_break(rtgui_region_t *pReg);
+/* Private function prototypes -----------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+static rtgui_point_t _null_point = {
+    0, 0
+};
+static rtgui_rect_t _null_rect = { 
+    0, 0, 0, 0
+};
+static rtgui_region_data_t _null_region_data = {
+    0, 0
+};
+static rtgui_region_data_t  _bad_region_data = {
+    0, 0
+};
 
 /*
  * The functions in this file implement the Region abstraction used extensively
@@ -103,61 +115,115 @@ static rtgui_region_status_t rtgui_break(rtgui_region_t *pReg);
  * the server and client region code into libpixregion.
  */
 
-#define allocData(n) rtgui_malloc(PIXREGION_SZOF(n))
-#define freeData(reg) if ((reg)->data && (reg)->data->size) rtgui_free((reg)->data)
+/* Private functions ---------------------------------------------------------*/
+#define allocData(n)                        \
+    rtgui_malloc(REGION_SIZE_OF_RECTS(n))
 
-#define RECTALLOC_BAIL(pReg,n,bail) \
-if (!(pReg)->data || (((pReg)->data->numRects + (n)) > (pReg)->data->size)) \
-    if (!rtgui_rect_alloc(pReg, n)) { goto bail; }
+#define freeData(rgn)                       \
+    if ((rgn)->data && (rgn)->data->size) { \
+        rtgui_free((rgn)->data);            \
+    }
 
-#define RECTALLOC(pReg,n) \
-if (!(pReg)->data || (((pReg)->data->numRects + (n)) > (pReg)->data->size)) \
-    if (!rtgui_rect_alloc(pReg, n)) { return RTGUI_REGION_STATUS_FAILURE; }
+#define RECTALLOC_BAIL(rgn, n, bail) \
+if (!(rgn)->data || (((rgn)->data->numRects + (n)) > (rgn)->data->size)) \
+    if (!_alloc_rect(rgn, n)) { goto bail; }
 
-#define ADDRECT(pNextRect,nx1,ny1,nx2,ny2)  \
-{                       \
-    pNextRect->x1 = nx1;            \
-    pNextRect->y1 = ny1;            \
-    pNextRect->x2 = nx2;            \
-    pNextRect->y2 = ny2;            \
-    pNextRect++;                \
+#define RECT_ALLOC(rgn,n)                   \
+    if (!(rgn)->data || (((rgn)->data->numRects + (n)) > (rgn)->data->size)) \
+        if (!_alloc_rect(rgn, n)) {    \
+            return RTGUI_REGION_STATUS_FAILURE; \
+        }
+
+#define ADD_RECT(pNextRect, nx1, ny1, nx2, ny2) { \
+    pNextRect->x1 = nx1;                    \
+    pNextRect->y1 = ny1;                    \
+    pNextRect->x2 = nx2;                    \
+    pNextRect->y2 = ny2;                    \
+    pNextRect++;                            \
 }
 
-#define NEWRECT(pReg,pNextRect,nx1,ny1,nx2,ny2)         \
-{                                   \
-    if (!(pReg)->data || ((pReg)->data->numRects == (pReg)->data->size))\
-    {                                   \
-    if (!rtgui_rect_alloc(pReg, 1))                 \
-        return RTGUI_REGION_STATUS_FAILURE;                     \
-    pNextRect = PIXREGION_TOP(pReg);                    \
-    }                                   \
-    ADDRECT(pNextRect,nx1,ny1,nx2,ny2);                 \
-    pReg->data->numRects++;                     \
-    RT_ASSERT(pReg->data->numRects<=pReg->data->size);          \
+#define NEW_RECT(rgn, pNextRect, nx1, ny1, nx2, ny2) { \
+    if (!(rgn)->data || ((rgn)->data->numRects == (rgn)->data->size)) { \
+        if (!_alloc_rect(rgn, 1))      \
+            return RTGUI_REGION_STATUS_FAILURE; \
+        pNextRect = REGION_NEXT_RECT(rgn);        \
+    }                                       \
+    ADD_RECT(pNextRect,nx1,ny1,nx2,ny2);                 \
+    rgn->data->numRects++;                     \
+    RT_ASSERT(rgn->data->numRects<=rgn->data->size);          \
 }
 
-#define DOWNSIZE(reg,numRects)                       \
-if (((numRects) < ((reg)->data->size >> 1)) && ((reg)->data->size > 50)) \
+#define DOWNSIZE(rgn,numRects)                       \
+if (((numRects) < ((rgn)->data->size >> 1)) && ((rgn)->data->size > 50)) \
 {                                    \
     rtgui_region_data_t * NewData;                           \
-    NewData = (rtgui_region_data_t *)rtgui_realloc((reg)->data, PIXREGION_SZOF(numRects));  \
+    NewData = (rtgui_region_data_t *)rtgui_realloc((rgn)->data, REGION_SIZE_OF_RECTS(numRects));  \
     if (NewData)                             \
     {                                    \
     NewData->size = (numRects);                  \
-    (reg)->data = NewData;                       \
+    (rgn)->data = NewData;                       \
     }                                    \
 }
 
-void rtgui_region_init(rtgui_region_t *region)
-{
-    region->extents = rtgui_empty_rect;
-    region->data = &rtgui_region_emptydata;
+static rtgui_region_status_t _invalid(rtgui_region_t *region) {
+    freeData(region);
+    region->extents = _null_rect;
+    region->data = &_bad_region_data;
+    return RTGUI_REGION_STATUS_FAILURE;
 }
-RTM_EXPORT(rtgui_region_init);
 
-void rtgui_region_init_rect(rtgui_region_t *region,
-                            int x, int y, unsigned int width, unsigned int height)
-{
+static rtgui_region_status_t _alloc_rect(rtgui_region_t *region,
+    rt_uint32_t n) {
+    rtgui_region_status_t ret;
+
+    ret = RTGUI_REGION_STATUS_FAILURE;
+
+    do {
+        rtgui_region_data_t *data;
+
+        if (!region->data) {
+            n++;
+            region->data = allocData(n);
+            if (!region->data) break;
+            region->data->numRects = 1;
+            *REGION_RECTS_PTR(region) = region->extents;
+
+        } else if (!region->data->size) {
+            region->data = allocData(n);
+            if (!region->data) break;
+            region->data->numRects = 0;
+
+        } else {
+            if (n == 1) {
+                n = region->data->numRects;
+                if (n > 500) /* XXX pick numbers out of a hat */
+                    n = 250;
+            }
+            n += region->data->numRects;
+            data = (rtgui_region_data_t *)rtgui_realloc(
+                region->data, REGION_SIZE_OF_RECTS(n));
+            if (!data) break;
+            region->data = data;
+        }
+
+        region->data->size = n;
+        ret = RTGUI_REGION_STATUS_SUCCESS;
+    } while (0);
+
+    if (RTGUI_REGION_STATUS_SUCCESS != ret)
+        return _invalid(region);
+    return ret;
+}
+
+/* Public functions ----------------------------------------------------------*/
+void rtgui_region_init_empty(rtgui_region_t *region) {
+    region->extents = _null_rect;
+    region->data = &_null_region_data;
+}
+RTM_EXPORT(rtgui_region_init_empty);
+
+void rtgui_region_init(rtgui_region_t *region,
+    rt_uint16_t x, rt_uint16_t y, rt_uint16_t width, rt_uint16_t height) {
     region->extents.x1 = x;
     region->extents.y1 = y;
     region->extents.x2 = x + width;
@@ -165,93 +231,60 @@ void rtgui_region_init_rect(rtgui_region_t *region,
     region->data = RT_NULL;
 }
 
-void rtgui_region_init_with_extents(rtgui_region_t *region,
-    const rtgui_rect_t *extents) {
-    region->extents = *extents;
+void rtgui_region_init_with_extent(rtgui_region_t *region,
+    const rtgui_rect_t *extent) {
+    region->extents = *extent;
     region->data = RT_NULL;
 }
 
 void rtgui_region_uninit(rtgui_region_t *region) {
-    good(region);
+    GOOD(region);
     freeData(region);
 }
 RTM_EXPORT(rtgui_region_uninit);
 
 rt_uint32_t rtgui_region_num_rects(rtgui_region_t *region) {
-    return PIXREGION_NUM_RECTS(region);
+    return REGION_DATA_NUM_RECTS(region);
 }
 
 rtgui_rect_t *rtgui_region_rects(rtgui_region_t *region) {
-    return PIXREGION_RECTS(region);
+    return REGION_GET_RECTS(region);
 }
 
-static rtgui_region_status_t rtgui_break(rtgui_region_t *region)
-{
-    freeData(region);
-    region->extents = rtgui_empty_rect;
-    region->data = &rtgui_brokendata;
-    return RTGUI_REGION_STATUS_FAILURE;
-}
+rtgui_region_status_t rtgui_region_copy(rtgui_region_t *dst,
+    rtgui_region_t *src) {
+    rtgui_region_status_t ret;
 
-static rtgui_region_status_t rtgui_rect_alloc(rtgui_region_t *region, int n)
-{
-    rtgui_region_data_t *data;
+    ret = RTGUI_REGION_STATUS_SUCCESS;
+    GOOD(dst); GOOD(src);
 
-    if (!region->data)
-    {
-        n++;
-        region->data = allocData(n);
-        if (!region->data) return rtgui_break(region);
-        region->data->numRects = 1;
-        *PIXREGION_BOXPTR(region) = region->extents;
-    }
-    else if (!region->data->size)
-    {
-        region->data = allocData(n);
-        if (!region->data) return rtgui_break(region);
-        region->data->numRects = 0;
-    }
-    else
-    {
-        if (n == 1)
-        {
-            n = region->data->numRects;
-            if (n > 500) /* XXX pick numbers out of a hat */
-                n = 250;
+    do {
+        if (dst == src) break;
+        dst->extents = src->extents;
+
+        if (!src->data || !src->data->size) {
+            freeData(dst);
+            dst->data = src->data;
+            break;
         }
-        n += region->data->numRects;
-        data = (rtgui_region_data_t *)rtgui_realloc(region->data, PIXREGION_SZOF(n));
-        if (!data) return rtgui_break(region);
-        region->data = data;
-    }
-    region->data->size = n;
-    return RTGUI_REGION_STATUS_SUCCESS;
-}
 
-rtgui_region_status_t rtgui_region_copy(rtgui_region_t *dst, rtgui_region_t *src)
-{
-    good(dst);
-    good(src);
-    if (dst == src)
-        return RTGUI_REGION_STATUS_SUCCESS;
-    dst->extents = src->extents;
-    if (!src->data || !src->data->size)
-    {
-        freeData(dst);
-        dst->data = src->data;
-        return RTGUI_REGION_STATUS_SUCCESS;
-    }
-    if (!dst->data || (dst->data->size < src->data->numRects))
-    {
-        freeData(dst);
-        dst->data = allocData(src->data->numRects);
-        if (!dst->data) return rtgui_break(dst);
-        dst->data->size = src->data->numRects;
-    }
-    dst->data->numRects = src->data->numRects;
-    rt_memmove((char *)PIXREGION_BOXPTR(dst), (char *)PIXREGION_BOXPTR(src),
-               dst->data->numRects * sizeof(rtgui_rect_t));
-    return RTGUI_REGION_STATUS_SUCCESS;
+        if (!dst->data || (dst->data->size < src->data->numRects)) {
+            freeData(dst);
+            dst->data = allocData(src->data->numRects);
+            if (!dst->data) {
+                ret = RTGUI_REGION_STATUS_FAILURE;
+                break;
+            }
+            dst->data->size = src->data->numRects;
+        }
+        dst->data->numRects = src->data->numRects;
+        rt_memmove(REGION_RECTS_PTR(dst), REGION_RECTS_PTR(src),
+            dst->data->numRects * sizeof(rtgui_rect_t));
+    } while (0);
+
+    if (RTGUI_REGION_STATUS_SUCCESS != ret)
+        return _invalid(dst);
+    return ret;
 }
 RTM_EXPORT(rtgui_region_copy);
 
@@ -261,7 +294,7 @@ RTM_EXPORT(rtgui_region_copy);
 
 /*-
  *-----------------------------------------------------------------------
- * rtgui_coalesce --
+ * _coalesce --
  *  Attempt to merge the boxes in the current band with those in the
  *  previous one.  We are guaranteed that the current band extends to
  *      the end of the rects array.  Used only by rtgui_op.
@@ -277,29 +310,27 @@ RTM_EXPORT(rtgui_region_copy);
  *
  *-----------------------------------------------------------------------
  */
-rt_inline rt_uint32_t
-rtgui_coalesce(
+rt_inline rt_uint32_t _coalesce(
     rtgui_region_t *region,         /* Region to coalesce */
-    rt_uint32_t prevStart,                  /* Index of start of previous band */
-    rt_uint32_t curStart) {                 /* Index of start of current band */
+    rt_uint32_t prevStart,          /* Index of start of previous band */
+    rt_uint32_t curStart) {         /* Index of start of current band */
     rtgui_rect_t *pPrevBox;         /* Current box in previous band */
     rtgui_rect_t *pCurBox;          /* Current box in current band */
     rt_uint32_t numRects;           /* Number rectangles in both bands */
-    rt_uint32_t y2;                         /* Bottom of current band */
+    rt_int16_t y2;                  /* Bottom of current band */
     /*
      * Figure out how many rectangles are in the band.
      */
     numRects = curStart - prevStart;
     RT_ASSERT(numRects == (region->data->numRects - curStart));
-
     if (!numRects) return curStart;
 
     /*
      * The bands may only be coalesced if the bottom of the previous
      * matches the top scanline of the current.
      */
-    pPrevBox = PIXREGION_BOX(region, prevStart);
-    pCurBox = PIXREGION_BOX(region, curStart);
+    pPrevBox = REGION_RECT(region, prevStart);
+    pCurBox = REGION_RECT(region, curStart);
     if (pPrevBox->y2 != pCurBox->y1) return curStart;
 
     /*
@@ -311,9 +342,8 @@ rtgui_coalesce(
     y2 = pCurBox->y2;
 
     do {
-        if ((pPrevBox->x1 != pCurBox->x1) || (pPrevBox->x2 != pCurBox->x2)) {
-            return (curStart);
-        }
+        if ((pPrevBox->x1 != pCurBox->x1) || (pPrevBox->x2 != pCurBox->x2))
+            return curStart;
         pPrevBox++;
         pCurBox++;
         numRects--;
@@ -333,13 +363,13 @@ rtgui_coalesce(
     return prevStart;
 }
 
-/* Quicky macro to avoid trivial reject procedure calls to rtgui_coalesce */
+/* Quicky macro to avoid trivial reject procedure calls to _coalesce */
 
-#define Coalesce(newReg, prevBand, curBand) \
+#define coalesce(newReg, prevBand, curBand) \
 if (curBand - prevBand == newReg->data->numRects - curBand) { \
-    prevBand = rtgui_coalesce(newReg, prevBand, curBand); \
-} else { \
-    prevBand = curBand; \
+    prevBand = _coalesce(newReg, prevBand, curBand); \
+} else {                                    \
+    prevBand = curBand;                     \
 }
 
 /*-
@@ -359,28 +389,26 @@ if (curBand - prevBand == newReg->data->numRects - curBand) { \
  *-----------------------------------------------------------------------
  */
 
-rt_inline rtgui_region_status_t
-rtgui_region_appendNonO(
+rt_inline rtgui_region_status_t rtgui_region_appendNonO(
     rtgui_region_t *region,
     rtgui_rect_t *r,
     rtgui_rect_t *rEnd,
-    int     y1,
-    int     y2) {
-    rtgui_rect_t   *pNextRect;
-    int newRects;
+    rt_int16_t y1,
+    rt_int16_t y2) {
+    rtgui_rect_t *pNextRect;
+    rt_uint32_t newRects;
 
     newRects = rEnd - r;
-
     RT_ASSERT(y1 < y2);
     RT_ASSERT(newRects != 0);
 
     /* Make sure we have enough space for all rectangles to be added */
-    RECTALLOC(region, newRects);
-    pNextRect = PIXREGION_TOP(region);
+    RECT_ALLOC(region, newRects);
+    pNextRect = REGION_NEXT_RECT(region);
     region->data->numRects += newRects;
     do {
         RT_ASSERT(r->x1 < r->x2);
-        ADDRECT(pNextRect, r->x1, y1, r->x2, y2);
+        ADD_RECT(pNextRect, r->x1, y1, r->x2, y2);
         r++;
     } while (r != rEnd);
 
@@ -400,8 +428,8 @@ rtgui_region_appendNonO(
 {                                           \
     int newRects = rEnd - r;                \
     if (newRects) {                         \
-    RECTALLOC(newReg, newRects);            \
-    rt_memmove((char *)PIXREGION_TOP(newReg),(char *)r,     \
+    RECT_ALLOC(newReg, newRects);            \
+    rt_memmove((char *)REGION_NEXT_RECT(newReg),(char *)r,     \
               newRects * sizeof(rtgui_rect_t));             \
     newReg->data->numRects += newRects;     \
     }                                       \
@@ -482,8 +510,8 @@ rtgui_op(
     /*
      * Break any region computed from a broken region
      */
-    if (PIXREGION_NAR(reg1) || PIXREGION_NAR(reg2))
-        return rtgui_break(newReg);
+    if (REGION_NAR(reg1) || REGION_NAR(reg2))
+        return _invalid(newReg);
 
     /*
      * Initialization:
@@ -493,11 +521,11 @@ rtgui_op(
      * another array of rectangles for it to use.
      */
 
-    r1 = PIXREGION_RECTS(reg1);
-    newSize = PIXREGION_NUM_RECTS(reg1);
+    r1 = REGION_GET_RECTS(reg1);
+    newSize = REGION_DATA_NUM_RECTS(reg1);
     r1End = r1 + newSize;
-    numRects = PIXREGION_NUM_RECTS(reg2);
-    r2 = PIXREGION_RECTS(reg2);
+    numRects = REGION_DATA_NUM_RECTS(reg2);
+    r2 = REGION_GET_RECTS(reg2);
     r2End = r2 + numRects;
     RT_ASSERT(r1 != r1End);
     RT_ASSERT(r2 != r2End);
@@ -507,18 +535,18 @@ rtgui_op(
             ((newReg == reg2) && (numRects > 1)))
     {
         oldData = newReg->data;
-        newReg->data = &rtgui_region_emptydata;
+        newReg->data = &_null_region_data;
     }
     /* guess at new size */
     if (numRects > newSize)
         newSize = numRects;
     newSize <<= 1;
     if (!newReg->data)
-        newReg->data = &rtgui_region_emptydata;
+        newReg->data = &_null_region_data;
     else if (newReg->data->size)
         newReg->data->numRects = 0;
     if (newSize > newReg->data->size)
-        if (!rtgui_rect_alloc(newReg, newSize))
+        if (!_alloc_rect(newReg, newSize))
             return RTGUI_REGION_STATUS_FAILURE;
 
     /*
@@ -535,11 +563,11 @@ rtgui_op(
      * the top of the rectangles of both regions and ybot clips the bottoms.
      */
 
-    ybot = RTGUI_MIN(r1->y1, r2->y1);
+    ybot = _MIN(r1->y1, r2->y1);
 
     /*
      * prevBand serves to mark the start of the previous band so rectangles
-     * can be coalesced into larger rectangles. qv. rtgui_coalesce, above.
+     * can be coalesced into larger rectangles. qv. _coalesce, above.
      * In the beginning, there is no previous band, so prevBand == curBand
      * (curBand is set later on, of course, but the first band will always
      * start at index 0). prevBand and curBand must be indices because of
@@ -573,23 +601,23 @@ rtgui_op(
          */
         if (r1y1 < r2y1) {
             if (appendNon1) {
-                top = RTGUI_MAX(r1y1, ybot);
-                bot = RTGUI_MIN(r1->y2, r2y1);
+                top = _MAX(r1y1, ybot);
+                bot = _MIN(r1->y2, r2y1);
                 if (top < bot) {
                     curBand = newReg->data->numRects;
                     rtgui_region_appendNonO(newReg, r1, r1BandEnd, top, bot);
-                    Coalesce(newReg, prevBand, curBand);
+                    coalesce(newReg, prevBand, curBand);
                 }
             }
             ytop = r2y1;
         } else if (r2y1 < r1y1) {
             if (appendNon2) {
-                top = RTGUI_MAX(r2y1, ybot);
-                bot = RTGUI_MIN(r2->y2, r1y1);
+                top = _MAX(r2y1, ybot);
+                bot = _MIN(r2->y2, r1y1);
                 if (top < bot) {
                     curBand = newReg->data->numRects;
                     rtgui_region_appendNonO(newReg, r2, r2BandEnd, top, bot);
-                    Coalesce(newReg, prevBand, curBand);
+                    coalesce(newReg, prevBand, curBand);
                 }
             }
             ytop = r1y1;
@@ -601,13 +629,13 @@ rtgui_op(
          * Now see if we've hit an intersecting band. The two bands only
          * intersect if ybot > ytop
          */
-        ybot = RTGUI_MIN(r1->y2, r2->y2);
+        ybot = _MIN(r1->y2, r2->y2);
         if (ybot > ytop) {
             curBand = newReg->data->numRects;
             if ((* overlapFunc)(newReg, r1, r1BandEnd, r2, r2BandEnd, ytop, ybot,
                                 pOverlap) == RTGUI_REGION_STATUS_FAILURE)
                 return RTGUI_REGION_STATUS_FAILURE;
-            Coalesce(newReg, prevBand, curBand);
+            coalesce(newReg, prevBand, curBand);
         }
 
         /*
@@ -630,10 +658,10 @@ rtgui_op(
         /* Do first nonOverlap1Func call, which may be able to coalesce */
         FindBand(r1, r1BandEnd, r1End, r1y1);
 
-        if (RTGUI_MAX(r1y1, ybot) < r1->y2) {
+        if (_MAX(r1y1, ybot) < r1->y2) {
             curBand = newReg->data->numRects;
-            rtgui_region_appendNonO(newReg, r1, r1BandEnd, RTGUI_MAX(r1y1, ybot), r1->y2);
-            Coalesce(newReg, prevBand, curBand);
+            rtgui_region_appendNonO(newReg, r1, r1BandEnd, _MAX(r1y1, ybot), r1->y2);
+            coalesce(newReg, prevBand, curBand);
             /* Just append the rest of the boxes  */
             AppendRegions(newReg, r1BandEnd, r1End);
         }
@@ -641,11 +669,11 @@ rtgui_op(
         /* Do first nonOverlap2Func call, which may be able to coalesce */
         FindBand(r2, r2BandEnd, r2End, r2y1);
 
-        if (RTGUI_MAX(r2y1, ybot) < r2->y2) {
+        if (_MAX(r2y1, ybot) < r2->y2) {
             curBand = newReg->data->numRects;
             rtgui_region_appendNonO(newReg, r2, r2BandEnd,
-                RTGUI_MAX(r2y1, ybot), r2->y2);
-            Coalesce(newReg, prevBand, curBand);
+                _MAX(r2y1, ybot), r2->y2);
+            coalesce(newReg, prevBand, curBand);
             /* Append rest of boxes */
             AppendRegions(newReg, r2BandEnd, r2End);
         }
@@ -657,9 +685,9 @@ rtgui_op(
     numRects = newReg->data->numRects;
     if (!numRects) {
         freeData(newReg);
-        newReg->data = &rtgui_region_emptydata;
+        newReg->data = &_null_region_data;
     } else if (numRects == 1) {
-        newReg->extents = *PIXREGION_BOXPTR(newReg);
+        newReg->extents = *REGION_RECTS_PTR(newReg);
         freeData(newReg);
         newReg->data = (rtgui_region_data_t *)RT_NULL;
     } else {
@@ -698,14 +726,14 @@ rtgui_set_extents(rtgui_region_t *region)
         return;
     }
 
-    box = PIXREGION_BOXPTR(region);
-    boxEnd = PIXREGION_END(region);
+    box = REGION_RECTS_PTR(region);
+    boxEnd = REGION_LAST_RECT(region);
 
     /*
      * Since box is the first rectangle in the region, it must have the
      * smallest y1 and since boxEnd is the last rectangle in the region,
      * it must have the largest y2, because of banding. Initialize x1 and
-     * x2 from  box and boxEnd, resp., as good things to initialize them
+     * x2 from  box and boxEnd, resp., as GOOD things to initialize them
      * to...
      */
     region->extents.x1 = box->x1;
@@ -743,37 +771,36 @@ rtgui_set_extents(rtgui_region_t *region)
  *-----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-static rtgui_region_status_t
-rtgui_region_intersectO(
+static rtgui_region_status_t rtgui_region_intersectO(
     rtgui_region_t *region,
     rtgui_rect_t *r1,
     rtgui_rect_t *r1End,
     rtgui_rect_t *r2,
     rtgui_rect_t *r2End,
-    short       y1,
-    short       y2,
-    int         *pOverlap)
-{
-    int     x1;
-    int     x2;
-    rtgui_rect_t   *pNextRect;
+    short y1,
+    short y2,
+    int *pOverlap) {
+    int x1;
+    int x2;
+    rtgui_rect_t *pNextRect;
+    (void)pOverlap;
 
-    pNextRect = PIXREGION_TOP(region);
+    pNextRect = REGION_NEXT_RECT(region);
 
     RT_ASSERT(y1 < y2);
     RT_ASSERT(r1 != r1End && r2 != r2End);
 
     do
     {
-        x1 = RTGUI_MAX(r1->x1, r2->x1);
-        x2 = RTGUI_MIN(r1->x2, r2->x2);
+        x1 = _MAX(r1->x1, r2->x1);
+        x2 = _MIN(r1->x2, r2->x2);
 
         /*
          * If there's any overlap between the two rectangles, add that
          * overlap to the new region.
          */
         if (x1 < x2)
-            NEWRECT(region, pNextRect, x1, y1, x2, y2);
+            NEW_RECT(region, pNextRect, x1, y1, x2, y2);
 
         /*
          * Advance the pointer(s) with the leftmost right side, since the next
@@ -799,40 +826,40 @@ rtgui_region_intersect(rtgui_region_t *newReg,
                        rtgui_region_t *reg1,
                        rtgui_region_t *reg2)
 {
-    good(reg1);
-    good(reg2);
-    good(newReg);
+    GOOD(reg1);
+    GOOD(reg2);
+    GOOD(newReg);
     /* check for trivial reject */
-    if (PIXREGION_NIL(reg1)  || PIXREGION_NIL(reg2) ||
+    if (REGION_NO_RECT(reg1)  || REGION_NO_RECT(reg2) ||
             !IS_R_INTERSECT(&reg1->extents, &reg2->extents))
     {
         /* Covers about 20% of all cases */
         freeData(newReg);
         newReg->extents.x2 = newReg->extents.x1;
         newReg->extents.y2 = newReg->extents.y1;
-        if (PIXREGION_NAR(reg1) || PIXREGION_NAR(reg2))
+        if (REGION_NAR(reg1) || REGION_NAR(reg2))
         {
-            newReg->data = &rtgui_brokendata;
+            newReg->data = &_bad_region_data;
             return RTGUI_REGION_STATUS_FAILURE;
         }
         else
-            newReg->data = &rtgui_region_emptydata;
+            newReg->data = &_null_region_data;
     }
     else if (!reg1->data && !reg2->data)
     {
         /* Covers about 80% of cases that aren't trivially rejected */
-        newReg->extents.x1 = RTGUI_MAX(reg1->extents.x1, reg2->extents.x1);
-        newReg->extents.y1 = RTGUI_MAX(reg1->extents.y1, reg2->extents.y1);
-        newReg->extents.x2 = RTGUI_MIN(reg1->extents.x2, reg2->extents.x2);
-        newReg->extents.y2 = RTGUI_MIN(reg1->extents.y2, reg2->extents.y2);
+        newReg->extents.x1 = _MAX(reg1->extents.x1, reg2->extents.x1);
+        newReg->extents.y1 = _MAX(reg1->extents.y1, reg2->extents.y1);
+        newReg->extents.x2 = _MIN(reg1->extents.x2, reg2->extents.x2);
+        newReg->extents.y2 = _MIN(reg1->extents.y2, reg2->extents.y2);
         freeData(newReg);
         newReg->data = (rtgui_region_data_t *)RT_NULL;
     }
-    else if (!reg2->data && SUBSUMES(&reg2->extents, &reg1->extents))
+    else if (!reg2->data && IS_R_INSIDE(&reg2->extents, &reg1->extents))
     {
         return rtgui_region_copy(newReg, reg1);
     }
-    else if (!reg1->data && SUBSUMES(&reg1->extents, &reg2->extents))
+    else if (!reg1->data && IS_R_INSIDE(&reg1->extents, &reg2->extents))
     {
         return rtgui_region_copy(newReg, reg2);
     }
@@ -851,7 +878,7 @@ rtgui_region_intersect(rtgui_region_t *newReg,
         rtgui_set_extents(newReg);
     }
 
-    good(newReg);
+    GOOD(newReg);
     return(RTGUI_REGION_STATUS_SUCCESS);
 }
 RTM_EXPORT(rtgui_region_intersect);
@@ -878,7 +905,7 @@ RTM_EXPORT(rtgui_region_intersect_rect);
     if (x2 < r->x2) x2 = r->x2; \
     } else {                    \
     /* Add current rectangle, start new one */                  \
-    NEWRECT(region, pNextRect, x1, y1, x2, y2);                 \
+    NEW_RECT(region, pNextRect, x1, y1, x2, y2);                 \
     x1 = r->x1;                 \
     x2 = r->x2;                 \
     }                           \
@@ -922,7 +949,7 @@ rtgui_region_unionO(
     RT_ASSERT(y1 < y2);
     RT_ASSERT(r1 != r1End && r2 != r2End);
 
-    pNextRect = PIXREGION_TOP(region);
+    pNextRect = REGION_NEXT_RECT(region);
 
     /* Start off current rectangle */
     if (r1->x1 < r2->x1)
@@ -961,7 +988,7 @@ rtgui_region_unionO(
     }
 
     /* Add current rectangle */
-    NEWRECT(region, pNextRect, x1, y1, x2, y2);
+    NEW_RECT(region, pNextRect, x1, y1, x2, y2);
 
     return RTGUI_REGION_STATUS_SUCCESS;
 }
@@ -987,9 +1014,9 @@ rtgui_region_union(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_region_t 
     int overlap; /* result ignored */
 
     /* Return RTGUI_REGION_STATUS_SUCCESS if some overlap between reg1, reg2 */
-    good(reg1);
-    good(reg2);
-    good(newReg);
+    GOOD(reg1);
+    GOOD(reg2);
+    GOOD(newReg);
     /*  checks all the simple cases */
 
     /*
@@ -1003,9 +1030,9 @@ rtgui_region_union(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_region_t 
     /*
      * Region 1 is empty
      */
-    if (PIXREGION_NIL(reg1))
+    if (REGION_NO_RECT(reg1))
     {
-        if (PIXREGION_NAR(reg1)) return rtgui_break(newReg);
+        if (REGION_NAR(reg1)) return _invalid(newReg);
         if (newReg != reg2)
             return rtgui_region_copy(newReg, reg2);
         return RTGUI_REGION_STATUS_SUCCESS;
@@ -1014,9 +1041,9 @@ rtgui_region_union(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_region_t 
     /*
      * Region 2 is empty
      */
-    if (PIXREGION_NIL(reg2))
+    if (REGION_NO_RECT(reg2))
     {
-        if (PIXREGION_NAR(reg2)) return rtgui_break(newReg);
+        if (REGION_NAR(reg2)) return _invalid(newReg);
         if (newReg != reg1)
             return rtgui_region_copy(newReg, reg1);
         return RTGUI_REGION_STATUS_SUCCESS;
@@ -1025,7 +1052,7 @@ rtgui_region_union(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_region_t 
     /*
      * Region 1 completely subsumes region 2
      */
-    if (!reg1->data && SUBSUMES(&reg1->extents, &reg2->extents))
+    if (!reg1->data && IS_R_INSIDE(&reg1->extents, &reg2->extents))
     {
         if (newReg != reg1)
             return rtgui_region_copy(newReg, reg1);
@@ -1035,7 +1062,7 @@ rtgui_region_union(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_region_t 
     /*
      * Region 2 completely subsumes region 1
      */
-    if (!reg2->data && SUBSUMES(&reg2->extents, &reg1->extents))
+    if (!reg2->data && IS_R_INSIDE(&reg2->extents, &reg1->extents))
     {
         if (newReg != reg2)
             return rtgui_region_copy(newReg, reg2);
@@ -1045,11 +1072,11 @@ rtgui_region_union(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_region_t 
     if (!rtgui_op(newReg, reg1, reg2, rtgui_region_unionO, RTGUI_REGION_STATUS_SUCCESS, RTGUI_REGION_STATUS_SUCCESS, &overlap))
         return RTGUI_REGION_STATUS_FAILURE;
 
-    newReg->extents.x1 = RTGUI_MIN(reg1->extents.x1, reg2->extents.x1);
-    newReg->extents.y1 = RTGUI_MIN(reg1->extents.y1, reg2->extents.y1);
-    newReg->extents.x2 = RTGUI_MAX(reg1->extents.x2, reg2->extents.x2);
-    newReg->extents.y2 = RTGUI_MAX(reg1->extents.y2, reg2->extents.y2);
-    good(newReg);
+    newReg->extents.x1 = _MIN(reg1->extents.x1, reg2->extents.x1);
+    newReg->extents.y1 = _MIN(reg1->extents.y1, reg2->extents.y1);
+    newReg->extents.x2 = _MAX(reg1->extents.x2, reg2->extents.x2);
+    newReg->extents.y2 = _MAX(reg1->extents.y2, reg2->extents.y2);
+    GOOD(newReg);
     return RTGUI_REGION_STATUS_SUCCESS;
 }
 
@@ -1082,25 +1109,25 @@ rtgui_region_append(rtgui_region_t *dstrgn,
     rtgui_rect_t *new, *old;
     int prepend;
 
-    if (PIXREGION_NAR(rgn)) return rtgui_break(dstrgn);
+    if (REGION_NAR(rgn)) return _invalid(dstrgn);
 
-    if (!rgn->data && (dstrgn->data == &rtgui_region_emptydata))
+    if (!rgn->data && (dstrgn->data == &_null_region_data))
     {
         dstrgn->extents = rgn->extents;
         dstrgn->data = (rtgui_region_data_t *)RT_NULL;
         return RTGUI_REGION_STATUS_SUCCESS;
     }
 
-    numRects = PIXREGION_NUM_RECTS(rgn);
+    numRects = REGION_DATA_NUM_RECTS(rgn);
     if (!numRects)
         return RTGUI_REGION_STATUS_SUCCESS;
     prepend = RTGUI_REGION_STATUS_FAILURE;
     size = numRects;
-    dnumRects = PIXREGION_NUM_RECTS(dstrgn);
+    dnumRects = REGION_DATA_NUM_RECTS(dstrgn);
     if (!dnumRects && (size < 200))
         size = 200; /* XXX pick numbers out of a hat */
-    RECTALLOC(dstrgn, size);
-    old = PIXREGION_RECTS(rgn);
+    RECT_ALLOC(dstrgn, size);
+    old = REGION_GET_RECTS(rgn);
     if (!dnumRects)
         dstrgn->extents = rgn->extents;
     else if (dstrgn->extents.x2 > dstrgn->extents.x1)
@@ -1108,7 +1135,7 @@ rtgui_region_append(rtgui_region_t *dstrgn,
         rtgui_rect_t *first, *last;
 
         first = old;
-        last = PIXREGION_BOXPTR(dstrgn) + (dnumRects - 1);
+        last = REGION_RECTS_PTR(dstrgn) + (dnumRects - 1);
         if ((first->y1 > last->y2) ||
                 ((first->y1 == last->y1) && (first->y2 == last->y2) &&
                  (first->x1 > last->x2)))
@@ -1121,7 +1148,7 @@ rtgui_region_append(rtgui_region_t *dstrgn,
         }
         else
         {
-            first = PIXREGION_BOXPTR(dstrgn);
+            first = REGION_RECTS_PTR(dstrgn);
             last = old + (numRects - 1);
             if ((first->y1 > last->y2) ||
                     ((first->y1 == last->y1) && (first->y2 == last->y2) &&
@@ -1140,16 +1167,16 @@ rtgui_region_append(rtgui_region_t *dstrgn,
     }
     if (prepend)
     {
-        new = PIXREGION_BOX(dstrgn, numRects);
+        new = REGION_RECT(dstrgn, numRects);
         if (dnumRects == 1)
-            *new = *PIXREGION_BOXPTR(dstrgn);
+            *new = *REGION_RECTS_PTR(dstrgn);
         else
-            rt_memmove((char *)new, (char *)PIXREGION_BOXPTR(dstrgn),
+            rt_memmove((char *)new, (char *)REGION_RECTS_PTR(dstrgn),
                        dnumRects * sizeof(rtgui_rect_t));
-        new = PIXREGION_BOXPTR(dstrgn);
+        new = REGION_RECTS_PTR(dstrgn);
     }
     else
-        new = PIXREGION_BOXPTR(dstrgn) + dnumRects;
+        new = REGION_RECTS_PTR(dstrgn) + dnumRects;
     if (numRects == 1)
         *new = *old;
     else
@@ -1257,38 +1284,39 @@ static void QuickSortRects(rtgui_rect_t rects[], int numRects)
  *
  *-----------------------------------------------------------------------
  */
-rtgui_region_status_t rtgui_region_validate(rtgui_region_t *badreg,
+rtgui_region_status_t rtgui_region_validate(
+    rtgui_region_t *badreg,
     int *pOverlap) {
     /* Descriptor for regions under construction  in Step 2. */
     typedef struct {
-        rtgui_region_t  reg;
-        rt_uint32_t     prevBand;
-        rt_uint32_t     curBand;
+        rtgui_region_t rgn;
+        rt_uint32_t prevBand;
+        rt_uint32_t curBand;
     } RegionInfo;
 
-    int numRects;   /* Original numRects for badreg     */
+    rt_uint32_t numRects;   /* Original numRects for badreg     */
     RegionInfo *ri;     /* Array of current regions         */
     int numRI;      /* Number of entries used in ri     */
     int sizeRI;     /* Number of entries available in ri    */
     int i;      /* Index into rects             */
     int j;      /* Index into ri                */
     RegionInfo *rit;       /* &ri[j]                    */
-    rtgui_region_t   *reg;        /* ri[j].reg              */
+    rtgui_region_t   *rgn;        /* ri[j].rgn              */
     rtgui_rect_t   *box;        /* Current box in rects         */
-    rtgui_rect_t   *riBox;      /* Last box in ri[j].reg            */
-    rtgui_region_t   *hreg;       /* ri[j_half].reg             */
+    rtgui_rect_t   *riBox;      /* Last box in ri[j].rgn            */
+    rtgui_region_t   *hreg;       /* ri[j_half].rgn             */
     rtgui_region_status_t ret = RTGUI_REGION_STATUS_SUCCESS;
 
     *pOverlap = RTGUI_REGION_STATUS_FAILURE;
     if (!badreg->data) {
-        good(badreg);
+        GOOD(badreg);
         return RTGUI_REGION_STATUS_SUCCESS;
     }
     numRects = badreg->data->numRects;
     if (!numRects) {
-        if (PIXREGION_NAR(badreg))
+        if (REGION_NAR(badreg))
             return RTGUI_REGION_STATUS_FAILURE;
-        good(badreg);
+        GOOD(badreg);
         return RTGUI_REGION_STATUS_SUCCESS;
     }
     if (badreg->extents.x1 < badreg->extents.x2) {
@@ -1298,27 +1326,27 @@ rtgui_region_status_t rtgui_region_validate(rtgui_region_t *badreg,
         } else {
             DOWNSIZE(badreg, numRects);
         }
-        good(badreg);
+        GOOD(badreg);
         return RTGUI_REGION_STATUS_SUCCESS;
     }
 
     /* Step 1: Sort the rects array into ascending (y1, x1) order */
-    QuickSortRects(PIXREGION_BOXPTR(badreg), numRects);
+    QuickSortRects(REGION_RECTS_PTR(badreg), numRects);
 
     /* Step 2: Scatter the sorted array into the RTGUI_MINimum number of regions */
 
     /* Set up the first region to be the first rectangle in badreg */
-    /* Note that step 2 code will never overflow the ri[0].reg rects array */
+    /* Note that step 2 code will never overflow the ri[0].rgn rects array */
     ri = (RegionInfo *) rtgui_malloc(4 * sizeof(RegionInfo));
-    if (!ri) return rtgui_break(badreg);
+    if (!ri) return _invalid(badreg);
     sizeRI = 4;
     numRI = 1;
     ri[0].prevBand = 0;
     ri[0].curBand = 0;
-    ri[0].reg = *badreg;
-    box = PIXREGION_BOXPTR(&ri[0].reg);
-    ri[0].reg.extents = *box;
-    ri[0].reg.data->numRects = 1;
+    ri[0].rgn = *badreg;
+    box = REGION_RECTS_PTR(&ri[0].rgn);
+    ri[0].rgn.extents = *box;
+    ri[0].rgn.data->numRects = 1;
 
     /* Now scatter rectangles into the RTGUI_MINimum set of valid regions.  If the
        next rectangle to be added to a region would force an existing rectangle
@@ -1332,8 +1360,8 @@ rtgui_region_status_t rtgui_region_validate(rtgui_region_t *badreg,
         /* Look for a region to append box to */
         for (j = numRI, rit = ri; --j >= 0; rit++)
         {
-            reg = &rit->reg;
-            riBox = PIXREGION_END(reg);
+            rgn = &rit->rgn;
+            riBox = REGION_LAST_RECT(rgn);
 
             if (box->y1 == riBox->y1 && box->y2 == riBox->y2)
             {
@@ -1346,22 +1374,22 @@ rtgui_region_status_t rtgui_region_validate(rtgui_region_t *badreg,
                 }
                 else
                 {
-                    RECTALLOC_BAIL(reg, 1, bail);
-                    *PIXREGION_TOP(reg) = *box;
-                    reg->data->numRects++;
+                    RECTALLOC_BAIL(rgn, 1, bail);
+                    *REGION_NEXT_RECT(rgn) = *box;
+                    rgn->data->numRects++;
                 }
                 goto NextRect;   /* So sue me */
             }
             else if (box->y1 >= riBox->y2)
             {
                 /* Put box into new band */
-                if (reg->extents.x2 < riBox->x2) reg->extents.x2 = riBox->x2;
-                if (reg->extents.x1 > box->x1)   reg->extents.x1 = box->x1;
-                Coalesce(reg, rit->prevBand, rit->curBand);
-                rit->curBand = reg->data->numRects;
-                RECTALLOC_BAIL(reg, 1, bail);
-                *PIXREGION_TOP(reg) = *box;
-                reg->data->numRects++;
+                if (rgn->extents.x2 < riBox->x2) rgn->extents.x2 = riBox->x2;
+                if (rgn->extents.x1 > box->x1)   rgn->extents.x1 = box->x1;
+                coalesce(rgn, rit->prevBand, rit->curBand);
+                rit->curBand = rgn->data->numRects;
+                RECTALLOC_BAIL(rgn, 1, bail);
+                *REGION_NEXT_RECT(rgn) = *box;
+                rgn->data->numRects++;
                 goto NextRect;
             }
             /* Well, this region was inappropriate.  Try the next one. */
@@ -1381,28 +1409,28 @@ rtgui_region_status_t rtgui_region_validate(rtgui_region_t *badreg,
         numRI++;
         rit->prevBand = 0;
         rit->curBand = 0;
-        rit->reg.extents = *box;
-        rit->reg.data = (rtgui_region_data_t *)RT_NULL;
-        if (!rtgui_rect_alloc(&rit->reg, (i + numRI) / numRI)) /* MUST force allocation */
+        rit->rgn.extents = *box;
+        rit->rgn.data = (rtgui_region_data_t *)RT_NULL;
+        if (!_alloc_rect(&rit->rgn, (i + numRI) / numRI)) /* MUST force allocation */
             goto bail;
 NextRect:
         ;
     } /* for i */
 
-    /* Make a final pass over each region in order to Coalesce and set
+    /* Make a final pass over each region in order to coalesce and set
        extents.x2 and extents.y2 */
 
     for (j = numRI, rit = ri; --j >= 0; rit++)
     {
-        reg = &rit->reg;
-        riBox = PIXREGION_END(reg);
-        reg->extents.y2 = riBox->y2;
-        if (reg->extents.x2 < riBox->x2) reg->extents.x2 = riBox->x2;
-        Coalesce(reg, rit->prevBand, rit->curBand);
-        if (reg->data->numRects == 1) /* keep unions happy below */
+        rgn = &rit->rgn;
+        riBox = REGION_LAST_RECT(rgn);
+        rgn->extents.y2 = riBox->y2;
+        if (rgn->extents.x2 < riBox->x2) rgn->extents.x2 = riBox->x2;
+        coalesce(rgn, rit->prevBand, rit->curBand);
+        if (rgn->data->numRects == 1) /* keep unions happy below */
         {
-            freeData(reg);
-            reg->data = (rtgui_region_data_t *)RT_NULL;
+            freeData(rgn);
+            rgn->data = (rtgui_region_data_t *)RT_NULL;
         }
     }
 
@@ -1412,33 +1440,33 @@ NextRect:
         int half = numRI / 2;
         for (j = numRI & 1; j < (half + (numRI & 1)); j++)
         {
-            reg = &ri[j].reg;
-            hreg = &ri[j + half].reg;
-            if (!rtgui_op(reg, reg, hreg, rtgui_region_unionO, RTGUI_REGION_STATUS_SUCCESS, RTGUI_REGION_STATUS_SUCCESS, pOverlap))
+            rgn = &ri[j].rgn;
+            hreg = &ri[j + half].rgn;
+            if (!rtgui_op(rgn, rgn, hreg, rtgui_region_unionO, RTGUI_REGION_STATUS_SUCCESS, RTGUI_REGION_STATUS_SUCCESS, pOverlap))
                 ret = RTGUI_REGION_STATUS_FAILURE;
-            if (hreg->extents.x1 < reg->extents.x1)
-                reg->extents.x1 = hreg->extents.x1;
-            if (hreg->extents.y1 < reg->extents.y1)
-                reg->extents.y1 = hreg->extents.y1;
-            if (hreg->extents.x2 > reg->extents.x2)
-                reg->extents.x2 = hreg->extents.x2;
-            if (hreg->extents.y2 > reg->extents.y2)
-                reg->extents.y2 = hreg->extents.y2;
+            if (hreg->extents.x1 < rgn->extents.x1)
+                rgn->extents.x1 = hreg->extents.x1;
+            if (hreg->extents.y1 < rgn->extents.y1)
+                rgn->extents.y1 = hreg->extents.y1;
+            if (hreg->extents.x2 > rgn->extents.x2)
+                rgn->extents.x2 = hreg->extents.x2;
+            if (hreg->extents.y2 > rgn->extents.y2)
+                rgn->extents.y2 = hreg->extents.y2;
             freeData(hreg);
         }
         numRI -= half;
     }
-    *badreg = ri[0].reg;
+    *badreg = ri[0].rgn;
     rtgui_free(ri);
-    good(badreg);
+    GOOD(badreg);
     return ret;
 
 bail:
     for (i = 0; i < numRI; i++)
-        freeData(&ri[i].reg);
+        freeData(&ri[i].rgn);
     rtgui_free(ri);
 
-    return rtgui_break(badreg);
+    return _invalid(badreg);
 }
 
 /*======================================================================
@@ -1480,7 +1508,7 @@ rtgui_region_subtractO(
     RT_ASSERT(y1 < y2);
     RT_ASSERT(r1 != r1End && r2 != r2End);
 
-    pNextRect = PIXREGION_TOP(region);
+    pNextRect = REGION_NEXT_RECT(region);
 
     do
     {
@@ -1523,7 +1551,7 @@ rtgui_region_subtractO(
              * part of minuend to region and skip to next subtrahend.
              */
             RT_ASSERT(x1 < r2->x1);
-            NEWRECT(region, pNextRect, x1, y1, r2->x1, y2);
+            NEW_RECT(region, pNextRect, x1, y1, r2->x1, y2);
 
             x1 = r2->x2;
             if (x1 >= r1->x2)
@@ -1549,7 +1577,7 @@ rtgui_region_subtractO(
              * Minuend used up: add any remaining piece before advancing.
              */
             if (r1->x2 > x1)
-                NEWRECT(region, pNextRect, x1, y1, r1->x2, y2);
+                NEW_RECT(region, pNextRect, x1, y1, r1->x2, y2);
             r1++;
             if (r1 != r1End)
                 x1 = r1->x1;
@@ -1563,7 +1591,7 @@ rtgui_region_subtractO(
     while (r1 != r1End)
     {
         RT_ASSERT(x1 < r1->x2);
-        NEWRECT(region, pNextRect, x1, y1, r1->x2, y2);
+        NEW_RECT(region, pNextRect, x1, y1, r1->x2, y2);
         r1++;
         if (r1 != r1End)
             x1 = r1->x1;
@@ -1593,14 +1621,14 @@ rtgui_region_subtract(rtgui_region_t *regD,
 {
     int overlap; /* result ignored */
 
-    good(regM);
-    good(regS);
-    good(regD);
+    GOOD(regM);
+    GOOD(regS);
+    GOOD(regD);
     /* check for trivial rejects */
-    if (PIXREGION_NIL(regM) || PIXREGION_NIL(regS) ||
+    if (REGION_NO_RECT(regM) || REGION_NO_RECT(regS) ||
             !IS_R_INTERSECT(&regM->extents, &regS->extents))
     {
-        if (PIXREGION_NAR(regS)) return rtgui_break(regD);
+        if (REGION_NAR(regS)) return _invalid(regD);
         return rtgui_region_copy(regD, regM);
     }
     else if (regM == regS)
@@ -1608,7 +1636,7 @@ rtgui_region_subtract(rtgui_region_t *regD,
         freeData(regD);
         regD->extents.x2 = regD->extents.x1;
         regD->extents.y2 = regD->extents.y1;
-        regD->data = &rtgui_region_emptydata;
+        regD->data = &_null_region_data;
         return RTGUI_REGION_STATUS_SUCCESS;
     }
 
@@ -1626,7 +1654,7 @@ rtgui_region_subtract(rtgui_region_t *regD,
      * due to coalescing, so we have to exaRTGUI_MINe fewer rectangles.
      */
     rtgui_set_extents(regD);
-    good(regD);
+    GOOD(regD);
     return RTGUI_REGION_STATUS_SUCCESS;
 }
 
@@ -1672,12 +1700,12 @@ rtgui_region_inverse(rtgui_region_t *newReg,       /* Destination region */
                      * bounding box */
     int   overlap;  /* result ignored */
 
-    good(reg1);
-    good(newReg);
+    GOOD(reg1);
+    GOOD(newReg);
     /* check for trivial rejects */
-    if (PIXREGION_NIL(reg1) || !IS_R_INTERSECT(invRect, &reg1->extents))
+    if (REGION_NO_RECT(reg1) || !IS_R_INTERSECT(invRect, &reg1->extents))
     {
-        if (PIXREGION_NAR(reg1)) return rtgui_break(newReg);
+        if (REGION_NAR(reg1)) return _invalid(newReg);
         newReg->extents = *invRect;
         freeData(newReg);
         newReg->data = (rtgui_region_data_t *)RT_NULL;
@@ -1700,7 +1728,7 @@ rtgui_region_inverse(rtgui_region_t *newReg,       /* Destination region */
      * due to coalescing, so we have to exaRTGUI_MINe fewer rectangles.
      */
     rtgui_set_extents(newReg);
-    good(newReg);
+    GOOD(newReg);
     return RTGUI_REGION_STATUS_SUCCESS;
 }
 
@@ -1730,8 +1758,8 @@ int rtgui_region_contains_rectangle(rtgui_region_t *region, rtgui_rect_t *prect)
     int         partIn, partOut;
     int         numRects;
 
-    good(region);
-    numRects = PIXREGION_NUM_RECTS(region);
+    GOOD(region);
+    numRects = REGION_DATA_NUM_RECTS(region);
     /* useful optimization */
     if (!numRects || !IS_R_INTERSECT(&region->extents, prect))
         return(RTGUI_REGION_OUT);
@@ -1739,7 +1767,7 @@ int rtgui_region_contains_rectangle(rtgui_region_t *region, rtgui_rect_t *prect)
     if (numRects == 1)
     {
         /* We know that it must be rgnIN or rgnPART */
-        if (SUBSUMES(&region->extents, prect))
+        if (IS_R_INSIDE(&region->extents, prect))
             return(RTGUI_REGION_IN);
         else
             return(RTGUI_REGION_PART);
@@ -1753,7 +1781,7 @@ int rtgui_region_contains_rectangle(rtgui_region_t *region, rtgui_rect_t *prect)
     y = prect->y1;
 
     /* can stop when both partOut and partIn are RTGUI_REGION_STATUS_SUCCESS, or we reach prect->y2 */
-    for (pbox = PIXREGION_BOXPTR(region), pboxEnd = pbox + numRects;
+    for (pbox = REGION_RECTS_PTR(region), pboxEnd = pbox + numRects;
             pbox != pboxEnd;
             pbox++)
     {
@@ -1819,17 +1847,17 @@ void rtgui_region_translate(rtgui_region_t *region, int x, int y)
     int nbox;
     rtgui_rect_t *pbox;
 
-    good(region);
+    GOOD(region);
     region->extents.x1 = x1 = region->extents.x1 + x;
     region->extents.y1 = y1 = region->extents.y1 + y;
     region->extents.x2 = x2 = region->extents.x2 + x;
     region->extents.y2 = y2 = region->extents.y2 + y;
-    if (((x1 - RTGUI_SHRT_MIN) | (y1 - RTGUI_SHRT_MIN) | (RTGUI_SHRT_MAX - x2) | (RTGUI_SHRT_MAX - y2)) >= 0)
+    if (((x1 - INT16_MIN) | (y1 - INT16_MIN) | (INT16_MAX - x2) | (INT16_MAX - y2)) >= 0)
     {
         if (region->data && region->data->numRects)
         {
             nbox = region->data->numRects;
-            for (pbox = PIXREGION_BOXPTR(region); nbox--; pbox++)
+            for (pbox = REGION_RECTS_PTR(region); nbox--; pbox++)
             {
                 pbox->x1 += x;
                 pbox->y1 += y;
@@ -1839,55 +1867,55 @@ void rtgui_region_translate(rtgui_region_t *region, int x, int y)
         }
         return;
     }
-    if (((x2 - RTGUI_SHRT_MIN) | (y2 - RTGUI_SHRT_MIN) | (RTGUI_SHRT_MAX - x1) | (RTGUI_SHRT_MAX - y1)) <= 0)
+    if (((x2 - INT16_MIN) | (y2 - INT16_MIN) | (INT16_MAX - x1) | (INT16_MAX - y1)) <= 0)
     {
         region->extents.x2 = region->extents.x1;
         region->extents.y2 = region->extents.y1;
         freeData(region);
-        region->data = &rtgui_region_emptydata;
+        region->data = &_null_region_data;
         return;
     }
-    if (x1 < RTGUI_SHRT_MIN)
-        region->extents.x1 = RTGUI_SHRT_MIN;
-    else if (x2 > RTGUI_SHRT_MAX)
-        region->extents.x2 = RTGUI_SHRT_MAX;
-    if (y1 < RTGUI_SHRT_MIN)
-        region->extents.y1 = RTGUI_SHRT_MIN;
-    else if (y2 > RTGUI_SHRT_MAX)
-        region->extents.y2 = RTGUI_SHRT_MAX;
+    if (x1 < INT16_MIN)
+        region->extents.x1 = INT16_MIN;
+    else if (x2 > INT16_MAX)
+        region->extents.x2 = INT16_MAX;
+    if (y1 < INT16_MIN)
+        region->extents.y1 = INT16_MIN;
+    else if (y2 > INT16_MAX)
+        region->extents.y2 = INT16_MAX;
 
     if (region->data && region->data->numRects)
     {
         rtgui_rect_t *pboxout;
 
         nbox = region->data->numRects;
-        for (pboxout = pbox = PIXREGION_BOXPTR(region); nbox--; pbox++)
+        for (pboxout = pbox = REGION_RECTS_PTR(region); nbox--; pbox++)
         {
             pboxout->x1 = x1 = pbox->x1 + x;
             pboxout->y1 = y1 = pbox->y1 + y;
             pboxout->x2 = x2 = pbox->x2 + x;
             pboxout->y2 = y2 = pbox->y2 + y;
-            if (((x2 - RTGUI_SHRT_MIN) | (y2 - RTGUI_SHRT_MIN) |
-                    (RTGUI_SHRT_MAX - x1) | (RTGUI_SHRT_MAX - y1)) <= 0)
+            if (((x2 - INT16_MIN) | (y2 - INT16_MIN) |
+                    (INT16_MAX - x1) | (INT16_MAX - y1)) <= 0)
             {
                 region->data->numRects--;
                 continue;
             }
-            if (x1 < RTGUI_SHRT_MIN)
-                pboxout->x1 = RTGUI_SHRT_MIN;
-            else if (x2 > RTGUI_SHRT_MAX)
-                pboxout->x2 = RTGUI_SHRT_MAX;
-            if (y1 < RTGUI_SHRT_MIN)
-                pboxout->y1 = RTGUI_SHRT_MIN;
-            else if (y2 > RTGUI_SHRT_MAX)
-                pboxout->y2 = RTGUI_SHRT_MAX;
+            if (x1 < INT16_MIN)
+                pboxout->x1 = INT16_MIN;
+            else if (x2 > INT16_MAX)
+                pboxout->x2 = INT16_MAX;
+            if (y1 < INT16_MIN)
+                pboxout->y1 = INT16_MIN;
+            else if (y2 > INT16_MAX)
+                pboxout->y2 = INT16_MAX;
             pboxout++;
         }
         if (pboxout != pbox)
         {
             if (region->data->numRects == 1)
             {
-                region->extents = *PIXREGION_BOXPTR(region);
+                region->extents = *REGION_RECTS_PTR(region);
                 freeData(region);
                 region->data = (rtgui_region_data_t *)RT_NULL;
             }
@@ -1899,10 +1927,10 @@ void rtgui_region_translate(rtgui_region_t *region, int x, int y)
 
 void rtgui_region_reset(rtgui_region_t *region, rtgui_rect_t *rect)
 {
-    good(region);
+    GOOD(region);
     freeData(region);
 
-    rtgui_region_init_with_extents(region, rect);
+    rtgui_region_init_with_extent(region, rect);
 }
 RTM_EXPORT(rtgui_region_reset);
 
@@ -1914,8 +1942,8 @@ int rtgui_region_contains_point(rtgui_region_t *region,
     rtgui_rect_t *pbox, *pboxEnd;
     int numRects;
 
-    good(region);
-    numRects = PIXREGION_NUM_RECTS(region);
+    GOOD(region);
+    numRects = REGION_DATA_NUM_RECTS(region);
     if (!numRects || !IS_P_INSIDE(&region->extents, x, y))
         return -RT_ERROR;
 
@@ -1925,7 +1953,7 @@ int rtgui_region_contains_point(rtgui_region_t *region,
         return RT_EOK;
     }
 
-    for (pbox = PIXREGION_BOXPTR(region), pboxEnd = pbox + numRects;
+    for (pbox = REGION_RECTS_PTR(region), pboxEnd = pbox + numRects;
             pbox != pboxEnd;
             pbox++)
     {
@@ -1944,23 +1972,23 @@ int rtgui_region_contains_point(rtgui_region_t *region,
 
 int rtgui_region_not_empty(rtgui_region_t *region)
 {
-    good(region);
+    GOOD(region);
 
-    return(!PIXREGION_NIL(region));
+    return(!REGION_NO_RECT(region));
 }
 
 void rtgui_region_empty(rtgui_region_t *region)
 {
-    good(region);
+    GOOD(region);
     freeData(region);
 
-    region->extents = rtgui_empty_rect;
-    region->data = &rtgui_region_emptydata;
+    region->extents = _null_rect;
+    region->data = &_null_region_data;
 }
 
 rtgui_rect_t *rtgui_region_extents(rtgui_region_t *region)
 {
-    good(region);
+    GOOD(region);
     return(&region->extents);
 }
 
@@ -1973,8 +2001,8 @@ void rtgui_region_dump(rtgui_region_t *region)
     int i;
     rtgui_rect_t *rects;
 
-    num = PIXREGION_NUM_RECTS(region);
-    rects = PIXREGION_RECTS(region);
+    num = REGION_DATA_NUM_RECTS(region);
+    rects = REGION_GET_RECTS(region);
     rt_kprintf("extents: (%d,%d) (%d,%d)\n",
                region->extents.x1, region->extents.y1,
                region->extents.x2, region->extents.y2);
@@ -2002,8 +2030,8 @@ void rtgui_region_draw_clip(rtgui_region_t *region, rtgui_dc_t *dc)
     fc = RTGUI_DC_FC(dc);
     RTGUI_DC_FC(dc) = RED;
 
-    num = PIXREGION_NUM_RECTS(region);
-    rects = PIXREGION_RECTS(region);
+    num = REGION_DATA_NUM_RECTS(region);
+    rects = REGION_GET_RECTS(region);
 
     x = region->extents.x1;
     y = region->extents.y1;
@@ -2027,7 +2055,7 @@ RTM_EXPORT(rtgui_region_draw_clip);
 #endif
 
 rt_bool_t rtgui_region_is_flat(rtgui_region_t *region) {
-    return (1 == PIXREGION_NUM_RECTS(region));
+    return (1 == REGION_DATA_NUM_RECTS(region));
 }
 RTM_EXPORT(rtgui_region_is_flat);
 
@@ -2150,9 +2178,9 @@ rt_bool_t rtgui_rect_is_intersect(const rtgui_rect_t *rect1,
         IS_P_INSIDE(rect2, rect1->x2, rect1->y1) || \
         IS_P_INSIDE(rect2, rect1->x2, rect1->y2)) {
         return RT_TRUE;
-    } else if (CROSS(rect1, rect2)) {
+    } else if (IS_R_CROSS(rect1, rect2)) {
         return RT_TRUE;
-    } else if (CROSS(rect2, rect1)) {
+    } else if (IS_R_CROSS(rect2, rect1)) {
         return RT_TRUE;
     }
     return RT_FALSE;
@@ -2168,7 +2196,7 @@ RTM_EXPORT(rtgui_rect_is_equal);
 
 rt_bool_t rtgui_rect_is_empty(const rtgui_rect_t *rect)
 {
-    if (rtgui_rect_is_equal(rect, &rtgui_empty_rect) == RT_EOK) return RT_TRUE;
+    if (rtgui_rect_is_equal(rect, &_null_rect) == RT_EOK) return RT_TRUE;
     return RT_FALSE;
 }
 RTM_EXPORT(rtgui_rect_is_empty);

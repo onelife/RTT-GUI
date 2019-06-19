@@ -267,8 +267,8 @@ struct rtgui_rect {
 
 /* region*/
 struct rtgui_region_data {
-    rt_uint32_t size;
-    rt_uint32_t numRects;
+    rt_uint32_t size;                       /* total */
+    rt_uint32_t numRects;                   /* used */
     // rtgui_rect_t rects[size];
 };
 

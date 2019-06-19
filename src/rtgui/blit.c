@@ -1646,7 +1646,7 @@ void rtgui_image_info_blit(rtgui_image_info_t *image, rtgui_dc_t *dc,
         rtgui_widget_rect_to_device(owner, &dest_extent);
 
         /* get intersect region clip */
-        rtgui_region_init_with_extents(&dest_region, &dest_extent);
+        rtgui_region_init_with_extent(&dest_region, &dest_extent);
         rtgui_region_intersect_rect(&dest_region, &(owner->clip), &dest_extent);
 
         num_rects = rtgui_region_num_rects(&dest_region);

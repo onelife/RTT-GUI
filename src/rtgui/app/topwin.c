@@ -457,7 +457,7 @@ static void _topwin_update_clip(void) {
         return;
     }
 
-    rtgui_region_init_rect(
+    rtgui_region_init(
         &region, 0, 0,
         rtgui_get_graphic_device()->width,
         rtgui_get_graphic_device()->height);
@@ -607,7 +607,7 @@ rt_err_t rtgui_topwin_remove(rtgui_win_t *win) {
     if (IS_TOPWIN_FLAG(top, SHOWN)) {
         rtgui_region_t region;
 
-        rtgui_region_init(&region);
+        rtgui_region_init_empty(&region);
         _topwin_update_clip();
         /* redraw */
         _topwin_get_union_region(top, &region);
@@ -830,7 +830,7 @@ void rtgui_topwin_resize(rtgui_win_t *win, rtgui_rect_t *rect) {
     if (!top || !!IS_TOPWIN_FLAG(top, SHOWN)) return;
 
     /* get current region */
-    rtgui_region_init_with_extents(&region, &top->extent);
+    rtgui_region_init_with_extent(&region, &top->extent);
     /* union the new rect so this is the region we should redraw */
     rtgui_region_union_rect(&region, &region, rect);
     top->extent = *rect;

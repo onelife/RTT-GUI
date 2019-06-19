@@ -424,10 +424,10 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
 
             /* always show title */
             rtgui_widget_show(TO_WIDGET(win->_title));
-            rtgui_region_init_with_extents(&win->outer_clip, &fixed);
+            rtgui_region_init_with_extent(&win->outer_clip, &fixed);
             win->outer_extent = fixed;
         } else {
-            rtgui_region_init_with_extents(&win->outer_clip, rect);
+            rtgui_region_init_with_extent(&win->outer_clip, rect);
             win->outer_extent = *rect;
         }
 
@@ -690,7 +690,7 @@ rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
         rtgui_region_t region;
         rtgui_region_t clip_region;
 
-        rtgui_region_init(&clip_region);
+        rtgui_region_init_empty(&clip_region);
         rtgui_region_copy(&clip_region, &win->outer_clip);
 
         rtgui_graphic_driver_vmode_enter();

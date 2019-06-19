@@ -72,7 +72,7 @@ static void _widget_constructor(void *obj) {
     wgt->min_width = wgt->min_height = 0;
     rt_memset(&(wgt->extent), 0x0, sizeof(wgt->extent));
     rt_memset(&(wgt->extent_visiable), 0x0, sizeof(wgt->extent_visiable));
-    rtgui_region_init_with_extents(&wgt->clip, &wgt->extent);
+    rtgui_region_init_with_extent(&wgt->clip, &wgt->extent);
 
     wgt->on_focus = RT_NULL;
     wgt->on_unfocus  = RT_NULL;
@@ -152,7 +152,7 @@ static void _widget_move(rtgui_widget_t* wgt, int dx, int dy) {
             &(wgt->extent_visiable));
 
     /* reset clip */
-    rtgui_region_init_with_extents(&(wgt->clip), &(wgt->extent));
+    rtgui_region_init_with_extent(&(wgt->clip), &(wgt->extent));
 
     /* move children */
     if (IS_CONTAINER(wgt)) {
@@ -236,7 +236,7 @@ void rtgui_widget_set_rect(rtgui_widget_t *wgt, const rtgui_rect_t *rect) {
     /* reset clip */
     if (rtgui_region_not_empty(&(wgt->clip)))
         rtgui_region_uninit(&(wgt->clip));
-    rtgui_region_init_with_extents(&(wgt->clip), rect);
+    rtgui_region_init_with_extent(&(wgt->clip), rect);
     if (wgt->parent && wgt->toplevel) {
         if (wgt->parent == TO_WIDGET(wgt->toplevel))
             rtgui_win_update_clip(wgt->toplevel);
@@ -378,7 +378,7 @@ void rtgui_widget_move_to_logic(rtgui_widget_t *wgt, int dx, int dy) {
         parent = parent->parent;
     if (parent) {
         /* reset clip info */
-        rtgui_region_init_with_extents(&(wgt->clip), &(wgt->extent));
+        rtgui_region_init_with_extent(&(wgt->clip), &(wgt->extent));
         rtgui_region_intersect_rect(&(wgt->clip), &(wgt->clip), &rect);
 
         /* give back the extent */

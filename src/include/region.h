@@ -23,21 +23,22 @@
  */
 #ifndef __RTGUI_REGION_H__
 #define __RTGUI_REGION_H__
-
+/* Includes ------------------------------------------------------------------*/
 #include "./rtgui.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
 #endif
 
-/*  true if two rect overlap */
+/* Exported defines ----------------------------------------------------------*/
+/*  true if rect r1 and r2 are overlap */
 #define IS_R_INTERSECT(r1, r2)      \
     (  !((r1)->x2 <= (r2)->x1)  ||  \
         ((r1)->x1 >= (r2)->x2)  ||  \
         ((r1)->y2 <= (r2)->y1)  ||  \
         ((r1)->y1 >= (r2)->y2)  )
 
-/* true if (x, y) inside rect */
+/* true if rect contains point (x, y) */
 #define IS_P_INSIDE(r, x, y)    \
     (   ((r)->x2 >  (x))    &&  \
         ((r)->x1 <= (x))    &&  \
@@ -58,30 +59,36 @@ extern "C" {
         ((r)->x2 <= (x1))   ||  \
         ((r)->x1 >  (x2))   )
 
-/* true iff Box r1 contains Box r2 */
-#define SUBSUMES(r1,r2) \
-      ( ((r1)->x1 <= (r2)->x1) && \
-        ((r1)->x2 >= (r2)->x2) && \
-        ((r1)->y1 <= (r2)->y1) && \
-        ((r1)->y2 >= (r2)->y2) )
-/* true iff box r1 and box r2 constitute cross */
-#define CROSS(r1,r2) \
-      ( ((r1)->x1 <= (r2)->x1) && \
-        ((r1)->x2 >= (r2)->x2) && \
-        ((r1)->y1 >= (r2)->y1) && \
-        ((r1)->y2 <= (r2)->y2) )
+/* true if rect r1 contains rect r2 */
+#define IS_R_INSIDE(r1, r2)         \
+    (   ((r1)->x1 <= (r2)->x1)  &&  \
+        ((r1)->x2 >= (r2)->x2)  &&  \
+        ((r1)->y1 <= (r2)->y1)  &&  \
+        ((r1)->y2 >= (r2)->y2)  )
 
-/* creation/destruction */
+/* true if rect r1 and rect r2 make cross */
+#define IS_R_CROSS(r1, r2)          \
+    (   ((r1)->x1 <= (r2)->x1)  &&  \
+        ((r1)->x2 >= (r2)->x2)  &&  \
+        ((r1)->y1 >= (r2)->y1)  &&  \
+        ((r1)->y2 <= (r2)->y2)  )
 
-void rtgui_region_init(rtgui_region_t *region);
-void rtgui_region_init_rect(rtgui_region_t *region,
-                            int x, int y, unsigned int width, unsigned int height);
-void rtgui_region_init_with_extents(rtgui_region_t *region, const rtgui_rect_t *extents);
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Exported functions ------------------------------------------------------- */
+void rtgui_region_init_empty(rtgui_region_t *region);
+void rtgui_region_init(rtgui_region_t *region,
+    rt_uint16_t x, rt_uint16_t y, rt_uint16_t width, rt_uint16_t height);
+void rtgui_region_init_with_extent(rtgui_region_t *region,
+    const rtgui_rect_t *extent);
 void rtgui_region_uninit(rtgui_region_t *region);
+rt_uint32_t rtgui_region_num_rects(rtgui_region_t *region);
+rtgui_rect_t *rtgui_region_rects(rtgui_region_t *region);
+rtgui_region_status_t rtgui_region_copy(rtgui_region_t *dst,
+    rtgui_region_t *src);
 
 void rtgui_region_translate(rtgui_region_t *region, int x, int y);
 
-rtgui_region_status_t rtgui_region_copy(rtgui_region_t *dest, rtgui_region_t *source);
 
 rtgui_region_status_t rtgui_region_intersect(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_region_t *reg2);
 rtgui_region_status_t rtgui_region_intersect_rect(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_rect_t *rect);
@@ -91,9 +98,7 @@ rtgui_region_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t
 rtgui_region_status_t rtgui_region_subtract_rect(rtgui_region_t *regD, rtgui_region_t *regM, rtgui_rect_t *rect);
 rtgui_region_status_t rtgui_region_inverse(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_rect_t *invRect);
 
-rt_uint32_t rtgui_region_num_rects(rtgui_region_t *region);
 
-rtgui_rect_t *rtgui_region_rects(rtgui_region_t *region);
 
 #define RTGUI_REGION_OUT    0
 #define RTGUI_REGION_IN     1
