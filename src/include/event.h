@@ -30,7 +30,6 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-// #include "include/rtdevice.h"
 #include "./kbddef.h"
 
 /* Exported defines ----------------------------------------------------------*/
@@ -74,6 +73,7 @@ extern "C" {
 #define IS_EVENT_TYPE(e, tname)             \
     ((e)->base.type == RTGUI_EVENT_##tname)
 
+
 /* other window event */
 #define RTGUI_EVENT_GET_RECT(e, i)          &(((rtgui_rect_t*)(e + 1))[i])
 
@@ -91,25 +91,28 @@ do {                                        \
 /* gesture event */
 #define RTGUI_EVENT_GESTURE_INIT(e, gtype)  \
     do {                                    \
-        RTGUI_EVENT_REINIT(e, GESTURE);       \
+        RTGUI_EVENT_REINIT(e, GESTURE);     \
         (e)->type = gtype;                  \
     } while (0)
 
 /* mouse event */
-#define RTGUI_MOUSE_BUTTON_LEFT             0x01
-#define RTGUI_MOUSE_BUTTON_RIGHT            0x02
-#define RTGUI_MOUSE_BUTTON_MIDDLE           0x03
-#define RTGUI_MOUSE_BUTTON_WHEELUP          0x04
-#define RTGUI_MOUSE_BUTTON_WHEELDOWN        0x08
-#define RTGUI_MOUSE_BUTTON_DOWN             0x10
-#define RTGUI_MOUSE_BUTTON_UP               0x20
+typedef enum rtgui_mouse_btn {
+    RTGUI_MOUSE_BUTTON_LEFT                 = 0x01,
+    RTGUI_MOUSE_BUTTON_RIGHT                = 0x02,
+    RTGUI_MOUSE_BUTTON_MIDDLE               = 0x03,
+    RTGUI_MOUSE_BUTTON_WHEELUP              = 0x04,
+    RTGUI_MOUSE_BUTTON_WHEELDOWN            = 0x08,
+    RTGUI_MOUSE_BUTTON_DOWN                 = 0x10,
+    RTGUI_MOUSE_BUTTON_UP                   = 0x20,
+} rtgui_mouse_btn_t;
+#define IS_BUTTON_EVENT_BUTTON(e, bname)    (e->mouse.button & RTGUI_MOUSE_BUTTON_##bname)
 
-/* keyboard event init */
-#define RTGUI_KBD_IS_SET_CTRL(e)            ((e)->mod & (RTGUI_KMOD_LCTRL | RTGUI_KMOD_RCTRL))
-#define RTGUI_KBD_IS_SET_ALT(e)             ((e)->mod & (RTGUI_KMOD_LALT  | RTGUI_KMOD_RALT))
-#define RTGUI_KBD_IS_SET_SHIFT(e)           ((e)->mod & (RTGUI_KMOD_LSHIFT| RTGUI_KMOD_RSHIFT))
-#define RTGUI_KBD_IS_UP(e)                  ((e)->type == RTGUI_KEYUP)
-#define RTGUI_KBD_IS_DOWN(e)                ((e)->type == RTGUI_KEYDOWN)
+/* keyboard event */
+#define IS_KBD_EVENT_KEY(e, kname)          (e->kbd.key == RTGUIK_##kname)
+#define IS_KBD_EVENT_MOD(e, mname)          (e->kbd.mod == RTGUI_KMOD_##mname)
+#define IS_KBD_EVENT_MOD2(e, mname)         \
+    (e->kbd.mod & (RTGUI_KMOD_L##mname | RTGUI_KMOD_R##mname))
+#define IS_KBD_EVENT_TYPE(e, tname)         (e->kbd.type == RTGUI_KEY##tname)
 
 /* touch event */
 #define RTGUI_TOUCH_UP                      0x01

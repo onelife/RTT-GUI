@@ -58,7 +58,7 @@ static void _title_constructor(void *obj) {
     rtgui_title_t *title_ = obj;
 
     TO_WIDGET(title_)->flag = RTGUI_WIDGET_FLAG_DEFAULT;
-    WIDGET_GET_TEXTALIGN(title_) = RTGUI_ALIGN_CENTER_VERTICAL;
+    WIDGET_TEXTALIGN(title_) = RTGUI_ALIGN_CENTER_VERTICAL;
 }
 
 static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
@@ -130,9 +130,8 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
 
     default:
-        if (SUPER_HANDLER(title_)) {
-            done = SUPER_HANDLER(title_)(title_, evt);
-        }
+        if (SUPER_CLASS_HANDLER(title))
+            done = SUPER_CLASS_HANDLER(title)(title_, evt);
         break;
     }
 

@@ -1789,7 +1789,6 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
 
     RT_ASSERT(owner != RT_NULL);
 
-    LOG_D("dc begin");
     do {
         rtgui_win_t *win;
         rtgui_widget_t *parent, *widget;
@@ -1818,7 +1817,7 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
             rt_memset(&(win->drawing_rect), 0x0, sizeof(rtgui_rect_t));
         }
         win->drawing++;
-        LOG_D("drawing %d", win->drawing);
+        LOG_D("win->drawing %d", win->drawing);
 
         /* always drawing on the virtual mode */
         if (!rtgui_graphic_driver_is_vmode()) {
@@ -1889,7 +1888,6 @@ void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
 
     RT_ASSERT(dc != RT_NULL);
 
-    LOG_D("dc end");
     /* get owner */
     if (dc->type == RTGUI_DC_CLIENT)
         owner = rt_container_of(dc, rtgui_widget_t, dc_type);

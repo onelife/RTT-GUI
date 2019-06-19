@@ -48,7 +48,7 @@ static void rtgui_dc_hw_blit_line(rtgui_dc_t *self, int x1, int x2, int y, rt_ui
 static void rtgui_dc_hw_blit(rtgui_dc_t *dc, struct rtgui_point *dc_point, rtgui_dc_t *dest, rtgui_rect_t *rect);
 static rt_bool_t rtgui_dc_hw_fini(rtgui_dc_t *dc);
 
-const struct rtgui_dc_engine dc_hw_engine =
+const rtgui_dc_engine_t dc_hw_engine =
 {
     rtgui_dc_hw_draw_point,
     rtgui_dc_hw_draw_color_point,

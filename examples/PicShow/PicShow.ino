@@ -36,14 +36,12 @@ static rt_bool_t picShow_handler(void *obj, rtgui_evt_generic_t *evt) {
   done = RT_FALSE;
 
   do {
-    if (DEFAULT_HANDLER(obj)) {
+    if (DEFAULT_HANDLER(obj))
       done = DEFAULT_HANDLER(obj)(obj, evt);
-    }
 
-    if ((evt->base.type != RTGUI_EVENT_COMMAND) || \
-        (evt->command.command_id != CMD_PIC_SHOW)) {
+    if (!IS_EVENT_TYPE(evt, COMMAND) || \
+        (evt->command.command_id != CMD_PIC_SHOW))
       break;
-    }
 
     dc = rtgui_dc_begin_drawing(TO_WIDGET(obj));
     if (!dc) {
@@ -69,8 +67,35 @@ static rt_bool_t picShow_handler(void *obj, rtgui_evt_generic_t *evt) {
   return done;
 }
 
+static rt_bool_t picShow_label_handler(void *obj, rtgui_evt_generic_t *evt) {
+  struct picShow_info *info = (struct picShow_info *)evt->command.type;
+  rt_bool_t done;
+
+  rt_kprintf("picShow label handle %x\n", evt->base.type);
+  done = RT_FALSE;
+
+  do {
+    if (DEFAULT_HANDLER(obj))
+      done = DEFAULT_HANDLER(obj)(obj, evt);
+
+    if (!IS_EVENT_TYPE(evt, COMMAND) || \
+        (evt->command.command_id != CMD_PIC_SHOW))
+      break;
+
+    rtgui_label_set_text(TO_LABEL(obj), info->path);
+    done = RT_TRUE;
+  } while (0);
+
+  return done;
+}
+
 static void picShow_entry(void *param) {
+  rtgui_rect_t rect;
   rtgui_win_t *win;
+  rtgui_label_t* label;
+  rtgui_container *cntr;
+  rtgui_box_t *box;
+  rtgui_button_t *btn1, *btn2;
   (void)param;
 
   /* create app */
@@ -89,25 +114,36 @@ static void picShow_entry(void *param) {
     return;
   }
 
-  /* create lable in window */
-  // label = rtgui_label_create("Photo Frame Demo");
-  // if (label == RT_NULL)
-  // {
-  //     rt_kprintf("Create lable failed!\n");
-  //     return;
-  // }
+  /* create label in window */
+  CREATE_LABEL_INSTANCE(label, picShow_label_handler, "Photo Frame Demo");
+  if (!label) {
+      rt_kprintf("Create label failed!\n");
+      return;
+  }
+  WIDGET_BACKGROUND(TO_WIDGET(label)) = white;
+  WIDGET_FOREGROUND(TO_WIDGET(label)) = blue;
 
-  // WIDGET_GET_TEXTALIGN(RTGUI_WIDGET(label)) = RTGUI_ALIGN_LEFT;
-  // WIDGET_GET_BACKGROUND(RTGUI_WIDGET(label)) = white;
-  // WIDGET_GET_FOREGROUND(RTGUI_WIDGET(label)) = blue;
+  rtgui_get_screen_rect(&rect);
+  rect.y2 = 15;
+  rtgui_widget_set_rect(TO_WIDGET(label), &rect);
+  rtgui_container_add_child(TO_CONTAINER(win), TO_WIDGET(label));
 
-  //   rect2.x1 = rect1.x1;
-  //   rect2.y1 = rect1.y1;
-  //   rect2.x2 = rect1.x2;
-  //   rect2.y2 = 15;
-  // rtgui_widget_set_rect(RTGUI_WIDGET(label), &rect2);
-  //   rtgui_object_set_event_handler(RTGUI_OBJECT(label), photo_lable_event_handler);
-  // rtgui_container_add_child(RTGUI_CONTAINER(window), RTGUI_WIDGET(label));
+  cntr = TO_CONTAINER(CREATE_INSTANCE(container, RT_NULL));
+  CREATE_BOX_INSTANCE(box, RTGUI_HORIZONTAL, 1);
+  rtgui_container_set_box(cntr, box);
+
+  CREATE_BUTTON_INSTANCE(btn1, RT_NULL, TYPE_PUSH, "Prev");
+  WIDGET_ALIGN(btn1) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
+  rtgui_container_add_child(cntr, TO_WIDGET(btn1));
+  CREATE_BUTTON_INSTANCE(btn2, RT_NULL, TYPE_PUSH, "Next");
+  WIDGET_ALIGN(btn2) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
+  rtgui_container_add_child(cntr, TO_WIDGET(btn2));
+
+  rtgui_get_screen_rect(&rect);
+  rect.y1 = rect.y2 - 30;
+  rtgui_widget_set_rect(TO_WIDGET(cntr), &rect);  
+  rtgui_container_add_child(TO_CONTAINER(win), TO_WIDGET(cntr));
+  rtgui_container_layout(cntr);
 
   rtgui_win_show(win, RT_FALSE);
   rtgui_app_run(picShow);
@@ -115,7 +151,6 @@ static void picShow_entry(void *param) {
   DELETE_WIN_INSTANCE(win);
   rtgui_app_uninit(picShow);
 }
-
 
 // RT-Thread function called by "RT_T.begin()"
 void rt_setup(void) {

@@ -31,15 +31,10 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "../rtgui.h"
+#include "include/rtgui.h"
 
 /* Exported defines ----------------------------------------------------------*/
 #define RTGUI_WIN_MAGIC                     0xA5A55A5A
-
-#define TITLE_HEIGHT                        20
-#define TITLE_CB_WIDTH                      16
-#define TITLE_CB_HEIGHT                     16
-#define TITLE_BORDER_SIZE                   2
 
 #define CREATE_WIN_INSTANCE(obj, hdl, parent, title, style, rect) \
     do {                                    \

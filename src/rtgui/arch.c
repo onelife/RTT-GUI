@@ -432,7 +432,7 @@ static void rtgui_log_event(rtgui_app_t* tgt, rtgui_evt_generic_t *evt) {
 
     case RTGUI_EVENT_KBD:
         rt_kprintf(": <%s> %s",
-            RTGUI_KBD_IS_UP(&evt->kbd) ? "up" : "down",
+            IS_KBD_EVENT_TYPE(evt, UP) ? "up" : "down",
             evt->kbd.wid ? evt->kbd.wid->title : "???");
         break;
 

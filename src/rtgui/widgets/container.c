@@ -30,9 +30,8 @@
 #include "include/widgets/window.h"
 
 #ifdef RT_USING_ULOG
-# define LOG_LVL                    LOG_LVL_DBG
-// # define LOG_LVL                   LOG_LVL_INFO
-# define LOG_TAG                    "GUI_CNT"
+# define LOG_LVL                    RTGUI_LOG_LEVEL
+# define LOG_TAG                    "WGT_CNT"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
@@ -122,7 +121,7 @@ static rt_bool_t _container_dispatch_event(rtgui_container_t *cntr,
         rtgui_widget_t *child = rt_slist_entry(node, rtgui_widget_t, sibling);
         /* check if intercepted for paint event */
         if (is_paint && \
-            !IS_INTERSECT(&(TO_WIDGET(cntr)->extent), &child->extent))
+            !IS_R_INTERSECT(&(TO_WIDGET(cntr)->extent), &child->extent))
             continue;
         if (EVENT_HANDLER(child)) {
             done = EVENT_HANDLER(child)(child, evt);
@@ -196,9 +195,10 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         rtgui_widget_get_rect(wgt, &rect);
         /* fill cntr with background */
         rtgui_dc_fill_rect(dc, &rect);
-        /* inform children paint event */
-        done = _container_dispatch_event(cntr, evt);
-        rtgui_dc_end_drawing(dc, 1);
+        /* inform children but not mark done in order to give chance to sibling
+           widgets */
+        (void)_container_dispatch_event(cntr, evt);
+        rtgui_dc_end_drawing(dc, RT_TRUE);
     }
     break;
 
@@ -239,8 +239,8 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
 
     default:
-        if (SUPER_HANDLER(cntr))
-            done = SUPER_HANDLER(cntr)(cntr, evt);
+        if (SUPER_CLASS_HANDLER(container))
+            done = SUPER_CLASS_HANDLER(container)(cntr, evt);
         break;
     }
 

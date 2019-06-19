@@ -29,7 +29,7 @@
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
-# define LOG_TAG                    "GUI_BOX"
+# define LOG_TAG                    "WGT_BOX"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
@@ -59,7 +59,7 @@ static void _box_constructor(void *obj) {
 
     /* set proper of control */
     box->orient = RTGUI_HORIZONTAL;
-    box->border_size = RTGUI_BORDER_DEFAULT_WIDTH;
+    box->border_sz = BORDER_SIZE_DEFAULT;
     box->container = RT_NULL;
 }
 
@@ -74,52 +74,47 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
 
     /* find spaces */
     space_count  = 0;
-    total_height = box->border_size;
+    total_height = box->border_sz;
     space_height = 0;
+    LOG_W("layout_vertical");
 
     rt_slist_for_each(node, &(box->container->children)) {
         rtgui_widget_t *wgt = \
             rt_slist_entry(node, rtgui_widget_t, sibling);
-        if (wgt->align & RTGUI_ALIGN_STRETCH) {
-            space_count ++;
-        } else {
+        if (wgt->align & RTGUI_ALIGN_STRETCH)
+            space_count++;
+        else
             total_height += wgt->min_height;
-        }
-        total_height += box->border_size;
+        total_height += box->border_sz;
     }
 
     /* calculate the height for each spaces */
-    if (space_count && (RECT_H(*extent) > total_height)) {
-        space_height = \
-            (RECT_H(*extent) - total_height) / space_count;
-    }
+    if (space_count && (RECT_H(*extent) > total_height))
+        space_height = (RECT_H(*extent) - total_height) / space_count;
 
     /* init (x, y) and box width */
-    next_x = extent->x1 + box->border_size;
-    next_y = extent->y1 + box->border_size;
-    box_width = RECT_W(*extent) - box->border_size * 2;
+    next_x = extent->x1 + box->border_sz;
+    next_y = extent->y1 + box->border_sz;
+    box_width = RECT_W(*extent) - box->border_sz * 2;
 
     /* layout each widget */
     rt_slist_for_each(node, &(box->container->children)) {
         rtgui_rect_t *rect;
-        rtgui_widget_t *wgt = \
-            rt_slist_entry(node, rtgui_widget_t, sibling);
+        rtgui_widget_t *wgt = rt_slist_entry(node, rtgui_widget_t, sibling);
 
         /* get extent of widget */
         rect = &(wgt->extent);
-
         /* reset rect */
         rtgui_rect_init(rect, 0, 0, wgt->min_width, wgt->min_height);
 
         /* left in default */
         rtgui_rect_move(rect, next_x, next_y);
 
-        if (wgt->align & RTGUI_ALIGN_EXPAND) {
-            /* expand on horizontal */
+        /* expand on horizontal */
+        if (wgt->align & RTGUI_ALIGN_EXPAND)
             rect->x2 = rect->x1 + (rt_int16_t)box_width;
-        }
+        /* center */
         if (wgt->align & RTGUI_ALIGN_CENTER_VERTICAL) {
-            /* center */
             rt_uint32_t mid;
 
             mid = box_width - RECT_W(*rect);
@@ -133,9 +128,8 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
             rect->x2 = next_x + box_width;
         }
 
-        if (wgt->align & RTGUI_ALIGN_STRETCH) {
+        if (wgt->align & RTGUI_ALIGN_STRETCH)
             rect->y2 = rect->y1 + space_height;
-        }
 
         /* send RTGUI_EVENT_RESIZE */
         RTGUI_CREATE_EVENT(evt, RESIZE, RT_WAITING_FOREVER);
@@ -152,7 +146,7 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
         }
 
         /* point to next height */
-        next_y = rect->y2 + box->border_size;
+        next_y = rect->y2 + box->border_sz;
     }
 }
 
@@ -167,39 +161,35 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
 
     /* find spaces */
     space_count = 0;
-    total_width = 0;
+    total_width = box->border_sz;
     space_width = 0;
+    LOG_W("layout_horizontal");
 
     rt_slist_for_each(node, &(box->container->children)) {
-        rtgui_widget_t *wgt = \
-            rt_slist_entry(node, rtgui_widget_t, sibling);
-        if (wgt->align & RTGUI_ALIGN_STRETCH) {
-            space_count ++;
-        } else {
+        rtgui_widget_t *wgt = rt_slist_entry(node, rtgui_widget_t, sibling);
+        if (wgt->align & RTGUI_ALIGN_STRETCH)
+            space_count++;
+        else
             total_width += wgt->min_width;
-        }
-        total_width += box->border_size;
+        total_width += box->border_sz;
     }
 
-    if (space_count) {
-        /* calculate the height for each spaces */
+    /* calculate the width for each spaces */
+    if (space_count)
         space_width = (RECT_W(*extent) - total_width) / space_count;
-    }
 
     /* init (x, y) and box height */
-    next_x = extent->x1 + box->border_size;
-    next_y = extent->y1 + box->border_size;
-    box_height = RECT_H(*extent) - (box->border_size << 1);
+    next_x = extent->x1 + box->border_sz;
+    next_y = extent->y1 + box->border_sz;
+    box_height = RECT_H(*extent) - (box->border_sz << 1);
 
     /* layout each widget */
     rt_slist_for_each(node, &(box->container->children)) {
         rtgui_rect_t *rect;
-        rtgui_widget_t *wgt = \
-            rt_slist_entry(node, rtgui_widget_t, sibling);
+        rtgui_widget_t *wgt = rt_slist_entry(node, rtgui_widget_t, sibling);
 
         /* get extent of widget */
         rect = &(wgt->extent);
-
         /* reset rect */
         rtgui_rect_move(rect, -rect->x1, -rect->y1);
         rect->x2 = wgt->min_width;
@@ -208,12 +198,11 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
         /* top in default */
         rtgui_rect_move(rect, next_x, next_y);
 
-        if (wgt->align & RTGUI_ALIGN_EXPAND) {
-            /* expand on vertical */
+        /* expand on vertical */
+        if (wgt->align & RTGUI_ALIGN_EXPAND)
             rect->y2 = rect->y1 + box_height;
-        }
+        /* center */
         if (wgt->align & RTGUI_ALIGN_CENTER_HORIZONTAL) {
-            /* center */
             rt_uint32_t mid;
 
             mid = box_height - RECT_H(*rect);
@@ -227,9 +216,8 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
             rect->y2 = next_y + box_height;
         }
 
-        if (wgt->align & RTGUI_ALIGN_STRETCH) {
+        if (wgt->align & RTGUI_ALIGN_STRETCH)
             rect->x2 = rect->x1 + space_width;
-        }
 
         /* send RTGUI_EVENT_RESIZE */
         RTGUI_CREATE_EVENT(evt, RESIZE, RT_WAITING_FOREVER);
@@ -246,7 +234,7 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
         }
 
         /* point to next width */
-        next_x = rect->x2 + box->border_size;
+        next_x = rect->x2 + box->border_sz;
     }
 }
 
@@ -257,6 +245,7 @@ void rtgui_box_layout(rtgui_box_t *box) {
     if (box->container == RT_NULL) return;
 
     extent = WIDGET_GETTER(extent)(TO_WIDGET(box->container));
+    LOG_W("cntr (%d,%d)-(%d,%d)", extent.x1, extent.y1, extent.x2, extent.y2);
     if (box->orient & RTGUI_VERTICAL)
         rtgui_box_layout_vertical(box, &extent);
     else

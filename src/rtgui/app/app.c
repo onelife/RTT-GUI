@@ -335,9 +335,8 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
 
     default:
-        if (SUPER_HANDLER(app)) {
-            done = SUPER_HANDLER(app)(app, evt);
-        }
+        if (SUPER_CLASS_HANDLER(app))
+            done = SUPER_CLASS_HANDLER(app)(app, evt);
         break;
     }
 

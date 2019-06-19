@@ -31,18 +31,32 @@ extern "C" {
 #endif
 
 /*  true if two rect overlap */
-#define IS_INTERSECT(r1, r2)  \
-    (!  ((r1)->x2 <= (r2)->x1)  || \
-        ((r1)->x1 >= (r2)->x2)  || \
-        ((r1)->y2 <= (r2)->y1)  || \
+#define IS_R_INTERSECT(r1, r2)      \
+    (  !((r1)->x2 <= (r2)->x1)  ||  \
+        ((r1)->x1 >= (r2)->x2)  ||  \
+        ((r1)->y2 <= (r2)->y1)  ||  \
         ((r1)->y1 >= (r2)->y2)  )
 
-/* true if (x,y) is inside rect */
-#define INSIDE(r, x, y)     \
-    (   ((r)->x2 >  (x))    && \
-        ((r)->x1 <= (x))    && \
-        ((r)->y2 >  (y))    && \
+/* true if (x, y) inside rect */
+#define IS_P_INSIDE(r, x, y)    \
+    (   ((r)->x2 >  (x))    &&  \
+        ((r)->x1 <= (x))    &&  \
+        ((r)->y2 >  (y))    &&  \
         ((r)->y1 <= (y))    )
+
+/* true if vline intersect rect */
+#define IS_VL_INTERSECT(r, x, y1, y2) \
+    (  !((r)->x1 >  ( x))   ||  \
+        ((r)->x2 <= ( x))   ||  \
+        ((r)->y2 <= (y1))   ||  \
+        ((r)->y1 >  (y2))   )
+
+/* true if hline intersect rect */
+#define IS_HL_INTERSECT(r, x1, x2, y) \
+    (  !((r)->y1 >  ( y))   ||  \
+        ((r)->y2 <= ( y))   ||  \
+        ((r)->x2 <= (x1))   ||  \
+        ((r)->x1 >  (x2))   )
 
 /* true iff Box r1 contains Box r2 */
 #define SUBSUMES(r1,r2) \
@@ -77,7 +91,7 @@ rtgui_region_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t
 rtgui_region_status_t rtgui_region_subtract_rect(rtgui_region_t *regD, rtgui_region_t *regM, rtgui_rect_t *rect);
 rtgui_region_status_t rtgui_region_inverse(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_rect_t *invRect);
 
-int rtgui_region_num_rects(rtgui_region_t *region);
+rt_uint32_t rtgui_region_num_rects(rtgui_region_t *region);
 
 rtgui_rect_t *rtgui_region_rects(rtgui_region_t *region);
 
@@ -105,11 +119,12 @@ extern rtgui_rect_t rtgui_empty_rect;
 
 void rtgui_rect_move(rtgui_rect_t *rect, int x, int y);
 void rtgui_rect_move_to_point(rtgui_rect_t *rect, int x, int y);
-void rtgui_rect_move_to_align(const rtgui_rect_t *rect, rtgui_rect_t *to, int align);
+void rtgui_rect_move_align(const rtgui_rect_t *rect, rtgui_rect_t *to, int align);
 void rtgui_rect_inflate(rtgui_rect_t *rect, int d);
 void rtgui_rect_intersect(rtgui_rect_t *src, rtgui_rect_t *dest);
 rt_bool_t rtgui_rect_contains_point(const rtgui_rect_t *rect, int x, int y);
-int  rtgui_rect_contains_rect(const rtgui_rect_t *rect1, const rtgui_rect_t *rect2);
+rt_bool_t rtgui_rect_contains_rect(const rtgui_rect_t *rect1,
+    const rtgui_rect_t *rect2);
 rt_bool_t rtgui_rect_is_intersect(const rtgui_rect_t *rect1, const rtgui_rect_t *rect2);
 rt_bool_t rtgui_rect_is_equal(const rtgui_rect_t *rect1,
   const rtgui_rect_t *rect2);

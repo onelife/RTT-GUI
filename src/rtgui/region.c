@@ -177,7 +177,7 @@ void rtgui_region_uninit(rtgui_region_t *region) {
 }
 RTM_EXPORT(rtgui_region_uninit);
 
-int rtgui_region_num_rects(rtgui_region_t *region) {
+rt_uint32_t rtgui_region_num_rects(rtgui_region_t *region) {
     return PIXREGION_NUM_RECTS(region);
 }
 
@@ -804,7 +804,7 @@ rtgui_region_intersect(rtgui_region_t *newReg,
     good(newReg);
     /* check for trivial reject */
     if (PIXREGION_NIL(reg1)  || PIXREGION_NIL(reg2) ||
-            !IS_INTERSECT(&reg1->extents, &reg2->extents))
+            !IS_R_INTERSECT(&reg1->extents, &reg2->extents))
     {
         /* Covers about 20% of all cases */
         freeData(newReg);
@@ -1598,7 +1598,7 @@ rtgui_region_subtract(rtgui_region_t *regD,
     good(regD);
     /* check for trivial rejects */
     if (PIXREGION_NIL(regM) || PIXREGION_NIL(regS) ||
-            !IS_INTERSECT(&regM->extents, &regS->extents))
+            !IS_R_INTERSECT(&regM->extents, &regS->extents))
     {
         if (PIXREGION_NAR(regS)) return rtgui_break(regD);
         return rtgui_region_copy(regD, regM);
@@ -1675,7 +1675,7 @@ rtgui_region_inverse(rtgui_region_t *newReg,       /* Destination region */
     good(reg1);
     good(newReg);
     /* check for trivial rejects */
-    if (PIXREGION_NIL(reg1) || !IS_INTERSECT(invRect, &reg1->extents))
+    if (PIXREGION_NIL(reg1) || !IS_R_INTERSECT(invRect, &reg1->extents))
     {
         if (PIXREGION_NAR(reg1)) return rtgui_break(newReg);
         newReg->extents = *invRect;
@@ -1733,7 +1733,7 @@ int rtgui_region_contains_rectangle(rtgui_region_t *region, rtgui_rect_t *prect)
     good(region);
     numRects = PIXREGION_NUM_RECTS(region);
     /* useful optimization */
-    if (!numRects || !IS_INTERSECT(&region->extents, prect))
+    if (!numRects || !IS_R_INTERSECT(&region->extents, prect))
         return(RTGUI_REGION_OUT);
 
     if (numRects == 1)
@@ -1916,7 +1916,7 @@ int rtgui_region_contains_point(rtgui_region_t *region,
 
     good(region);
     numRects = PIXREGION_NUM_RECTS(region);
-    if (!numRects || !INSIDE(&region->extents, x, y))
+    if (!numRects || !IS_P_INSIDE(&region->extents, x, y))
         return -RT_ERROR;
 
     if (numRects == 1)
@@ -2039,8 +2039,7 @@ void rtgui_rect_move(rtgui_rect_t *rect, int x, int y) {
 }
 RTM_EXPORT(rtgui_rect_move);
 
-void rtgui_rect_move_to_point(rtgui_rect_t *rect, int x, int y)
-{
+void rtgui_rect_move_to_point(rtgui_rect_t *rect, int x, int y) {
     int mx, my;
 
     mx = x - rect->x1;
@@ -2048,56 +2047,49 @@ void rtgui_rect_move_to_point(rtgui_rect_t *rect, int x, int y)
 
     rect->x1 += mx;
     rect->x2 += mx;
-
     rect->y1 += my;
     rect->y2 += my;
 }
 RTM_EXPORT(rtgui_rect_move_to_point);
 
-void rtgui_rect_move_to_align(const rtgui_rect_t *rect, rtgui_rect_t *to, int align)
-{
-    int dw = 0, dh = 0;
+void rtgui_rect_move_align(const rtgui_rect_t *rect, rtgui_rect_t *to,
+    int align) {
+    int dw, dh;
 
     /* get delta width and height */
     dw = RECT_W(*rect) - RECT_W(*to);
     dh = RECT_H(*rect) - RECT_H(*to);
-    //if (dw < 0) dw = 0;
-    //if (dh < 0) dh = 0;
+    if (dw < 0) dw = 0;
+    if (dh < 0) dh = 0;
 
     /* move to insider of rect */
     rtgui_rect_move_to_point(to, rect->x1, rect->y1);
 
     /* limited the destination rect to source rect */
-    //if (dw == 0) to->x2 = rect->x2;
-    //if (dh == 0) to->y2 = rect->y2;
+    if (dw == 0) to->x2 = rect->x2;
+    if (dh == 0) to->y2 = rect->y2;
 
-    /* align to right */
-    if (align & RTGUI_ALIGN_RIGHT)
-    {
+    if (align & RTGUI_ALIGN_RIGHT) {
+        /* align to right */
         to->x1 += dw;
         to->x2 += dw;
-    }
-    /* align to center horizontal */
-    else if (align & RTGUI_ALIGN_CENTER_HORIZONTAL)
-    {
+    } else if (align & RTGUI_ALIGN_CENTER_HORIZONTAL) {
+        /* align to center horizontal */
         to->x1 += dw >> 1;
         to->x2 += dw >> 1;
     }
 
-    /* align to bottom */
-    if (align & RTGUI_ALIGN_BOTTOM)
-    {
+    if (align & RTGUI_ALIGN_BOTTOM) {
+        /* align to bottom */
         to->y1 += dh;
         to->y2 += dh;
-    }
-    /* align to center vertical */
-    else if (align & RTGUI_ALIGN_CENTER_VERTICAL)
-    {
+    } else if (align & RTGUI_ALIGN_CENTER_VERTICAL) {
+        /* align to center vertical */
         to->y1 += dh >> 1;
         to->y2 += dh >> 1;
     }
 }
-RTM_EXPORT(rtgui_rect_move_to_align);
+RTM_EXPORT(rtgui_rect_move_align);
 
 void rtgui_rect_inflate(rtgui_rect_t *rect, int d) {
     rect->x1 -= d;
@@ -2117,12 +2109,10 @@ void rtgui_rect_intersect(rtgui_rect_t *src, rtgui_rect_t *dest) {
 RTM_EXPORT(rtgui_rect_intersect);
 
 /* union src rect into dest rect */
-void rtgui_rect_union(rtgui_rect_t *src, rtgui_rect_t *dest)
-{
-    if (rtgui_rect_is_empty(dest))
-    {
+void rtgui_rect_union(rtgui_rect_t *src, rtgui_rect_t *dest) {
+    if (rtgui_rect_is_empty(dest)) {
         *dest = *src;
-        return ;
+        return;
     }
 
     if (dest->x1 > src->x1) dest->x1 = src->x1;
@@ -2133,37 +2123,32 @@ void rtgui_rect_union(rtgui_rect_t *src, rtgui_rect_t *dest)
 RTM_EXPORT(rtgui_rect_union);
 
 rt_bool_t rtgui_rect_contains_point(const rtgui_rect_t *rect, int x, int y) {
-    return INSIDE(rect, x, y);
+    return IS_P_INSIDE(rect, x, y);
 }
 RTM_EXPORT(rtgui_rect_contains_point);
 
-int  rtgui_rect_contains_rect(const rtgui_rect_t *rect1, const rtgui_rect_t *rect2)
-{
-    if (INSIDE(rect1, rect2->x1, rect2->y1) &&
-            INSIDE(rect1, rect2->x1, rect2->y2) &&
-            INSIDE(rect1, rect2->x2, rect2->y1) &&
-            INSIDE(rect1, rect2->x2, rect2->y2))
-    {
-        return RT_EOK;
-    }
-
-    return -RT_ERROR;
+rt_bool_t rtgui_rect_contains_rect(const rtgui_rect_t *rect1,
+    const rtgui_rect_t *rect2) {
+    return (IS_P_INSIDE(rect1, rect2->x1, rect2->y1) && \
+            IS_P_INSIDE(rect1, rect2->x1, rect2->y2) && \
+            IS_P_INSIDE(rect1, rect2->x2, rect2->y1) && \
+            IS_P_INSIDE(rect1, rect2->x2, rect2->y2) );
 }
 RTM_EXPORT(rtgui_rect_contains_rect);
 
 rt_bool_t rtgui_rect_is_intersect(const rtgui_rect_t *rect1,
     const rtgui_rect_t *rect2) {
     if (
-        INSIDE(rect1, rect2->x1, rect2->y1) || \
-        INSIDE(rect1, rect2->x1, rect2->y2) || \
-        INSIDE(rect1, rect2->x2, rect2->y1) || \
-        INSIDE(rect1, rect2->x2, rect2->y2)) {
+        IS_P_INSIDE(rect1, rect2->x1, rect2->y1) || \
+        IS_P_INSIDE(rect1, rect2->x1, rect2->y2) || \
+        IS_P_INSIDE(rect1, rect2->x2, rect2->y1) || \
+        IS_P_INSIDE(rect1, rect2->x2, rect2->y2)) {
         return RT_TRUE;
     } else if (
-        INSIDE(rect2, rect1->x1, rect1->y1) || \
-        INSIDE(rect2, rect1->x1, rect1->y2) || \
-        INSIDE(rect2, rect1->x2, rect1->y1) || \
-        INSIDE(rect2, rect1->x2, rect1->y2)) {
+        IS_P_INSIDE(rect2, rect1->x1, rect1->y1) || \
+        IS_P_INSIDE(rect2, rect1->x1, rect1->y2) || \
+        IS_P_INSIDE(rect2, rect1->x2, rect1->y1) || \
+        IS_P_INSIDE(rect2, rect1->x2, rect1->y2)) {
         return RT_TRUE;
     } else if (CROSS(rect1, rect2)) {
         return RT_TRUE;

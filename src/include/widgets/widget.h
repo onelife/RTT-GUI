@@ -39,50 +39,50 @@ extern "C" {
 /* Exported functions ------------------------------------------------------- */
 MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, wgt, rtgui_widget_t*, parent);
 rtgui_win_t *rtgui_widget_get_toplevel(rtgui_widget_t *wgt);
-void rtgui_widget_set_border(rtgui_widget_t *widget, rt_uint32_t style);
+void rtgui_widget_set_border(rtgui_widget_t *wgt, rt_uint32_t style);
 MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, widget, int, min_width);
 MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, widget, int, min_height);
-void rtgui_widget_set_minsize(rtgui_widget_t *widget, int width, int height);
+void rtgui_widget_set_minsize(rtgui_widget_t *wgt, int width, int height);
 MEMBER_GETTER_PROTOTYPE(rtgui_widget_t, widget, rtgui_rect_t, extent);
-void rtgui_widget_set_rect(rtgui_widget_t *widget, const rtgui_rect_t *rect);
-void rtgui_widget_set_rectangle(rtgui_widget_t *widget, int x, int y,
+void rtgui_widget_set_rect(rtgui_widget_t *wgt, const rtgui_rect_t *rect);
+void rtgui_widget_set_rectangle(rtgui_widget_t *wgt, int x, int y,
     int width, int height);
-void rtgui_widget_get_rect(rtgui_widget_t *widget, rtgui_rect_t *rect);
+void rtgui_widget_get_rect(rtgui_widget_t *wgt, rtgui_rect_t *rect);
 MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, widget, rtgui_evt_hdl_t, on_focus);
 MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, widget, rtgui_evt_hdl_t, on_unfocus);
 
-rtgui_widget_t *rtgui_widget_get_next_sibling(rtgui_widget_t *widget);
-rtgui_widget_t *rtgui_widget_get_prev_sibling(rtgui_widget_t *widget);
-rtgui_color_t rtgui_widget_get_parent_foreground(rtgui_widget_t *widget);
-rtgui_color_t rtgui_widget_get_parent_background(rtgui_widget_t *widget);
+rtgui_widget_t *rtgui_widget_get_next_sibling(rtgui_widget_t *wgt);
+rtgui_widget_t *rtgui_widget_get_prev_sibling(rtgui_widget_t *wgt);
+rtgui_color_t rtgui_widget_get_parent_foreground(rtgui_widget_t *wgt);
+rtgui_color_t rtgui_widget_get_parent_background(rtgui_widget_t *wgt);
 
-void rtgui_widget_clip_parent(rtgui_widget_t *widget);
-void rtgui_widget_clip_return(rtgui_widget_t *widget);
+void rtgui_widget_clip_parent(rtgui_widget_t *wgt);
+void rtgui_widget_clip_return(rtgui_widget_t *wgt);
 
 /* get the physical position of a logic point on widget */
-void rtgui_widget_point_to_device(rtgui_widget_t *widget, rtgui_point_t *point);
+void rtgui_widget_point_to_device(rtgui_widget_t *wgt, rtgui_point_t *point);
 /* get the physical position of a logic rect on widget */
-void rtgui_widget_rect_to_device(rtgui_widget_t *widget, rtgui_rect_t *rect);
+void rtgui_widget_rect_to_device(rtgui_widget_t *wgt, rtgui_rect_t *rect);
 /* get the logic position of a physical point on widget */
-void rtgui_widget_point_to_logic(rtgui_widget_t *widget, rtgui_point_t *point);
+void rtgui_widget_point_to_logic(rtgui_widget_t *wgt, rtgui_point_t *point);
 /* get the logic position of a physical rect on widget */
-void rtgui_widget_rect_to_logic(rtgui_widget_t *widget, rtgui_rect_t *rect);
+void rtgui_widget_rect_to_logic(rtgui_widget_t *wgt, rtgui_rect_t *rect);
 /* move widget and its children to a logic point */
-void rtgui_widget_move_to_logic(rtgui_widget_t *widget, int dx, int dy);
+void rtgui_widget_move_to_logic(rtgui_widget_t *wgt, int dx, int dy);
 
-void rtgui_widget_focus(rtgui_widget_t *widget);
-void rtgui_widget_unfocus(rtgui_widget_t *widget);
-void rtgui_widget_update_clip(rtgui_widget_t *widget);
-void rtgui_widget_show(rtgui_widget_t *widget);
-void rtgui_widget_hide(rtgui_widget_t *widget);
-void rtgui_widget_update(rtgui_widget_t *widget);
+void rtgui_widget_focus(rtgui_widget_t *wgt);
+void rtgui_widget_unfocus(rtgui_widget_t *wgt);
+void rtgui_widget_update_clip(rtgui_widget_t *wgt);
+void rtgui_widget_show(rtgui_widget_t *wgt);
+void rtgui_widget_hide(rtgui_widget_t *wgt);
+void rtgui_widget_update(rtgui_widget_t *wgt);
 rt_bool_t rtgui_widget_onshow(rtgui_obj_t *obj, void *param);
 rt_bool_t rtgui_widget_onhide(rtgui_obj_t *obj, void *param);
-rt_bool_t rtgui_widget_onpaint(rtgui_obj_t *object, rtgui_evt_base_t *event);
+rt_bool_t rtgui_widget_onpaint(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
 rt_bool_t rtgui_widget_onupdate_toplvl(rtgui_obj_t *obj, void *param);
-rt_bool_t rtgui_widget_is_in_animation(rtgui_widget_t *widget);
+rt_bool_t rtgui_widget_is_in_animation(rtgui_widget_t *wgt);
 /* dump widget information */
-void rtgui_widget_dump(rtgui_widget_t *widget);
+void rtgui_widget_dump(rtgui_widget_t *wgt);
 
 #ifdef __cplusplus
 }

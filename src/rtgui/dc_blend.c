@@ -1420,6 +1420,7 @@ static void _do_blend_line(rtgui_dc_t * dst,
     rt_uint8_t pixel_format;
     rt_uint8_t r, g, b, a;
     rtgui_widget_t *owner;
+    (void)draw_end;
 
     pixel_format = rtgui_dc_get_pixel_format(dst);
     func = _dc_calc_blend_line_func(pixel_format);

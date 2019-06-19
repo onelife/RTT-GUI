@@ -60,6 +60,7 @@ extern "C" {
 #define IS_SUBCLASS(cls, _super)            rtgui_is_subclass_of(cls, _super)
 #define IS_INSTANCE(ins, _cls)              \
     rtgui_is_subclass_of(((rtgui_obj_t *)ins)->cls, _cls)
+#define SUPER_CLASS(name)                   (CLASS_METADATA(name)->_super)
 
 #define OBJECT_HANDLER(obj)                 TO_OBJECT((void *)obj)->evt_hdl
 #define DEFAULT_HANDLER(obj)                CLASS_(obj)->evt_hdl
@@ -67,6 +68,7 @@ extern "C" {
     (OBJECT_HANDLER(obj) ? OBJECT_HANDLER(obj) : DEFAULT_HANDLER(obj))
 #define SUPER_HANDLER(obj)                  \
     (CLASS_(obj)->_super ? CLASS_(obj)->_super->evt_hdl : RT_NULL)
+#define SUPER_CLASS_HANDLER(name)           (SUPER_CLASS(name)->evt_hdl)
 
 #define SETTER_PROTOTYPE(name, _type)       \
     void rtgui_set_##name(_type val)
@@ -147,46 +149,51 @@ extern "C" {
 #define RTGUI_MEMBER_SETTER_GETTER(ctype, cname, mtype, mname) \
     RTGUI_MEMBER_SETTER(ctype, cname, mtype, mname); \
     RTGUI_MEMBER_GETTER(ctype, cname, mtype, mname)
+#define MEMBER_GETTER(cname, mname)          rtgui_##cname##_get_##mname
 
 #define APP_SETTER(mname)                   rtgui_app_set_##mname
 #define WIDGET_SETTER(mname)                rtgui_widget_set_##mname
 #define WIDGET_GETTER(mname)                rtgui_widget_get_##mname
+#define LABEL_GETTER(mname)                 rtgui_label_get_##mname
 
+#define WIDGET_ALIGN(w)                     (TO_WIDGET(w)->align)
+#define WIDGET_BORDER(w)                    (TO_WIDGET(w)->border)
+#define WIDGET_BORDER_STYLE(w)              (TO_WIDGET(w)->border_style)
+#define WIDGET_FOREGROUND(w)                (TO_WIDGET(w)->gc.foreground)
+#define WIDGET_BACKGROUND(w)                (TO_WIDGET(w)->gc.background)
+#define WIDGET_TEXTALIGN(w)                 (TO_WIDGET(w)->gc.textalign)
+#define WIDGET_FONT(w)                      (TO_WIDGET(w)->gc.font)
+#define WIDGET_DC(w)                        ((rtgui_dc_t *)&((w)->dc_type))
 
+#define WIDGET_FLAG(w)                      (TO_WIDGET(w)->flag)
+#define WIDGET_FLAG_CLEAR(w, fname)         WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_##fname
+#define WIDGET_FLAG_SET(w, fname)           WIDGET_FLAG(w) |= RTGUI_WIDGET_FLAG_##fname
+#define IS_WIDGET_FLAG(w, fname)            (WIDGET_FLAG(w) & RTGUI_WIDGET_FLAG_##fname)
 
-#define WIDGET_GET_ALIGN(w)                 (TO_WIDGET(w)->align)
-#define WIDGET_GET_BORDER(w)                (TO_WIDGET(w)->border)
-#define WIDGET_GET_BORDER_STYLE(w)          (TO_WIDGET(w)->border_style)
-#define WIDGET_GET_FOREGROUND(w)            (TO_WIDGET(w)->gc.foreground)
-#define WIDGET_GET_BACKGROUND(w)            (TO_WIDGET(w)->gc.background)
-#define WIDGET_GET_TEXTALIGN(w)             (TO_WIDGET(w)->gc.textalign)
-#define WIDGET_GET_FONT(w)                  (TO_WIDGET(w)->gc.font)
-#define WIDGET_GET_DC(w)                    ((rtgui_dc_t *)&((w)->dc_type))
+#define WIN_FLAG(w)                         (TO_WIN(w)->flag)
+#define WIN_FLAG_CLEAR(w, fname)            WIN_FLAG(w) &= ~RTGUI_WIN_FLAG_##fname
+#define WIN_FLAG_SET(w, fname)              WIN_FLAG(w) |= RTGUI_WIN_FLAG_##fname
+#define IS_WIN_FLAG(w, fname)               (WIN_FLAG(w) & RTGUI_WIN_FLAG_##fname)
 
-#define WIDGET_GET_FLAG(w)                  (TO_WIDGET(w)->flag)
-#define WIDGET_FLAG_CLEAR(w, fname)         WIDGET_GET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_##fname
-#define WIDGET_FLAG_SET(w, fname)           WIDGET_GET_FLAG(w) |= RTGUI_WIDGET_FLAG_##fname
-#define IS_WIDGET_FLAG(w, fname)            (WIDGET_GET_FLAG(w) & RTGUI_WIDGET_FLAG_##fname)
+#define WIN_STYLE(w)                        (TO_WIN(w)->style)
+#define WIN_STYLE_CLEAR(w, sname)           WIN_STYLE(w) &= ~RTGUI_WIN_STYLE_##sname
+#define WIN_STYLE_SET(w, sname)             WIN_STYLE(w) |= RTGUI_WIN_STYLE_##sname
+#define IS_WIN_STYLE(w, sname)              (WIN_STYLE(w) & RTGUI_WIN_STYLE_##sname)
 
-#define WIN_GET_FLAG(w)                     (TO_WIN(w)->flag)
-#define WIN_FLAG_CLEAR(w, fname)            WIN_GET_FLAG(w) &= ~RTGUI_WIN_FLAG_##fname
-#define WIN_FLAG_SET(w, fname)              WIN_GET_FLAG(w) |= RTGUI_WIN_FLAG_##fname
-#define IS_WIN_FLAG(w, fname)               (WIN_GET_FLAG(w) & RTGUI_WIN_FLAG_##fname)
+#define APP_FLAG(a)                         (TO_APP(a)->flag)
+#define APP_FLAG_CLEAR(a, fname)            APP_FLAG(a) &= ~RTGUI_APP_FLAG_##fname
+#define APP_FLAG_SET(a, fname)              APP_FLAG(a) |= RTGUI_APP_FLAG_##fname
+#define IS_APP_FLAG(a, fname)               (APP_FLAG(a) & RTGUI_APP_FLAG_##fname)
 
-#define WIN_GET_STYLE(w)                    (TO_WIN(w)->style)
-#define WIN_STYLE_CLEAR(w, sname)           WIN_GET_STYLE(w) &= ~RTGUI_WIN_STYLE_##sname
-#define WIN_STYLE_SET(w, sname)             WIN_GET_STYLE(w) |= RTGUI_WIN_STYLE_##sname
-#define IS_WIN_STYLE(w, sname)              (WIN_GET_STYLE(w) & RTGUI_WIN_STYLE_##sname)
+#define TOPWIN_FLAG(t)                      (t->flag)
+#define TOPWIN_FLAG_CLEAR(t, fname)         TOPWIN_FLAG(t) &= ~RTGUI_TOPWIN_FLAG_##fname
+#define TOPWIN_FLAG_SET(t, fname)           TOPWIN_FLAG(t) |= RTGUI_TOPWIN_FLAG_##fname
+#define IS_TOPWIN_FLAG(t, fname)            (TOPWIN_FLAG(t) & RTGUI_TOPWIN_FLAG_##fname)
 
-#define APP_GET_FLAG(a)                     (TO_APP(a)->flag)
-#define APP_FLAG_CLEAR(a, fname)            APP_GET_FLAG(a) &= ~RTGUI_APP_FLAG_##fname
-#define APP_FLAG_SET(a, fname)              APP_GET_FLAG(a) |= RTGUI_APP_FLAG_##fname
-#define IS_APP_FLAG(a, fname)               (APP_GET_FLAG(a) & RTGUI_APP_FLAG_##fname)
-
-#define TOPWIN_GET_FLAG(t)                  (t->flag)
-#define TOPWIN_FLAG_CLEAR(t, fname)         TOPWIN_GET_FLAG(t) &= ~RTGUI_TOPWIN_FLAG_##fname
-#define TOPWIN_FLAG_SET(t, fname)           TOPWIN_GET_FLAG(t) |= RTGUI_TOPWIN_FLAG_##fname
-#define IS_TOPWIN_FLAG(t, fname)            (TOPWIN_GET_FLAG(t) & RTGUI_TOPWIN_FLAG_##fname)
+#define BUTTON_FLAG(b)                      (b->flag)
+#define BUTTON_FLAG_CLEAR(b, fname)         BUTTON_FLAG(b) &= ~RTGUI_BUTTON_FLAG_##fname
+#define BUTTON_FLAG_SET(b, fname)           BUTTON_FLAG(b) |= RTGUI_BUTTON_FLAG_##fname
+#define IS_BUTTON_FLAG(b, fname)            (BUTTON_FLAG(b) & RTGUI_BUTTON_FLAG_##fname)
 
 /* Exported types ------------------------------------------------------------*/
 struct rtgui_graphic_driver;
@@ -214,6 +221,8 @@ typedef struct rtgui_image rtgui_image_t;
 typedef struct rtgui_image_info rtgui_image_info_t;
 typedef struct rtgui_blit_info rtgui_blit_info_t;
 
+struct rtgui_dc_engine;
+typedef struct rtgui_dc_engine rtgui_dc_engine_t;
 typedef struct rtgui_gc rtgui_gc_t;
 typedef struct rtgui_dc rtgui_dc_t;
 
@@ -223,6 +232,8 @@ typedef struct rtgui_container rtgui_container_t;
 typedef struct rtgui_box rtgui_box_t;
 typedef struct rtgui_widget rtgui_widget_t;
 typedef struct rtgui_title rtgui_title_t;
+typedef struct rtgui_label rtgui_label_t;
+typedef struct rtgui_button rtgui_button_t;
 typedef struct rtgui_win rtgui_win_t;
 typedef struct rtgui_app rtgui_app_t;
 typedef struct rtgui_timer rtgui_timer_t;
@@ -258,8 +269,7 @@ struct rtgui_rect {
 struct rtgui_region_data {
     rt_uint32_t size;
     rt_uint32_t numRects;
-    /* XXX: And why, exactly, do we have this bogus struct definition? */
-    /* rtgui_rect_t rects[size]; in memory but not explicitly declared */
+    // rtgui_rect_t rects[size];
 };
 
 struct rtgui_region {
@@ -348,12 +358,13 @@ struct rtgui_dc {
     /* type of device context */
     rt_uint32_t type;
     /* dc engine */
-    const struct rtgui_dc_engine *engine;
+    const rtgui_dc_engine_t *engine;
 };
 
 /* graphic context */
 struct rtgui_gc {
-    rtgui_color_t foreground, background;
+    rtgui_color_t foreground;
+    rtgui_color_t background;
     rt_uint16_t textstyle;
     rt_uint16_t textalign;
     rtgui_font_t *font;
@@ -397,14 +408,14 @@ typedef enum rtgui_widget_flag {
     RTGUI_WIDGET_FLAG_FOCUSABLE             = 0x0010,
     RTGUI_WIDGET_FLAG_DC_VISIBLE            = 0x0100,
     RTGUI_WIDGET_FLAG_IN_ANIM               = 0x0200,
-} rtgui_win_widget_t;
+} rtgui_widget_flag_t;
 
 struct rtgui_widget {
     rtgui_obj_t _super;                     /* super class */
     rtgui_widget_t *parent;                 /* parent widget */
     rtgui_win_t *toplevel;                  /* parent window */
     rt_slist_t sibling;                     /* children and sibling */
-    rtgui_win_widget_t flag;
+    rtgui_widget_flag_t flag;
     rt_int32_t align;
     rt_uint16_t border;
     rt_uint16_t border_style;
@@ -416,7 +427,7 @@ struct rtgui_widget {
     rtgui_evt_hdl_t on_unfocus;
     rtgui_gc_t gc;                          /* graphic context */
     rt_ubase_t dc_type;                     /* hardware device context */
-    const struct rtgui_dc_engine *dc_engine;  // TODO(onelife): struct rtgui_dc
+    const rtgui_dc_engine_t *dc_engine;  // TODO(onelife): struct rtgui_dc
     rt_uint32_t user_data;
 };
 
@@ -431,13 +442,35 @@ struct rtgui_container {
 struct rtgui_box {
     rtgui_obj_t _super;
     rt_uint16_t orient;
-    rt_uint16_t border_size;
+    rt_uint16_t border_sz;
     rtgui_container_t *container;
 };
 
 /* title */
 struct rtgui_title {
     rtgui_widget_t _super;
+};
+
+/* label */
+struct rtgui_label {
+    rtgui_widget_t _super;
+    char *text;
+};
+
+/* button */
+typedef enum rtgui_button_flag {
+    RTGUI_BUTTON_FLAG_TYPE_NORMAL           = 0x00,
+    RTGUI_BUTTON_FLAG_TYPE_PUSH             = 0x10,
+    RTGUI_BUTTON_FLAG_PRESS                 = 0x01,
+    RTGUI_BUTTON_FLAG_DEFAULT               = 0x02,
+} rtgui_button_flag_t;
+
+struct rtgui_button {
+    rtgui_label_t _super;
+    rt_uint16_t flag;
+    rtgui_image_t *press_img;
+    rtgui_image_t *unpress_img;
+    rtgui_evt_hdl_t on_button;
 };
 
 /* window */
@@ -907,8 +940,6 @@ enum RTGUI_BORDER_STYLE {
     RTGUI_BORDER_EXTRA,
     RTGUI_BORDER_UP,
     RTGUI_BORDER_DOWN,
-    RTGUI_BORDER_DEFAULT_WIDTH              = 2,
-    RTGUI_WIDGET_DEFAULT_MARGIN             = 3,
 };
 
 /* Blend mode */
@@ -919,6 +950,7 @@ enum RTGUI_BLENDMODE {
     RTGUI_BLENDMODE_MOD,
 };
 
+/* box orient */
 enum RTGUI_ORIENTATION {
     RTGUI_HORIZONTAL                        = 0x01,
     RTGUI_VERTICAL                          = 0x02,

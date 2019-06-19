@@ -26,20 +26,20 @@
 #define __TO_BOX_H__
 
 #include "../rtgui.h"
-#include "./widget.h"
-#include "./container.h"
+// #include "./widget.h"
+// #include "./container.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-#define CREATE_BOX_INSTANCE(obj, orient, border_sz) \
+#define CREATE_BOX_INSTANCE(obj, ort, sz)   \
     do {                                    \
         obj = (rtgui_box_t *)CREATE_INSTANCE(box, RT_NULL); \
         if (obj) {                          \
-            box->orient = orient;           \
-            box->border_size = border_sz;   \
+            box->orient = ort;              \
+            box->border_sz = sz;          \
         }                                   \
     } while (0)
 

@@ -32,7 +32,7 @@
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
-# define LOG_TAG                    "GUI_WGT"
+# define LOG_TAG                    "WGT_WGT"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
@@ -74,7 +74,7 @@ static void _widget_constructor(void *obj) {
     rt_memset(&(wgt->extent_visiable), 0x0, sizeof(wgt->extent_visiable));
     rtgui_region_init_with_extents(&wgt->clip, &wgt->extent);
 
-    wgt->on_focus   = RT_NULL;
+    wgt->on_focus = RT_NULL;
     wgt->on_unfocus  = RT_NULL;
 
     wgt->gc.foreground = default_foreground;
@@ -123,8 +123,8 @@ static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     case RTGUI_EVENT_PAINT:
     default:
-        if (SUPER_HANDLER(wgt))
-            done = SUPER_HANDLER(wgt)(wgt, evt);
+        if (SUPER_CLASS_HANDLER(widget))
+            done = SUPER_CLASS_HANDLER(widget)(wgt, evt);
         break;
     }
 
@@ -307,13 +307,13 @@ rtgui_color_t rtgui_widget_get_parent_foreground(rtgui_widget_t *wgt) {
     rtgui_widget_t *parent;
 
     parent = wgt->parent;
-    if (!parent) return WIDGET_GET_FOREGROUND(wgt);
+    if (!parent) return WIDGET_FOREGROUND(wgt);
 
     /* get root */
     while (parent->parent && IS_WIDGET_FLAG(parent, TRANSPARENT))
         parent = parent->parent;
 
-    return WIDGET_GET_FOREGROUND(parent);
+    return WIDGET_FOREGROUND(parent);
 }
 RTM_EXPORT(rtgui_widget_get_parent_foreground);
 
@@ -321,13 +321,13 @@ rtgui_color_t rtgui_widget_get_parent_background(rtgui_widget_t *wgt) {
     rtgui_widget_t *parent;
 
     parent = wgt->parent;
-    if (!parent) return WIDGET_GET_BACKGROUND(wgt);
+    if (!parent) return WIDGET_BACKGROUND(wgt);
 
     /* get root */
     while (parent->parent && IS_WIDGET_FLAG(parent, TRANSPARENT))
         parent = parent->parent;
 
-    return WIDGET_GET_BACKGROUND(parent);
+    return WIDGET_BACKGROUND(parent);
 }
 RTM_EXPORT(rtgui_widget_get_parent_background);
 
@@ -640,8 +640,8 @@ void rtgui_widget_dump(rtgui_widget_t *wgt)
 
     if (IS_WIN(wgt) == RT_TRUE)
         rt_kprintf(":%s ", TO_WIN(wgt)->title);
-    else if ((RTGUI_IS_LABEL(wgt) == RT_TRUE) || (RTGUI_IS_BUTTON(wgt) == RT_TRUE))
-        rt_kprintf(":%s ", RTGUI_LABEL(wgt)->text);
+    else if ((IS_LABEL(wgt) == RT_TRUE) || (IS_BUTTON(wgt) == RT_TRUE))
+        rt_kprintf(":%s ", TO_LABEL(wgt)->text);
 
     rt_kprintf("extent(%d, %d) - (%d, %d)\n", wgt->extent.x1,
                wgt->extent.y1, wgt->extent.x2, wgt->extent.y2);

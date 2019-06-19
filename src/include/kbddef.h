@@ -25,8 +25,7 @@
 #define __KBD_DEF_H__
 
 /* The keyboard key have been cleverly chosen to map to ASCII */
-typedef enum
-{
+typedef enum rtgui_kbd_key {
     RTGUIK_UNKNOWN      = 0,
     RTGUIK_FIRST        = 0,
     RTGUIK_BACKSPACE    = 8,
@@ -276,11 +275,10 @@ typedef enum
     RTGUIK_POWER        = 320,      /* Power key */
 
     RTGUIK_LAST
-} RTGUI_KBD_KEY;
+} rtgui_kbd_key_t;
 
 /* Enumeration of valid key mods (possibly OR'd together) */
-typedef enum
-{
+typedef enum rtgui_kbd_mod {
     RTGUI_KMOD_NONE     = 0x0000,
     RTGUI_KMOD_LSHIFT   = 0x0001,
     RTGUI_KMOD_RSHIFT   = 0x0002,
@@ -294,12 +292,11 @@ typedef enum
     RTGUI_KMOD_CAPS     = 0x2000,
     RTGUI_KMOD_MODE     = 0x4000,
     RTGUI_KMOD_RESERVED = 0x8000
-} RTGUI_KBD_MOD;
+} rtgui_kbd_mod_t ;
 
-typedef enum
-{
+typedef enum rtgui_kbd_type {
     RTGUI_KEYDOWN,          /* Keys pressed */
     RTGUI_KEYUP,            /* Keys released */
-} RTGUI_KBD_TYPE;
+} rtgui_kbd_type_t;
 
-#endif
+#endif /* __KBD_DEF_H__ */

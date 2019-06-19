@@ -10,6 +10,9 @@ extern "C" {
     #include "include/rtgui.h"
     #include "include/dc.h"
     #include "include/images/image.h"
+    #include "include/widgets/container.h"
+    #include "include/widgets/label.h"
+    #include "include/widgets/button.h"
     #include "include/widgets/window.h"
     #include "include/app/app.h"
 }

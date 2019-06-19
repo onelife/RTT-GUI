@@ -23,11 +23,13 @@
  */
 
 #include "include/rtgui.h"
-#include "include/blit.h"
-#include "include/driver.h"
-#include "include/images/image.h"
 
 #ifdef GUIENGINE_IMAGE_PNG
+
+#include "include/blit.h"
+#include "include/driver.h"
+#include "include/image.h"
+
 #include "png.h"
 
 #define PNG_MAGIC_LEN       8
@@ -713,4 +715,5 @@ void rtgui_image_png_init()
     /* register png on image system */
     rtgui_image_register_engine(&rtgui_image_png_engine);
 }
-#endif
+
+#endif /* GUIENGINE_IMAGE_PNG */

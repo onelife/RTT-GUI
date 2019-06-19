@@ -170,7 +170,7 @@ void rtgui_font_draw(rtgui_font_t *font, rtgui_dc_t *dc, const char *text,
     RT_ASSERT(font != RT_NULL);
 
     rtgui_font_get_metrics(font, text, &text_rect);
-    rtgui_rect_move_to_align(rect, &text_rect, RTGUI_DC_TEXTALIGN(dc));
+    rtgui_rect_move_align(rect, &text_rect, RTGUI_DC_TEXTALIGN(dc));
 
     if (!rt_strcasecmp(font->family, "asc")) {
         ascii = font;
@@ -194,7 +194,7 @@ void rtgui_font_draw(rtgui_font_t *font, rtgui_dc_t *dc, const char *text,
             if (RT_EOK != non_ascii->engine->font_open(non_ascii)) break;
         }
 
-        while ((rect->x1 < rect->x2) && (idx < len)) {
+        while ((text_rect.x1 < text_rect.x2) && (idx < len)) {
             /* get font data */
             rt_uint8_t *utf8 = (rt_uint8_t *)text + idx;
             rt_uint8_t size = UTF8_SIZE(*utf8);
@@ -210,7 +210,7 @@ void rtgui_font_draw(rtgui_font_t *font, rtgui_dc_t *dc, const char *text,
             }
 
             /* draw a char */
-            rect->x1 += rtgui_font_draw_char(_font, dc, code, rect);
+            text_rect.x1 += rtgui_font_draw_char(_font, dc, code, &text_rect);
             idx += size;
         }
 

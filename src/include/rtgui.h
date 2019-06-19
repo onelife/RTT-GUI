@@ -75,6 +75,16 @@ extern "C" {
 #define IS_TITLE(obj)                       IS_INSTANCE((obj), _TITLE_METADATA)
 #define TO_TITLE(obj)                       \
     CAST_(obj, _TITLE_METADATA, rtgui_title_t)
+/* Label */
+#define _LABEL_METADATA                     CLASS_METADATA(label)
+#define IS_LABEL(obj)                       IS_INSTANCE(obj, _LABEL_METADATA)
+#define TO_LABEL(obj)                       \
+    CAST_(obj, _LABEL_METADATA, rtgui_label_t)
+/* Button */
+#define _BUTTON_METADATA                    CLASS_METADATA(button)
+#define IS_BUTTON(obj)                      IS_INSTANCE(obj, _BUTTON_METADATA)
+#define TO_BUTTON(obj)                      \
+    CAST_(obj, _BUTTON_METADATA, rtgui_button_t)
 /* Window */
 #define _WIN_METADATA                       CLASS_METADATA(win)
 #define IS_WIN(obj)                         IS_INSTANCE((obj), _WIN_METADATA)
@@ -89,6 +99,15 @@ extern "C" {
 #define RECT_W(r)                           ((r).x2 - (r).x1 + 1)
 #define RECT_H(r)                           ((r).y2 - (r).y1 + 1)
 
+
+#define BORDER_SIZE_DEFAULT                (2)
+#define MARGIN_WIDGET_DEFAULT               (3)
+
+#define TITLE_HEIGHT                        (20)
+#define TITLE_CB_WIDTH                      (16)
+#define TITLE_CB_HEIGHT                     (16)
+#define TITLE_BORDER_SIZE                   (2)
+
 /* Global variables ----------------------------------------------------------*/
 extern struct rt_mempool *rtgui_event_pool;
 extern rtgui_point_t rtgui_empty_point;
@@ -100,8 +119,10 @@ CLASS_PROTOTYPE(app);
 CLASS_PROTOTYPE(box);
 CLASS_PROTOTYPE(widget);
 CLASS_PROTOTYPE(container);
-CLASS_PROTOTYPE(win);
 CLASS_PROTOTYPE(title);
+CLASS_PROTOTYPE(label);
+CLASS_PROTOTYPE(button);
+CLASS_PROTOTYPE(win);
 
 /* Exported functions ------------------------------------------------------- */
 void *rtgui_create_instance(const rtgui_class_t *cls, rtgui_evt_hdl_t evt_hdl);
