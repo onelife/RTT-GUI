@@ -419,7 +419,6 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
             /* update title clip */
             rtgui_region_subtract_rect(
                 &(TO_WIDGET(win->_title)->clip),
-                &(TO_WIDGET(win->_title)->clip),
                 &(TO_WIDGET(win)->extent));
 
             /* always show title */
@@ -612,14 +611,11 @@ void rtgui_win_update_clip(rtgui_win_t *win) {
         /* Reset the inner clip of title. */
         TO_WIDGET(win->_title)->extent = win->outer_extent;
         rtgui_region_copy(
-            &TO_WIDGET(win->_title)->clip,
-            &win->outer_clip);
+            &TO_WIDGET(win->_title)->clip, &win->outer_clip);
         rtgui_region_subtract_rect(
-            &TO_WIDGET(win->_title)->clip,
-            &TO_WIDGET(win->_title)->clip,
-            &TO_WIDGET(win)->extent);
+            &TO_WIDGET(win->_title)->clip, &TO_WIDGET(win)->extent);
         /* Reset the inner clip of window. */
-        rtgui_region_intersect_rect(
+        rtgui_region_intersect_rect2(
             &TO_WIDGET(win)->clip,
             &win->outer_clip,
             &TO_WIDGET(win)->extent);
@@ -705,9 +701,7 @@ rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
         /* remove clip */
         rtgui_region_reset(&win->outer_clip,
                            &TO_WIDGET(win)->extent);
-        rtgui_region_intersect(&win->outer_clip,
-                               &win->outer_clip,
-                               &region);
+        rtgui_region_intersect(&win->outer_clip, &region);
         rtgui_win_update_clip(win);
         /* use virtual framebuffer */
         rtgui_widget_update(TO_WIDGET(win));
@@ -722,9 +716,7 @@ rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
         /* restore the clip information of window */
         rtgui_region_reset(&TO_WIDGET(win)->clip,
                            &TO_WIDGET(win)->extent);
-        rtgui_region_intersect(&(TO_WIDGET(win)->clip),
-                               &(TO_WIDGET(win)->clip),
-                               &clip_region);
+        rtgui_region_intersect(&(TO_WIDGET(win)->clip), &clip_region);
         rtgui_region_uninit(&region);
         rtgui_region_uninit(&clip_region);
 

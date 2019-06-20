@@ -540,7 +540,7 @@ static void rtgui_dc_buffer_blit(rtgui_dc_t *self,
             rtgui_widget_rect_to_device(owner, &dest_extent);
 
             rtgui_region_init_with_extent(&dest_region, &dest_extent);
-            rtgui_region_intersect_rect(&dest_region, &(owner->clip), &dest_extent);
+            rtgui_region_intersect_rect2(&dest_region, &(owner->clip), &dest_extent);
             bpp = rtgui_color_get_bpp(dc->pixel_format);
             hw_bpp = rtgui_color_get_bpp(hw_driver->pixel_format);
 

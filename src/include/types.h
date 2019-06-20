@@ -277,11 +277,6 @@ struct rtgui_region {
     rtgui_region_data_t *data;
 };
 
-typedef enum {
-    RTGUI_REGION_STATUS_FAILURE,
-    RTGUI_REGION_STATUS_SUCCESS
-} rtgui_region_status_t;
-
 /* font */
 struct rtgui_font_engine {
     rt_err_t (*font_init)(rtgui_font_t *font);

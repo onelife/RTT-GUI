@@ -30,6 +30,11 @@
 extern "C" {
 #endif
 
+typedef enum {
+    FAILURE,
+    SUCCESS
+} op_status_t;
+
 /* Exported defines ----------------------------------------------------------*/
 /*  true if rect r1 and r2 are overlap */
 #define IS_R_INTERSECT(r1, r2)      \
@@ -84,20 +89,18 @@ void rtgui_region_init_with_extent(rtgui_region_t *region,
 void rtgui_region_uninit(rtgui_region_t *region);
 rt_uint32_t rtgui_region_num_rects(rtgui_region_t *region);
 rtgui_rect_t *rtgui_region_rects(rtgui_region_t *region);
-rtgui_region_status_t rtgui_region_copy(rtgui_region_t *dst,
-    rtgui_region_t *src);
+op_status_t rtgui_region_copy(rtgui_region_t *dst, rtgui_region_t *src);
 
 void rtgui_region_translate(rtgui_region_t *region, int x, int y);
 
+op_status_t rtgui_region_intersect_rect2(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_rect_t *rect);
 
-rtgui_region_status_t rtgui_region_intersect(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_region_t *reg2);
-rtgui_region_status_t rtgui_region_intersect_rect(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_rect_t *rect);
-rtgui_region_status_t rtgui_region_union(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_region_t *reg2);
-rtgui_region_status_t rtgui_region_union_rect(rtgui_region_t *dest, rtgui_region_t *source, rtgui_rect_t *rect);
-rtgui_region_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t *regM, rtgui_region_t *regS);
-rtgui_region_status_t rtgui_region_subtract_rect(rtgui_region_t *regD, rtgui_region_t *regM, rtgui_rect_t *rect);
-rtgui_region_status_t rtgui_region_inverse(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_rect_t *invRect);
-
+op_status_t rtgui_region_intersect(rtgui_region_t *newReg, rtgui_region_t *reg);
+op_status_t rtgui_region_intersect_rect(rtgui_region_t *newReg, rtgui_rect_t *rect);
+op_status_t rtgui_region_union(rtgui_region_t *dstRgn, rtgui_region_t *rgn);
+op_status_t rtgui_region_union_rect(rtgui_region_t *dest, rtgui_rect_t *rect);
+op_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t *regS);
+op_status_t rtgui_region_subtract_rect(rtgui_region_t *regD, rtgui_rect_t *rect);
 
 
 #define RTGUI_REGION_OUT    0
@@ -110,8 +113,8 @@ int rtgui_region_contains_rectangle(rtgui_region_t *rtgui_region_t, rtgui_rect_t
 int rtgui_region_not_empty(rtgui_region_t *region);
 rtgui_rect_t *rtgui_region_extents(rtgui_region_t *region);
 
-rtgui_region_status_t rtgui_region_append(rtgui_region_t *dest, rtgui_region_t *region);
-rtgui_region_status_t rtgui_region_validate(rtgui_region_t *badreg, int *pOverlap);
+op_status_t rtgui_region_append(rtgui_region_t *dest, rtgui_region_t *region);
+op_status_t rtgui_region_validate(rtgui_region_t *badreg, int *pOverlap);
 
 void rtgui_region_reset(rtgui_region_t *region, rtgui_rect_t *rect);
 void rtgui_region_empty(rtgui_region_t *region);
@@ -131,8 +134,7 @@ rt_bool_t rtgui_rect_contains_point(const rtgui_rect_t *rect, int x, int y);
 rt_bool_t rtgui_rect_contains_rect(const rtgui_rect_t *rect1,
     const rtgui_rect_t *rect2);
 rt_bool_t rtgui_rect_is_intersect(const rtgui_rect_t *rect1, const rtgui_rect_t *rect2);
-rt_bool_t rtgui_rect_is_equal(const rtgui_rect_t *rect1,
-  const rtgui_rect_t *rect2);
+rt_bool_t rtgui_rect_is_equal(const rtgui_rect_t *rect1, const rtgui_rect_t *rect2);
 rtgui_rect_t *rtgui_rect_set(rtgui_rect_t *rect, int x, int y, int w, int h);
 rt_bool_t rtgui_rect_is_empty(const rtgui_rect_t *rect);
 void rtgui_rect_union(rtgui_rect_t *src, rtgui_rect_t *dest);
