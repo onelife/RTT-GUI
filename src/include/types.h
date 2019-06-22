@@ -196,8 +196,8 @@ extern "C" {
 #define IS_BUTTON_FLAG(b, fname)            (BUTTON_FLAG(b) & RTGUI_BUTTON_FLAG_##fname)
 
 /* Exported types ------------------------------------------------------------*/
-struct rtgui_graphic_driver;
-typedef struct rtgui_graphic_driver rtgui_graphic_driver_t;
+struct rtgui_gfx_driver;
+typedef struct rtgui_gfx_driver rtgui_gfx_driver_t;
 
 typedef struct rtgui_rect rtgui_rect_t;
 typedef struct rtgui_point rtgui_point_t;
@@ -239,7 +239,8 @@ typedef struct rtgui_app rtgui_app_t;
 typedef struct rtgui_timer rtgui_timer_t;
 typedef struct rtgui_topwin rtgui_topwin_t;
 
-typedef struct rtgui_evt_base rtgui_evt_base_t;
+typedef struct rtgui_touch rtgui_touch_t;
+
 typedef struct rtgui_event_timer rtgui_event_timer_t;
 typedef union rtgui_evt_generic rtgui_evt_generic_t;
 
@@ -247,7 +248,7 @@ typedef void (*rtgui_constructor_t)(void *obj);
 typedef void (*rtgui_destructor_t)(rtgui_class_t *obj);
 typedef rt_bool_t (*rtgui_evt_hdl_t)(void *obj, rtgui_evt_generic_t *evt);
 typedef void (*rtgui_idle_hdl_t)(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
-typedef void (*rtgui_timeout_hdl_t)(rtgui_timer_t *timer, void *parameter);
+typedef void (*rtgui_timeout_hdl_t)(rtgui_timer_t *timer, void *param);
 typedef void (*rtgui_hook_t)(void);
 
 /* coordinate point */
@@ -676,19 +677,19 @@ struct rtgui_evt_base {
 
 /* app event */
 struct rtgui_evt_app {
-    rtgui_evt_base_t base;
+    struct rtgui_evt_base base;
     rtgui_app_t *app;
 };
 
 /* window manager event  */
 struct rtgui_event_set_wm {
-    rtgui_evt_base_t base;
+    struct rtgui_evt_base base;
     rtgui_app_t *app;
 };
 
 /* window event */
 #define _RTGUI_EVENT_WIN_ELEMENTS           \
-    rtgui_evt_base_t base;                \
+    struct rtgui_evt_base base;             \
     rtgui_win_t *wid;
 
 struct rtgui_event_win {
@@ -725,13 +726,13 @@ struct rtgui_event_win_update_end {
 
 /* other window event */
 struct rtgui_event_update_begin {
-    rtgui_evt_base_t base;
+    struct rtgui_evt_base base;
     /* the update rect */
     rtgui_rect_t rect;
 };
 
 struct rtgui_evt_update_end {
-    rtgui_evt_base_t base;
+    struct rtgui_evt_base base;
     /* the update rect */
     rtgui_rect_t rect;
 };
@@ -759,13 +760,13 @@ struct rtgui_event_clip_info {
 #define rtgui_event_hide rtgui_evt_base
 
 struct rtgui_event_update_toplvl {
-    rtgui_evt_base_t base;
+    struct rtgui_evt_base base;
     rtgui_win_t *toplvl;
 };
 
 struct rtgui_event_timer {
-    rtgui_evt_base_t base;
-    struct rtgui_timer *timer;
+    struct rtgui_evt_base base;
+    rtgui_timer_t *timer;
 };
 
 // TODO(onelife): ??
@@ -824,12 +825,23 @@ struct rtgui_event_kbd {
     rt_uint16_t unicode;                    /* translated character */
 };
 
-/* touch event: handled by server */
+typedef enum rtgui_touch_type {
+    RTGUI_TOUCH_NONE                        = 0x00,
+    RTGUI_TOUCH_UP                          = 0x01,
+    RTGUI_TOUCH_DOWN                        = 0x02,
+    RTGUI_TOUCH_MOTION                      = 0x03,
+} rtgui_touch_type_t;
+
+struct rtgui_touch {
+    rt_uint16_t id;
+    rtgui_touch_type_t type;
+    rtgui_point_t point;
+};
+
+/* handled by server */
 struct rtgui_event_touch {
-    rtgui_evt_base_t base;
-    rt_uint16_t x, y;
-    rt_uint16_t up_down;
-    rt_uint16_t resv;
+    struct rtgui_evt_base base;
+    rtgui_touch_t data;
 };
 
 /* user command event */
@@ -845,17 +857,17 @@ struct rtgui_event_command {
 
 /* widget event */
 struct rtgui_event_scrollbar {
-    rtgui_evt_base_t base;
+    struct rtgui_evt_base base;
     rt_uint8_t event;
 };
 
 struct rtgui_event_focused {
-    rtgui_evt_base_t base;
+    struct rtgui_evt_base base;
     rtgui_widget_t *widget;
 };
 
 struct rtgui_event_resize {
-    rtgui_evt_base_t base;
+    struct rtgui_evt_base base;
     rt_int16_t x, y;
     rt_int16_t w, h;
 };
@@ -867,7 +879,7 @@ typedef enum rtgui_event_model_mode {
 } rtgui_event_model_mode_t;
 
 struct rtgui_event_mv_model {
-    rtgui_evt_base_t base;
+    struct rtgui_evt_base base;
     struct rtgui_mv_model *model;
     struct rtgui_mv_view  *view;
     rt_size_t first_data_changed_idx;

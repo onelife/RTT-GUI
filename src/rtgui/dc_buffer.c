@@ -482,7 +482,7 @@ static void rtgui_dc_buffer_blit(rtgui_dc_t *self,
         int index;
         rt_uint8_t *line_ptr, *pixels;
         rtgui_blit_line_func blit_line;
-        rtgui_graphic_driver_t *hw_driver;
+        rtgui_gfx_driver_t *hw_driver;
 
         hw_driver = rtgui_get_graphic_device();
         /* prepare pixel line */

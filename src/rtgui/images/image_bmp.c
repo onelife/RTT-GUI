@@ -560,7 +560,7 @@ void screenshot(const char *filename) {
     rt_uint16_t *src;
     rt_uint32_t mask;
     struct rtgui_image_bmp_header bhr;
-    rtgui_graphic_driver_t *grp = display();
+    rtgui_gfx_driver_t *grp = display();
     #ifdef RGB_CONVERT_TO_BGR
         int j;
         rt_uint16_t *line_buf;

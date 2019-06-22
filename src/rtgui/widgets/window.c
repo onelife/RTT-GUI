@@ -243,8 +243,7 @@ static rt_bool_t _win_handle_mouse_btn(rtgui_win_t *win,
      * last_mouse on mouse up event(but not overwrite other
      * widgets). If not, it will receive two mouse up events.
      */
-    if (win->last_mouse && \
-        (evt->mouse.button & RTGUI_MOUSE_BUTTON_UP)) {
+    if (win->last_mouse && IS_MOUSE_EVENT_BUTTON(evt, UP)) {
         if (TO_OBJECT(win->last_mouse)->evt_hdl(
                 TO_OBJECT(win->last_mouse), evt)) {
             /* clean last mouse event handled widget */
@@ -284,7 +283,6 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
 
     case RTGUI_EVENT_WIN_MOVE:
-        /* move window */
         rtgui_win_move(win, evt->win_move.x, evt->win_move.y);
         break;
 
@@ -329,15 +327,12 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     #endif
 
     case RTGUI_EVENT_MOUSE_BUTTON:
-        if (!rtgui_rect_contains_point(
+        if (rtgui_rect_contains_point(
             &TO_WIDGET(win)->extent, evt->mouse.x, evt->mouse.y)) {
             done = _win_handle_mouse_btn(win, evt);
-            break;
-        }
-        if (win->_title) {
+        } else if (win->_title) {
             rtgui_obj_t *tobj = TO_OBJECT(win->_title);
             done = EVENT_HANDLER(tobj)(tobj, evt);
-            break;
         }
         break;
 
@@ -646,7 +641,7 @@ void rtgui_win_set_rect(rtgui_win_t *win, rtgui_rect_t *rect) {
         if (evt) {
             evt->win_resize.wid = win;
             evt->win_resize.rect = *rect;
-            rtgui_send_request(evt);
+            rtgui_send_request(evt, RT_WAITING_FOREVER);
         }
     }
 }

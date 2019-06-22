@@ -465,7 +465,7 @@ void rtgui_widget_unfocus(rtgui_widget_t *wgt) {
     WIDGET_FLAG_CLEAR(wgt, FOCUS);
     wgt->toplevel->focused = RT_NULL;
 
-    LOG_D("unfocus %d", wgt->_super.id);
+    LOG_D("unfocus %s", wgt->_super.cls->name);
     if (!IS_CONTAINER(wgt)) return;
 
     rt_slist_for_each(node, &(TO_CONTAINER(wgt)->children)) {

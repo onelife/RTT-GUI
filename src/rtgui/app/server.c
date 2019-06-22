@@ -50,137 +50,131 @@ static rtgui_hook_t _show_win_hook = RT_NULL;
 static rtgui_hook_t _act_win_hook = RT_NULL;
 
 /* Private functions ---------------------------------------------------------*/
-static rt_bool_t _server_mouse_motion_event_handler(rtgui_evt_generic_t *evt) {
+static rt_bool_t _server_mouse_motion_handler(rtgui_evt_generic_t *evt) {
+    rt_uint16_t x, y;
     rt_bool_t done = RT_TRUE;
 
     do {
-        rtgui_topwin_t *topwin = rtgui_topwin_get_at(
-            evt->mouse.x, evt->mouse.y);
-        if (topwin && topwin->monitor_list.next) {
-            // FIXME:
+        rtgui_topwin_t *top;
+
+        x = evt->mouse.x;
+        y = evt->mouse.y;
+
+        top = rtgui_topwin_get_at(x, y);
+        if (!top) break;
+
+        if (top && top->monitor_list.next) {
             /* check whether the monitor exist */
-            if (!rtgui_mouse_monitor_contains_point(
-                &(topwin->monitor_list), evt->mouse.x, evt->mouse.y)) {
-                topwin = RT_NULL;
-            }
+            if (!rtgui_mouse_monitor_contains_point(&(top->monitor_list), x, y))
+                break;
         }
-        if (!topwin) break;
 
         /* send RTGUI_EVENT_MOUSE_MOTION */
-        /* change owner to server */
-        RTGUI_EVENT_REINIT(evt, MOUSE_MOTION);
-        evt->mouse.wid = topwin->wid;
+        evt->mouse.wid = top->wid;
         evt->mouse.act_cnt = rtgui_get_app_act_cnt();
-        rtgui_request(topwin->wid->app, evt, RT_WAITING_NO);
-        //TODO: topwin->wid->app? topwin->app?
+        rtgui_request(top->wid->app, evt, 1/*RT_WAITING_NO*/);
+        /* to prevent evt been free */
         done = RT_FALSE;
     } while (0);
 
     /* move mouse */
-    rtgui_mouse_moveto(evt->mouse.x, evt->mouse.y);
+    rtgui_mouse_moveto(x, y);
 
     return done;
 }
 
-static rt_bool_t _server_mouse_btn_event_handler(rtgui_evt_generic_t *evt) {
-    rtgui_topwin_t *topwin;
+static rt_bool_t _server_mouse_button_handler(rtgui_evt_generic_t *evt) {
+    rt_uint16_t x, y;
     rt_bool_t done = RT_TRUE;
 
     do {
-        #ifdef RTGUI_USING_WINMOVE
-        if (rtgui_winrect_is_moved() && (evt->mouse.button & \
-            (RTGUI_MOUSE_BUTTON_LEFT | RTGUI_MOUSE_BUTTON_UP))) {
-            rtgui_win_t *win;
-            rtgui_rect_t rect;
+        rtgui_topwin_t *top;
 
-            if (rtgui_winrect_moved_done(&rect, &win)) {
-                /* send RTGUI_EVENT_WIN_MOVE */
-                RTGUI_EVENT_REINIT(evt, WIN_MOVE);
-                evt->win_move.wid = win;
-                evt->win_move.x = rect.x1;
-                evt->win_move.y = rect.y1;
-                rtgui_request(win->app, evt, RT_WAITING_NO);
-                done = RT_FALSE;
-                break;
+        x = evt->mouse.x;
+        y = evt->mouse.y;
+
+        #ifdef RTGUI_USING_WINMOVE
+            if (rtgui_winrect_is_moved() && (evt->mouse.button & \
+                (RTGUI_MOUSE_BUTTON_LEFT | RTGUI_MOUSE_BUTTON_UP))) {
+                rtgui_win_t *win;
+                rtgui_rect_t rect;
+
+                if (rtgui_winrect_moved_done(&rect, &win)) {
+                    /* send RTGUI_EVENT_WIN_MOVE */
+                    RTGUI_EVENT_REINIT(evt, WIN_MOVE);
+                    evt->win_move.wid = win;
+                    evt->win_move.x = rect.x1;
+                    evt->win_move.y = rect.y1;
+                    rtgui_request(win->app, evt, RT_WAITING_NO);
+                    done = RT_FALSE;
+                    break;
+                }
             }
-        }
         #endif
 
-        /* send RTGUI_EVENT_MOUSE_BUTTON */
-        /* change owner to server */
-        RTGUI_EVENT_REINIT(evt, MOUSE_BUTTON);
-        /* set cursor position */
-        rtgui_mouse_set_position(evt->mouse.x, evt->mouse.y);
+        /* set cursor */
+        // rtgui_mouse_set_position(evt->mouse.x, evt->mouse.y);
 
-        /* get the topwin which contains the mouse */
-        topwin = rtgui_topwin_get_at(evt->mouse.x, evt->mouse.y);
-        if (!topwin) break;
+        /* get the top which contains the mouse */
+        top = rtgui_topwin_get_at(x, y);
+        if (!top) break;
 
         /* only raise window if the button is pressed down */
         if ((evt->mouse.button & RTGUI_MOUSE_BUTTON_DOWN) && \
-            (rtgui_topwin_get_focus() != topwin)) {
-            rtgui_topwin_activate(topwin);
+            (rtgui_topwin_get_focus() != top)) {
+            rtgui_topwin_activate(top);
         }
 
-        evt->mouse.wid = topwin->wid;
+        /* send RTGUI_EVENT_MOUSE_BUTTON */
+        evt->mouse.wid = top->wid;
         evt->mouse.act_cnt = rtgui_get_app_act_cnt();
-        rtgui_request(topwin->app, evt, RT_WAITING_NO);
+        rtgui_request(top->app, evt, 1/*RT_WAITING_NO*/);
         done = RT_FALSE;
     } while (0);
+
+    /* move mouse */
+    rtgui_mouse_moveto(x, y);
 
     return done;
 }
 
-static rt_bool_t _server_touch_event_handler(rtgui_evt_generic_t *evt) {
-    (void)evt;
-    return RT_FALSE;
-    // evt->touch
-    //  if (rtgui_touch_do_calibration(evt) == RT_TRUE)
-    //  {
-    //      struct rtgui_event_mouse emouse;
-
-    //      /* convert it as a mouse event to rtgui */
-    //      if (evt->up_down == RTGUI_TOUCH_MOTION)
-    //      {
-    //          RTGUI_EVENT_MOUSE_MOTION_INIT(&emouse);
-    //          emouse.x = evt->x;
-    //          emouse.y = evt->y;
-    //          emouse.button = 0;
-
-    //          _server_mouse_motion_event_handler(&emouse);
-    //      }
-    //      else
-    //      {
-    //          RTGUI_EVENT_MOUSE_BUTTON_INIT(&emouse);
-    //          emouse.x = evt->x;
-    //          emouse.y = evt->y;
-    //          emouse.button = RTGUI_MOUSE_BUTTON_LEFT;
-    //          if (evt->up_down == RTGUI_TOUCH_UP)
-    //              emouse.button |= RTGUI_MOUSE_BUTTON_UP;
-    //          else
-    //              emouse.button |= RTGUI_MOUSE_BUTTON_DOWN;
-
-    //          _server_mouse_btn_event_handler(&emouse);
-    //      }
-    //  }
+static rt_bool_t _server_touch_handler(rtgui_evt_generic_t *evt) {
+     // if (!rtgui_touch_do_calibration(evt)) return RT_FALSE;
+     if (IS_TOUCH_EVENT_TYPE(evt, MOTION)) {
+        RTGUI_EVENT_REINIT(evt, MOUSE_MOTION);
+        evt->mouse.x = evt->touch.data.point.x;
+        evt->mouse.y = evt->touch.data.point.y;
+        evt->mouse.button = RTGUI_MOUSE_BUTTON_NONE;
+        return _server_mouse_motion_handler(evt);
+    } else {
+        RTGUI_EVENT_REINIT(evt, MOUSE_BUTTON);
+        evt->mouse.x = evt->touch.data.point.x;
+        evt->mouse.y = evt->touch.data.point.y;
+        evt->mouse.button = RTGUI_MOUSE_BUTTON_LEFT;
+        if (evt->touch.data.type == RTGUI_TOUCH_UP)
+            evt->mouse.button |= RTGUI_MOUSE_BUTTON_UP;
+        else
+            evt->mouse.button |= RTGUI_MOUSE_BUTTON_DOWN;
+        return _server_mouse_button_handler(evt);
+     }
 }
 
-static rt_bool_t _server_kbd_event_handler(rtgui_evt_generic_t *evt) {
-    rtgui_topwin_t *topwin;
+static rt_bool_t _server_keyboard_handler(rtgui_evt_generic_t *evt) {
+    rtgui_topwin_t *top;
     rt_bool_t done = RT_TRUE;
 
     /* todo: handle input method and global shortcut */
-    topwin = rtgui_topwin_get_focus();
-    if (topwin) {
-        RT_ASSERT(topwin->flag & RTGUI_TOPWIN_FLAG_ACTIVATE);  // TODO(onelife): ?
+    top = rtgui_topwin_get_focus();
+    if (top) {
+        RT_ASSERT(top->flag & RTGUI_TOPWIN_FLAG_ACTIVATE);  // TODO(onelife): ?
 
         /* send RTGUI_EVENT_KBD */
         /* change owner to server */
         RTGUI_EVENT_REINIT(evt, KBD);
         /* send to focus window */
-        evt->kbd.wid = topwin->wid;
+        evt->kbd.wid = top->wid;
         evt->kbd.act_cnt = rtgui_get_app_act_cnt();
-        rtgui_request(topwin->app, evt, RT_WAITING_NO);
+        rtgui_request(top->app, evt, RT_WAITING_NO);
         done = RT_FALSE;
     }
 
@@ -205,28 +199,28 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         }
         break;
 
-    /* mouse and keyboard evt */
+    /* mouse and keyboard */
     case RTGUI_EVENT_MOUSE_MOTION:
-        /* handle mouse motion event */
-        done = _server_mouse_motion_event_handler(evt);
+        done = _server_mouse_motion_handler(evt);
         break;
 
     case RTGUI_EVENT_MOUSE_BUTTON:
-        /* handle mouse button */
-        done = _server_mouse_btn_event_handler(evt);
+        done = _server_mouse_button_handler(evt);
         break;
 
     case RTGUI_EVENT_TOUCH:
         /* handle touch event */
-        done = _server_touch_event_handler(evt);
+        LOG_D("touch: %x, %d (%d,%d)", evt->touch.data.id, evt->touch.data.type,
+            evt->touch.data.point.x, evt->touch.data.point.y);
+        done = _server_touch_handler(evt);
         break;
 
     case RTGUI_EVENT_KBD:
         /* handle keyboard event */
-        done = _server_kbd_event_handler(evt);
+        done = _server_keyboard_handler(evt);
         break;
 
-    /* window event */
+    /* window */
     case RTGUI_EVENT_WIN_CREATE:
         if (RT_EOK != rtgui_topwin_add(evt->base.origin, evt->win_create.wid,
             evt->win_create.parent_window))
@@ -279,13 +273,12 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         }
         break;
 
-    /* other event */
+    /* other */
     case RTGUI_EVENT_COMMAND:
         break;
 
     case RTGUI_EVENT_UPDATE_BEGIN:
         #ifdef RTGUI_USING_MOUSE_CURSOR
-            /* hide cursor */
             rtgui_mouse_hide_cursor();
         #endif
         break;
@@ -293,13 +286,12 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     case RTGUI_EVENT_UPDATE_END:
         {
             /* handle screen update */
-            rtgui_graphic_driver_t *drv = rtgui_get_graphic_device();
+            rtgui_gfx_driver_t *drv = rtgui_get_graphic_device();
             if (drv) {
                 rtgui_graphic_driver_screen_update(drv,
                     &(evt->update_end.rect));
             }
             #ifdef RTGUI_USING_MOUSE_CURSOR
-                /* show cursor */
                 rtgui_mouse_show_cursor();
             #endif
         }
@@ -317,17 +309,19 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
 
     default:
-        LOG_E("[SrvEVT] bad event [%d]", evt->base.type);
+        LOG_E("[SrvEVT] bad event [%x]", evt->base.type);
         ack = RT_ERROR;
         break;
     }
 
     EVT_LOG("[SrvEVT] %s @%p from %s done %d", rtgui_event_text(evt), evt,
         evt->base.origin->mb->parent.parent.name, done);
-    if (!done) {
-        LOG_W("[SrvEVT] %p not done", evt);
+
+    if (!done && !IS_EVENT_TYPE(evt, MOUSE_MOTION) && \
+        !IS_EVENT_TYPE(evt, MOUSE_BUTTON)) {
+        LOG_E("[SrvEVT] %p not done", evt);
     }
-    if (done && evt) {
+    if (done && evt && !IS_EVENT_TYPE(evt, TIMER)) {
         rtgui_response(evt, ack);
         RTGUI_FREE_EVENT(evt);
     }
@@ -389,9 +383,9 @@ rt_err_t rtgui_server_init(void) {
     return ret;
 }
 
-rt_err_t rtgui_send_request(rtgui_evt_generic_t *evt) {
+rt_err_t rtgui_send_request(rtgui_evt_generic_t *evt, rt_int32_t timeout) {
     if (_srv_app)
-        return rtgui_request(_srv_app, evt, RT_WAITING_FOREVER);
+        return rtgui_request(_srv_app, evt, timeout);
 
     LOG_E("post bf srv start");
     return -RT_ENOSYS;

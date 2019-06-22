@@ -23,10 +23,8 @@
  * 2019-05-15     onelife      refactor
  */
 /* Includes ------------------------------------------------------------------*/
-#include "../include/rtgui.h"
-//#include <rtgui/rtgui_theme.h>
-//#include "../server/mouse.h"
-#include "../include/widgets/window.h"
+#include "include/rtgui.h"
+#include "include/widgets/window.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL

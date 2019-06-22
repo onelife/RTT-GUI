@@ -67,7 +67,7 @@ struct rtgui_dc_engine {
 struct rtgui_dc_hw {
     rtgui_dc_t _super;
     rtgui_widget_t *owner;
-    const rtgui_graphic_driver_t *hw_driver;
+    const rtgui_gfx_driver_t *hw_driver;
 };
 
 /**

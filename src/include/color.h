@@ -91,90 +91,59 @@ extern const rtgui_color_t light_grey;
  * 31                                    0
  */
 
-/* convert rtgui color to mono */
-rt_inline rt_uint8_t rtgui_color_to_mono(rtgui_color_t c)
-{
-    rt_uint8_t pixel;
-
-    pixel = (RTGUI_RGB_R(c) | RTGUI_RGB_G(c) | RTGUI_RGB_B(c)) ? 0x01 : 0x00;
-    return pixel;
+/* RGB -> mono */
+rt_inline rtgui_color_t rtgui_color_to_mono(rtgui_color_t c) {
+    return (RTGUI_RGB_R(c) | RTGUI_RGB_G(c) | RTGUI_RGB_B(c)) ? 0x01 : 0x00;
 }
 
-rt_inline rtgui_color_t rtgui_color_from_mono(rt_uint8_t pixel)
-{
-    rtgui_color_t color;
-
-    if (pixel)
-    {
-        color = white;
-    }
-    else
-    {
-        color = black;
-    }
-    return color;
+/* mono -> RGB */
+rt_inline rtgui_color_t rtgui_color_from_mono(rtgui_color_t pixel) {
+    return pixel ? white : black;
 }
 
 /* convert rtgui color to RRRRRGGGGGGBBBBB */
 rt_inline rt_uint16_t rtgui_color_to_565(rtgui_color_t c) {
-    rt_uint16_t color;
+    rt_uint16_t pixel;
 
-    RGB565_FROM_RGB(color, RTGUI_RGB_R(c), RTGUI_RGB_G(c), RTGUI_RGB_B(c));
-    return color;
+    RGB565_FROM_RGB(pixel, RTGUI_RGB_R(c), RTGUI_RGB_G(c), RTGUI_RGB_B(c));
+    return pixel;
 }
 
 rt_inline rtgui_color_t rtgui_color_from_565(rt_uint16_t pixel) {
     rt_uint16_t r, g, b;
-    rtgui_color_t color;
 
     r = (pixel >> 11) & 0x1f;
     g = (pixel >> 5)  & 0x3f;
     b = pixel & 0x1f;
 
-    color = b * 255 / 31 + ((g * 255 / 63) << 8) + ((r * 255 / 31) << 16);
-
-    return color;
+    return (b * 255 / 31 + ((g * 255 / 63) << 8) + ((r * 255 / 31) << 16));
 }
 
 /* convert rtgui color to BBBBBGGGGGGRRRRR */
-rt_inline rt_uint16_t rtgui_color_to_565p(rtgui_color_t c)
-{
-    rt_uint16_t pixel;
-
-    pixel = (rt_uint16_t)(((RTGUI_RGB_B(c) >> 3) << 11) | ((RTGUI_RGB_G(c) >> 2) << 5) | (RTGUI_RGB_R(c) >> 3));
-    return pixel;
+rt_inline rt_uint16_t rtgui_color_to_565p(rtgui_color_t c) {
+    return (rt_uint16_t)(((RTGUI_RGB_B(c) >> 3) << 11) | \
+                         ((RTGUI_RGB_G(c) >> 2) << 5)  | \
+                         (RTGUI_RGB_R(c) >> 3));
 }
 
-rt_inline rtgui_color_t rtgui_color_from_565p(rt_uint16_t pixel)
-{
+rt_inline rtgui_color_t rtgui_color_from_565p(rt_uint16_t pixel) {
     rt_uint8_t r, g, b;
-    rtgui_color_t color;
 
     r = pixel & 0x1f;
     g = (pixel >> 5) & 0x3f;
     b = (pixel >> 11) & 0x1f;
 
-    color = b * 255 / 31 + ((g * 255 / 63) << 8) + ((r * 255 / 31) << 16);
-
-    return color;
+    return (b * 255 / 31 + ((g * 255 / 63) << 8) + ((r * 255 / 31) << 16));
 }
 
 /* convert rtgui color to RGB */
-rt_inline rt_uint32_t rtgui_color_to_888(rtgui_color_t c)
-{
-    rt_uint32_t pixel;
-
-    pixel = RTGUI_RGB_R(c) << 16 | RTGUI_RGB_G(c) << 8 | RTGUI_RGB_B(c);
-    return pixel;
+rt_inline rt_uint32_t rtgui_color_to_888(rtgui_color_t c) {
+    return (RTGUI_RGB_R(c) << 16 | RTGUI_RGB_G(c) << 8 | RTGUI_RGB_B(c));
 }
 
-rt_inline rtgui_color_t rtgui_color_from_888(rt_uint32_t pixel)
-{
-    rtgui_color_t color;
-
-    color = RTGUI_RGB(((pixel >> 16) & 0xff), ((pixel >> 8) & 0xff), pixel & 0xff);
-
-    return color;
+rt_inline rtgui_color_t rtgui_color_from_888(rt_uint32_t pixel) {
+    return RTGUI_RGB(((pixel >> 16) & 0xff), ((pixel >> 8) & 0xff),
+        (pixel & 0xff));
 }
 
 /* get the bits of specified pixle format */

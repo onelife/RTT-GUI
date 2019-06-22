@@ -23,9 +23,13 @@
  * 2019-05-23     onelife      rename to "driver.c"
  */
 
-#include "../include/rtgui.h"
-#include "../include/driver.h"
-#include "../include/region.h"
+#include "include/rtgui.h"
+#include "include/region.h"
+#include "include/driver.h"
+
+#ifdef CONFIG_TOUCH_DEVICE_NAME
+# include "components/arduino/drv_common.h"
+#endif
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -37,10 +41,9 @@
 #endif /* RT_USING_ULOG */
 
 
-#define rt_graphix_ops(device)      \
-    ((struct rtgui_graphic_driver_ops *)(device->user_data))
-#define gfx_device                  (rtgui_get_graphic_device()->device)
-#define gfx_device_ops              rt_graphix_ops(gfx_device)
+#define display_dev                 (rtgui_get_graphic_device()->device)
+#define graphic_ops()               \
+    ((struct rtgui_graphic_driver_ops *)(display_dev->user_data))
 
 
 const struct rtgui_graphic_driver_ops *rtgui_pixel_device_get_ops(
@@ -48,9 +51,15 @@ const struct rtgui_graphic_driver_ops *rtgui_pixel_device_get_ops(
 const struct rtgui_graphic_driver_ops *rtgui_framebuffer_get_ops(
     int pixel_format);
 
-static rtgui_graphic_driver_t _driver;
-static rtgui_graphic_driver_t *_current_driver = &_driver;
-RTGUI_REFERENCE_GETTER(graphic_device, rtgui_graphic_driver_t, _current_driver);
+static rtgui_gfx_driver_t _gfx_drv;
+static rtgui_gfx_driver_t *_cur_drv = &_gfx_drv;
+RTGUI_REFERENCE_GETTER(graphic_device, rtgui_gfx_driver_t, _cur_drv);
+
+#ifdef CONFIG_TOUCH_DEVICE_NAME
+    static rt_bool_t _touch_done = RT_FALSE;
+    static rt_device_t _touch;
+    RTGUI_GETTER(touch_device, rt_device_t, _touch);
+#endif
 
 
 #ifdef GUIENGIN_USING_VFRAMEBUFFER
@@ -60,19 +69,19 @@ RTGUI_REFERENCE_GETTER(graphic_device, rtgui_graphic_driver_t, _current_driver);
 #  define RTGUI_VFB_PIXEL_FMT       RTGRAPHIC_PIXEL_FORMAT_RGB565
 # endif
 
-static rtgui_graphic_driver_t _vfb_driver = {0};
+static rtgui_gfx_driver_t _vfb_driver = {0};
 
 static void _graphic_driver_vmode_init(void) {
-    if (_vfb_driver.width != _driver.width || _vfb_driver.height != _driver.height)
+    if (_vfb_driver.width != _gfx_drv.width || _vfb_driver.height != _gfx_drv.height)
     {
         if (_vfb_driver.framebuffer != RT_NULL) rtgui_free((void*)_vfb_driver.framebuffer);
 
         _vfb_driver.device = RT_NULL;
         _vfb_driver.pixel_format = RTGUI_VFB_PIXEL_FMT;
         _vfb_driver.bits_per_pixel = rtgui_color_get_bits(RTGUI_VFB_PIXEL_FMT);
-        _vfb_driver.width  = _driver.width;
-        _vfb_driver.height = _driver.height;
-        _vfb_driver.pitch  = _driver.width * _BIT2BYTE(_vfb_driver.bits_per_pixel);
+        _vfb_driver.width  = _gfx_drv.width;
+        _vfb_driver.height = _gfx_drv.height;
+        _vfb_driver.pitch  = _gfx_drv.width * _BIT2BYTE(_vfb_driver.bits_per_pixel);
         _vfb_driver.framebuffer = rtgui_malloc(_vfb_driver.height * _vfb_driver.pitch);
         rt_memset(_vfb_driver.framebuffer, 0, _vfb_driver.height * _vfb_driver.pitch);
         _vfb_driver.ext_ops = RT_NULL;
@@ -83,24 +92,24 @@ static void _graphic_driver_vmode_init(void) {
 void rtgui_graphic_driver_vmode_enter(void)
 {
     rtgui_screen_lock(RT_WAITING_FOREVER);
-    _current_driver = &_vfb_driver;
+    _cur_drv = &_vfb_driver;
 }
 RTM_EXPORT(rtgui_graphic_driver_vmode_enter);
 
 void rtgui_graphic_driver_vmode_exit(void)
 {
-    _current_driver = &_driver;
+    _cur_drv = &_gfx_drv;
     rtgui_screen_unlock();
 }
 RTM_EXPORT(rtgui_graphic_driver_vmode_exit);
 
 rt_bool_t rtgui_graphic_driver_is_vmode(void) {
-    return (_current_driver == &_vfb_driver);
+    return (_cur_drv == &_vfb_driver);
 }
 RTM_EXPORT(rtgui_graphic_driver_is_vmode);
 
 rtgui_dc_t*
-rtgui_graphic_driver_get_rect_buffer(const rtgui_graphic_driver_t *drv,
+rtgui_graphic_driver_get_rect_buffer(const rtgui_gfx_driver_t *drv,
                                      rtgui_rect_t *r)
 {
     int w, h;
@@ -109,7 +118,7 @@ rtgui_graphic_driver_get_rect_buffer(const rtgui_graphic_driver_t *drv,
     rtgui_rect_t src, rect;
 
     /* use virtual framebuffer in default */
-    if (drv == RT_NULL) drv = _current_driver;
+    if (drv == RT_NULL) drv = _cur_drv;
 
     if (r == RT_NULL)
     {
@@ -150,19 +159,16 @@ rtgui_graphic_driver_get_rect_buffer(const rtgui_graphic_driver_t *drv,
     return (rtgui_dc_t*)buffer;
 }
 RTM_EXPORT(rtgui_graphic_driver_get_rect_buffer);
-#else /* GUIENGIN_USING_VFRAMEBUFFER */
-rt_bool_t rtgui_graphic_driver_is_vmode(void) {
-    return RT_FALSE;
-}
-RTM_EXPORT(rtgui_graphic_driver_is_vmode);
+
 #endif /* GUIENGIN_USING_VFRAMEBUFFER */
 
-void rtgui_graphic_driver_get_rect(const rtgui_graphic_driver_t *drv,
+void rtgui_graphic_driver_get_rect(const rtgui_gfx_driver_t *drv,
     rtgui_rect_t *rect) {
     RT_ASSERT(rect != RT_NULL);
 
     /* use default drv */
-    if (RT_NULL == drv) drv = _current_driver;
+    if (RT_NULL == drv)
+        drv = _cur_drv;
 
     rect->x1 = rect->y1 = 0;
     rect->x2 = drv->width;
@@ -170,7 +176,7 @@ void rtgui_graphic_driver_get_rect(const rtgui_graphic_driver_t *drv,
 }
 RTM_EXPORT(rtgui_graphic_driver_get_rect);
 
-rt_err_t rtgui_graphic_set_device(rt_device_t dev) {
+rt_err_t rtgui_set_graphic_device(rt_device_t dev) {
     struct rt_device_graphic_info info;
     struct rtgui_graphic_ext_ops *ext_ops;
     rt_err_t ret;
@@ -179,45 +185,42 @@ rt_err_t rtgui_graphic_set_device(rt_device_t dev) {
         ret = rt_device_open(dev, 0);
         if (RT_EOK != ret) break;
 
-        /* get framebuffer address */
+        /* get info */
         ret = rt_device_control(dev, RTGRAPHIC_CTRL_GET_INFO, &info);
         if (RT_EOK != ret) break;
 
         /* if the first set graphic device */
-        if (_driver.width == 0 || _driver.height == 0) {
+        if (!_gfx_drv.width || !_gfx_drv.height) {
             rtgui_rect_t rect;
 
             rtgui_get_mainwin_rect(&rect);
-            if (rect.x2 == 0 || rect.y2 == 0) {
+            if (!rect.x2 || !rect.y2) {
+                /* reset main-window */
                 rtgui_rect_init(&rect, 0, 0, info.width, info.height);
-                /* re-set main-window */
                 rtgui_set_mainwin_rect(&rect);
             }
         }
 
         /* initialize framebuffer drv */
-        _driver.device = dev;
-        _driver.pixel_format = info.pixel_format;
-        _driver.bits_per_pixel = info.bits_per_pixel;
-        _driver.width = info.width;
-        _driver.height = info.height;
-        _driver.pitch = _driver.width * _BIT2BYTE(_driver.bits_per_pixel);
-        _driver.framebuffer = info.framebuffer;
+        _gfx_drv.device = dev;
+        _gfx_drv.pixel_format = info.pixel_format;
+        _gfx_drv.bits_per_pixel = info.bits_per_pixel;
+        _gfx_drv.width = info.width;
+        _gfx_drv.height = info.height;
+        _gfx_drv.pitch = _gfx_drv.width * _BIT2BYTE(_gfx_drv.bits_per_pixel);
+        _gfx_drv.framebuffer = info.framebuffer;
 
-        /* get graphic extension operations */
+        /* get extent ops */
         ret = rt_device_control(dev, RTGRAPHIC_CTRL_GET_EXT, &ext_ops);
         if (RT_EOK != ret) {
-            _driver.ext_ops = ext_ops;
+            _gfx_drv.ext_ops = ext_ops;
             ret = RT_EOK;
         }
 
-        if (info.framebuffer) {
-            /* is a frame buffer device */
-            _driver.ops = rtgui_framebuffer_get_ops(_driver.pixel_format);
-        } else {
-            /* is a pixel device */
-            _driver.ops = rtgui_pixel_device_get_ops(_driver.pixel_format);
-        }
+        if (info.framebuffer)
+            _gfx_drv.ops = rtgui_framebuffer_get_ops(_gfx_drv.pixel_format);
+        else
+            _gfx_drv.ops = rtgui_pixel_device_get_ops(_gfx_drv.pixel_format);
 
         #ifdef RTGUI_USING_HW_CURSOR
             /* set default cursor image */
@@ -231,11 +234,55 @@ rt_err_t rtgui_graphic_set_device(rt_device_t dev) {
 
     return ret;
 }
-RTM_EXPORT(rtgui_graphic_set_device);
+RTM_EXPORT(rtgui_set_graphic_device);
+
+#ifdef CONFIG_TOUCH_DEVICE_NAME
+
+static void touch_available(void) {
+    /* call by interrupt, send touch event to server */
+    // TODO(onelife): need a lock to prevent interrupt e.g. sd reading
+    rt_size_t num;
+    rtgui_touch_t *data;
+    rtgui_evt_generic_t *evt;
+
+    num = rt_device_read(_touch, 0, &data, 1);
+    /* skip moving event otherwise eat up resources */
+    if ((num > 1) || (data->type == RTGUI_TOUCH_MOTION) || \
+        (data->type == RTGUI_TOUCH_NONE))
+        return;
+
+    /* get only one lift up event */
+    if (num)                _touch_done = RT_FALSE;
+    else if (_touch_done)   return;
+    else                    _touch_done = RT_TRUE;
+
+    /* send RTGUI_EVENT_TOUCH */
+    RTGUI_CREATE_EVENT(evt, TOUCH, RT_WAITING_NO);
+    if (!evt) return;
+    rt_memcpy(&evt->touch.data, data, sizeof(rtgui_touch_t));
+    (void)rtgui_send_request(evt, RT_WAITING_NO);
+}
+
+rt_err_t rtgui_set_touch_device(rt_device_t dev) {
+    rt_err_t ret;
+
+    do {
+        ret = rt_device_open(dev, 0);
+        if (RT_EOK != ret) break;
+        /* set touch indicator */
+        ret = rt_device_control(dev, RT_DEVICE_CTRL_SET_RX_INDICATOR,
+            touch_available);
+        _touch = dev;
+    } while (0);
+
+    return ret;
+}
+
+#endif /* CONFIG_TOUCH_DEVICE_NAME */
 
 /* screen update */
 void rtgui_graphic_driver_screen_update(
-    const rtgui_graphic_driver_t *drv, rtgui_rect_t *rect) {
+    const rtgui_gfx_driver_t *drv, rtgui_rect_t *rect) {
     if (drv->device)  {
         struct rt_device_rect_info rect_info;
 
@@ -260,16 +307,16 @@ RTM_EXPORT(rtgui_graphic_driver_screen_update);
 
 void rtgui_graphic_driver_set_framebuffer(void *fb)
 {
-    if (_current_driver)
-        _current_driver->framebuffer = fb;
+    if (_cur_drv)
+        _cur_drv->framebuffer = fb;
     else
-        _driver.framebuffer = fb;
+        _gfx_drv.framebuffer = fb;
 }
 
 /* get video frame buffer */
-rt_uint8_t *rtgui_graphic_driver_get_framebuffer(const rtgui_graphic_driver_t *drv)
+rt_uint8_t *rtgui_graphic_driver_get_framebuffer(const rtgui_gfx_driver_t *drv)
 {
-    if (drv == RT_NULL) drv = _current_driver;
+    if (drv == RT_NULL) drv = _cur_drv;
 
     return (rt_uint8_t *)drv->framebuffer;
 }
@@ -317,7 +364,7 @@ static void _rgb565_draw_hline(rtgui_color_t *c, int x1, int x2, int y)
 
 static void _rgb565_draw_vline(rtgui_color_t *c, int x , int y1, int y2)
 {
-    rtgui_graphic_driver_t *drv;
+    rtgui_gfx_driver_t *drv;
     rt_uint8_t *dst;
     rt_uint16_t pixel;
     int index;
@@ -368,7 +415,7 @@ static void _rgb565p_draw_hline(rtgui_color_t *c, int x1, int x2, int y)
 
 static void _rgb565p_draw_vline(rtgui_color_t *c, int x , int y1, int y2)
 {
-    rtgui_graphic_driver_t *drv;
+    rtgui_gfx_driver_t *drv;
     rt_uint8_t *dst;
     rt_uint16_t pixel;
     int index;
@@ -450,7 +497,7 @@ static void _rgb888_draw_hline(rtgui_color_t *c, int x1, int x2, int y)
 static void _rgb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2)
 {
 #ifdef GUIENGINE_USING_RGB888_AS_32BIT
-    rtgui_graphic_driver_t *drv;
+    rtgui_gfx_driver_t *drv;
     rtgui_color_t *dst;
     int index;
 
@@ -462,7 +509,7 @@ static void _rgb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2)
         dst += drv->width;
     }
 #else
-    rtgui_graphic_driver_t *drv;
+    rtgui_gfx_driver_t *drv;
     rt_uint8_t *dst;
     int index;
 
@@ -508,7 +555,7 @@ static void _argb888_draw_hline(rtgui_color_t *c, int x1, int x2, int y)
 
 static void _argb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2)
 {
-    rtgui_graphic_driver_t *drv;
+    rtgui_gfx_driver_t *drv;
     rtgui_color_t *dst;
     int index;
 
@@ -524,7 +571,7 @@ static void _argb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2)
 /* draw raw hline */
 static void framebuffer_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y)
 {
-    rtgui_graphic_driver_t *drv;
+    rtgui_gfx_driver_t *drv;
     rt_uint8_t *dst;
 
     drv = rtgui_get_graphic_device();
@@ -575,7 +622,7 @@ const struct rtgui_graphic_driver_ops _framebuffer_argb888_ops =
 
 static void _mono_set_pixel(rtgui_color_t *c, int x, int y)
 {
-    rtgui_graphic_driver_t *drv = rtgui_get_graphic_device();
+    rtgui_gfx_driver_t *drv = rtgui_get_graphic_device();
 
     if (*c == white)
         MONO_PIXEL(FRAMEBUFFER, x, y) &= ~(1 << (y % 8));
@@ -585,7 +632,7 @@ static void _mono_set_pixel(rtgui_color_t *c, int x, int y)
 
 static void _mono_get_pixel(rtgui_color_t *c, int x, int y)
 {
-    rtgui_graphic_driver_t *drv = rtgui_get_graphic_device();
+    rtgui_gfx_driver_t *drv = rtgui_get_graphic_device();
 
     if (MONO_PIXEL(FRAMEBUFFER, x, y) & (1 << (y % 8)))
         *c = black;
@@ -596,7 +643,7 @@ static void _mono_get_pixel(rtgui_color_t *c, int x, int y)
 static void _mono_draw_hline(rtgui_color_t *c, int x1, int x2, int y)
 {
     int index;
-    rtgui_graphic_driver_t *drv = rtgui_get_graphic_device();
+    rtgui_gfx_driver_t *drv = rtgui_get_graphic_device();
 
     if (*c == white)
         for (index = x1; index < x2; index ++)
@@ -612,7 +659,7 @@ static void _mono_draw_hline(rtgui_color_t *c, int x1, int x2, int y)
 
 static void _mono_draw_vline(rtgui_color_t *c, int x , int y1, int y2)
 {
-    rtgui_graphic_driver_t *drv = rtgui_get_graphic_device();
+    rtgui_gfx_driver_t *drv = rtgui_get_graphic_device();
     int index;
 
     if (*c == white)
@@ -630,7 +677,7 @@ static void _mono_draw_vline(rtgui_color_t *c, int x , int y1, int y2)
 /* draw raw hline */
 static void _mono_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y)
 {
-    rtgui_graphic_driver_t *drv = rtgui_get_graphic_device();
+    rtgui_gfx_driver_t *drv = rtgui_get_graphic_device();
     int index;
 
     for (index = x1; index < x2; index ++)
@@ -678,70 +725,57 @@ const struct rtgui_graphic_driver_ops *rtgui_framebuffer_get_ops(
 /*
  * Pixel type drv
  */
-static void _pixel_mono_set_pixel(rtgui_color_t *c, int x, int y)
-{
-    rt_uint8_t pixel;
-
-    pixel = rtgui_color_to_mono(*c);
-    gfx_device_ops->set_pixel((char *)&pixel, x, y);
-}
-
-static void _pixel_rgb565p_set_pixel(rtgui_color_t *c, int x, int y)
-{
-    rt_uint16_t pixel;
-
-    pixel = rtgui_color_to_565p(*c);
-    gfx_device_ops->set_pixel((char *)&pixel, x, y);
+static void _pixel_mono_set_pixel(rtgui_color_t *c, int x, int y) {
+    rtgui_color_t pixel = rtgui_color_to_mono(*c);
+    graphic_ops()->set_pixel(&pixel, x, y);
 }
 
 static void _pixel_rgb565_set_pixel(rtgui_color_t *c, int x, int y) {
     rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565(*c);
-    gfx_device_ops->set_pixel(&pixel, x, y);
+    graphic_ops()->set_pixel(&pixel, x, y);
 }
 
-static void _pixel_rgb888_set_pixel(rtgui_color_t *c, int x, int y)
-{
-    rt_uint32_t pixel;
+static void _pixel_rgb565p_set_pixel(rtgui_color_t *c, int x, int y) {
+    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565p(*c);
+    graphic_ops()->set_pixel(&pixel, x, y);
+}
 
-    pixel = rtgui_color_to_888(*c);
-    gfx_device_ops->set_pixel((char *)&pixel, x, y);
+static void _pixel_rgb888_set_pixel(rtgui_color_t *c, int x, int y) {
+    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_888(*c);
+    graphic_ops()->set_pixel(&pixel, x, y);
 }
 
 static void _pixel_mono_get_pixel(rtgui_color_t *c, int x, int y) {
     rtgui_color_t pixel;
 
-    gfx_device_ops->get_pixel(&pixel, x, y);
-    *c = rtgui_color_from_mono((rt_uint8_t)pixel);
-}
-
-static void _pixel_rgb565p_get_pixel(rtgui_color_t *c, int x, int y) {
-    rtgui_color_t pixel;
-
-    gfx_device_ops->get_pixel(&pixel, x, y);
-    *c = rtgui_color_from_565p((rt_uint16_t)pixel);
+    graphic_ops()->get_pixel(&pixel, x, y);
+    *c = rtgui_color_from_mono(pixel);
 }
 
 static void _pixel_rgb565_get_pixel(rtgui_color_t *c, int x, int y) {
     rtgui_color_t pixel;
 
-    gfx_device_ops->get_pixel(&pixel, x, y);
+    graphic_ops()->get_pixel(&pixel, x, y);
     *c = rtgui_color_from_565((rt_uint16_t)pixel);
 }
 
-static void _pixel_rgb888_get_pixel(rtgui_color_t *c, int x, int y)
-{
-    rt_uint32_t pixel;
+static void _pixel_rgb565p_get_pixel(rtgui_color_t *c, int x, int y) {
+    rtgui_color_t pixel;
 
-    gfx_device_ops->get_pixel((char *)&pixel, x, y);
-    *c = rtgui_color_from_888(pixel);
+    graphic_ops()->get_pixel(&pixel, x, y);
+    *c = rtgui_color_from_565p((rt_uint16_t)pixel);
 }
 
-static void _pixel_mono_draw_hline(rtgui_color_t *c, int x1, int x2, int y)
-{
-    rt_uint8_t pixel;
+static void _pixel_rgb888_get_pixel(rtgui_color_t *c, int x, int y) {
+    rtgui_color_t pixel;
 
-    pixel = rtgui_color_to_mono(*c);
-    gfx_device_ops->draw_hline((char *)&pixel, x1, x2, y);
+    graphic_ops()->get_pixel(&pixel, x, y);
+    *c = rtgui_color_from_888((rt_uint32_t)pixel);
+}
+
+static void _pixel_mono_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
+    rtgui_color_t pixel = rtgui_color_to_mono(*c);
+    graphic_ops()->draw_hline(&pixel, x1, x2, y);
 }
 
 static void _pixel_rgb565p_draw_hline(rtgui_color_t *c, int x1, int x2, int y)
@@ -749,12 +783,12 @@ static void _pixel_rgb565p_draw_hline(rtgui_color_t *c, int x1, int x2, int y)
     rt_uint16_t pixel;
 
     pixel = rtgui_color_to_565p(*c);
-    gfx_device_ops->draw_hline((char *)&pixel, x1, x2, y);
+    graphic_ops()->draw_hline((char *)&pixel, x1, x2, y);
 }
 
 static void _pixel_rgb565_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
     rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565(*c);
-    gfx_device_ops->draw_hline(&pixel, x1, x2, y);
+    graphic_ops()->draw_hline(&pixel, x1, x2, y);
 }
 
 static void _pixel_rgb888_draw_hline(rtgui_color_t *c, int x1, int x2, int y)
@@ -762,7 +796,7 @@ static void _pixel_rgb888_draw_hline(rtgui_color_t *c, int x1, int x2, int y)
     rt_uint32_t pixel;
 
     pixel = rtgui_color_to_888(*c);
-    gfx_device_ops->draw_hline((char *)&pixel, x1, x2, y);
+    graphic_ops()->draw_hline((char *)&pixel, x1, x2, y);
 }
 
 static void _pixel_mono_draw_vline(rtgui_color_t *c, int x, int y1, int y2)
@@ -770,7 +804,7 @@ static void _pixel_mono_draw_vline(rtgui_color_t *c, int x, int y1, int y2)
     rt_uint8_t pixel;
 
     pixel = rtgui_color_to_mono(*c);
-    gfx_device_ops->draw_vline((char *)&pixel, x, y1, y2);
+    graphic_ops()->draw_vline((char *)&pixel, x, y1, y2);
 }
 
 static void _pixel_rgb565p_draw_vline(rtgui_color_t *c, int x, int y1, int y2)
@@ -778,24 +812,24 @@ static void _pixel_rgb565p_draw_vline(rtgui_color_t *c, int x, int y1, int y2)
     rt_uint16_t pixel;
 
     pixel = rtgui_color_to_565p(*c);
-    gfx_device_ops->draw_vline((char *)&pixel, x, y1, y2);
+    graphic_ops()->draw_vline((char *)&pixel, x, y1, y2);
 }
 
 static void _pixel_rgb565_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
     rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565(*c);
-    gfx_device_ops->draw_vline(&pixel, x, y1, y2);
+    graphic_ops()->draw_vline(&pixel, x, y1, y2);
 }
 
 static void _pixel_rgb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
     rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_888(*c);
-    gfx_device_ops->draw_vline(&pixel, x, y1, y2);
+    graphic_ops()->draw_vline(&pixel, x, y1, y2);
 }
 
 static void _pixel_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y) {
     if (x2 > x1)
-        gfx_device_ops->draw_raw_hline(pixels, x1, x2, y);
+        graphic_ops()->draw_raw_hline(pixels, x1, x2, y);
     else
-        gfx_device_ops->draw_raw_hline(pixels, x2, x2, y);
+        graphic_ops()->draw_raw_hline(pixels, x2, x2, y);
 }
 
 const struct rtgui_graphic_driver_ops _pixel_mono_ops = {
@@ -806,8 +840,7 @@ const struct rtgui_graphic_driver_ops _pixel_mono_ops = {
     _pixel_draw_raw_hline,
 };
 
-const struct rtgui_graphic_driver_ops _pixel_rgb565p_ops =
-{
+const struct rtgui_graphic_driver_ops _pixel_rgb565p_ops = {
     _pixel_rgb565p_set_pixel,
     _pixel_rgb565p_get_pixel,
     _pixel_rgb565p_draw_hline,
@@ -815,8 +848,7 @@ const struct rtgui_graphic_driver_ops _pixel_rgb565p_ops =
     _pixel_draw_raw_hline,
 };
 
-const struct rtgui_graphic_driver_ops _pixel_rgb565_ops =
-{
+const struct rtgui_graphic_driver_ops _pixel_rgb565_ops = {
     _pixel_rgb565_set_pixel,
     _pixel_rgb565_get_pixel,
     _pixel_rgb565_draw_hline,
@@ -824,8 +856,7 @@ const struct rtgui_graphic_driver_ops _pixel_rgb565_ops =
     _pixel_draw_raw_hline,
 };
 
-const struct rtgui_graphic_driver_ops _pixel_rgb888_ops =
-{
+const struct rtgui_graphic_driver_ops _pixel_rgb888_ops = {
     _pixel_rgb888_set_pixel,
     _pixel_rgb888_get_pixel,
     _pixel_rgb888_draw_hline,
@@ -858,26 +889,24 @@ const struct rtgui_graphic_driver_ops *rtgui_pixel_device_get_ops(int pixel_form
  */
 
 #ifdef RTGUI_USING_HW_CURSOR
-void rtgui_cursor_set_position(rt_uint16_t x, rt_uint16_t y)
-{
+void rtgui_cursor_set_position(rt_uint16_t x, rt_uint16_t y) {
     rt_uint32_t value;
 
-    if (_current_driver->device != RT_NULL)
-    {
+    if (_cur_drv->device) {
         value = (x << 16 | y);
-        rt_device_control(_driver.device, RT_DEVICE_CTRL_CURSOR_SET_POSITION, &value);
+        rt_device_control(_gfx_drv.device, RT_DEVICE_CTRL_CURSOR_SET_POSITION,
+            &value);
     }
 }
 
-void rtgui_cursor_set_image(enum rtgui_cursor_type type)
-{
+void rtgui_cursor_set_image(enum rtgui_cursor_type type) {
     rt_uint32_t value;
 
-    if (_current_driver->device != RT_NULL)
-    {
+    if (_cur_drv->device) {
         value = type;
-        rt_device_control(_driver.device, RT_DEVICE_CTRL_CURSOR_SET_TYPE, &value);
+        rt_device_control(_gfx_drv.device, RT_DEVICE_CTRL_CURSOR_SET_TYPE,
+            &value);
     }
-};
+}
 #endif
 

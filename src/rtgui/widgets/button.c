@@ -122,53 +122,48 @@ static rt_bool_t _button_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         if (!IS_WIDGET_FLAG(btn, SHOWN) || IS_WIDGET_FLAG(btn, DISABLE))
             break;
 
-        /* not clicking current widget */
         if (!rtgui_rect_contains_point(&(TO_WIDGET(btn)->extent),
             evt->mouse.x, evt->mouse.y)) {
+            /* not on this btn */
             BUTTON_FLAG_CLEAR(btn, PRESS);
-
+            LOG_D("unpress btn");
             rtgui_widget_update(TO_WIDGET(btn));
             break;
         }
+        done = RT_TRUE;
 
         if (IS_BUTTON_FLAG(btn, TYPE_PUSH)) {
-            if (!IS_BUTTON_EVENT_BUTTON(evt, UP)) {
-                done = RT_TRUE;
-                break;
-            }
+            if (!IS_MOUSE_EVENT_BUTTON(evt, UP)) break;
 
             if (IS_BUTTON_FLAG(btn, PRESS))
                 BUTTON_FLAG_CLEAR(btn, PRESS);
             else
                 BUTTON_FLAG_SET(btn, PRESS);
 
+            LOG_D("push btn press: %d", IS_BUTTON_FLAG(btn, PRESS));
             rtgui_widget_update(TO_WIDGET(btn));
-
             if (btn->on_button)
                 (void)btn->on_button(TO_OBJECT(btn), evt);
         } else {
-            rt_bool_t do_call = RT_FALSE;
             rtgui_win_t *win;
+            rt_bool_t do_call;
 
-            if (!IS_BUTTON_EVENT_BUTTON(evt, LEFT)) {
-                done = RT_TRUE;
-                break;
-            }
+            if (!IS_MOUSE_EVENT_BUTTON(evt, LEFT)) break;
 
+            win = TO_WIDGET(btn)->toplevel;
             /* we need to decide whether the callback will be invoked
              * before the flag has changed. Moreover, we cannot invoke
              * it directly here, because the button might be destroyed
              * in the callback. If that happens, program will crash on
              * the following code. We need to make sure that the
              * callbacks are invoke at the very last step. */
-            if (IS_BUTTON_FLAG(btn, PRESS) && IS_BUTTON_EVENT_BUTTON(evt, UP))
-                do_call = RT_TRUE;
-            win = TO_WIDGET(btn)->toplevel;
+            do_call = IS_BUTTON_FLAG(btn, PRESS) && \
+                      IS_MOUSE_EVENT_BUTTON(evt, UP);
 
             /* if the button will handle the mouse up event here, it
              * should not be the last_mouse. Take care that
              * don't overwrite other widgets. */
-            if (IS_BUTTON_EVENT_BUTTON(evt, DOWN)) {
+            if (IS_MOUSE_EVENT_BUTTON(evt, DOWN)) {
                 BUTTON_FLAG_SET(btn, PRESS);
                 win->last_mouse = TO_WIDGET(btn);
             } else {
@@ -177,14 +172,11 @@ static rt_bool_t _button_event_handler(void *obj, rtgui_evt_generic_t *evt) {
                     win->last_mouse = RT_NULL;
             }
 
-            /* draw button */
+            LOG_W("btn press: %d", IS_BUTTON_FLAG(btn, PRESS));
             rtgui_widget_update(TO_WIDGET(btn));
-
             if (do_call && btn->on_button)
                 btn->on_button(TO_WIDGET(btn), evt);
         }
-
-        done = RT_TRUE;
         break;
 
     default:
@@ -199,15 +191,15 @@ static rt_bool_t _button_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 static rt_bool_t _button_on_unfocus(void *obj, rtgui_evt_generic_t *evt) {
+    rtgui_dc_t *dc;
     rt_bool_t done = RT_FALSE;
     (void)evt;
 
     do {
         rtgui_widget_t *wgt;
-        rtgui_dc_t *dc;
         rtgui_gc_t *gc;
         rtgui_rect_t rect;
-        rtgui_color_t foreground;
+        rtgui_color_t fc;
 
         wgt = TO_WIDGET(obj);
         dc = rtgui_dc_begin_drawing(wgt);
@@ -224,14 +216,14 @@ static rt_bool_t _button_on_unfocus(void *obj, rtgui_evt_generic_t *evt) {
         /* only clear focus rect */
         rtgui_rect_inflate(&rect, -BORDER_SIZE_DEFAULT);
         gc = rtgui_dc_get_gc(dc);
-        foreground = gc->foreground;
+        fc = gc->foreground;
         gc->foreground = gc->background;
         rtgui_dc_draw_focus_rect(dc, &rect);
-        gc->foreground = foreground;
+        gc->foreground = fc;
 
-        rtgui_dc_end_drawing(dc, RT_TRUE);
     } while (0);
 
+    rtgui_dc_end_drawing(dc, RT_TRUE);
     return done;
 }
 

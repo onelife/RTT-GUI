@@ -42,6 +42,7 @@ extern "C" {
 #include "include/event.h"
 #include "include/arch.h"
 #include "include/driver.h"
+#include "include/color.h"
 
 /* Exported defines ----------------------------------------------------------*/
 /* Object */
@@ -99,9 +100,13 @@ extern "C" {
 
 #define RECT_W(r)                           ((r).x2 - (r).x1 + 1)
 #define RECT_H(r)                           ((r).y2 - (r).y1 + 1)
+#define IS_RECT_NO_SIZE(r)                  \
+    (((r).x1 == (r).x2) && ((r).y1 == (r).y2))
+#define RECT_CLEAR(r)                       \
+    rt_memset(&r, 0x00, sizeof(rtgui_rect_t))
 
 
-#define BORDER_SIZE_DEFAULT                (2)
+#define BORDER_SIZE_DEFAULT                 (2)
 #define MARGIN_WIDGET_DEFAULT               (3)
 
 #define TITLE_HEIGHT                        (20)
@@ -139,7 +144,7 @@ REFERENCE_GETTER_PROTOTYPE(server, rtgui_app_t);
 SETTER_PROTOTYPE(server_show_win_hook, rtgui_hook_t);
 SETTER_PROTOTYPE(server_act_win_hook, rtgui_hook_t);
 rt_err_t rtgui_server_init(void);
-rt_err_t rtgui_send_request(rtgui_evt_generic_t *evt);
+rt_err_t rtgui_send_request(rtgui_evt_generic_t *evt, rt_int32_t timeout);
 rt_err_t rtgui_send_request_sync(rtgui_evt_generic_t *evt);
 
 #ifdef __cplusplus

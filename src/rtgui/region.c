@@ -54,10 +54,7 @@
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static rtgui_point_t _null_point = {
-    0, 0
-};
-static rtgui_rect_t _null_rect = { 
+static rtgui_rect_t _null_rect = {
     0, 0, 0, 0
 };
 static rtgui_region_data_t _null_region_data = {

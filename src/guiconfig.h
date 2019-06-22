@@ -32,21 +32,23 @@
 #endif
 
 #define CONFIG_GUI_DEVICE_NAME              "ILI9341"
+#define CONFIG_TOUCH_DEVICE_NAME            "FT6206"
+
 #define CONFIG_JPEG_BUFFER_SIZE             (4 * 1024) 
 #define CONFIG_JPEG_OUTPUT_RGB565           (1)
 #define RTGUI_BIG_ENDIAN_OUTPUT
 #define CONFIG_USING_FONT_FILE              (1)
 
-#define RTGUI_MQ_SIZE                       (16)
-#define RTGUI_MB_SIZE                       (16)
-#define RTGUI_EVENT_POOL_NUMBER             (32)
+#define RTGUI_MQ_SIZE                       (32)
+#define RTGUI_MB_SIZE                       (32)
+#define RTGUI_EVENT_POOL_NUMBER             (64)
 #define RTGUI_EVENT_RESEND_DELAY            (RT_TICK_PER_SECOND / 50)
 
 
 #define RTGUI_LOG_LEVEL                     (LOG_LVL_DBG)
 #define GUIENGIN_USING_CAST_CHECK
 // #define RTGUI_OBJECT_TRACE
-#define RTGUI_EVENT_LOG
+#define RTGUI_LOG_EVENT
 #define RTGUI_USING_MOUSE_CURSOR
 // #define RTGUI_USING_DC_BUFFER
 

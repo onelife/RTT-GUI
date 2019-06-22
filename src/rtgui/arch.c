@@ -41,7 +41,7 @@
 /* Private function prototype ------------------------------------------------*/
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#ifndef RTGUI_EVENT_LOG
+#ifndef RTGUI_LOG_EVENT
 # define rtgui_log_event(tgt, evt)
 #endif
 // #define RTGUI_MEM_TRACE
@@ -51,7 +51,15 @@
 static struct rt_mutex _screen_lock;
 static struct rt_mailbox ack_sync;
 static rt_uint8_t ack_pool[SYNC_ACK_NUMBER];
-
+static rtgui_event_timer_t _timer_evt = {
+    .base = {
+        .type = RTGUI_EVENT_TIMER,
+        .user = 0,
+        .origin = RT_NULL,
+        .ack = RT_NULL,
+    },
+    .timer = RT_NULL,
+};
 static rtgui_rect_t _main_win_rect;
 
 /* Private functions ---------------------------------------------------------*/
@@ -85,49 +93,40 @@ INIT_ENV_EXPORT(rtgui_system_init);
 /************************************************************************/
 /* RTGUI Timer                                                          */
 /************************************************************************/
-static void rtgui_time_out(void *param) {
-    rtgui_evt_generic_t *evt;
-    rt_err_t ret;
-    rtgui_timer_t *timer;
-    timer = (rtgui_timer_t *)param;
+static void rtgui_timer_timeout(void *param) {
+    rtgui_timer_t *timer = (rtgui_timer_t *)param;
 
     if (RTGUI_TIMER_ST_RUNNING != timer->state) return;
 
-    /* send RTGUI_EVENT_TIMER */
-    evt = (rtgui_evt_generic_t *)rt_mp_alloc(rtgui_event_pool, RT_WAITING_NO);
-    if (evt) {
-        /* not in thread context */
-        evt->timer.base.type = RTGUI_EVENT_TIMER;
-        evt->timer.base.origin = RT_NULL;
-        evt->timer.timer = timer;
-        ret = rtgui_request(timer->app, evt, RT_WAITING_NO);
-        if (ret) {
-            LOG_E("timer evt err [%d]", ret);
-            return;
-        }
-    } else {
-        LOG_E("get mp err");
+    /* send RTGUI_EVENT_TIMER in interrupt? */
+    _timer_evt.timer = timer;
+    if (RT_EOK != rtgui_request(rtgui_get_server(), &_timer_evt, RT_WAITING_NO))
         return;
-    }
-
     timer->pending_cnt++;
 }
 
-rtgui_timer_t *rtgui_timer_create(rt_int32_t time, rt_int32_t flag,
+rtgui_timer_t *rtgui_timer_create(rt_int32_t tick, rt_uint8_t flag,
     rtgui_timeout_hdl_t timeout, void *param) {
     rtgui_timer_t *timer;
 
     timer = (rtgui_timer_t *)rtgui_malloc(sizeof(rtgui_timer_t));
+    if (!timer) {
+        LOG_E("create tmr mem err");
+        return RT_NULL;
+    }
     timer->app = rtgui_app_self();
-    timer->timeout = timeout;
     timer->pending_cnt = 0;
     timer->state = RTGUI_TIMER_ST_INIT;
+    timer->timeout = timeout;
     timer->user_data = param;
 
-    /* init rt-thread timer */
-    rt_timer_init(&(timer->timer), "rtgui", rtgui_time_out, timer, time,
-        (rt_uint8_t)flag);
-
+    rt_timer_init(
+        &(timer->timer),        /* rt tmr */
+        timer->app->name,       /* name */
+        rtgui_timer_timeout,    /* timeout func */
+        timer,                  /* param */
+        tick,                   /* tick */
+        flag);                  /* flag */
     return timer;
 }
 RTM_EXPORT(rtgui_timer_create);
@@ -140,7 +139,7 @@ void rtgui_timer_destory(rtgui_timer_t *timer) {
     if ((0 != timer->pending_cnt) && (0 != timer->app->ref_cnt)) {
         timer->state = RTGUI_TIMER_ST_DESTROY_PENDING;
     } else {
-        /* detach rt-thread timer */
+        /* detach rt tmr */
         rt_timer_detach(&(timer->timer));
         rtgui_free(timer);
     }
@@ -164,7 +163,7 @@ RTM_EXPORT(rtgui_timer_set_timeout);
 void rtgui_timer_start(rtgui_timer_t *timer) {
     RT_ASSERT(timer != RT_NULL);
 
-    /* start rt-thread timer */
+    /* start rt tmr */
     timer->state = RTGUI_TIMER_ST_RUNNING;
     rt_timer_start(&(timer->timer));
 }
@@ -173,7 +172,7 @@ RTM_EXPORT(rtgui_timer_start);
 void rtgui_timer_stop(rtgui_timer_t *timer) {
     RT_ASSERT(timer != RT_NULL);
 
-    /* stop rt-thread timer */
+    /* stop rt tmr */
     timer->state = RTGUI_TIMER_ST_INIT;
     rt_timer_stop(&(timer->timer));
 }
@@ -351,7 +350,7 @@ FINSH_FUNCTION_EXPORT(list_guimem, display memory information);
 /***************************************************************************//**
  * Event Log
  ******************************************************************************/
-#ifdef RTGUI_EVENT_LOG
+#ifdef RTGUI_LOG_EVENT
 const char *rtgui_event_text(rtgui_evt_generic_t *evt) {
     switch (evt->base.type) {
     case RTGUI_EVENT_APP_CREATE:    return "<App>Create";
@@ -502,7 +501,7 @@ static void rtgui_log_event(rtgui_app_t* tgt, rtgui_evt_generic_t *evt) {
     }
     rt_kprintf("\n");
 }
-#endif /* RTGUI_EVENT_LOG */
+#endif /* RTGUI_LOG_EVENT */
 
 /***************************************************************************//**
  * Server/Client API
@@ -511,31 +510,37 @@ rt_err_t rtgui_request(rtgui_app_t* tgt, rtgui_evt_generic_t *evt,
     rt_int32_t timeout) {
     rt_err_t ret;
 
-    rtgui_log_event(tgt, evt);
+    if (timeout) {
+        /* never rt_kprintf in interrupt */
+        rtgui_log_event(tgt, evt);
+    }
 
-    evt->base.ack = RT_NULL;
+    // evt->base.ack = RT_NULL;
     ret = rt_mb_send_wait(tgt->mb, (rt_ubase_t)evt, timeout);
     if (ret) {
         LOG_E("tx evt %d to %s err [%d]", evt->base.type, tgt->name, ret);
-        RTGUI_FREE_EVENT(evt);
+        if (!IS_EVENT_TYPE(evt, TIMER)) RTGUI_FREE_EVENT(evt);
     }
 
-    EVT_LOG("[EVT] Request @%p", evt);
+    if (timeout) {
+        /* never rt_kprintf in interrupt */
+        EVT_LOG("[EVT] Request @%p", evt);
+    }
     return ret;
 }
 RTM_EXPORT(rtgui_request);
 
-rt_err_t rtgui_request_sync(rtgui_app_t* dst, rtgui_evt_generic_t *evt) {
+rt_err_t rtgui_request_sync(rtgui_app_t* tgt, rtgui_evt_generic_t *evt) {
     rt_ubase_t ack;
     rt_err_t ret;
 
     EVT_LOG("[EVT] Sync request @%p", evt);
-    rtgui_log_event(dst, evt);
+    rtgui_log_event(tgt, evt);
     ret = RT_EOK;
 
     do {
         evt->base.ack = &ack_sync;
-        ret = rt_mb_send(dst->mb, (rt_ubase_t)evt);
+        ret = rt_mb_send(tgt->mb, (rt_ubase_t)evt);
         if (ret) {
             LOG_E("tx sync %d err %d", evt->base.type, ret);
             RTGUI_FREE_EVENT(evt);

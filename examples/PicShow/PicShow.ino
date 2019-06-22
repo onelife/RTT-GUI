@@ -89,6 +89,32 @@ static rt_bool_t picShow_label_handler(void *obj, rtgui_evt_generic_t *evt) {
   return done;
 }
 
+static rt_bool_t picShow_btn_handler(void *obj, rtgui_evt_generic_t *evt) {
+  rt_bool_t done;
+
+  rt_kprintf("picShow btn handle %x\n", evt->base.type);
+  done = RT_FALSE;
+
+  do {
+    if (DEFAULT_HANDLER(obj))
+      done = DEFAULT_HANDLER(obj)(obj, evt);
+
+    if (!IS_EVENT_TYPE(evt, MOUSE_BUTTON) || !IS_MOUSE_EVENT_BUTTON(evt, UP))
+      break;
+
+    rt_kprintf("+++ btn (%d,%d)\n", evt->mouse.x, evt->mouse.y);
+    done = RT_TRUE;
+  } while (0);
+
+  return done;
+}
+
+// static rt_bool_t picShow_btn1_handler(void *obj, rtgui_evt_generic_t *evt) {
+// }
+
+// static rt_bool_t picShow_btn2_handler(void *obj, rtgui_evt_generic_t *evt) {
+// }
+
 static void picShow_entry(void *param) {
   rtgui_rect_t rect;
   rtgui_win_t *win;
@@ -132,10 +158,10 @@ static void picShow_entry(void *param) {
   CREATE_BOX_INSTANCE(box, RTGUI_HORIZONTAL, 1);
   rtgui_container_set_box(cntr, box);
 
-  CREATE_BUTTON_INSTANCE(btn1, RT_NULL, TYPE_PUSH, "Prev");
+  CREATE_BUTTON_INSTANCE(btn1, picShow_btn_handler, TYPE_NORMAL, "Prev");
   WIDGET_ALIGN(btn1) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
   rtgui_container_add_child(cntr, TO_WIDGET(btn1));
-  CREATE_BUTTON_INSTANCE(btn2, RT_NULL, TYPE_PUSH, "Next");
+  CREATE_BUTTON_INSTANCE(btn2, picShow_btn_handler, TYPE_PUSH, "Next");
   WIDGET_ALIGN(btn2) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
   rtgui_container_add_child(cntr, TO_WIDGET(btn2));
 

@@ -153,6 +153,7 @@ rt_bool_t rtgui_container_dispatch_mouse_event(rtgui_container_t *cntr,
 
     focus = TO_WIDGET(cntr)->toplevel->focused;
     done = RT_FALSE;
+    LOG_D("cntr mouse");
 
     /* call children's event handler, return once handled */
     rt_slist_for_each(node, &(cntr->children)) {

@@ -154,7 +154,7 @@ rt_err_t rtgui_mouse_init(void) {
     ret = -RT_ENOMEM;
 
     do {
-        const rtgui_graphic_driver_t *disp = display();
+        const rtgui_gfx_driver_t *disp = display();
 
         if (_cursor) rtgui_mouse_uninit();
 
@@ -162,14 +162,14 @@ rt_err_t rtgui_mouse_init(void) {
         if (!_cursor) break;
 
         /* init cursor */
-        rt_memset(_cursor, 0, sizeof(rtgui_cursor_t));
+        rt_memset(_cursor, 0x00, sizeof(rtgui_cursor_t));
         _cursor->byte_pp = _BIT2BYTE(disp->bits_per_pixel);
         _cursor->screen_pitch = _cursor->byte_pp * disp->width;
 
         #ifdef RTGUI_USING_MOUSE_CURSOR
-            /* init cursor_lock */
+            /* init cursor lock */
             rt_mutex_init(&cursor_lock, "cursor", RT_IPC_FLAG_FIFO);
-            /* cursor image */
+            /* load cursor image */
             _cursor->cursor_image = rtgui_image_create_from_mem("xpm",
                 (const rt_uint8_t *)cursor_xpm, sizeof(cursor_xpm), RT_TRUE);
             if (!_cursor->cursor_image) {
@@ -228,10 +228,10 @@ void rtgui_mouse_uninit(void) {
     #endif
 
     #ifdef RTGUI_USING_WINMOVE
-        if (_cursor->win_left) rtgui_free(_cursor->win_left);
-        if (_cursor->win_right) rtgui_free(_cursor->win_right);
-        if (_cursor->win_top) rtgui_free(_cursor->win_top);
-        if (_cursor->win_bottom) rtgui_free(_cursor->win_bottom);
+        if (_cursor->win_left)      rtgui_free(_cursor->win_left);
+        if (_cursor->win_right)     rtgui_free(_cursor->win_right);
+        if (_cursor->win_top)       rtgui_free(_cursor->win_top);
+        if (_cursor->win_bottom)    rtgui_free(_cursor->win_bottom);
     #endif
 
     rtgui_free(_cursor);
@@ -278,7 +278,6 @@ void rtgui_mouse_moveto(rt_uint32_t x, rt_uint32_t y) {
         /* move current cursor */
         _cursor->cx = x;
         _cursor->cy = y;
-
         /* show cursor */
         #ifdef RTGUI_USING_MOUSE_CURSOR
             rtgui_mouse_show_cursor();
@@ -298,20 +297,19 @@ void rtgui_mouse_moveto(rt_uint32_t x, rt_uint32_t y) {
     #endif
 }
 
-void rtgui_mouse_set_position(int x, int y)
-{
+void rtgui_mouse_set_position(int x, int y) {
     /* move current cursor */
     _cursor->cx = x;
     _cursor->cy = y;
 
-#ifdef RTGUI_USING_HW_CURSOR
-    rtgui_cursor_set_position(_cursor->cx, _cursor->cy);
-#endif
+    #ifdef RTGUI_USING_HW_CURSOR
+        rtgui_cursor_set_position(_cursor->cx, _cursor->cy);
+    #endif
 }
 
 #ifdef RTGUI_USING_MOUSE_CURSOR
-void rtgui_mouse_set_cursor_enable(rt_bool_t enable)
-{
+
+void rtgui_mouse_set_cursor_enable(rt_bool_t enable) {
     _cursor->show_cursor = enable;
 }
 
@@ -327,6 +325,8 @@ void rtgui_mouse_get_cursor_rect(rtgui_rect_t *rect) {
 }
 
 void rtgui_mouse_show_cursor(void) {
+    LOG_D("->cursor cnt %d", _cursor->show_cursor_count);
+
     if (!_cursor->show_cursor) return;
 
     _cursor->show_cursor_count++;
@@ -339,8 +339,9 @@ void rtgui_mouse_show_cursor(void) {
 }
 
 void rtgui_mouse_hide_cursor(void) {
-    if (_cursor->show_cursor == RT_FALSE)
-        return;
+    LOG_D("<-cursor cnt %d", _cursor->show_cursor_count);
+
+    if (!_cursor->show_cursor) return;
 
     if (_cursor->show_cursor_count == 1) {
         /* display the cursor coverage area */
@@ -349,9 +350,8 @@ void rtgui_mouse_hide_cursor(void) {
     _cursor->show_cursor_count--;
 }
 
-rt_bool_t rtgui_mouse_is_intersect(rtgui_rect_t *r)
-{
-    return rtgui_rect_is_intersect(&(_cursor->rect), r) == RT_EOK ? RT_TRUE : RT_FALSE;
+rt_bool_t rtgui_mouse_is_intersect(rtgui_rect_t *r) {
+    return rtgui_rect_is_intersect(&(_cursor->rect), r);
 }
 
 /* display the saved cursor area to screen */

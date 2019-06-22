@@ -41,8 +41,8 @@ extern "C" {
 /* Exported functions ------------------------------------------------------- */
 rt_err_t rtgui_system_init(void);
 
-rtgui_timer_t *rtgui_timer_create(rt_int32_t time, rt_int32_t flag,
-    rtgui_timeout_hdl_t timeout, void *parameter);
+rtgui_timer_t *rtgui_timer_create(rt_int32_t tick, rt_uint8_t flag,
+    rtgui_timeout_hdl_t timeout, void *param);
 void rtgui_timer_destory(rtgui_timer_t *timer);
 
 void rtgui_timer_set_timeout(rtgui_timer_t *timer, rt_int32_t time);
@@ -53,7 +53,7 @@ void *rtgui_malloc(rt_size_t size);
 void rtgui_free(void *ptr);
 void *rtgui_realloc(void *ptr, rt_size_t size);
 
-#ifdef RTGUI_EVENT_LOG
+#ifdef RTGUI_LOG_EVENT
 const char *rtgui_event_text(rtgui_evt_generic_t *evt);
 #endif
 
