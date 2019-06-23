@@ -41,6 +41,7 @@ extern "C" {
 #include "include/types.h"
 #include "include/event.h"
 #include "include/arch.h"
+#include "include/dc.h"
 #include "include/driver.h"
 #include "include/color.h"
 

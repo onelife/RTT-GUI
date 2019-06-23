@@ -112,9 +112,6 @@ static rt_bool_t _server_mouse_button_handler(rtgui_evt_generic_t *evt) {
             }
         #endif
 
-        /* set cursor */
-        // rtgui_mouse_set_position(evt->mouse.x, evt->mouse.y);
-
         /* get the top which contains the mouse */
         top = rtgui_topwin_get_at(x, y);
         if (!top) break;
@@ -286,9 +283,9 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     case RTGUI_EVENT_UPDATE_END:
         {
             /* handle screen update */
-            rtgui_gfx_driver_t *drv = rtgui_get_graphic_device();
+            rtgui_gfx_driver_t *drv = rtgui_get_gfx_device();
             if (drv) {
-                rtgui_graphic_driver_screen_update(drv,
+                rtgui_gfx_update_screen(drv,
                     &(evt->update_end.rect));
             }
             #ifdef RTGUI_USING_MOUSE_CURSOR

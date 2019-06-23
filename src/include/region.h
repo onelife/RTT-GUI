@@ -93,14 +93,18 @@ op_status_t rtgui_region_copy(rtgui_region_t *dst, rtgui_region_t *src);
 
 void rtgui_region_translate(rtgui_region_t *region, int x, int y);
 
-op_status_t rtgui_region_intersect_rect2(rtgui_region_t *newReg, rtgui_region_t *reg1, rtgui_rect_t *rect);
-
-op_status_t rtgui_region_intersect(rtgui_region_t *newReg, rtgui_region_t *reg);
-op_status_t rtgui_region_intersect_rect(rtgui_region_t *newReg, rtgui_rect_t *rect);
-op_status_t rtgui_region_union(rtgui_region_t *dstRgn, rtgui_region_t *rgn);
-op_status_t rtgui_region_union_rect(rtgui_region_t *dest, rtgui_rect_t *rect);
-op_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t *regS);
-op_status_t rtgui_region_subtract_rect(rtgui_region_t *regD, rtgui_rect_t *rect);
+op_status_t rtgui_region_intersect(rtgui_region_t *dstRgn,
+    rtgui_region_t *rgn1, rtgui_region_t *rgn2);
+op_status_t rtgui_region_intersect_rect(rtgui_region_t *dstRgn,
+    rtgui_region_t *reg1, rtgui_rect_t *rect);
+op_status_t rtgui_region_union(rtgui_region_t *dstRgn, rtgui_region_t *rgn1,
+    rtgui_region_t *rgn2);
+op_status_t rtgui_region_union_rect(rtgui_region_t *dst, rtgui_region_t *src,
+    rtgui_rect_t *rect);
+op_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t *regM,
+    rtgui_region_t *regS);
+op_status_t rtgui_region_subtract_rect(rtgui_region_t *regD,
+    rtgui_region_t *regM, rtgui_rect_t *rect);
 
 
 #define RTGUI_REGION_OUT    0
@@ -108,7 +112,7 @@ op_status_t rtgui_region_subtract_rect(rtgui_region_t *regD, rtgui_rect_t *rect)
 #define RTGUI_REGION_PART   2
 
 int rtgui_region_contains_point(rtgui_region_t *region, int x, int y, rtgui_rect_t *box);
-int rtgui_region_contains_rectangle(rtgui_region_t *rtgui_region_t, rtgui_rect_t *prect);
+rt_bool_t rtgui_region_contains_rect(rtgui_region_t *rgn, rtgui_rect_t *rect);
 
 int rtgui_region_not_empty(rtgui_region_t *region);
 rtgui_rect_t *rtgui_region_extents(rtgui_region_t *region);

@@ -22,9 +22,8 @@
  * 2014-03-15     Grissom      The first version
  */
 
-#include "../include/rtgui.h"
-#include "../include/dc.h"
-#include "../include/dc_trans.h"
+#include "include/rtgui.h"
+#include "include/dc_trans.h"
 
 struct rtgui_dc_trans
 {

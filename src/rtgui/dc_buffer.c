@@ -22,15 +22,12 @@
  * 2009-10-16     Bernard      first version
  */
 
-#include "../include/rtgui.h"
+#include "include/rtgui.h"
 
 #ifdef RTGUI_USING_DC_BUFFER
 
-#include "../include/dc.h"
-#include "../include/blit.h"
-#include "../include/color.h"
-#include "../include/dc_draw.h"
-#include "../include/image_container.h"
+#include "include/blit.h"
+#include "include/dc_draw.h"
 
 static rt_bool_t rtgui_dc_buffer_fini(rtgui_dc_t *dc);
 static void rtgui_dc_buffer_draw_point(rtgui_dc_t *dc, int x, int y);
@@ -69,7 +66,7 @@ rtgui_dc_t *rtgui_dc_buffer_create(int w, int h)
 {
     rt_uint8_t pixel_format;
 
-    pixel_format = rtgui_get_graphic_device()->pixel_format;
+    pixel_format = rtgui_get_gfx_device()->pixel_format;
 
     /* create a dc_buffer with hardware driver pixel format */
     return rtgui_dc_buffer_create_pixformat(pixel_format, w, h);
@@ -484,7 +481,7 @@ static void rtgui_dc_buffer_blit(rtgui_dc_t *self,
         rtgui_blit_line_func blit_line;
         rtgui_gfx_driver_t *hw_driver;
 
-        hw_driver = rtgui_get_graphic_device();
+        hw_driver = rtgui_get_gfx_device();
         /* prepare pixel line */
         pixels = _dc_get_pixel(dc, dc_point.x, dc_point.y);
 
@@ -540,7 +537,7 @@ static void rtgui_dc_buffer_blit(rtgui_dc_t *self,
             rtgui_widget_rect_to_device(owner, &dest_extent);
 
             rtgui_region_init_with_extent(&dest_region, &dest_extent);
-            rtgui_region_intersect_rect2(&dest_region, &(owner->clip), &dest_extent);
+            rtgui_region_intersect_rect(&dest_region, &(owner->clip), &dest_extent);
             bpp = rtgui_color_get_bpp(dc->pixel_format);
             hw_bpp = rtgui_color_get_bpp(hw_driver->pixel_format);
 

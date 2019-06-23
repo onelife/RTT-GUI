@@ -25,7 +25,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 #include "include/region.h"
-#include "include/dc.h"
 #include "include/images/image.h"
 #include "include/widgets/button.h"
 

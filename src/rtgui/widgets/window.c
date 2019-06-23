@@ -24,7 +24,6 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-// #include "include/color.h"
 #include "include/widgets/container.h"
 #include "include/widgets/window.h"
 #include "include/app/app.h"
@@ -412,9 +411,8 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
                 fixed.y1 -= TITLE_HEIGHT;
             rtgui_widget_set_rect(TO_WIDGET(win->_title), &fixed);
             /* update title clip */
-            rtgui_region_subtract_rect(
-                &(TO_WIDGET(win->_title)->clip),
-                &(TO_WIDGET(win)->extent));
+            rtgui_region_subtract_rect(&(TO_WIDGET(win->_title)->clip),
+                &(TO_WIDGET(win->_title)->clip), &(TO_WIDGET(win)->extent));
 
             /* always show title */
             rtgui_widget_show(TO_WIDGET(win->_title));
@@ -608,9 +606,11 @@ void rtgui_win_update_clip(rtgui_win_t *win) {
         rtgui_region_copy(
             &TO_WIDGET(win->_title)->clip, &win->outer_clip);
         rtgui_region_subtract_rect(
-            &TO_WIDGET(win->_title)->clip, &TO_WIDGET(win)->extent);
+            &TO_WIDGET(win->_title)->clip,
+            &TO_WIDGET(win->_title)->clip,
+            &TO_WIDGET(win)->extent);
         /* Reset the inner clip of window. */
-        rtgui_region_intersect_rect2(
+        rtgui_region_intersect_rect(
             &TO_WIDGET(win)->clip,
             &win->outer_clip,
             &TO_WIDGET(win)->extent);
@@ -684,9 +684,9 @@ rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
         rtgui_region_init_empty(&clip_region);
         rtgui_region_copy(&clip_region, &win->outer_clip);
 
-        rtgui_graphic_driver_vmode_enter();
+        rtgui_gfx_driver_vmode_enter();
 
-        rtgui_graphic_driver_get_rect(RT_NULL, &rect);
+        rtgui_gfx_get_rect(RT_NULL, &rect);
         region.data = RT_NULL;
         region.extents.x1 = rect.x1;
         region.extents.y1 = rect.y1;
@@ -706,7 +706,7 @@ rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
 
         dc = rtgui_graphic_driver_get_rect_buffer(RT_NULL, &rect);
 
-        rtgui_graphic_driver_vmode_exit();
+        rtgui_gfx_driver_vmode_exit();
 
         /* restore the clip information of window */
         rtgui_region_reset(&TO_WIDGET(win)->clip,

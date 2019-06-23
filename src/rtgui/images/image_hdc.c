@@ -25,7 +25,6 @@
 
 #ifdef GUIENGINE_USING_HDC
 
-#include "include/dc.h"
 #include "include/blit.h"
 #include "include/images/image.h"
 #include "include/images/image_hdc.h"
@@ -112,7 +111,7 @@ static rt_bool_t rtgui_image_hdc_load(rtgui_image_t *image, rtgui_filerw_t *file
     if (header[3] == 0)
     {
         /* 0.x version */
-        hdc->pixel_format = rtgui_get_graphic_device()->pixel_format;
+        hdc->pixel_format = rtgui_get_gfx_device()->pixel_format;
     }
     else if (header[3] == 1)
     {

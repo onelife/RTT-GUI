@@ -47,8 +47,6 @@
 */
 
 #include "include/rtgui.h"
-#include "include/dc.h"
-#include "include/color.h"
 #include "include/region.h"
 #include "include/blit.h"
 
@@ -62,71 +60,173 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-/* Lookup tables to expand partial bytes to the full 0..255 range */
 
-static const rt_uint8_t lookup_0[] = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-    32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
-    64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95,
-    96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121,
-    122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146,
-    147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171,
-    172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196,
-    197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221,
-    222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246,
-    247, 248, 249, 250, 251, 252, 253, 254, 255
-};
+/* RGB888 / BGR888 -> RGB565 blending */
+static void blit_line_rgb888_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint16_t *dst = (rt_uint16_t *)_dst;
+    rt_uint8_t *end = src + len;
+    rt_uint8_t step = _BIT2BYTE(GUIENGINE_RGB888_PIXEL_BITS) << scale;
+    rt_uint32_t srcR, srcG, srcB;
+    (void)palette;
 
-static const rt_uint8_t lookup_1[] = {
-    0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62,
-    64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 96, 98, 100, 102, 104, 106, 108, 110, 112, 114, 116, 118,
-    120, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 142, 144, 146, 148, 150, 152, 154, 156, 158, 160, 162, 164, 166,
-    168, 170, 172, 174, 176, 178, 180, 182, 184, 186, 188, 190, 192, 194, 196, 198, 200, 202, 204, 206, 208, 210, 212, 214,
-    216, 218, 220, 222, 224, 226, 228, 230, 232, 234, 236, 238, 240, 242, 244, 246, 248, 250, 252, 255
-};
+    for ( ; src < end; src += step, dst++) {
+        RGB_FROM_RGB888(*src, srcB, srcG, srcR);
+        RGB565_FROM_RGB(*dst, srcR, srcG, srcB);
+    }
+}
 
-static const rt_uint8_t lookup_2[] = {
-    0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 85, 89, 93, 97, 101, 105, 109, 113, 117,
-    121, 125, 129, 133, 137, 141, 145, 149, 153, 157, 161, 165, 170, 174, 178, 182, 186, 190, 194, 198, 202, 206, 210, 214, 218,
-    222, 226, 230, 234, 238, 242, 246, 250, 255
-};
+/* RGB565 -> RGB565 blending */
+static void blit_line_rgb565_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *_src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint16_t *dst = (rt_uint16_t *)_dst;
+    rt_uint16_t *src = (rt_uint16_t *)_src;
+    rt_uint8_t *end = _src + len;
+    rt_uint8_t step = 1 << scale;
+    (void)palette;
 
-static const rt_uint8_t lookup_3[] = {
-    0, 8, 16, 24, 32, 41, 49, 57, 65, 74, 82, 90, 98, 106, 115, 123, 131, 139, 148, 156, 164, 172, 180, 189, 197, 205, 213, 222,
-    230, 238, 246, 255
-};
+    for ( ; src < (rt_uint16_t *)end; src += step) {
+        #ifdef RTGUI_BIG_ENDIAN_OUTPUT
+            *dst++ = (*src << 8) | (*src >> 8);
+        #else
+            *dst++ = *src;
+        #endif
+    }
+}
 
-static const rt_uint8_t lookup_4[] = {
-    0, 17, 34, 51, 68, 85, 102, 119, 136, 153, 170, 187, 204, 221, 238, 255
-};
+/* RGB8I -> RGB565 blending */
+static void blit_line_gray8i_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint16_t *dst = (rt_uint16_t *)_dst;
+    rt_uint8_t *end = src + len;
+    rt_uint8_t step = 1 << scale;
+    rtgui_color_t color;
 
-static const rt_uint8_t lookup_5[] = {
-    0, 36, 72, 109, 145, 182, 218, 255
-};
+    for ( ; src < end; src += step) {
+        color = palette->colors[*src];
+        RGB565_FROM_RGB(*dst++, RTGUI_RGB_R(color), RTGUI_RGB_G(color),
+            RTGUI_RGB_B(color));
+    }
+}
 
-static const rt_uint8_t lookup_6[] = {
-    0, 85, 170, 255
-};
+/* RGB4I -> RGB565 blending */
+static void blit_line_gray4i_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint16_t *dst = (rt_uint16_t *)_dst;
+    rt_uint8_t *end = src + len;
+    rt_uint8_t step, shift_step, shift;
+    rtgui_color_t color;
 
-static const rt_uint8_t lookup_7[] = {
-    0, 255
-};
+    if (scale > 1) {
+        shift_step = 8;
+        step = 1 << (scale - 1);
+    } else {
+        shift_step = 1 << (2 + scale);
+        step = 1;
+    }
 
-static const rt_uint8_t lookup_8[] = {
-    255
-};
+    for ( ; src < end; src += step)
+        for (shift = 0; shift < 8; shift += shift_step) {
+            color = \
+                palette->colors[(*src & (0x0F << (4 - shift))) >> (4 - shift)];
+            RGB565_FROM_RGB(*dst++, RTGUI_RGB_R(color), RTGUI_RGB_G(color),
+                RTGUI_RGB_B(color));
+        }
+}
 
-const rt_uint8_t* rtgui_blit_expand_byte[9] = {
-    lookup_0,
-    lookup_1,
-    lookup_2,
-    lookup_3,
-    lookup_4,
-    lookup_5,
-    lookup_6,
-    lookup_7,
-    lookup_8
-};
+/* RGB2I -> RGB565 blending */
+static void blit_line_gray2i_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint16_t *dst = (rt_uint16_t *)_dst;
+    rt_uint8_t *end = src + len;
+    rt_uint8_t step, shift_step, shift;
+    rtgui_color_t color;
+
+    if (scale > 2) {
+        shift_step = 8;
+        step = 1 << (scale - 2);
+    } else {
+        shift_step = 1 << (1 + scale);
+        step = 1;
+    }
+
+    // TODO(onelife): test
+    for ( ; src < end; src += step)
+        for (shift = 0; shift < 8; shift += shift_step) {
+            color = \
+                palette->colors[(*src & (0x03 << (6 - shift))) >> (6 - shift)];
+            RGB565_FROM_RGB(*dst++, RTGUI_RGB_R(color), RTGUI_RGB_G(color),
+                RTGUI_RGB_B(color));
+        }
+}
+
+/* MONO -> RGB565 blending */
+static void blit_line_mono_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint16_t *dst = (rt_uint16_t *)_dst;
+    rt_uint8_t *end = src + len;
+    rt_uint8_t step, shift_step, shift;
+    //  test
+    if (scale > 3) {
+        shift_step = 8;
+        step = 1 << (scale - 3);
+    } else {
+        shift_step = 1 << scale;
+        step = 1;
+    }
+
+    for ( ; src < end; src += step)
+        for (shift = 0; shift < 8; shift += shift_step)
+            if (*src & (0x01 << (7 - shift))) {
+                RGB565_FROM_RGB(*dst++,
+                    RTGUI_RGB_R(palette->colors[1]),
+                    RTGUI_RGB_G(palette->colors[1]),
+                    RTGUI_RGB_B(palette->colors[1]));
+            } else {
+                RGB565_FROM_RGB(*dst++,
+                    RTGUI_RGB_R(palette->colors[0]),
+                    RTGUI_RGB_G(palette->colors[0]),
+                    RTGUI_RGB_B(palette->colors[0]));
+            }
+}
+
+rtgui_blit_line_func2 rtgui_get_blit_line_func(rt_uint8_t src_fmt,
+    rt_uint8_t dst_fmt) {
+
+    switch (dst_fmt) {
+    case RTGRAPHIC_PIXEL_FORMAT_RGB565:
+        switch (src_fmt) {
+        case RTGRAPHIC_PIXEL_FORMAT_RGB888:
+            return blit_line_rgb888_to_rgb565;
+
+        case RTGRAPHIC_PIXEL_FORMAT_RGB565:
+            return blit_line_rgb565_to_rgb565;
+
+        case RTGRAPHIC_PIXEL_FORMAT_RGB8I:
+            return blit_line_gray8i_to_rgb565;
+
+        case RTGRAPHIC_PIXEL_FORMAT_RGB4I:
+            return blit_line_gray4i_to_rgb565;
+
+        case RTGRAPHIC_PIXEL_FORMAT_RGB2I:
+            return blit_line_gray2i_to_rgb565;
+
+        case RTGRAPHIC_PIXEL_FORMAT_MONO:
+            return blit_line_mono_to_rgb565;
+
+        default:
+            return RT_NULL;
+        }
+
+    default:
+        return RT_NULL;
+    }
+
+    return RT_NULL;
+}
+
+
+#ifdef RTGUI_USING_DC_BUFFER
 
 /* 3 bpp to 1 bpp */
 static void rtgui_blit_line_3_1(rt_uint8_t *_dst, rt_uint8_t *_src,
@@ -581,169 +681,6 @@ rtgui_blit_line_func rtgui_blit_line_get(rt_uint8_t dst_bpp,
     return _blit_table[dst_bpp - 1][src_bpp - 1];
 }
 
-/* RGB888 / BGR888 -> RGB565 blending */
-static void blit_line_rgb888_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
-    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
-    rt_uint16_t *dst = (rt_uint16_t *)_dst;
-    rt_uint8_t *end = src + len;
-    rt_uint8_t step = _BIT2BYTE(GUIENGINE_RGB888_PIXEL_BITS) << scale;
-    rt_uint32_t srcR, srcG, srcB;
-    (void)palette;
-
-    for ( ; src < end; src += step, dst++) {
-        RGB_FROM_RGB888(*src, srcB, srcG, srcR);
-        RGB565_FROM_RGB(*dst, srcR, srcG, srcB);
-    }
-}
-
-/* RGB565 -> RGB565 blending */
-static void blit_line_rgb565_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *_src,
-    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
-    rt_uint16_t *dst = (rt_uint16_t *)_dst;
-    rt_uint16_t *src = (rt_uint16_t *)_src;
-    rt_uint8_t *end = _src + len;
-    rt_uint8_t step = 1 << scale;
-    (void)palette;
-
-    for ( ; src < (rt_uint16_t *)end; src += step) {
-        #ifdef RTGUI_BIG_ENDIAN_OUTPUT
-            *dst++ = (*src << 8) | (*src >> 8);
-        #else
-            *dst++ = *src;
-        #endif
-    }
-}
-
-/* RGB8I -> RGB565 blending */
-static void blit_line_gray8i_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
-    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
-    rt_uint16_t *dst = (rt_uint16_t *)_dst;
-    rt_uint8_t *end = src + len;
-    rt_uint8_t step = 1 << scale;
-    rtgui_color_t color;
-
-    for ( ; src < end; src += step) {
-        color = palette->colors[*src];
-        RGB565_FROM_RGB(*dst++, RTGUI_RGB_R(color), RTGUI_RGB_G(color),
-            RTGUI_RGB_B(color));
-    }
-}
-
-/* RGB4I -> RGB565 blending */
-static void blit_line_gray4i_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
-    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
-    rt_uint16_t *dst = (rt_uint16_t *)_dst;
-    rt_uint8_t *end = src + len;
-    rt_uint8_t step, shift_step, shift;
-    rtgui_color_t color;
-
-    if (scale > 1) {
-        shift_step = 8;
-        step = 1 << (scale - 1);
-    } else {
-        shift_step = 1 << (2 + scale);
-        step = 1;
-    }
-
-    for ( ; src < end; src += step)
-        for (shift = 0; shift < 8; shift += shift_step) {
-            color = \
-                palette->colors[(*src & (0x0F << (4 - shift))) >> (4 - shift)];
-            RGB565_FROM_RGB(*dst++, RTGUI_RGB_R(color), RTGUI_RGB_G(color),
-                RTGUI_RGB_B(color));
-        }
-}
-
-/* RGB2I -> RGB565 blending */
-static void blit_line_gray2i_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
-    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
-    rt_uint16_t *dst = (rt_uint16_t *)_dst;
-    rt_uint8_t *end = src + len;
-    rt_uint8_t step, shift_step, shift;
-    rtgui_color_t color;
-
-    if (scale > 2) {
-        shift_step = 8;
-        step = 1 << (scale - 2);
-    } else {
-        shift_step = 1 << (1 + scale);
-        step = 1;
-    }
-
-    // TODO(onelife): test
-    for ( ; src < end; src += step)
-        for (shift = 0; shift < 8; shift += shift_step) {
-            color = \
-                palette->colors[(*src & (0x03 << (6 - shift))) >> (6 - shift)];
-            RGB565_FROM_RGB(*dst++, RTGUI_RGB_R(color), RTGUI_RGB_G(color),
-                RTGUI_RGB_B(color));
-        }
-}
-
-/* MONO -> RGB565 blending */
-static void blit_line_mono_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
-    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
-    rt_uint16_t *dst = (rt_uint16_t *)_dst;
-    rt_uint8_t *end = src + len;
-    rt_uint8_t step, shift_step, shift;
-    //  test
-    if (scale > 3) {
-        shift_step = 8;
-        step = 1 << (scale - 3);
-    } else {
-        shift_step = 1 << scale;
-        step = 1;
-    }
-
-    for ( ; src < end; src += step)
-        for (shift = 0; shift < 8; shift += shift_step)
-            if (*src & (0x01 << (7 - shift))) {
-                RGB565_FROM_RGB(*dst++,
-                    RTGUI_RGB_R(palette->colors[1]),
-                    RTGUI_RGB_G(palette->colors[1]),
-                    RTGUI_RGB_B(palette->colors[1]));
-            } else {
-                RGB565_FROM_RGB(*dst++,
-                    RTGUI_RGB_R(palette->colors[0]),
-                    RTGUI_RGB_G(palette->colors[0]),
-                    RTGUI_RGB_B(palette->colors[0]));
-            }
-}
-
-rtgui_blit_line_func2 rtgui_get_blit_line_func(rt_uint8_t src_fmt,
-    rt_uint8_t dst_fmt) {
-
-    switch (dst_fmt) {
-    case RTGRAPHIC_PIXEL_FORMAT_RGB565:
-        switch (src_fmt) {
-        case RTGRAPHIC_PIXEL_FORMAT_RGB888:
-            return blit_line_rgb888_to_rgb565;
-
-        case RTGRAPHIC_PIXEL_FORMAT_RGB565:
-            return blit_line_rgb565_to_rgb565;
-
-        case RTGRAPHIC_PIXEL_FORMAT_RGB8I:
-            return blit_line_gray8i_to_rgb565;
-
-        case RTGRAPHIC_PIXEL_FORMAT_RGB4I:
-            return blit_line_gray4i_to_rgb565;
-
-        case RTGRAPHIC_PIXEL_FORMAT_RGB2I:
-            return blit_line_gray2i_to_rgb565;
-
-        case RTGRAPHIC_PIXEL_FORMAT_MONO:
-            return blit_line_mono_to_rgb565;
-
-        default:
-            return RT_NULL;
-        }
-
-    default:
-        return RT_NULL;
-    }
-
-    return RT_NULL;
-}
 
 /* RGB565 -> RGB565 blending with alpha */
 static void blit_rgb565_to_rgb565_alpha(rtgui_blit_info_t *info) {
@@ -1540,6 +1477,8 @@ static void blit_color_to_argb888_alpha(rtgui_blit_info_t *info) {
     }
 }
 
+#if defined(UIENGINE_IMAGE_PNG) || defined(GUIENGINE_USING_HDC)
+
 void rtgui_blit(rtgui_blit_info_t *info) {
     if (!info->src_h || !info->src_w || !info->dst_h || !info->dst_w)
         return;
@@ -1623,6 +1562,10 @@ void rtgui_blit(rtgui_blit_info_t *info) {
 }
 RTM_EXPORT(rtgui_blit);
 
+#endif /* defined(UIENGINE_IMAGE_PNG) || defined(GUIENGINE_USING_HDC) */
+
+#ifdef GUIENGINE_USING_HDC
+
 void rtgui_image_info_blit(rtgui_image_info_t *image, rtgui_dc_t *dc,
     rtgui_rect_t *dc_rect) {
     rt_uint8_t bpp, hw_bpp;
@@ -1631,7 +1574,7 @@ void rtgui_image_info_blit(rtgui_image_info_t *image, rtgui_dc_t *dc,
     rtgui_rect_t dest_extent;
     rtgui_gfx_driver_t *hw_drv;
 
-    hw_drv = rtgui_get_graphic_device();
+    hw_drv = rtgui_get_gfx_device();
     dest_extent = *dc_rect;
 
     if ((dc->type == RTGUI_DC_CLIENT) && hw_drv->framebuffer) {
@@ -1647,7 +1590,7 @@ void rtgui_image_info_blit(rtgui_image_info_t *image, rtgui_dc_t *dc,
 
         /* get intersect region clip */
         rtgui_region_init_with_extent(&dest_region, &dest_extent);
-        rtgui_region_intersect_rect2(&dest_region, &(owner->clip), &dest_extent);
+        rtgui_region_intersect_rect(&dest_region, &(owner->clip), &dest_extent);
 
         num_rects = rtgui_region_num_rects(&dest_region);
         rects = rtgui_region_rects(&dest_region);
@@ -1750,3 +1693,7 @@ void rtgui_image_info_blit(rtgui_image_info_t *image, rtgui_dc_t *dc,
     }
 }
 RTM_EXPORT(rtgui_image_info_blit);
+
+#endif /* GUIENGINE_USING_HDC */
+
+#endif /* RTGUI_USING_DC_BUFFER */

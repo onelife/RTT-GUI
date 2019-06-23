@@ -74,11 +74,9 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "../include/dc.h"
-#include "../include/dc_draw.h"
-#include "../include/color.h"
+#include "include/dc_draw.h"
 
-#define hw_driver               (rtgui_get_graphic_device())
+#define hw_driver               (rtgui_get_gfx_device())
 #define _int_swap(x, y)         do {x ^= y; y ^= x; x ^= y;} while (0)
 
 rt_inline rt_uint8_t _dc_get_bits_per_pixel(rtgui_dc_t* dc)
@@ -546,15 +544,15 @@ static void _do_draw_line(rtgui_dc_t * dst,
         }
         else
         {
-            register rt_base_t index;
+            register rt_ubase_t idx;
 
-            for (index = 0; index < rtgui_region_num_rects(&(owner->clip)); index ++)
+            for (idx = 0; idx < rtgui_region_num_rects(&(owner->clip)); idx ++)
             {
                 rtgui_rect_t *prect;
                 int draw_x1, draw_x2;
                 int draw_y1, draw_y2;
 
-                prect = ((rtgui_rect_t *)(owner->clip.data + index + 1));
+                prect = ((rtgui_rect_t *)(owner->clip.data + idx + 1));
                 draw_x1 = x1;
                 draw_x2 = x2;
                 draw_y1 = y1;
@@ -1462,15 +1460,15 @@ static void _do_blend_line(rtgui_dc_t * dst,
         }
         else
         {
-            register rt_base_t index;
+            register rt_ubase_t idx;
 
-            for (index = 0; index < rtgui_region_num_rects(&(owner->clip)); index ++)
+            for (idx = 0; idx < rtgui_region_num_rects(&(owner->clip)); idx ++)
             {
                 rtgui_rect_t *prect;
                 int draw_x1, draw_x2;
                 int draw_y1, draw_y2;
 
-                prect = ((rtgui_rect_t *)(owner->clip.data + index + 1));
+                prect = ((rtgui_rect_t *)(owner->clip.data + idx + 1));
                 draw_x1 = x1;
                 draw_x2 = x2;
                 draw_y1 = y1;
@@ -1729,7 +1727,7 @@ rtgui_dc_blend_fill_rect(rtgui_dc_t* dst, const rtgui_rect_t *rect,
 
     if (dst->type == RTGUI_DC_CLIENT)
     {
-        register rt_base_t index;
+        register rt_ubase_t idx;
         rtgui_widget_t *owner;
         rtgui_rect_t draw_rect;
 
@@ -1754,11 +1752,11 @@ rtgui_dc_blend_fill_rect(rtgui_dc_t* dst, const rtgui_rect_t *rect,
         }
         else
         {
-            for (index = 0; index < rtgui_region_num_rects(&(owner->clip)); index ++)
+            for (idx = 0; idx < rtgui_region_num_rects(&(owner->clip)); idx ++)
             {
                 rtgui_rect_t *prect;
 
-                prect = ((rtgui_rect_t *)(owner->clip.data + index + 1));
+                prect = ((rtgui_rect_t *)(owner->clip.data + idx + 1));
 
                 draw_rect = *rect;
                 rtgui_rect_move(&draw_rect,owner->extent.x1, owner->extent.y1);
@@ -1861,7 +1859,7 @@ rtgui_dc_blend_fill_rects(rtgui_dc_t * dst, const rtgui_rect_t *rects, int count
 
         if (dst->type == RTGUI_DC_CLIENT)
         {
-            register rt_base_t index;
+            register rt_ubase_t idx;
             rtgui_rect_t draw_rect;
 
             if (owner->clip.data == RT_NULL)
@@ -1882,11 +1880,11 @@ rtgui_dc_blend_fill_rects(rtgui_dc_t * dst, const rtgui_rect_t *rects, int count
             }
             else
             {
-                for (index = 0; index < rtgui_region_num_rects(&(owner->clip)); index ++)
+                for (idx = 0; idx < rtgui_region_num_rects(&(owner->clip)); idx ++)
                 {
                     rtgui_rect_t *prect;
 
-                    prect = ((rtgui_rect_t *)(owner->clip.data + index + 1));
+                    prect = ((rtgui_rect_t *)(owner->clip.data + idx + 1));
 
                     draw_rect = rect;
                     rtgui_rect_move(&draw_rect,owner->extent.x1, owner->extent.y1);

@@ -28,9 +28,7 @@
 #include <stdlib.h> /* fir qsort  */
 #include <math.h>   /* for sin/cos etc */
 
-#include "../include/rtgui.h"
-#include "../include/dc.h"
-#include "../include/widgets/window.h"
+#include "include/rtgui.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -1699,7 +1697,7 @@ rt_uint8_t rtgui_dc_get_pixel_format(rtgui_dc_t *dc)
     {
         rtgui_gfx_driver_t *hw_driver;
 
-        hw_driver = rtgui_get_graphic_device();
+        hw_driver = rtgui_get_gfx_device();
         pixel_fmt = hw_driver->pixel_format;
         break;
     }
@@ -1911,7 +1909,7 @@ void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
             #endif
 
             /* update screen */
-            rtgui_graphic_driver_screen_update(rtgui_get_graphic_device(),
+            rtgui_gfx_update_screen(rtgui_get_gfx_device(),
                 &(owner->extent));
         }
     } while (0);

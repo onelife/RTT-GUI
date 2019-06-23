@@ -25,7 +25,6 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/dc.h"
 #include "include/widgets/container.h"
 #include "include/widgets/window.h"
 

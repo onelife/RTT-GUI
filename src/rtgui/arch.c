@@ -82,7 +82,7 @@ rt_err_t rtgui_system_init(void) {
         ret = rtgui_server_init();
         if (RT_EOK != ret) break;
         /* use h/w rect for main window */
-        rtgui_graphic_driver_get_rect(rtgui_get_graphic_device(),
+        rtgui_gfx_get_rect(rtgui_get_gfx_device(),
             &_main_win_rect);
     } while (0);
 
@@ -94,13 +94,14 @@ INIT_ENV_EXPORT(rtgui_system_init);
 /* RTGUI Timer                                                          */
 /************************************************************************/
 static void rtgui_timer_timeout(void *param) {
-    rtgui_timer_t *timer = (rtgui_timer_t *)param;
+    rtgui_timer_t *timer = param;
 
     if (RTGUI_TIMER_ST_RUNNING != timer->state) return;
 
     /* send RTGUI_EVENT_TIMER in interrupt? */
     _timer_evt.timer = timer;
-    if (RT_EOK != rtgui_request(rtgui_get_server(), &_timer_evt, RT_WAITING_NO))
+    if (RT_EOK != rtgui_request(rtgui_get_server(),
+        (rtgui_evt_generic_t *)&_timer_evt, RT_WAITING_NO))
         return;
     timer->pending_cnt++;
 }
@@ -609,7 +610,7 @@ rt_err_t rtgui_recv_filter(rtgui_app_t *tgt, rt_uint32_t type,
 RTM_EXPORT(rtgui_recv_filter);
 
 void rtgui_get_screen_rect(rtgui_rect_t *rect) {
-    rtgui_graphic_driver_get_rect(rtgui_get_graphic_device(), rect);
+    rtgui_gfx_get_rect(rtgui_get_gfx_device(), rect);
 }
 RTM_EXPORT(rtgui_get_screen_rect);
 

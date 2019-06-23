@@ -28,10 +28,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/dc.h"
 #include "include/driver.h"
-// #include "include/widgets/container.h"
-// #include "include/widgets/window.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -44,7 +41,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define display()                           (rtgui_get_graphic_device())
+#define display()                           (rtgui_get_gfx_device())
 #define dc_set_foreground(c)                dc->gc.foreground = c
 #define dc_set_background(c)                dc->gc.background = c
 #define _int_swap(x, y)                     \
@@ -224,7 +221,7 @@ static void _dc_client_blit_line(rtgui_dc_t *self, int x1, int x2, int y,
         /* draw hline */
         display()->ops->draw_raw_hline(line_data + offset, x1, x2, y);
     } else {
-        register rt_base_t idx;
+        register rt_ubase_t idx;
         register rt_base_t draw_x1, draw_x2;
 
         for (idx = 1; idx <= rtgui_region_num_rects(&(owner->clip)); idx++) {
@@ -248,9 +245,8 @@ static void _dc_client_blit(rtgui_dc_t *dc, struct rtgui_point *dc_point,
     (void)dc_point;
     (void)dest;
     (void)rect;
-    /* no blit in hardware dc */
-    // TODO: what blit do?
-    LOG_E("dc_client_blit");
+    /* no blit in hardware dc? */
+    LOG_E("no client dc blit");
 }
 
 static rt_bool_t _dc_client_uninit(rtgui_dc_t *dc) {

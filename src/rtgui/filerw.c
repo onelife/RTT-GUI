@@ -183,6 +183,11 @@ static int mem_read(rtgui_filerw_t *context, void *ptr, rt_size_t size, rt_size_
 
 static int mem_write(rtgui_filerw_t *context, const void *ptr, rt_size_t size, rt_size_t num)
 {
+    (void)context;
+    (void)ptr;
+    (void)size;
+    (void)num;
+    LOG_E("no mem_write");
     return 0; /* not support memory write */
 }
 

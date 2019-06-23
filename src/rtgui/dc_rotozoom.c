@@ -52,11 +52,8 @@ Andreas Schiffler -- aschiffler at ferzkopp dot net
 
 #include <math.h>
 
-#include "../include/rtgui.h"
-#include "../include/dc.h"
-#include "../include/dc_draw.h"
-#include "../include/color.h"
-
+#include "include/rtgui.h"
+#include "include/dc_draw.h"
 
 /* ---- Internally used structures */
 
@@ -79,12 +76,6 @@ typedef struct tColorY
     rt_uint8_t y;
 } tColorY;
 
-/*!
-\brief Returns maximum of two numbers a and b.
-*/
-#ifndef MAX
-#define MAX(a,b)    (((a) > (b)) ? (a) : (b))
-#endif
 
 /*!
 \brief Number of guard rows added to destination surfaces.
@@ -741,13 +732,13 @@ rtgui_dc_t* rtgui_dc_rotate_90degrees(struct rtgui_dc_buffer* src, int numClockw
 \param sanglezoom The cosine of the angle adjusted by the zoom factor.
 
 */
-void _rtgui_dc_rotozoom_size(int width, int height, double angle, double zoomx, double zoomy,
-                             int *dstwidth, int *dstheight,
-                             double *canglezoom, double *sanglezoom)
-{
+void _rtgui_dc_rotozoom_size(int width, int height, double angle,
+    double zoomx, double zoomy, int *dstwidth, int *dstheight,
+    double *canglezoom, double *sanglezoom) {
     double x, y, cx, cy, sx, sy;
     double radangle;
     int dstwidthhalf, dstheighthalf;
+    (void)zoomy;
 
     /*
     * Determine destination width and height by rotating a centered source box
@@ -764,10 +755,10 @@ void _rtgui_dc_rotozoom_size(int width, int height, double angle, double zoomx, 
     sx = *sanglezoom * x;
     sy = *sanglezoom * y;
 
-    dstwidthhalf = MAX((int)
-                       ceil(MAX(MAX(MAX(fabs(cx + sy), fabs(cx - sy)), fabs(-cx + sy)), fabs(-cx - sy))), 1);
-    dstheighthalf = MAX((int)
-                        ceil(MAX(MAX(MAX(fabs(sx + cy), fabs(sx - cy)), fabs(-sx + cy)), fabs(-sx - cy))), 1);
+    dstwidthhalf = _MAX((int)
+                       ceil(_MAX(_MAX(_MAX(fabs(cx + sy), fabs(cx - sy)), fabs(-cx + sy)), fabs(-cx - sy))), 1);
+    dstheighthalf = _MAX((int)
+                        ceil(_MAX(_MAX(_MAX(fabs(sx + cy), fabs(sx - cy)), fabs(-sx + cy)), fabs(-sx - cy))), 1);
     *dstwidth = 2 * dstwidthhalf;
     *dstheight = 2 * dstheighthalf;
 }

@@ -24,6 +24,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
+#include "include/region.h"
 #include "include/widgets/window.h"
 
 #ifdef RT_USING_ULOG

@@ -26,7 +26,6 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/font/font.h"
-#include "include/dc.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL

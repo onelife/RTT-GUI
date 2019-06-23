@@ -21,11 +21,8 @@
  * Date           Author       Notes
  * 2009-10-16     Bernard      first version
  */
-#include "../include/rtgui.h"
-#include "../include/dc.h"
-#include "../include/driver.h"
-#include "../include/widgets/container.h"
-#include "../include/widgets/window.h"
+#include "include/rtgui.h"
+#include "include/driver.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -75,7 +72,7 @@ rtgui_dc_t *rtgui_dc_hw_create(rtgui_widget_t *owner)
         dc->_super.type = RTGUI_DC_HW;
         dc->_super.engine = &dc_hw_engine;
         dc->owner = owner;
-        dc->hw_driver = rtgui_get_graphic_device();
+        dc->hw_driver = rtgui_get_gfx_device();
 
         return &(dc->_super);
     }
@@ -270,12 +267,14 @@ static void rtgui_dc_hw_blit_line(rtgui_dc_t *self, int x1, int x2, int y, rt_ui
     dc->hw_driver->ops->draw_raw_hline(line_data, x1, x2, y);
 }
 
-static void rtgui_dc_hw_blit(rtgui_dc_t *dc,
-                             struct rtgui_point *dc_point,
-                             rtgui_dc_t *dest,
-                             rtgui_rect_t *rect)
-{
+static void rtgui_dc_hw_blit(rtgui_dc_t *dc, struct rtgui_point *dc_point,
+    rtgui_dc_t *dest, rtgui_rect_t *rect) {
     /* not blit in hardware dc */
-    return ;
+    (void)dc;
+    (void)dc_point;
+    (void)dest;
+    (void)rect;
+    /* no blit in hardware dc? */
+    LOG_E("no hw dc blit");
 }
 

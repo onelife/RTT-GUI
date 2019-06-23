@@ -74,7 +74,7 @@ typedef struct rtgui_image_bmp {
 /* In multiple of 12 and bigger than 48 */
 #define BMP_WORKING_BUFFER_SIZE     (384)
 #define BMP_MAX_SCALING_FACTOR      (10)
-#define display()                   (rtgui_get_graphic_device())
+#define display()                   (rtgui_get_gfx_device())
 
 /* Private variables ---------------------------------------------------------*/
 rtgui_image_engine_t bmp_engine = {

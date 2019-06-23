@@ -25,7 +25,7 @@ void RT_GUI::begin(void) {
 
     dev = rt_device_find(CONFIG_GUI_DEVICE_NAME);
     RT_ASSERT(RT_NULL != dev);
-    ret = rtgui_set_graphic_device(dev);
+    ret = rtgui_set_gfx_device(dev);
     RT_ASSERT(RT_EOK == ret);
     #ifdef CONFIG_TOUCH_DEVICE_NAME
     dev = rt_device_find(CONFIG_TOUCH_DEVICE_NAME);

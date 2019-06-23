@@ -67,7 +67,7 @@ struct rtgui_image_jpeg {
 #define JPEG_BUF_SIZE               CONFIG_JPEG_BUFFER_SIZE
 #define JPEG_MAX_SCALING_FACTOR     (3)
 #define JPEG_MAX_OUTPUT_WIDTH       (16)
-#define display()                   (rtgui_get_graphic_device())
+#define display()                   (rtgui_get_gfx_device())
 
 /* Private macro -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/

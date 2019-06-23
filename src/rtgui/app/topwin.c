@@ -187,7 +187,7 @@ static void _topwin_get_union_region(rtgui_topwin_t *top,
     rt_list_foreach(node, &top->children, next) {
         _topwin_get_union_region(get_topwin_by_list(node), region);
     }
-    rtgui_region_union_rect(region, &top->extent);
+    rtgui_region_union_rect(region, region, &top->extent);
 }
 
 /* The return value of this function is the next node in tree.
@@ -443,7 +443,8 @@ rt_inline void _rtgui_topwin_clip_to_region(rtgui_topwin_t *top,
     rtgui_region_t *region) {
 
     rtgui_region_reset(&top->wid->outer_clip, &top->wid->outer_extent);
-    rtgui_region_intersect(&top->wid->outer_clip, region);
+    rtgui_region_intersect(&top->wid->outer_clip, &top->wid->outer_clip,
+        region);
 }
 
 static void _topwin_update_clip(void) {
@@ -458,8 +459,8 @@ static void _topwin_update_clip(void) {
 
     rtgui_region_init(
         &region, 0, 0,
-        rtgui_get_graphic_device()->width,
-        rtgui_get_graphic_device()->height);
+        rtgui_get_gfx_device()->width,
+        rtgui_get_gfx_device()->height);
 
     /* from top to bottom. */
     top = _topwin_get_shown_with_flag(RTGUI_TOPWIN_FLAG_ONTOP);
@@ -484,7 +485,7 @@ static void _topwin_update_clip(void) {
         /* clip the topwin */
         _rtgui_topwin_clip_to_region(top, &region);
         /* update available region */
-        rtgui_region_subtract_rect(&region, &top->extent);
+        rtgui_region_subtract_rect(&region, &region, &top->extent);
 
         if (RT_EOK != rtgui_request(top->app, evt, RT_WAITING_FOREVER)) {
             LOG_E("active %s err", top->wid->title);
@@ -831,7 +832,7 @@ void rtgui_topwin_resize(rtgui_win_t *win, rtgui_rect_t *rect) {
     /* get current region */
     rtgui_region_init_with_extent(&region, &top->extent);
     /* union the new rect so this is the region we should redraw */
-    rtgui_region_union_rect(&region, rect);
+    rtgui_region_union_rect(&region, &region, rect);
     top->extent = *rect;
 
     /* update windows clip info */

@@ -25,8 +25,8 @@
 #ifndef __RTGUI_COLOR_H__
 #define __RTGUI_COLOR_H__
 
-#include "./rtgui.h"
-#include "./blit.h"
+#include "include/rtgui.h"
+#include "include/blit.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,6 +84,124 @@ extern const rtgui_color_t white;
 extern const rtgui_color_t high_light;
 extern const rtgui_color_t dark_grey;
 extern const rtgui_color_t light_grey;
+
+extern const rt_uint8_t* rtgui_blit_expand_byte[9];
+
+/* xxx <= RGB */
+#ifdef RTGUI_BIG_ENDIAN_OUTPUT
+# define RGB565_FROM_RGB(pixel, r, g, b) {                              \
+    pixel = ((g >> 2) << 13) | ((b >> 3) << 8) | ((r >> 3) << 3) | (g >> 5);  \
+}
+#else
+# define RGB565_FROM_RGB(pixel, r, g, b) {                              \
+    pixel = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);              \
+}
+#endif
+
+#define BGR565_FROM_RGB(pixel, r, g, b) {                               \
+    pixel = ((b >> 3) << 11) | ((g >> 2) << 5) | (r >> 3);              \
+}
+
+#define RGB555_FROM_RGB(pixel, r, g, b) {                               \
+    pixel = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);              \
+}
+
+#ifdef GUIENGINE_USING_RGB888_AS_32BIT
+# define RGB888_FROM_RGB(pixel, r, g, b) {                              \
+    pixel = (r << 16) | (g << 8) | b;                                   \
+}
+#else
+# define RGB888_FROM_RGB(pixel, r, g, b) {                              \
+    rt_uint8_t *p = &pixel;                                             \
+    *p++ = r;                                                           \
+    *p++ = g;                                                           \
+    *p = b;                                                             \
+}
+#endif
+
+#define ARGB8888_FROM_RGBA(pixel, r, g, b, a) {                         \
+    pixel = (a << 24) | (r << 16) | (g << 8) | b;                       \
+}
+#define RGBA8888_FROM_RGBA(pixel, r, g, b, a)                           \
+    pixel = (r << 24) | (g << 16) | (b << 8) | a;                       \
+}
+#define ABGR8888_FROM_RGBA(pixel, r, g, b, a) {                         \
+    pixel = (a << 24) | (b << 16) | (g << 8) | r;                       \
+}
+#define BGRA8888_FROM_RGBA(pixel, r, g, b, a) {                         \
+    pixel = (b << 24) | (g << 16) | (r << 8) | a;                       \
+}
+#define ARGB2101010_FROM_RGBA(pixel, r, g, b, a) {                      \
+    r = r ? ((r << 2) | 0x3) : 0;                                       \
+    g = g ? ((g << 2) | 0x3) : 0;                                       \
+    b = b ? ((b << 2) | 0x3) : 0;                                       \
+    a = (a * 3) / 255;                                                  \
+    pixel = (a << 30) | (r << 20) | (g << 10) | b;                      \
+}
+
+/* RGB <= xxx */
+#define RGB_FROM_RGB565(pixel, r, g, b) {                               \
+    r = rtgui_blit_expand_byte[3][((pixel & 0xF800)>>11)];              \
+    g = rtgui_blit_expand_byte[2][((pixel & 0x07E0)>>5)];               \
+    b = rtgui_blit_expand_byte[3][(pixel & 0x001F)];                    \
+}
+#define RGB_FROM_BGR565(pixel, r, g, b) {                               \
+    b = rtgui_blit_expand_byte[3][((pixel & 0xF800)>>11)];              \
+    g = rtgui_blit_expand_byte[2][((pixel & 0x07E0)>>5)];               \
+    r = rtgui_blit_expand_byte[3][(pixel & 0x001F)];                    \
+}
+#define RGB_FROM_RGB555(pixel, r, g, b) {                               \
+    r = rtgui_blit_expand_byte[3][((pixel & 0x7C00)>>10)];              \
+    g = rtgui_blit_expand_byte[3][((pixel & 0x03E0)>>5)];               \
+    b = rtgui_blit_expand_byte[3][(pixel & 0x001F)];                    \
+}
+
+#ifdef GUIENGINE_USING_RGB888_AS_32BIT
+# define RGB_FROM_RGB888(pixel, r, g, b) {                              \
+    r = ((pixel & 0xFF0000)>>16);                                       \
+    g = ((pixel & 0xFF00)>>8);                                          \
+    b = (pixel & 0xFF);                                                 \
+}
+#else
+# define RGB_FROM_RGB888(pixel, r, g, b) {                              \
+    rt_uint8_t *p = &pixel;                                             \
+    r = *p++;                                                           \
+    g = *p++;                                                           \
+    b = *p;                                                             \
+}
+#endif
+
+#define RGBA_FROM_RGBA8888(pixel, r, g, b, a) {                         \
+    r = (pixel >> 24);                                                  \
+    g = ((pixel >> 16) & 0xFF);                                         \
+    b = ((pixel >> 8) & 0xFF);                                          \
+    a = (pixel & 0xFF);                                                 \
+}
+#define RGBA_FROM_ARGB8888(pixel, r, g, b, a) {                         \
+    r = ((pixel >> 16) & 0xFF);                                         \
+    g = ((pixel >> 8) & 0xFF);                                          \
+    b = (pixel & 0xFF);                                                 \
+    a = (pixel >> 24);                                                  \
+}
+#define RGBA_FROM_ABGR8888(pixel, r, g, b, a) {                         \
+    r = (pixel & 0xFF);                                                 \
+    g = ((pixel >> 8) & 0xFF);                                          \
+    b = ((pixel >> 16) & 0xFF);                                         \
+    a = (pixel >> 24);                                                  \
+}
+#define RGBA_FROM_BGRA8888(pixel, r, g, b, a) {                         \
+    r = ((pixel >> 8) & 0xFF);                                          \
+    g = ((pixel >> 16) & 0xFF);                                         \
+    b = (pixel >> 24);                                                  \
+    a = (pixel & 0xFF);                                                 \
+}
+#define RGBA_FROM_ARGB2101010(pixel, r, g, b, a) {                      \
+    r = ((pixel >> 22) & 0xFF);                                         \
+    g = ((pixel >> 12) & 0xFF);                                         \
+    b = ((pixel >> 2) & 0xFF);                                          \
+    a = rtgui_blit_expand_byte[6][(pixel >> 30)];                       \
+}
+
 
 /*
  * RTGUI default color format: ARGB

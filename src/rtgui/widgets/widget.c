@@ -25,7 +25,6 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/dc.h"
 #include "include/widgets/widget.h"
 #include "include/widgets/window.h"
 #include "include/widgets/container.h"
@@ -340,7 +339,7 @@ void rtgui_widget_clip_parent(rtgui_widget_t *wgt) {
     }
     /* clip the widget extern from parent */
     if (parent)
-        rtgui_region_subtract(&(parent->clip), &(wgt->clip));
+        rtgui_region_subtract(&(parent->clip), &(parent->clip), &(wgt->clip));
 }
 RTM_EXPORT(rtgui_widget_clip_parent);
 
@@ -353,7 +352,7 @@ void rtgui_widget_clip_return(rtgui_widget_t *wgt) {
     }
     /* give clip back to parent */
     if (parent)
-        rtgui_region_union(&(parent->clip), &(wgt->clip));
+        rtgui_region_union(&(parent->clip), &(parent->clip), &(wgt->clip));
 }
 RTM_EXPORT(rtgui_widget_clip_return);
 
@@ -379,10 +378,10 @@ void rtgui_widget_move_to_logic(rtgui_widget_t *wgt, int dx, int dy) {
     if (parent) {
         /* reset clip info */
         rtgui_region_init_with_extent(&(wgt->clip), &(wgt->extent));
-        rtgui_region_intersect_rect(&(wgt->clip), &rect);
+        rtgui_region_intersect_rect(&(wgt->clip), &(wgt->clip), &rect);
 
         /* give back the extent */
-        rtgui_region_union(&(parent->clip), &(wgt->clip));
+        rtgui_region_union(&(parent->clip), &(parent->clip), &(wgt->clip));
     }
 
     /* move this widget (and its children if it's a container) to destination 
@@ -495,7 +494,8 @@ void rtgui_widget_update_clip(rtgui_widget_t *wgt) {
 
     /* update clip, limit widget extent in parent extent */
     rtgui_region_reset(&(wgt->clip), &(wgt->extent));
-    rtgui_region_intersect_rect(&(wgt->clip), &(parent->extent_visiable));
+    rtgui_region_intersect_rect(&(wgt->clip), &(wgt->clip),
+        &(parent->extent_visiable));
 
     /* get the parent without transparent */
     while (parent && IS_WIDGET_FLAG(parent, TRANSPARENT))
@@ -503,10 +503,11 @@ void rtgui_widget_update_clip(rtgui_widget_t *wgt) {
 
     if (parent) {
         /* return clip to parent */
-        rtgui_region_union(&(parent->clip), &(wgt->clip));
+        rtgui_region_union(&(parent->clip), &(parent->clip), &(wgt->clip));
         /* subtract widget clip in parent clip */
         if (!IS_WIDGET_FLAG(wgt, TRANSPARENT) && IS_CONTAINER(parent))
-            rtgui_region_subtract_rect(&(parent->clip), &(wgt->extent_visiable));
+            rtgui_region_subtract_rect(&(parent->clip), &(parent->clip),
+                &(wgt->extent_visiable));
     }
 
     /*

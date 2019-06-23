@@ -150,6 +150,7 @@ extern "C" {
     RTGUI_MEMBER_SETTER(ctype, cname, mtype, mname); \
     RTGUI_MEMBER_GETTER(ctype, cname, mtype, mname)
 #define MEMBER_GETTER(cname, mname)          rtgui_##cname##_get_##mname
+#define MEMBER_SETTER(cname, mname)          rtgui_##cname##_set_##mname
 
 #define APP_SETTER(mname)                   rtgui_app_set_##mname
 #define WIDGET_SETTER(mname)                rtgui_widget_set_##mname
@@ -190,7 +191,7 @@ extern "C" {
 #define TOPWIN_FLAG_SET(t, fname)           TOPWIN_FLAG(t) |= RTGUI_TOPWIN_FLAG_##fname
 #define IS_TOPWIN_FLAG(t, fname)            (TOPWIN_FLAG(t) & RTGUI_TOPWIN_FLAG_##fname)
 
-#define BUTTON_FLAG(b)                      (b->flag)
+#define BUTTON_FLAG(b)                      (TO_BUTTON(b)->flag)
 #define BUTTON_FLAG_CLEAR(b, fname)         BUTTON_FLAG(b) &= ~RTGUI_BUTTON_FLAG_##fname
 #define BUTTON_FLAG_SET(b, fname)           BUTTON_FLAG(b) |= RTGUI_BUTTON_FLAG_##fname
 #define IS_BUTTON_FLAG(b, fname)            (BUTTON_FLAG(b) & RTGUI_BUTTON_FLAG_##fname)
@@ -210,16 +211,12 @@ typedef struct rtgui_fnt_font rtgui_fnt_font_t;
 typedef struct rtgui_bmp_font rtgui_bmp_font_t;
 typedef struct rtgui_font rtgui_font_t;
 
-struct rtgui_image_info;
-struct rtgui_blit_info;
 struct rtgui_filerw;
 typedef struct rtgui_filerw rtgui_filerw_t;
 typedef rt_uint32_t rtgui_color_t;
 typedef struct rtgui_image_engine rtgui_image_engine_t;
 typedef struct rtgui_image_palette rtgui_image_palette_t;
 typedef struct rtgui_image rtgui_image_t;
-typedef struct rtgui_image_info rtgui_image_info_t;
-typedef struct rtgui_blit_info rtgui_blit_info_t;
 
 struct rtgui_dc_engine;
 typedef struct rtgui_dc_engine rtgui_dc_engine_t;

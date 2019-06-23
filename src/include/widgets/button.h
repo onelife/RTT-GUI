@@ -51,6 +51,11 @@ extern "C" {
 
 #define DELETE_BUTTON_INSTANCE(obj)         DELETE_INSTANCE(obj)
 
+#define rtgui_button_get_text(obj)          \
+    MEMBER_GETTER(label, text)(TO_LABEL(obj))
+#define rtgui_button_set_text(obj, _text)          \
+    MEMBER_SETTER(label, text)(TO_LABEL(obj), _text)
+
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
