@@ -171,13 +171,13 @@ static rt_bool_t picShow_btn2_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     if (IS_BUTTON_FLAG(obj, PRESS)) {
       rt_kprintf("+++ %s pressed\n", MEMBER_GETTER(button, text)(obj));
-      MEMBER_SETTER(button, text)(obj, "开始");
+      MEMBER_SETTER(button, text)(obj, "Loop");
       rt_timer_stop(&picTmr);
       timeout = RT_FALSE;
       pause = RT_TRUE;
     } else {
       rt_kprintf("+++ %s unpressed\n", MEMBER_GETTER(button, text)(obj));
-      MEMBER_SETTER(button, text)(obj, "暂停");
+      MEMBER_SETTER(button, text)(obj, "Pause");
       pause = RT_FALSE;
       rt_timer_start(&picTmr);
     }
@@ -231,10 +231,10 @@ static void picShow_entry(void *param) {
   CREATE_BOX_INSTANCE(box, RTGUI_HORIZONTAL, 1);
   rtgui_container_set_box(cntr, box);
 
-  CREATE_BUTTON_INSTANCE(btn1, picShow_btn1_handler, TYPE_NORMAL, "下一张");
+  CREATE_BUTTON_INSTANCE(btn1, picShow_btn1_handler, TYPE_NORMAL, "Next");
   WIDGET_ALIGN(btn1) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
   rtgui_container_add_child(cntr, TO_WIDGET(btn1));
-  CREATE_BUTTON_INSTANCE(btn2, picShow_btn2_handler, TYPE_PUSH, "暂停");
+  CREATE_BUTTON_INSTANCE(btn2, picShow_btn2_handler, TYPE_PUSH, "Pause");
   WIDGET_ALIGN(btn2) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
   rtgui_container_add_child(cntr, TO_WIDGET(btn2));
 
