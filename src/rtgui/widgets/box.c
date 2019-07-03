@@ -256,8 +256,7 @@ void rtgui_box_layout(rtgui_box_t *box) {
 }
 RTM_EXPORT(rtgui_box_layout);
 
-void rtgui_box_layout_rect(rtgui_box_t *box, rtgui_rect_t *rect)
-{
+void rtgui_box_layout_rect(rtgui_box_t *box, rtgui_rect_t *rect) {
     RT_ASSERT(box != RT_NULL);
 
     if (box->container == RT_NULL) return;

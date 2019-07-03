@@ -202,7 +202,7 @@ RTM_EXPORT(rtgui_app_self);
 
 RTGUI_MEMBER_SETTER_GETTER(rtgui_app_t, app, rtgui_idle_hdl_t, on_idle);
 
-rt_inline rt_bool_t _app_target_handler(
+rt_inline rt_bool_t _app_dispatch_event_to_win(
     rtgui_app_t *app, rtgui_evt_generic_t *evt) {
     rtgui_obj_t *tgt;
     (void)app;
@@ -247,13 +247,13 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     switch (evt->base.type) {
     case RTGUI_EVENT_KBD:
         if (evt->kbd.act_cnt == app->act_cnt)
-            done = _app_target_handler(app, evt);
+            done = _app_dispatch_event_to_win(app, evt);
         break;
 
     case RTGUI_EVENT_MOUSE_BUTTON:
     case RTGUI_EVENT_MOUSE_MOTION:
         if (evt->mouse.act_cnt == app->act_cnt)
-            done = _app_target_handler(app, evt);
+            done = _app_dispatch_event_to_win(app, evt);
         // if (!done && IS_EVENT_TYPE(evt, MOUSE_BUTTON)) {
         //     rtgui_mouse_moveto(evt->mouse.x, evt->mouse.y);
         //     done = RT_TRUE;
@@ -262,12 +262,12 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     case RTGUI_EVENT_GESTURE:
         if (evt->gesture.act_cnt == app->act_cnt)
-            done = _app_target_handler(app, evt);
+            done = _app_dispatch_event_to_win(app, evt);
         break;
 
     case RTGUI_EVENT_WIN_ACTIVATE:
         app->act_cnt++;
-        done = _app_target_handler(app, evt);
+        done = _app_dispatch_event_to_win(app, evt);
         break;
 
     case RTGUI_EVENT_PAINT:
@@ -278,7 +278,7 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     case RTGUI_EVENT_WIN_MOVE:
     case RTGUI_EVENT_WIN_SHOW:
     case RTGUI_EVENT_WIN_HIDE:
-        done = _app_target_handler(app, evt);
+        done = _app_dispatch_event_to_win(app, evt);
         break;
 
     case RTGUI_EVENT_APP_ACTIVATE:
@@ -325,14 +325,14 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     case RTGUI_EVENT_COMMAND:
         if (evt->command.wid) {
-            done = _app_target_handler(app, evt);
+            done = _app_dispatch_event_to_win(app, evt);
         } else {
             rtgui_topwin_t *top = rtgui_topwin_get_focus();
             if (top) {
                 RT_ASSERT(top->flag & RTGUI_TOPWIN_FLAG_ACTIVATE)
                 /* send to focus window */
                 evt->command.wid = top->wid;
-                done = _app_target_handler(app, evt);
+                done = _app_dispatch_event_to_win(app, evt);
             }
         }
         break;
@@ -346,10 +346,11 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     EVT_LOG("[AppEVT] %s @%p from %s done %d", rtgui_event_text(evt), evt,
         evt->base.origin->mb->parent.parent.name, done);
 
-    if (!done) {
+    if (!done && !IS_EVENT_TYPE(evt, COMMAND)) {
         LOG_W("[AppEVT] %p not done!", evt);
     }
     if (evt && !IS_EVENT_TYPE(evt, TIMER)) {
+        rtgui_response(evt, RT_EOK);
         RTGUI_FREE_EVENT(evt);
     }
 

@@ -594,7 +594,7 @@ void rtgui_win_move(rtgui_win_t *win, int x, int y) {
 RTM_EXPORT(rtgui_win_move);
 
 void rtgui_win_update_clip(rtgui_win_t *win) {
-    rtgui_container_t *cnt;
+    rtgui_container_t *cntr;
     rt_slist_t *node;
 
     if (RT_NULL == win) return;
@@ -620,8 +620,8 @@ void rtgui_win_update_clip(rtgui_win_t *win) {
     }
 
     /* update the clip info of each child */
-    cnt = TO_CONTAINER(win);
-    rt_slist_for_each(node, &(cnt->children)) {
+    cntr = TO_CONTAINER(win);
+    rt_slist_for_each(node, &(cntr->children)) {
         rtgui_widget_t *child = rt_slist_entry(node, rtgui_widget_t, sibling);
 
         rtgui_widget_update_clip(child);
@@ -753,27 +753,28 @@ RTM_EXPORT(rtgui_win_get_drawing);
 
 /* window drawing */
 void rtgui_theme_draw_win(rtgui_title_t *title) {
+    rtgui_win_t *win;
+    rtgui_dc_t *dc;
+
     if (!title) return;
 
+    win = TO_WIDGET(title)->toplevel;
+    if (!win->_title) {
+        LOG_E("no title");
+        return;
+    }
+
+    /* begin drawing */
+    dc = rtgui_dc_begin_drawing(TO_WIDGET(win->_title));
+    if (!dc) {
+        LOG_E("no dc");
+        return;
+    }
+
     do {
-        rtgui_win_t *win;
-        rtgui_dc_t *dc;
         rtgui_rect_t rect;
         rtgui_rect_t box_rect = {0, 0, TITLE_CB_WIDTH, TITLE_CB_HEIGHT};
         rt_uint16_t index, r, g, b, delta;
-
-        win = TO_WIDGET(title)->toplevel;
-        if (!win->_title) {
-            LOG_E("no title");
-            break;
-        }
-
-        /* begin drawing */
-        dc = rtgui_dc_begin_drawing(TO_WIDGET(win->_title));
-        if (!dc) {
-            LOG_E("no dc");
-            break;
-        }
 
         /* get rect */
         rtgui_widget_get_rect(TO_WIDGET(win->_title), &rect);
@@ -863,8 +864,8 @@ void rtgui_theme_draw_win(rtgui_title_t *title) {
                     close_byte);
             }
         }
-
-        rtgui_dc_end_drawing(dc, RT_TRUE);
-        LOG_W("draw theme done");
     } while (0);
+
+    rtgui_dc_end_drawing(dc, RT_TRUE);
+    LOG_W("draw theme done");
 }

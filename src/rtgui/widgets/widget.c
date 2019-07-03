@@ -573,12 +573,12 @@ void rtgui_widget_update(rtgui_widget_t *wgt) {
         rtgui_evt_generic_t *evt;
 
         if (!wgt) break;
-        if (!EVENT_HANDLER(wgt) || IS_WIDGET_FLAG(wgt, IN_ANIM)) break;
+        if (!EVENT_HANDLER(wgt) || IS_WIDGET_FLAG(wgt, IN_ANIM) || \
+            !IS_WIDGET_FLAG(wgt, SHOWN)) break;
 
         /* send RTGUI_EVENT_PAINT */
         RTGUI_CREATE_EVENT(evt, PAINT, RT_WAITING_FOREVER);
         if (!evt) break;
-        LOG_I("update");
         evt->paint.wid = RT_NULL;
         (void)EVENT_HANDLER(wgt)(wgt, evt);
         RTGUI_FREE_EVENT(evt);

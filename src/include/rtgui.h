@@ -87,6 +87,11 @@ extern "C" {
 #define IS_BUTTON(obj)                      IS_INSTANCE(obj, _BUTTON_METADATA)
 #define TO_BUTTON(obj)                      \
     CAST_(obj, _BUTTON_METADATA, rtgui_button_t)
+/* Progress Bar */
+#define _PROGRESS_METADATA                  CLASS_METADATA(progress)
+#define IS_PROGRESS(obj)                    IS_INSTANCE(obj, _PROGRESS_METADATA)
+#define TO_PROGRESS(obj)                    \
+    CAST_(obj, _PROGRESS_METADATA, rtgui_progress_t)
 /* Window */
 #define _WIN_METADATA                       CLASS_METADATA(win)
 #define IS_WIN(obj)                         IS_INSTANCE((obj), _WIN_METADATA)
@@ -128,6 +133,7 @@ CLASS_PROTOTYPE(widget);
 CLASS_PROTOTYPE(container);
 CLASS_PROTOTYPE(title);
 CLASS_PROTOTYPE(label);
+CLASS_PROTOTYPE(progress);
 CLASS_PROTOTYPE(button);
 CLASS_PROTOTYPE(win);
 

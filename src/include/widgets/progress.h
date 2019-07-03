@@ -1,5 +1,5 @@
 /*
- * File      : container.h
+ * File      : progress.h
  * This file is part of RT-Thread GUI Engine
  * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
  *
@@ -19,37 +19,35 @@
  *
  * Change Logs:
  * Date           Author       Notes
- * 2009-10-16     Bernard      first version
- * 2019-06-15     onelife      refactor
+ * 2019-07-02     onelife      refactor
  */
-#ifndef __RTGUI_CNTR_H__
-#define __RTGUI_CNTR_H__
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#ifndef __RTGUI_PROGRESS_H__
+#define __RTGUI_PROGRESS_H__
 /* Includes ------------------------------------------------------------------*/
-#include "./widget.h"
-#include "./box.h"
+#include "include/rtgui.h"
 
 /* Exported defines ----------------------------------------------------------*/
+#define PROGRESS_WIDTH_DEFAULT              (100)
+#define PROGRESS_HEIGHT_DEFAULT             (20)
+#define PROGRESS_RANGE_DEFAULT              (100)
+
+#define CREATE_PROGRESS_INSTANCE(obj, hdl, _orient, _range, rect) \
+    do {                                    \
+        obj = (rtgui_progress_t *)CREATE_INSTANCE(progress, hdl); \
+        if (!obj) break;                    \
+        obj->orient = _orient;              \
+        obj->range = _range;                \
+        if (rect != RT_NULL)                \
+            rtgui_widget_set_rect(TO_WIDGET(obj), rect); \
+    } while (0)
+
+#define DELETE_PROGRESS_INSTANCE(obj)       DELETE_INSTANCE(obj)
+
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-rt_bool_t rtgui_container_dispatch_mouse_event(rtgui_container_t *container,
-    rtgui_evt_generic_t *event);
-void rtgui_container_add_child(rtgui_container_t *cntr, rtgui_widget_t *child);
-void rtgui_container_remove_child(rtgui_container_t *cntr,
-    rtgui_widget_t *child);
-rtgui_widget_t *rtgui_container_get_first_child(rtgui_container_t *cntr);
-void rtgui_container_set_box(rtgui_container_t *container, rtgui_box_t *box);
-void rtgui_container_layout(rtgui_container_t *container);
-rtgui_obj_t* rtgui_container_get_object(rtgui_container_t *cntr,
-    rt_uint32_t id);
+MEMBER_SETTER_GETTER_PROTOTYPE(rtgui_progress_t, progress, rt_uint16_t, range);
+MEMBER_SETTER_GETTER_PROTOTYPE(rtgui_progress_t, progress, rt_uint16_t, value);
+void rtgui_theme_draw_progress(rtgui_progress_t *bar);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __RTGUI_CNTR_H__ */
+#endif /* __RTGUI_PROGRESS_H__ */

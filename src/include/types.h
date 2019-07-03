@@ -200,9 +200,9 @@ extern "C" {
 struct rtgui_gfx_driver;
 typedef struct rtgui_gfx_driver rtgui_gfx_driver_t;
 
-typedef struct rtgui_rect rtgui_rect_t;
 typedef struct rtgui_point rtgui_point_t;
 typedef struct rtgui_line rtgui_line_t;
+typedef struct rtgui_rect rtgui_rect_t;
 typedef struct rtgui_region_data rtgui_region_data_t;
 typedef struct rtgui_region rtgui_region_t;
 
@@ -231,6 +231,7 @@ typedef struct rtgui_widget rtgui_widget_t;
 typedef struct rtgui_title rtgui_title_t;
 typedef struct rtgui_label rtgui_label_t;
 typedef struct rtgui_button rtgui_button_t;
+typedef struct rtgui_progress rtgui_progress_t;
 typedef struct rtgui_win rtgui_win_t;
 typedef struct rtgui_app rtgui_app_t;
 typedef struct rtgui_timer rtgui_timer_t;
@@ -248,17 +249,25 @@ typedef void (*rtgui_idle_hdl_t)(rtgui_obj_t *obj, rtgui_evt_generic_t *evt);
 typedef void (*rtgui_timeout_hdl_t)(rtgui_timer_t *timer, void *param);
 typedef void (*rtgui_hook_t)(void);
 
-/* coordinate point */
+
+/* Attributes */
+typedef enum rtgui_orientation {
+    RTGUI_HORIZONTAL                        = 0x01,
+    RTGUI_VERTICAL                          = 0x02,
+    RTGUI_ORIENTATION_BOTH                  = RTGUI_HORIZONTAL | RTGUI_VERTICAL,
+} rtgui_orientation_t;
+
+/* point */
 struct rtgui_point {
     rt_int16_t x, y;
 };
 
-/* line segment */
+/* line */
 struct rtgui_line {
     rtgui_point_t start, end;
 };
 
-/* rectangle structure */
+/* rectangle */
 struct rtgui_rect {
     rt_int16_t x1, y1, x2, y2;
 };
@@ -408,7 +417,7 @@ struct rtgui_widget {
     rtgui_widget_t *parent;                 /* parent widget */
     rtgui_win_t *toplevel;                  /* parent window */
     rt_slist_t sibling;                     /* children and sibling */
-    rtgui_widget_flag_t flag;
+    rt_uint32_t flag;
     rt_int32_t align;
     rt_uint16_t border;
     rt_uint16_t border_style;
@@ -464,6 +473,14 @@ struct rtgui_button {
     rtgui_image_t *press_img;
     rtgui_image_t *unpress_img;
     rtgui_evt_hdl_t on_button;
+};
+
+/* progress bar */
+struct rtgui_progress {
+    rtgui_widget_t _super;
+    rtgui_orientation_t orient;
+    rt_uint16_t range;
+    rt_uint16_t value;
 };
 
 /* window */
@@ -952,13 +969,6 @@ enum RTGUI_BLENDMODE {
     RTGUI_BLENDMODE_BLEND,
     RTGUI_BLENDMODE_ADD,
     RTGUI_BLENDMODE_MOD,
-};
-
-/* box orient */
-enum RTGUI_ORIENTATION {
-    RTGUI_HORIZONTAL                        = 0x01,
-    RTGUI_VERTICAL                          = 0x02,
-    RTGUI_ORIENTATION_BOTH                  = RTGUI_HORIZONTAL | RTGUI_VERTICAL,
 };
 
 enum RTGUI_ALIGN {

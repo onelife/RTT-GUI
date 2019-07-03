@@ -116,7 +116,7 @@ void rtgui_label_set_text(rtgui_label_t *lab, const char *text) {
     }
 
     if (text)
-        lab->text = (char *)rt_strdup(text);
+        lab->text = rt_strdup(text);
 
     /* update widget */
     rtgui_widget_update(TO_WIDGET(lab));
@@ -137,6 +137,8 @@ void rtgui_theme_draw_label(rtgui_label_t *lab) {
         }
 
         rtgui_widget_get_rect(TO_WIDGET(lab), &rect);
+        LOG_W("draw label (%d,%d)-(%d, %d)", rect.x1, rect.y1, rect.x2,
+            rect.y2);
         rtgui_dc_fill_rect(dc, &rect);
         rtgui_dc_draw_text(dc, LABEL_GETTER(text)(lab), &rect);
 

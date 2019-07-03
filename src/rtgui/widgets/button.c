@@ -233,8 +233,8 @@ RTGUI_MEMBER_SETTER(rtgui_button_t, button, rtgui_evt_hdl_t, on_button);
 
 void rtgui_theme_draw_button(rtgui_button_t *btn) {
     do {
-        struct rtgui_dc *dc;
-        struct rtgui_rect rect;
+        rtgui_dc_t *dc;
+        rtgui_rect_t rect;
 
         dc = rtgui_dc_begin_drawing(TO_WIDGET(btn));
         if (!dc) {

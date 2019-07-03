@@ -11,21 +11,25 @@
 #include <log.h>
 
 #define CMD_PIC_SHOW  0xFF01
+#define CMD_PIC_DELAY 0xFF02
 #define PIC_DIR       "/pic"
-#define TIMER_TICKS   (5 * RT_TICK_PER_SECOND)
+#define TIMER_TICKS   (1 * RT_TICK_PER_SECOND)
+#define TIMER_COUNT   (5)
 
 struct picShow_info {
   char* path;
   const char* format;
 };
 
-static struct rt_timer picTmr;
+static rtgui_timer_t *picTmr;
+static rt_uint8_t tmrCnt = 0;
 static rt_bool_t timeout = RT_TRUE;
 static rt_bool_t pause = RT_FALSE;
 
 const char bmp[] = "bmp";
 const char jpeg[] = "jpeg";
 rtgui_app_t *picShow;
+rtgui_progress_t *bar;
 DIR* dir = RT_NULL;
 struct dirent* dirent = RT_NULL;
 char path[20];
@@ -64,9 +68,8 @@ static rt_bool_t picShow_handler(void *obj, rtgui_evt_generic_t *evt) {
   rtgui_dc_t *dc;
   rtgui_rect_t rect;
   rtgui_image_t *img;
-  rt_bool_t done;
-
-  done = RT_FALSE;
+  rtgui_evt_generic_t *dlyEvt;
+  rt_bool_t done = RT_FALSE;
 
   do {
     if (DEFAULT_HANDLER(obj))
@@ -75,11 +78,16 @@ static rt_bool_t picShow_handler(void *obj, rtgui_evt_generic_t *evt) {
     if (!IS_EVENT_TYPE(evt, COMMAND) || \
         (evt->command.command_id != CMD_PIC_SHOW))
       break;
+    done = RT_FALSE;
+
+
+    rtgui_timer_stop(picTmr);
+    timeout = RT_FALSE;
+    tmrCnt = 0;
 
     dc = rtgui_dc_begin_drawing(TO_WIDGET(obj));
     if (!dc) {
       rt_kprintf("No DC!\n");
-      done = RT_FALSE;
       break;
     }
 
@@ -87,7 +95,6 @@ static rt_bool_t picShow_handler(void *obj, rtgui_evt_generic_t *evt) {
     rect.y1 += 15;
     rect.y2 -= 30;
 
-    rt_kprintf("Loading %s\n", info->path);
     img = rtgui_image_create_from_file(info->format, info->path, RT_FALSE);
     if (img) {
         rtgui_image_blit(img, dc, &rect);
@@ -95,9 +102,17 @@ static rt_bool_t picShow_handler(void *obj, rtgui_evt_generic_t *evt) {
     } else {
       rt_kprintf("Load %s filed!\n", info->path);
     }
-    done = RT_TRUE;
-
     rtgui_dc_end_drawing(dc, RT_TRUE);
+
+    RTGUI_CREATE_EVENT(dlyEvt, COMMAND, RT_WAITING_FOREVER);
+    dlyEvt->command.wid = RT_NULL;
+    dlyEvt->command.type = 0;
+    dlyEvt->command.command_id = CMD_PIC_DELAY;
+    rtgui_request(picShow, dlyEvt, RT_WAITING_FOREVER);
+
+    if (!pause) {
+      rtgui_timer_start(picTmr);
+    }
   } while (0);
 
   return done;
@@ -105,29 +120,51 @@ static rt_bool_t picShow_handler(void *obj, rtgui_evt_generic_t *evt) {
 
 static rt_bool_t picShow_label_handler(void *obj, rtgui_evt_generic_t *evt) {
   struct picShow_info *info = (struct picShow_info *)evt->command.type;
-  rt_bool_t done;
-
-  done = RT_FALSE;
+  rt_bool_t done = RT_FALSE;
 
   do {
     if (DEFAULT_HANDLER(obj))
       done = DEFAULT_HANDLER(obj)(obj, evt);
 
-    if (!IS_EVENT_TYPE(evt, COMMAND) || \
-        (evt->command.command_id != CMD_PIC_SHOW))
-      break;
+    if (!IS_EVENT_TYPE(evt, COMMAND)) break;
+    done = RT_FALSE;
 
-    rtgui_label_set_text(TO_LABEL(obj), info->path);
-    done = RT_TRUE;
+    rt_kprintf("--- label handle %x\n", evt->command.command_id);
+    if (evt->command.command_id == CMD_PIC_SHOW) {
+      WIDGET_FLAG_SET(obj, SHOWN);
+      rtgui_label_set_text(TO_LABEL(obj), info->path);
+    } else if (evt->command.command_id == CMD_PIC_DELAY) {
+      WIDGET_FLAG_CLEAR(obj, SHOWN);
+    }
+  } while (0);
+
+  return done;
+}
+
+static rt_bool_t picShow_progress_handler(void *obj, rtgui_evt_generic_t *evt) {
+  rt_bool_t done = RT_FALSE;
+
+  do {
+    if (DEFAULT_HANDLER(obj))
+      done = DEFAULT_HANDLER(obj)(obj, evt);
+
+    if (!IS_EVENT_TYPE(evt, COMMAND)) break;
+    done = RT_FALSE;
+
+    rt_kprintf("--- progress handle %x\n", evt->command.command_id);
+    if (evt->command.command_id == CMD_PIC_SHOW) {
+      WIDGET_FLAG_CLEAR(obj, SHOWN);
+    } else if (evt->command.command_id == CMD_PIC_DELAY) {
+      WIDGET_FLAG_SET(obj, SHOWN);
+      rtgui_progress_set_value(TO_PROGRESS(obj), 0);
+    }
   } while (0);
 
   return done;
 }
 
 static rt_bool_t picShow_btn1_handler(void *obj, rtgui_evt_generic_t *evt) {
-  rt_bool_t done;
-
-  done = RT_FALSE;
+  rt_bool_t done = RT_FALSE;
 
   do {
     static struct picShow_info info;
@@ -148,8 +185,6 @@ static rt_bool_t picShow_btn1_handler(void *obj, rtgui_evt_generic_t *evt) {
       picEvt->command.type = (rt_int32_t)&info;
       picEvt->command.command_id = CMD_PIC_SHOW;
       rtgui_request(picShow, picEvt, RT_WAITING_FOREVER);
-      timeout = RT_FALSE;
-      if (!pause) rt_timer_start(&picTmr);
     }
     done = RT_TRUE;
   } while (0);
@@ -158,9 +193,7 @@ static rt_bool_t picShow_btn1_handler(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 static rt_bool_t picShow_btn2_handler(void *obj, rtgui_evt_generic_t *evt) {
-  rt_bool_t done;
-
-  done = RT_FALSE;
+  rt_bool_t done = RT_FALSE;
 
   do {
     if (DEFAULT_HANDLER(obj))
@@ -172,14 +205,15 @@ static rt_bool_t picShow_btn2_handler(void *obj, rtgui_evt_generic_t *evt) {
     if (IS_BUTTON_FLAG(obj, PRESS)) {
       rt_kprintf("+++ %s pressed\n", MEMBER_GETTER(button, text)(obj));
       MEMBER_SETTER(button, text)(obj, "Loop");
-      rt_timer_stop(&picTmr);
+      rtgui_timer_stop(picTmr);
       timeout = RT_FALSE;
+      tmrCnt = 0;
       pause = RT_TRUE;
     } else {
       rt_kprintf("+++ %s unpressed\n", MEMBER_GETTER(button, text)(obj));
       MEMBER_SETTER(button, text)(obj, "Pause");
       pause = RT_FALSE;
-      rt_timer_start(&picTmr);
+      rtgui_timer_start(picTmr);
     }
 
     done = RT_TRUE;
@@ -188,11 +222,23 @@ static rt_bool_t picShow_btn2_handler(void *obj, rtgui_evt_generic_t *evt) {
   return done;
 }
 
+static void picShow_timeout(rtgui_timer_t *tmr, void *param) {
+  (void)param;
+  tmrCnt++;
+  rtgui_progress_set_value(bar, (rt_uint16_t)(
+    (rt_uint32_t)tmrCnt * 100 / TIMER_COUNT));
+  if (tmrCnt >= TIMER_COUNT) {
+    rtgui_timer_stop(tmr);
+    tmrCnt = 0;
+    timeout = RT_TRUE;
+  }
+}
+
 static void picShow_entry(void *param) {
   rtgui_rect_t rect;
   rtgui_win_t *win;
-  rtgui_label_t* label;
   rtgui_container *cntr;
+  rtgui_label_t* label;
   rtgui_box_t *box;
   rtgui_button_t *btn1, *btn2;
   (void)param;
@@ -201,6 +247,13 @@ static void picShow_entry(void *param) {
   CREATE_APP_INSTANCE(picShow, RT_NULL, "PicShow");
   if (!picShow) {
     rt_kprintf("Create app failed!\n");
+    return;
+  }
+
+  picTmr = rtgui_timer_create(TIMER_TICKS, RT_TIMER_FLAG_PERIODIC,
+    picShow_timeout, RT_NULL);
+  if (!picTmr) {
+    rt_kprintf("Create timer failed!\n");
     return;
   }
 
@@ -213,7 +266,7 @@ static void picShow_entry(void *param) {
     return;
   }
 
-  /* create label in window */
+  /* label */
   CREATE_LABEL_INSTANCE(label, picShow_label_handler, "PicShow Example");
   if (!label) {
       rt_kprintf("Create label failed!\n");
@@ -227,6 +280,15 @@ static void picShow_entry(void *param) {
   rtgui_widget_set_rect(TO_WIDGET(label), &rect);
   rtgui_container_add_child(TO_CONTAINER(win), TO_WIDGET(label));
 
+  /* progress bar */
+  CREATE_PROGRESS_INSTANCE(bar, picShow_progress_handler, RTGUI_HORIZONTAL, 100, &rect);
+  if (!bar) {
+      rt_kprintf("Create progress failed!\n");
+      return;
+  }
+  rtgui_container_add_child(TO_CONTAINER(win), TO_WIDGET(bar));
+
+  /* buttons in container */
   cntr = TO_CONTAINER(CREATE_INSTANCE(container, RT_NULL));
   CREATE_BOX_INSTANCE(box, RTGUI_HORIZONTAL, 1);
   rtgui_container_set_box(cntr, box);
@@ -242,7 +304,6 @@ static void picShow_entry(void *param) {
   rect.y1 = rect.y2 - 30;
   rtgui_widget_set_rect(TO_WIDGET(cntr), &rect);  
   rtgui_container_add_child(TO_CONTAINER(win), TO_WIDGET(cntr));
-  rtgui_container_layout(cntr);
 
   rtgui_win_show(win, RT_FALSE);
   rtgui_app_run(picShow);
@@ -251,18 +312,8 @@ static void picShow_entry(void *param) {
   rtgui_app_uninit(picShow);
 }
 
-static void picShow_timeout(void *param) {
-    (void)param;
-    timeout = RT_TRUE;
-}
-
 // RT-Thread function called by "RT_T.begin()"
 void rt_setup(void) {
-  rt_timer_init(
-    &picTmr, "picTmr",
-    picShow_timeout, RT_NULL,
-    TIMER_TICKS, RT_TIMER_FLAG_ONE_SHOT);
-
   rt_thread_t tid = rt_thread_create(
     "picShow", picShow_entry, RT_NULL, 2048, 25, 10);
   if (tid) {
@@ -294,17 +345,18 @@ void loop() {
     }
 
     while (!get_pic(&info)) {
-      rt_kprintf("+++ got %s\n", info.path);
       rt_thread_sleep(100);
       continue;
     }
+    rt_kprintf("+++ send %s\n", info.path);
 
     RTGUI_CREATE_EVENT(evt, COMMAND, RT_WAITING_FOREVER);
     evt->command.wid = RT_NULL;
     evt->command.type = (rt_int32_t)&info;
     evt->command.command_id = CMD_PIC_SHOW;
     rtgui_request(picShow, evt, RT_WAITING_FOREVER);
+    // rtgui_request_sync(picShow, evt);
+
     timeout = RT_FALSE;
-    rt_timer_start(&picTmr);
   }
 }

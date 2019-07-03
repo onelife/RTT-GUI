@@ -98,10 +98,10 @@ static void rtgui_timer_timeout(void *param) {
 
     if (RTGUI_TIMER_ST_RUNNING != timer->state) return;
 
-    /* send RTGUI_EVENT_TIMER in interrupt? */
+    /* send RTGUI_EVENT_TIMER in rt timer timeout hdl */
     _timer_evt.timer = timer;
-    if (RT_EOK != rtgui_request(rtgui_get_server(),
-        (rtgui_evt_generic_t *)&_timer_evt, RT_WAITING_NO))
+    if (RT_EOK != rtgui_request(timer->app, (rtgui_evt_generic_t *)&_timer_evt,
+        RT_WAITING_NO))
         return;
     timer->pending_cnt++;
 }

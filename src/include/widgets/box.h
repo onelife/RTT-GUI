@@ -22,18 +22,16 @@
  * 2009-10-16     Bernard      first version
  * 2019-05-18     onelife      refactor
  */
-#ifndef __TO_BOX_H__
-#define __TO_BOX_H__
-
-#include "../rtgui.h"
-// #include "./widget.h"
-// #include "./container.h"
+#ifndef __RTGUI_BOX_H__
+#define __RTGUI_BOX_H__
+/* Includes ------------------------------------------------------------------*/
+#include "include/rtgui.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
+/* Exported defines ----------------------------------------------------------*/
 #define CREATE_BOX_INSTANCE(obj, ort, sz)   \
     do {                                    \
         obj = (rtgui_box_t *)CREATE_INSTANCE(box, RT_NULL); \
@@ -43,7 +41,9 @@ extern "C" {
         }                                   \
     } while (0)
 
-
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Exported functions ------------------------------------------------------- */
 void rtgui_box_layout(rtgui_box_t *box);
 void rtgui_box_layout_rect(rtgui_box_t *box, rtgui_rect_t *rect);
 
@@ -51,4 +51,4 @@ void rtgui_box_layout_rect(rtgui_box_t *box, rtgui_rect_t *rect);
 }
 #endif
 
-#endif
+#endif /* __RTGUI_BOX_H__ */

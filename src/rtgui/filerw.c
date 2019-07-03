@@ -292,21 +292,17 @@ rtgui_filerw_t *rtgui_filerw_create_file(const char *filename,
     return RT_NULL;
 }
 
-int rtgui_filerw_unlink(const char *filename)
-{
-#ifdef _WIN32_NATIVE
-    return _unlink(filename);
-#else
-#ifndef RT_USING_DFS
-    /* no unlink function */
-    return -1;
-#else
-    return unlink(filename);
-#endif
-#endif
+int rtgui_filerw_unlink(const char *filename) {
+    #ifndef RT_USING_DFS
+        /* no unlink function */
+        (void)filename;
+        return -1;
+    #else
+        return unlink(filename);
+    #endif
 }
 
-#endif
+#endif /* GUIENGINE_USING_DFS_FILERW */
 
 rtgui_filerw_t *rtgui_filerw_create_mem(const rt_uint8_t *mem, rt_size_t size)
 {

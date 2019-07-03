@@ -12,6 +12,7 @@ extern "C" {
     #include "include/widgets/container.h"
     #include "include/widgets/label.h"
     #include "include/widgets/button.h"
+    #include "include/widgets/progress.h"
     #include "include/widgets/window.h"
     #include "include/app/app.h"
 }
