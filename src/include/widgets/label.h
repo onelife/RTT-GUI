@@ -25,10 +25,20 @@
 #ifndef __RTGUI_LABEL_H__
 #define __RTGUI_LABEL_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 
+#ifdef IMPORT_TYPES
+
 /* Exported defines ----------------------------------------------------------*/
+#define _LABEL_METADATA                     CLASS_METADATA(label)
+#define IS_LABEL(obj)                       IS_INSTANCE(obj, _LABEL_METADATA)
+#define TO_LABEL(obj)                       CAST_(obj, _LABEL_METADATA, rtgui_label_t)
+
 #define CREATE_LABEL_INSTANCE(obj, hdl, text) \
     do {                                    \
         obj = (rtgui_label_t *)CREATE_INSTANCE(label, hdl); \
@@ -40,11 +50,26 @@
 #define DELETE_LABEL_INSTANCE(obj)          DELETE_INSTANCE(obj)
 
 /* Exported types ------------------------------------------------------------*/
+struct rtgui_label {
+    rtgui_widget_t _super;
+    char *text;
+};
+
 /* Exported constants --------------------------------------------------------*/
+CLASS_PROTOTYPE(label);
+
+#undef __RTGUI_LABEL_H__
+#else /* IMPORT_TYPES */
+
 /* Exported functions ------------------------------------------------------- */
 rt_err_t *rtgui_label_init(rtgui_label_t *lab, const char *text);
 void rtgui_label_set_text(rtgui_label_t *lab, const char *text);
 MEMBER_GETTER_PROTOTYPE(rtgui_label_t, label, char*, text);
-void rtgui_theme_draw_label(rtgui_label_t *lab);
+
+#endif /* IMPORT_TYPES */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __RTGUI_LABEL_H__ */

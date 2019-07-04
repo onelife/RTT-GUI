@@ -23,8 +23,6 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/region.h"
-#include "include/driver.h"
 #ifdef RTGUI_USING_MOUSE_CURSOR
 #include "include/images/image.h"
 #endif
@@ -640,13 +638,13 @@ static void rtgui_winrect_save()
 
 void rtgui_mouse_monitor_append(rt_slist_t *head, rtgui_rect_t *rect)
 {
-    struct rtgui_mouse_monitor *mmonitor;
+    rtgui_mouse_monitor_t *mmonitor;
 
     /* check parameters */
     if (head == RT_NULL || rect == RT_NULL) return;
 
     /* create a mouse monitor node */
-    mmonitor = (struct rtgui_mouse_monitor *) rtgui_malloc(sizeof(struct rtgui_mouse_monitor));
+    mmonitor = (rtgui_mouse_monitor_t *) rtgui_malloc(sizeof(rtgui_mouse_monitor_t));
     if (mmonitor == RT_NULL) return; /* no memory */
 
     /* set mouse monitor node */
@@ -660,14 +658,14 @@ void rtgui_mouse_monitor_append(rt_slist_t *head, rtgui_rect_t *rect)
 void rtgui_mouse_monitor_remove(rt_slist_t *head, rtgui_rect_t *rect)
 {
     rt_slist_t *node;
-    struct rtgui_mouse_monitor *mmonitor;
+    rtgui_mouse_monitor_t *mmonitor;
 
     /* check parameters */
     if (head == RT_NULL || rect == RT_NULL) return;
 
     for (node = head->next; node != RT_NULL; node = node->next)
     {
-        mmonitor = rt_slist_entry(node, struct rtgui_mouse_monitor, list);
+        mmonitor = rt_slist_entry(node, rtgui_mouse_monitor_t, list);
         if (mmonitor->rect.x1 == rect->x1 &&
                 mmonitor->rect.x2 == rect->x2 &&
                 mmonitor->rect.y1 == rect->y1 &&
@@ -691,8 +689,8 @@ rt_bool_t rtgui_mouse_monitor_contains_point(rt_slist_t *head, int x, int y)
 
     rt_slist_for_each(node, head)
     {
-        struct rtgui_mouse_monitor *monitor = rt_slist_entry(node,
-                                              struct rtgui_mouse_monitor, list);
+        rtgui_mouse_monitor_t *monitor = rt_slist_entry(node,
+                                              rtgui_mouse_monitor_t, list);
 
         if (rtgui_rect_contains_point(&(monitor->rect), x, y) == RT_EOK)
         {

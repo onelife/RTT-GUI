@@ -24,6 +24,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
+#include "include/font/font.h"
 #include "include/widgets/label.h"
 
 #ifdef RT_USING_ULOG
@@ -43,6 +44,7 @@
 static void _label_constructor(void *obj);
 static void _label_destructor(void *obj);
 static rt_bool_t _label_event_handler(void *obj, rtgui_evt_generic_t *evt);
+static void _theme_draw_label(rtgui_label_t *lab);
 
 /* Private variables ---------------------------------------------------------*/
 RTGUI_CLASS(
@@ -77,7 +79,7 @@ static rt_bool_t _label_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     switch (evt->base.type) {
     case RTGUI_EVENT_PAINT:
-        rtgui_theme_draw_label(lab);
+        _theme_draw_label(lab);
         break;
 
     default:
@@ -89,6 +91,28 @@ static rt_bool_t _label_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     EVT_LOG("[LabEVT] %s @%p from %s done %d", rtgui_event_text(evt), evt,
         evt->base.origin->mb->parent.parent.name, done);
     return done;
+}
+
+static void _theme_draw_label(rtgui_label_t *lab) {
+    do {
+        rtgui_dc_t *dc;
+        rtgui_rect_t rect;
+
+        dc = rtgui_dc_begin_drawing(TO_WIDGET(lab));
+        if (!dc) {
+            LOG_E("no dc");
+            break;
+        }
+
+        rtgui_widget_get_rect(TO_WIDGET(lab), &rect);
+        LOG_W("draw label (%d,%d)-(%d, %d)", rect.x1, rect.y1, rect.x2,
+            rect.y2);
+        rtgui_dc_fill_rect(dc, &rect);
+        rtgui_dc_draw_text(dc, LABEL_GETTER(text)(lab), &rect);
+
+        rtgui_dc_end_drawing(dc, RT_TRUE);
+        LOG_W("draw label done");
+    } while (0);
 }
 
 /* Public functions ----------------------------------------------------------*/
@@ -124,25 +148,3 @@ void rtgui_label_set_text(rtgui_label_t *lab, const char *text) {
 RTM_EXPORT(rtgui_label_set_text);
 
 RTGUI_MEMBER_GETTER(rtgui_label_t, label, char*, text);
-
-void rtgui_theme_draw_label(rtgui_label_t *lab) {
-    do {
-        rtgui_dc_t *dc;
-        rtgui_rect_t rect;
-
-        dc = rtgui_dc_begin_drawing(TO_WIDGET(lab));
-        if (!dc) {
-            LOG_E("no dc");
-            break;
-        }
-
-        rtgui_widget_get_rect(TO_WIDGET(lab), &rect);
-        LOG_W("draw label (%d,%d)-(%d, %d)", rect.x1, rect.y1, rect.x2,
-            rect.y2);
-        rtgui_dc_fill_rect(dc, &rect);
-        rtgui_dc_draw_text(dc, LABEL_GETTER(text)(lab), &rect);
-
-        rtgui_dc_end_drawing(dc, RT_TRUE);
-        LOG_W("draw label done");
-    } while (0);
-}

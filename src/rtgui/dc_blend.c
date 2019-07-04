@@ -74,6 +74,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "include/rtgui.h"
 #include "include/dc_draw.h"
 
 #define hw_driver               (rtgui_get_gfx_device())
@@ -659,7 +660,7 @@ void rtgui_dc_draw_aa_lines(rtgui_dc_t * dst, const struct rtgui_point * points,
 }
 
 static int
-_dc_blend_point_rgb565(rtgui_dc_t * dst, int x, int y, enum RTGUI_BLENDMODE blendMode, rt_uint8_t r,
+_dc_blend_point_rgb565(rtgui_dc_t * dst, int x, int y, rtgui_blend_mode_t blendMode, rt_uint8_t r,
                        rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
 {
     unsigned inva = 0xff - a;
@@ -683,7 +684,7 @@ _dc_blend_point_rgb565(rtgui_dc_t * dst, int x, int y, enum RTGUI_BLENDMODE blen
 }
 
 static int
-_dc_blend_point_bgr565(rtgui_dc_t * dst, int x, int y, enum RTGUI_BLENDMODE blendMode, rt_uint8_t r,
+_dc_blend_point_bgr565(rtgui_dc_t * dst, int x, int y, rtgui_blend_mode_t blendMode, rt_uint8_t r,
                        rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
 {
     unsigned inva = 0xff - a;
@@ -707,7 +708,7 @@ _dc_blend_point_bgr565(rtgui_dc_t * dst, int x, int y, enum RTGUI_BLENDMODE blen
 }
 
 static int
-_dc_blend_point_rgb888(rtgui_dc_t * dst, int x, int y, enum RTGUI_BLENDMODE blendMode, rt_uint8_t r,
+_dc_blend_point_rgb888(rtgui_dc_t * dst, int x, int y, rtgui_blend_mode_t blendMode, rt_uint8_t r,
                        rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
 {
     unsigned inva = 0xff - a;
@@ -731,7 +732,7 @@ _dc_blend_point_rgb888(rtgui_dc_t * dst, int x, int y, enum RTGUI_BLENDMODE blen
 }
 
 static int
-_dc_blend_point_argb8888(rtgui_dc_t * dst, int x, int y, enum RTGUI_BLENDMODE blendMode,
+_dc_blend_point_argb8888(rtgui_dc_t * dst, int x, int y, rtgui_blend_mode_t blendMode,
                          rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
 {
     unsigned inva = 0xff - a;
@@ -755,7 +756,7 @@ _dc_blend_point_argb8888(rtgui_dc_t * dst, int x, int y, enum RTGUI_BLENDMODE bl
 }
 
 void
-rtgui_dc_blend_point(rtgui_dc_t * dst, int x, int y, enum RTGUI_BLENDMODE blendMode, rt_uint8_t r,
+rtgui_dc_blend_point(rtgui_dc_t * dst, int x, int y, rtgui_blend_mode_t blendMode, rt_uint8_t r,
                      rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
 {
     RT_ASSERT(dst != RT_NULL);
@@ -831,12 +832,12 @@ RTM_EXPORT(rtgui_dc_blend_point);
 
 void
 rtgui_dc_blend_points(rtgui_dc_t *dst, const rtgui_point_t *points, int count,
-                      enum RTGUI_BLENDMODE blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
+                      rtgui_blend_mode_t blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
 {
     int i;
     int x, y;
     int (*func)(rtgui_dc_t * dst, int x, int y,
-                enum RTGUI_BLENDMODE blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a) = NULL;
+                rtgui_blend_mode_t blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a) = NULL;
 
     RT_ASSERT(dst != RT_NULL);
     if (!rtgui_dc_get_visible(dst)) return;
@@ -920,7 +921,7 @@ RTM_EXPORT(rtgui_dc_blend_points);
 
 static void
 _dc_blend_line_rgb565(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
-                      enum RTGUI_BLENDMODE blendMode, rt_uint8_t _r, rt_uint8_t _g, rt_uint8_t _b, rt_uint8_t _a,
+                      rtgui_blend_mode_t blendMode, rt_uint8_t _r, rt_uint8_t _g, rt_uint8_t _b, rt_uint8_t _a,
                       rt_bool_t draw_end)
 {
     unsigned r, g, b, a, inva;
@@ -1025,7 +1026,7 @@ _dc_blend_line_rgb565(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
 
 static void
 _dc_blend_line_bgr565(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
-                      enum RTGUI_BLENDMODE blendMode, rt_uint8_t _r, rt_uint8_t _g, rt_uint8_t _b, rt_uint8_t _a,
+                      rtgui_blend_mode_t blendMode, rt_uint8_t _r, rt_uint8_t _g, rt_uint8_t _b, rt_uint8_t _a,
                       rt_bool_t draw_end)
 {
     unsigned r, g, b, a, inva;
@@ -1130,7 +1131,7 @@ _dc_blend_line_bgr565(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
 
 static void
 _dc_blend_line_rgb888(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
-                      enum RTGUI_BLENDMODE blendMode, rt_uint8_t _r, rt_uint8_t _g, rt_uint8_t _b, rt_uint8_t _a,
+                      rtgui_blend_mode_t blendMode, rt_uint8_t _r, rt_uint8_t _g, rt_uint8_t _b, rt_uint8_t _a,
                       rt_bool_t draw_end)
 {
     unsigned r, g, b, a, inva;
@@ -1280,7 +1281,7 @@ _dc_blend_line_rgb888(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
 
 static void
 _dc_blend_line_argb8888(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
-                        enum RTGUI_BLENDMODE blendMode, rt_uint8_t _r, rt_uint8_t _g, rt_uint8_t _b, rt_uint8_t _a,
+                        rtgui_blend_mode_t blendMode, rt_uint8_t _r, rt_uint8_t _g, rt_uint8_t _b, rt_uint8_t _a,
                         rt_bool_t draw_end)
 {
     unsigned r, g, b, a, inva;
@@ -1385,7 +1386,7 @@ _dc_blend_line_argb8888(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
 
 typedef void (*BlendLineFunc) (rtgui_dc_t * dst,
                                int x1, int y1, int x2, int y2,
-                               enum RTGUI_BLENDMODE blendMode,
+                               rtgui_blend_mode_t blendMode,
                                rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a,
                                rt_bool_t draw_end);
 
@@ -1411,7 +1412,7 @@ static void _do_blend_line(rtgui_dc_t * dst,
                            rtgui_color_t color,
                            int x1, int y1,
                            int x2, int y2,
-                           enum RTGUI_BLENDMODE blendMode,
+                           rtgui_blend_mode_t blendMode,
                            rt_bool_t draw_end)
 {
     BlendLineFunc func;
@@ -1507,7 +1508,7 @@ static void _do_blend_line(rtgui_dc_t * dst,
 
 void
 rtgui_dc_blend_line(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
-                    enum RTGUI_BLENDMODE blendMode, rtgui_color_t color)
+                    rtgui_blend_mode_t blendMode, rtgui_color_t color)
 {
     RT_ASSERT(dst != RT_NULL);
     if (!rtgui_dc_get_visible(dst))
@@ -1522,7 +1523,7 @@ RTM_EXPORT(rtgui_dc_blend_line);
 
 void
 rtgui_dc_blend_lines(rtgui_dc_t * dst, const rtgui_point_t * points, int count,
-                     enum RTGUI_BLENDMODE blendMode, rtgui_color_t color)
+                     rtgui_blend_mode_t blendMode, rtgui_color_t color)
 {
     int i;
 
@@ -1565,7 +1566,7 @@ RTM_EXPORT(rtgui_dc_blend_lines);
 
 static void
 _dc_blend_fill_rect_rgb565(rtgui_dc_t * dst, const rtgui_rect_t * rect,
-                           enum RTGUI_BLENDMODE blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
+                           rtgui_blend_mode_t blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
 {
     unsigned inva = 0xff - a;
 
@@ -1588,7 +1589,7 @@ _dc_blend_fill_rect_rgb565(rtgui_dc_t * dst, const rtgui_rect_t * rect,
 
 static void
 _dc_blend_fill_rect_bgr565(rtgui_dc_t * dst, const rtgui_rect_t * rect,
-                           enum RTGUI_BLENDMODE blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
+                           rtgui_blend_mode_t blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
 {
     unsigned inva = 0xff - a;
 
@@ -1611,7 +1612,7 @@ _dc_blend_fill_rect_bgr565(rtgui_dc_t * dst, const rtgui_rect_t * rect,
 
 static void
 _dc_blend_fill_rect_rgb888(rtgui_dc_t * dst, const rtgui_rect_t * rect,
-                           enum RTGUI_BLENDMODE blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
+                           rtgui_blend_mode_t blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
 {
     unsigned inva = 0xff - a;
 
@@ -1649,7 +1650,7 @@ _dc_blend_fill_rect_rgb888(rtgui_dc_t * dst, const rtgui_rect_t * rect,
 
 static void
 _dc_blend_fill_rect_argb8888(rtgui_dc_t * dst, const rtgui_rect_t * rect,
-                             enum RTGUI_BLENDMODE blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
+                             rtgui_blend_mode_t blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a)
 {
     unsigned inva = 0xff - a;
 
@@ -1671,11 +1672,11 @@ _dc_blend_fill_rect_argb8888(rtgui_dc_t * dst, const rtgui_rect_t * rect,
 }
 
 typedef void (*BlendFillFunc)(rtgui_dc_t * dst, const rtgui_rect_t * rect,
-                              enum RTGUI_BLENDMODE blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a);
+                              rtgui_blend_mode_t blendMode, rt_uint8_t r, rt_uint8_t g, rt_uint8_t b, rt_uint8_t a);
 
 void
 rtgui_dc_blend_fill_rect(rtgui_dc_t* dst, const rtgui_rect_t *rect,
-                         enum RTGUI_BLENDMODE blendMode, rtgui_color_t color)
+                         rtgui_blend_mode_t blendMode, rtgui_color_t color)
 {
     unsigned r, g, b, a;
     BlendFillFunc func = RT_NULL;
@@ -1794,7 +1795,7 @@ RTM_EXPORT(rtgui_dc_blend_fill_rect);
 
 void
 rtgui_dc_blend_fill_rects(rtgui_dc_t * dst, const rtgui_rect_t *rects, int count,
-                          enum RTGUI_BLENDMODE blendMode, rtgui_color_t color)
+                          rtgui_blend_mode_t blendMode, rtgui_color_t color)
 {
     int i;
     rtgui_rect_t rect;

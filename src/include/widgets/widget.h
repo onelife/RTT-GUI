@@ -27,15 +27,70 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /* Includes ------------------------------------------------------------------*/
-#include "../rtgui.h"
-#include "../region.h"
-// #include "../color.h"
-// #include "../font/font.h"
+#include "include/rtgui.h"
+
+#ifdef IMPORT_TYPES
 
 /* Exported defines ----------------------------------------------------------*/
+#define _WIDGET_METADATA                    CLASS_METADATA(widget)
+#define IS_WIDGET(obj)                      IS_INSTANCE(obj, _WIDGET_METADATA)
+#define TO_WIDGET(obj)                      CAST_(obj, _WIDGET_METADATA, rtgui_widget_t)
+
+#define WIDGET_ALIGN(w)                     (TO_WIDGET(w)->align)
+#define WIDGET_BORDER(w)                    (TO_WIDGET(w)->border)
+#define WIDGET_BORDER_STYLE(w)              (TO_WIDGET(w)->border_style)
+#define WIDGET_FOREGROUND(w)                (TO_WIDGET(w)->gc.foreground)
+#define WIDGET_BACKGROUND(w)                (TO_WIDGET(w)->gc.background)
+#define WIDGET_TEXTALIGN(w)                 (TO_WIDGET(w)->gc.textalign)
+#define WIDGET_FONT(w)                      (TO_WIDGET(w)->gc.font)
+#define WIDGET_DC(w)                        ((rtgui_dc_t *)&((w)->dc_type))
+
+#define WIDGET_FLAG(w)                      (TO_WIDGET(w)->flag)
+#define WIDGET_FLAG_CLEAR(w, fname)         WIDGET_FLAG(w) &= ~RTGUI_WIDGET_FLAG_##fname
+#define WIDGET_FLAG_SET(w, fname)           WIDGET_FLAG(w) |= RTGUI_WIDGET_FLAG_##fname
+#define IS_WIDGET_FLAG(w, fname)            (WIDGET_FLAG(w) & RTGUI_WIDGET_FLAG_##fname)
+
 /* Exported types ------------------------------------------------------------*/
+typedef enum rtgui_widget_flag {
+    RTGUI_WIDGET_FLAG_DEFAULT               = 0x0000,
+    RTGUI_WIDGET_FLAG_SHOWN                 = 0x0001,
+    RTGUI_WIDGET_FLAG_DISABLE               = 0x0002,
+    RTGUI_WIDGET_FLAG_FOCUS                 = 0x0004,
+    RTGUI_WIDGET_FLAG_TRANSPARENT           = 0x0008,
+    RTGUI_WIDGET_FLAG_FOCUSABLE             = 0x0010,
+    RTGUI_WIDGET_FLAG_DC_VISIBLE            = 0x0100,
+    RTGUI_WIDGET_FLAG_IN_ANIM               = 0x0200,
+} rtgui_widget_flag_t;
+
+struct rtgui_widget {
+    rtgui_obj_t _super;                     /* super class */
+    rtgui_widget_t *parent;                 /* parent widget */
+    rtgui_win_t *toplevel;                  /* parent window */
+    rt_slist_t sibling;                     /* children and sibling */
+    rt_uint32_t flag;
+    rt_int32_t align;
+    rt_uint16_t border;
+    rt_uint16_t border_style;
+    rt_int16_t min_width, min_height;
+    rtgui_rect_t extent;
+    rtgui_rect_t extent_visiable;           /* including children */
+    rtgui_region_t clip;
+    rtgui_evt_hdl_t on_focus;
+    rtgui_evt_hdl_t on_unfocus;
+    rtgui_gc_t gc;                          /* graphic context */
+    rt_ubase_t dc_type;                     /* hardware device context */
+    const rtgui_dc_engine_t *dc_engine;     // TODO(onelife): struct rtgui_dc
+    rt_uint32_t user_data;
+};
+
 /* Exported constants --------------------------------------------------------*/
+CLASS_PROTOTYPE(widget);
+
+#undef __RTGUI_WIDGET_H__
+#else /* IMPORT_TYPES */
+
 /* Exported functions ------------------------------------------------------- */
 MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, wgt, rtgui_widget_t*, parent);
 rtgui_win_t *rtgui_widget_get_toplevel(rtgui_widget_t *wgt);
@@ -83,6 +138,8 @@ rt_bool_t rtgui_widget_onupdate_toplvl(rtgui_obj_t *obj, void *param);
 rt_bool_t rtgui_widget_is_in_animation(rtgui_widget_t *wgt);
 /* dump widget information */
 void rtgui_widget_dump(rtgui_widget_t *wgt);
+
+#endif /* IMPORT_TYPES */
 
 #ifdef __cplusplus
 }

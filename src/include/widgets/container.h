@@ -30,12 +30,28 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "./widget.h"
-#include "./box.h"
+#include "include/rtgui.h"
+
+#ifdef IMPORT_TYPES
 
 /* Exported defines ----------------------------------------------------------*/
+#define _CONTAINER_METADATA                 CLASS_METADATA(container)
+#define IS_CONTAINER(obj)                   IS_INSTANCE((obj), _CONTAINER_METADATA)
+#define TO_CONTAINER(obj)                   CAST_(obj, _CONTAINER_METADATA, rtgui_container_t)
+
 /* Exported types ------------------------------------------------------------*/
+struct rtgui_container {
+    rtgui_widget_t _super;
+    rtgui_box_t *layout_box;
+    rt_slist_t children;
+};
+
 /* Exported constants --------------------------------------------------------*/
+CLASS_PROTOTYPE(container);
+
+#undef __RTGUI_CNTR_H__
+#else /* IMPORT_TYPES */
+
 /* Exported functions ------------------------------------------------------- */
 rt_bool_t rtgui_container_dispatch_mouse_event(rtgui_container_t *container,
     rtgui_evt_generic_t *event);
@@ -45,8 +61,10 @@ void rtgui_container_remove_child(rtgui_container_t *cntr,
 rtgui_widget_t *rtgui_container_get_first_child(rtgui_container_t *cntr);
 void rtgui_container_set_box(rtgui_container_t *container, rtgui_box_t *box);
 void rtgui_container_layout(rtgui_container_t *container);
-rtgui_obj_t* rtgui_container_get_object(rtgui_container_t *cntr,
-    rt_uint32_t id);
+// rtgui_obj_t* rtgui_container_get_object(rtgui_container_t *cntr,
+//     rt_uint32_t id);
+
+#endif /* IMPORT_TYPES */
 
 #ifdef __cplusplus
 }

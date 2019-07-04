@@ -25,9 +25,10 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/arch.h"
 #include "include/images/image.h"
+#include "include/font/font.h"
 #include "include/app/app.h"
+#include "include/arch.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -54,7 +55,6 @@ static rt_uint8_t ack_pool[SYNC_ACK_NUMBER];
 static rtgui_event_timer_t _timer_evt = {
     .base = {
         .type = RTGUI_EVENT_TIMER,
-        .user = 0,
         .origin = RT_NULL,
         .ack = RT_NULL,
     },
@@ -116,9 +116,9 @@ rtgui_timer_t *rtgui_timer_create(rt_int32_t tick, rt_uint8_t flag,
         return RT_NULL;
     }
     timer->app = rtgui_app_self();
-    timer->pending_cnt = 0;
     timer->state = RTGUI_TIMER_ST_INIT;
     timer->timeout = timeout;
+    timer->pending_cnt = 0;
     timer->user_data = param;
 
     rt_timer_init(
@@ -485,8 +485,8 @@ static void rtgui_log_event(rtgui_app_t* tgt, rtgui_evt_generic_t *evt) {
     case RTGUI_EVENT_MOUSE_BUTTON:
     case RTGUI_EVENT_MOUSE_MOTION:
         rt_kprintf("(%03d, %03d) <%s %s> %s", evt->mouse.x, evt->mouse.y,
-            (evt->mouse.button & RTGUI_MOUSE_BUTTON_LEFT) ? "L" : "R",
-            (evt->mouse.button & RTGUI_MOUSE_BUTTON_DOWN) ? "down" : "up",
+            (evt->mouse.button & MOUSE_BUTTON_LEFT) ? "L" : "R",
+            (evt->mouse.button & MOUSE_BUTTON_DOWN) ? "down" : "up",
             evt->mouse.wid ? evt->mouse.wid->title : "???");
         break;
 

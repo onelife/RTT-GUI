@@ -28,20 +28,22 @@
 extern "C" {
 #endif
 
-#include "./rtgui.h"
-#include "./font/font.h"
-#include "./driver.h"
-#include "./widgets/widget.h"
+/* Includes ------------------------------------------------------------------*/
+#include "include/rtgui.h"
 
+#ifdef IMPORT_TYPES
+
+/* Exported defines ----------------------------------------------------------*/
 #ifndef M_PI
-#define M_PI    3.14159265358979323846
+# define M_PI    3.14159265358979323846
 #endif
 
-enum rtgui_dc_type {
+/* Exported types ------------------------------------------------------------*/
+typedef enum rtgui_dc_type {
     RTGUI_DC_HW,
     RTGUI_DC_CLIENT,
     RTGUI_DC_BUFFER,
-};
+} rtgui_dc_type_t;
 
 struct rtgui_dc_engine {
     /* interface */
@@ -54,6 +56,14 @@ struct rtgui_dc_engine {
     void (*blit)(rtgui_dc_t *dc, struct rtgui_point *dc_point, rtgui_dc_t *dest, rtgui_rect_t *rect);
 
     rt_bool_t (*fini)(rtgui_dc_t *dc);
+};
+
+/* device context/drawable canvas */
+struct rtgui_dc {
+    /* type of device context */
+    rtgui_dc_type_t type;
+    /* dc engine */
+    const rtgui_dc_engine_t *engine;
 };
 
 /*
@@ -95,6 +105,12 @@ struct rtgui_dc_buffer {
 #define RTGUI_DC_FONT(dc)       (rtgui_dc_get_gc(RTGUI_DC(dc))->font)
 #define RTGUI_DC_TEXTALIGN(dc)  (rtgui_dc_get_gc(RTGUI_DC(dc))->textalign)
 
+/* Exported constants --------------------------------------------------------*/
+
+#undef __RTGUI_DC_H__
+#else /* IMPORT_TYPES */
+
+/* Exported functions ------------------------------------------------------- */
 /* create a buffer dc */
 rtgui_dc_t *rtgui_dc_buffer_create(int width, int height);
 rtgui_dc_t *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w, int h);
@@ -163,14 +179,14 @@ void rtgui_dc_fill_ellipse(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_
 void rtgui_dc_draw_aa_line(rtgui_dc_t * dst,int x1,int y1,int x2,int y2);
 void rtgui_dc_draw_aa_lines(rtgui_dc_t * dst,const struct rtgui_point * points,int count);
 
-void rtgui_dc_blend_point(rtgui_dc_t * dst,int x,int y,enum RTGUI_BLENDMODE blendMode,rt_uint8_t r,rt_uint8_t g,rt_uint8_t b,rt_uint8_t a);
-void rtgui_dc_blend_points(rtgui_dc_t * dst,const rtgui_point_t * points,int count,enum RTGUI_BLENDMODE blendMode,rt_uint8_t r,rt_uint8_t g,rt_uint8_t b,rt_uint8_t a);
+void rtgui_dc_blend_point(rtgui_dc_t * dst,int x,int y,rtgui_blend_mode_t blendMode,rt_uint8_t r,rt_uint8_t g,rt_uint8_t b,rt_uint8_t a);
+void rtgui_dc_blend_points(rtgui_dc_t * dst,const rtgui_point_t * points,int count,rtgui_blend_mode_t blendMode,rt_uint8_t r,rt_uint8_t g,rt_uint8_t b,rt_uint8_t a);
 
-void rtgui_dc_blend_line(rtgui_dc_t * dst,int x1,int y1,int x2,int y2,enum RTGUI_BLENDMODE blendMode,rtgui_color_t color);
-void rtgui_dc_blend_lines(rtgui_dc_t * dst,const rtgui_point_t * points,int count,enum RTGUI_BLENDMODE blendMode,rtgui_color_t color);
+void rtgui_dc_blend_line(rtgui_dc_t * dst,int x1,int y1,int x2,int y2,rtgui_blend_mode_t blendMode,rtgui_color_t color);
+void rtgui_dc_blend_lines(rtgui_dc_t * dst,const rtgui_point_t * points,int count,rtgui_blend_mode_t blendMode,rtgui_color_t color);
 
-void rtgui_dc_blend_fill_rect(rtgui_dc_t * dst,const rtgui_rect_t * rect,enum RTGUI_BLENDMODE blendMode,rtgui_color_t color);
-void rtgui_dc_blend_fill_rects(rtgui_dc_t * dst,const rtgui_rect_t * rects,int count,enum RTGUI_BLENDMODE blendMode,rtgui_color_t color);
+void rtgui_dc_blend_fill_rect(rtgui_dc_t * dst,const rtgui_rect_t * rect,rtgui_blend_mode_t blendMode,rtgui_color_t color);
+void rtgui_dc_blend_fill_rects(rtgui_dc_t * dst,const rtgui_rect_t * rects,int count,rtgui_blend_mode_t blendMode,rtgui_color_t color);
 
 void rtgui_dc_draw_aa_circle(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t r);
 void rtgui_dc_draw_aa_ellipse(rtgui_dc_t *dc, rt_int16_t  x, rt_int16_t y, rt_int16_t rx, rt_int16_t ry);
@@ -250,6 +266,8 @@ rtgui_dc_t *rtgui_dc_rotozoom(rtgui_dc_t *dc, double angle, double zoomx, double
 
 /* dc buffer dump to file */
 void rtgui_dc_buffer_dump(rtgui_dc_t *self, char *fn);
+
+#endif /* IMPORT_TYPES */
 
 #ifdef __cplusplus
 }

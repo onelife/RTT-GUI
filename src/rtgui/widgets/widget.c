@@ -25,9 +25,9 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/widgets/widget.h"
-#include "include/widgets/window.h"
+#include "include/font/font.h"
 #include "include/widgets/container.h"
+#include "include/widgets/window.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL

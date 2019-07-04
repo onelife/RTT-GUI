@@ -1,5 +1,5 @@
 /*
- * File      : progress.h
+ * File      : title.h
  * This file is part of RT-Thread GUI Engine
  * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
  *
@@ -19,10 +19,15 @@
  *
  * Change Logs:
  * Date           Author       Notes
- * 2019-07-02     onelife      refactor
+ * 2009-10-16     Bernard      first version
+ * 2019-05-18     onelife      refactor
  */
-#ifndef __RTGUI_PROGRESS_H__
-#define __RTGUI_PROGRESS_H__
+#ifndef __RTGUI_TITLE_H__
+#define __RTGUI_TITLE_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
@@ -30,44 +35,32 @@
 #ifdef IMPORT_TYPES
 
 /* Exported defines ----------------------------------------------------------*/
-#define _PROGRESS_METADATA                  CLASS_METADATA(progress)
-#define IS_PROGRESS(obj)                    IS_INSTANCE(obj, _PROGRESS_METADATA)
-#define TO_PROGRESS(obj)                    CAST_(obj, _PROGRESS_METADATA, rtgui_progress_t)
+#define _TITLE_METADATA                     CLASS_METADATA(title)
+#define IS_TITLE(obj)                       IS_INSTANCE((obj), _TITLE_METADATA)
+#define TO_TITLE(obj)                       CAST_(obj, _TITLE_METADATA, rtgui_title_t)
 
-#define CREATE_PROGRESS_INSTANCE(obj, hdl, _orient, _range, rect) \
-    do {                                    \
-        obj = (rtgui_progress_t *)CREATE_INSTANCE(progress, hdl); \
-        if (!obj) break;                    \
-        obj->orient = _orient;              \
-        obj->range = _range;                \
-        if (rect != RT_NULL)                \
-            rtgui_widget_set_rect(TO_WIDGET(obj), rect); \
-    } while (0)
-
-#define DELETE_PROGRESS_INSTANCE(obj)       DELETE_INSTANCE(obj)
-
-#define PROGRESS_WIDTH_DEFAULT              (100)
-#define PROGRESS_HEIGHT_DEFAULT             (20)
-#define PROGRESS_RANGE_DEFAULT              (100)
+#define TITLE_HEIGHT                        (20)
+#define TITLE_BORDER_SIZE                   (2)
+#define TITLE_CLOSE_BUTTON_WIDTH            (16)
+#define TITLE_CLOSE_BUTTON_HEIGHT           (16)
 
 /* Exported types ------------------------------------------------------------*/
-struct rtgui_progress {
+struct rtgui_title {
     rtgui_widget_t _super;
-    rtgui_orient_t orient;
-    rt_uint16_t range;
-    rt_uint16_t value;
 };
 
 /* Exported constants --------------------------------------------------------*/
-CLASS_PROTOTYPE(progress);
+CLASS_PROTOTYPE(title);
 
-#undef __RTGUI_PROGRESS_H__
+#undef __RTGUI_TITLE_H__
 #else /* IMPORT_TYPES */
 
 /* Exported functions ------------------------------------------------------- */
-MEMBER_SETTER_GETTER_PROTOTYPE(rtgui_progress_t, progress, rt_uint16_t, range);
-MEMBER_SETTER_GETTER_PROTOTYPE(rtgui_progress_t, progress, rt_uint16_t, value);
 
 #endif /* IMPORT_TYPES */
 
-#endif /* __RTGUI_PROGRESS_H__ */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __RTGUI_TITLE_H__ */

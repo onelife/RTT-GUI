@@ -26,8 +26,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 
+#ifdef IMPORT_TYPES
+
 /* Exported defines ----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
+typedef struct rtgui_gfx_driver rtgui_gfx_driver_t;
+
 /* graphic driver operations */
 struct rtgui_graphic_driver_ops {
     void (*set_pixel)(rtgui_color_t *c, int x, int y);
@@ -71,6 +75,10 @@ struct rtgui_gfx_driver {
 #endif
 
 /* Exported constants --------------------------------------------------------*/
+
+#undef __RTGUI_DRIVER_H__
+#else /* IMPORT_TYPES */
+
 /* Exported functions ------------------------------------------------------- */
 rt_err_t rtgui_set_gfx_device(rt_device_t dev);
 REFERENCE_GETTER_PROTOTYPE(gfx_device, rtgui_gfx_driver_t);
@@ -80,18 +88,17 @@ void rtgui_gfx_set_framebuffer(void *fb);
 rt_uint8_t *rtgui_gfx_get_framebuffer(const rtgui_gfx_driver_t *driver);
 
 #ifdef GUIENGIN_USING_VFRAMEBUFFER
-    void rtgui_gfx_driver_vmode_enter(void);
-    void rtgui_gfx_driver_vmode_exit(void);
-    rtgui_dc_t* rtgui_graphic_driver_get_rect_buffer(const rtgui_gfx_driver_t *driver, rtgui_rect_t *rect);
-    rt_bool_t rtgui_graphic_driver_is_vmode(void);
-
+void rtgui_gfx_driver_vmode_enter(void);
+void rtgui_gfx_driver_vmode_exit(void);
+rtgui_dc_t* rtgui_graphic_driver_get_rect_buffer(const rtgui_gfx_driver_t *driver, rtgui_rect_t *rect);
+rt_bool_t rtgui_graphic_driver_is_vmode(void);
 #else /* GUIENGIN_USING_VFRAMEBUFFER */
 # define rtgui_graphic_driver_is_vmode()    (RT_FALSE)
 #endif /* GUIENGIN_USING_VFRAMEBUFFER */
 
 #ifdef CONFIG_TOUCH_DEVICE_NAME
-    rt_err_t rtgui_set_touch_device(rt_device_t dev);
-    GETTER_PROTOTYPE(touch_device, rt_device_t);
+rt_err_t rtgui_set_touch_device(rt_device_t dev);
+GETTER_PROTOTYPE(touch_device, rt_device_t);
 #endif /* CONFIG_TOUCH_DEVICE_NAME */
 
 #ifdef RTGUI_USING_HW_CURSOR
@@ -99,5 +106,7 @@ void rtgui_cursor_set_device(const char* device_name);
 void rtgui_cursor_set_position(rt_uint16_t x, rt_uint16_t y);
 void rtgui_cursor_set_image(enum rtgui_cursor_type type);
 #endif /* RTGUI_USING_HW_CURSOR */
+
+#endif /* IMPORT_TYPES */
 
 #endif /* __RTGUI_DRIVER_H__ */

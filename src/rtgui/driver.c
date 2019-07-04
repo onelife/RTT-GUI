@@ -25,8 +25,6 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/region.h"
-#include "include/driver.h"
 
 #ifdef CONFIG_TOUCH_DEVICE_NAME
 # include "components/arduino/drv_common.h"

@@ -25,6 +25,7 @@
  * 2019-06-03     onelife      refactor
  */
 /* Includes ------------------------------------------------------------------*/
+#include "include/rtgui.h"
 #include "include/font/font.h"
 
 #ifdef RT_USING_ULOG

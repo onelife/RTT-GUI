@@ -29,6 +29,7 @@
 #include <math.h>   /* for sin/cos etc */
 
 #include "include/rtgui.h"
+#include "include/font/font.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -1898,7 +1899,7 @@ void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
             /* send RTGUI_EVENT_UPDATE_END */
             RTGUI_CREATE_EVENT(evt, UPDATE_END, RT_WAITING_FOREVER);
             if (!evt) break;
-            evt->win_update.rect = owner->extent;  // win->drawing_rect?
+            evt->update_end.rect = owner->extent;  // win->drawing_rect?
             (void)rtgui_send_request(evt, RT_WAITING_FOREVER);
         } else {
             #ifdef RTGUI_USING_MOUSE_CURSOR

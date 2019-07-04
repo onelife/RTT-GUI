@@ -24,19 +24,26 @@
  */
 #ifndef __RTGUI_BUTTON_H__
 #define __RTGUI_BUTTON_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/widgets/label.h"
 
 /**
  * @defgroup rtgui_button
  * @{
  */
-#ifdef __cplusplus
-extern "C" {
-#endif
+
+#ifdef IMPORT_TYPES
 
 /* Exported defines ----------------------------------------------------------*/
+#define _BUTTON_METADATA                    CLASS_METADATA(button)
+#define IS_BUTTON(obj)                      IS_INSTANCE(obj, _BUTTON_METADATA)
+#define TO_BUTTON(obj)                      CAST_(obj, _BUTTON_METADATA, rtgui_button_t)
+
 #define CREATE_BUTTON_INSTANCE(obj, hdl, _type, text) \
     do {                                    \
         obj = (rtgui_button_t *)CREATE_INSTANCE(button, hdl); \
@@ -51,14 +58,38 @@ extern "C" {
 
 #define DELETE_BUTTON_INSTANCE(obj)         DELETE_INSTANCE(obj)
 
-#define rtgui_button_get_text(obj)          \
-    MEMBER_GETTER(label, text)(TO_LABEL(obj))
-#define rtgui_button_set_text(obj, _text)          \
-    MEMBER_SETTER(label, text)(TO_LABEL(obj), _text)
+#define BUTTON_FLAG(b)                      (TO_BUTTON(b)->flag)
+#define BUTTON_FLAG_CLEAR(b, fname)         BUTTON_FLAG(b) &= ~RTGUI_BUTTON_FLAG_##fname
+#define BUTTON_FLAG_SET(b, fname)           BUTTON_FLAG(b) |= RTGUI_BUTTON_FLAG_##fname
+#define IS_BUTTON_FLAG(b, fname)            (BUTTON_FLAG(b) & RTGUI_BUTTON_FLAG_##fname)
 
 /* Exported types ------------------------------------------------------------*/
+typedef enum rtgui_button_flag {
+    RTGUI_BUTTON_FLAG_TYPE_NORMAL           = 0x00,
+    RTGUI_BUTTON_FLAG_TYPE_PUSH             = 0x10,
+    RTGUI_BUTTON_FLAG_PRESS                 = 0x01,
+    RTGUI_BUTTON_FLAG_DEFAULT               = 0x02,
+} rtgui_button_flag_t;
+
+struct rtgui_button {
+    rtgui_label_t _super;
+    rt_uint16_t flag;
+    rtgui_image_t *press_img;
+    rtgui_image_t *unpress_img;
+    rtgui_evt_hdl_t on_button;
+};
+
 /* Exported constants --------------------------------------------------------*/
+CLASS_PROTOTYPE(button);
+
+#undef __RTGUI_BUTTON_H__
+#else /* IMPORT_TYPES */
+
 /* Exported functions ------------------------------------------------------- */
+#define rtgui_button_get_text(obj)          \
+    MEMBER_GETTER(label, text)(TO_LABEL(obj))
+#define rtgui_button_set_text(obj, _text)   \
+    MEMBER_SETTER(label, text)(TO_LABEL(obj), _text)
 MEMBER_SETTER_PROTOTYPE(rtgui_button_t, button, rtgui_image_t*, press_img);
 MEMBER_SETTER_PROTOTYPE(rtgui_button_t, button, rtgui_image_t*, unpress_img);
 /** 
@@ -72,13 +103,15 @@ MEMBER_SETTER_PROTOTYPE(rtgui_button_t, button, rtgui_image_t*, unpress_img);
  * @param evt_hdl the callback function.
  */
 MEMBER_SETTER_PROTOTYPE(rtgui_button_t, button, rtgui_evt_hdl_t, on_button);
-void rtgui_theme_draw_button(rtgui_button_t *btn);
+
+#endif /* IMPORT_TYPES */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
 #endif
-/**
- * @}
- */
 
 #endif /* __RTGUI_BUTTON_H__ */

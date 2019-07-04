@@ -4,7 +4,7 @@
  * @ref     https://github.com/lindabell/gB2312toUnicode
  * @author  lindabell
  ******************************************************************************/
-#include "include/font/font.h"
+#include "include/rtgui.h"
 #ifdef GUIENGINE_USING_FONTHZ
 
 const rt_uint16_t UnicodeToGB2312_Tab[][2] = {

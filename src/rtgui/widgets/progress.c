@@ -38,6 +38,7 @@
 /* Private function prototype ------------------------------------------------*/
 static void _progress_constructor(void *obj);
 static rt_bool_t _progress_event_handler(void *obj, rtgui_evt_generic_t *evt);
+static void _theme_draw_progress(rtgui_progress_t *bar);
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -71,7 +72,7 @@ static rt_bool_t _progress_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     switch (evt->base.type) {
     case RTGUI_EVENT_PAINT:
-        rtgui_theme_draw_progress(bar);
+        _theme_draw_progress(bar);
         break;
 
     default:
@@ -83,28 +84,7 @@ static rt_bool_t _progress_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     return done;
 }
 
-/* Public functions ----------------------------------------------------------*/
-void rtgui_progress_set_range(rtgui_progress_t *bar, rt_uint16_t range) {
-    if (bar->range != range) {
-        bar->range = range;
-        rtgui_widget_update(TO_WIDGET(bar));
-    }
-}
-RTM_EXPORT(rtgui_progress_set_range);
-
-RTGUI_MEMBER_GETTER(rtgui_progress_t, progress, rt_uint16_t, range);
-
-void rtgui_progress_set_value(rtgui_progress_t *bar, rt_uint16_t value) {
-    if (bar->value != value) {
-        bar->value = value;
-        rtgui_widget_update(TO_WIDGET(bar));
-    }
-}
-RTM_EXPORT(rtgui_progress_set_value);
-
-RTGUI_MEMBER_GETTER(rtgui_progress_t, progress, rt_uint16_t, value);
-
-void rtgui_theme_draw_progress(rtgui_progress_t *bar) {
+static void _theme_draw_progress(rtgui_progress_t *bar) {
     rtgui_dc_t *dc;
 
     dc = rtgui_dc_begin_drawing(TO_WIDGET(bar));
@@ -165,3 +145,24 @@ void rtgui_theme_draw_progress(rtgui_progress_t *bar) {
     rtgui_dc_end_drawing(dc, RT_TRUE);
     LOG_W("draw progress done");
 }
+
+/* Public functions ----------------------------------------------------------*/
+void rtgui_progress_set_range(rtgui_progress_t *bar, rt_uint16_t range) {
+    if (bar->range != range) {
+        bar->range = range;
+        rtgui_widget_update(TO_WIDGET(bar));
+    }
+}
+RTM_EXPORT(rtgui_progress_set_range);
+
+RTGUI_MEMBER_GETTER(rtgui_progress_t, progress, rt_uint16_t, range);
+
+void rtgui_progress_set_value(rtgui_progress_t *bar, rt_uint16_t value) {
+    if (bar->value != value) {
+        bar->value = value;
+        rtgui_widget_update(TO_WIDGET(bar));
+    }
+}
+RTM_EXPORT(rtgui_progress_set_value);
+
+RTGUI_MEMBER_GETTER(rtgui_progress_t, progress, rt_uint16_t, value);

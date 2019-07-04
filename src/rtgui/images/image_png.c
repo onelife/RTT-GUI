@@ -27,7 +27,6 @@
 #ifdef GUIENGINE_IMAGE_PNG
 
 #include "include/blit.h"
-#include "include/driver.h"
 #include "include/image.h"
 
 #include "png.h"

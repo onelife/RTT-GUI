@@ -46,7 +46,7 @@
 
 
 #define RTGUI_LOG_LEVEL                     (LOG_LVL_DBG)
-#define GUIENGIN_USING_CAST_CHECK
+#define RTGUI_CASTING_CHECK
 // #define RTGUI_OBJECT_TRACE
 #define RTGUI_LOG_EVENT
 #define RTGUI_USING_MOUSE_CURSOR

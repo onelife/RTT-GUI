@@ -26,6 +26,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 #include "include/widgets/container.h"
+#include "include/widgets/box.h"
 #include "include/widgets/window.h"
 
 #ifdef RT_USING_ULOG
@@ -317,6 +318,7 @@ void rtgui_container_layout(rtgui_container_t *cntr) {
 }
 RTM_EXPORT(rtgui_container_layout);
 
+#if 0
 rtgui_obj_t* rtgui_container_get_object(rtgui_container_t *cntr, rt_uint32_t id) {
     rt_slist_t *node;
 
@@ -333,4 +335,4 @@ rtgui_obj_t* rtgui_container_get_object(rtgui_container_t *cntr, rt_uint32_t id)
     return RT_NULL;
 }
 RTM_EXPORT(rtgui_container_get_object);
-
+#endif

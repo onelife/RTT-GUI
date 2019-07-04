@@ -24,7 +24,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/region.h"
+#include "include/widgets/title.h"
 #include "include/widgets/window.h"
 
 #ifdef RT_USING_ULOG
@@ -82,17 +82,17 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     case RTGUI_EVENT_MOUSE_BUTTON:
         if (IS_WIN_STYLE(wgt->toplevel, CLOSEBOX)) {
-            if (evt->mouse.button & RTGUI_MOUSE_BUTTON_LEFT) {
+            if (evt->mouse.button & MOUSE_BUTTON_LEFT) {
                 rtgui_rect_t rect;
 
                 /* get close button rect (device value) */
                 rect.x1 = wgt->extent.x2 - TITLE_BORDER_SIZE - 3 - \
-                    TITLE_CB_WIDTH;
+                    TITLE_CLOSE_BUTTON_WIDTH;
                 rect.y1 = wgt->extent.y1 + TITLE_BORDER_SIZE + 3;
-                rect.x2 = rect.x1 + TITLE_CB_WIDTH;
-                rect.y2 = rect.y1 + TITLE_CB_HEIGHT;
+                rect.x2 = rect.x1 + TITLE_CLOSE_BUTTON_WIDTH;
+                rect.y2 = rect.y1 + TITLE_CLOSE_BUTTON_HEIGHT;
 
-                if (evt->mouse.button & RTGUI_MOUSE_BUTTON_DOWN) {
+                if (evt->mouse.button & MOUSE_BUTTON_DOWN) {
                     if (rtgui_rect_contains_point(
                         &rect, evt->mouse.x, evt->mouse.y)) {
                         WIN_FLAG_SET(wgt->toplevel, CB_PRESSED);
@@ -103,7 +103,7 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
                         rtgui_winrect_set(wgt->toplevel);
                 #endif
                     }
-                } else if (evt->mouse.button & RTGUI_MOUSE_BUTTON_UP) {
+                } else if (evt->mouse.button & MOUSE_BUTTON_UP) {
                     if (IS_WIN_FLAG(wgt->toplevel, CB_PRESSED) && \
                         (rtgui_rect_contains_point(
                             &rect, evt->mouse.x, evt->mouse.y))) {
@@ -120,7 +120,7 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
                     }
                 }
             }
-        } else if (evt->mouse.button & RTGUI_MOUSE_BUTTON_DOWN) {
+        } else if (evt->mouse.button & MOUSE_BUTTON_DOWN) {
             #ifdef RTGUI_USING_WINMOVE
                 rtgui_winrect_set(wgt->toplevel);
             #endif

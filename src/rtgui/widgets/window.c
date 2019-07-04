@@ -136,7 +136,6 @@ static rt_err_t _win_create_in_server(rtgui_win_t *win) {
         }
         evt->win_create.parent_window = win->parent;
         evt->win_create.wid = win;
-        evt->win_create.base.user = win->style;
         ret = rtgui_send_request_sync(evt);
         if (ret) break;
         WIN_FLAG_SET(win, CONNECTED);
@@ -665,7 +664,6 @@ RTM_EXPORT(rtgui_win_set_title);
 
 
 #ifdef GUIENGIN_USING_VFRAMEBUFFER
-# include "../include/driver.h"
 
 rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
     rtgui_dc_t *dc;
@@ -773,7 +771,9 @@ void rtgui_theme_draw_win(rtgui_title_t *title) {
 
     do {
         rtgui_rect_t rect;
-        rtgui_rect_t box_rect = {0, 0, TITLE_CB_WIDTH, TITLE_CB_HEIGHT};
+        rtgui_rect_t box_rect = {
+            0, 0, TITLE_CLOSE_BUTTON_WIDTH, TITLE_CLOSE_BUTTON_HEIGHT,
+        };
         rt_uint16_t index, r, g, b, delta;
 
         /* get rect */
@@ -839,7 +839,7 @@ void rtgui_theme_draw_win(rtgui_title_t *title) {
 
             rect.x1 += 4;
             rect.y1 += 2;
-            rect.y2 = rect.y1 + TITLE_CB_HEIGHT;
+            rect.y2 = rect.y1 + TITLE_CLOSE_BUTTON_HEIGHT;
             rtgui_dc_draw_text(dc, win->title, &rect);
 
             if (!IS_WIN_STYLE(win, CLOSEBOX)) break;

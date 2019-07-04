@@ -23,7 +23,9 @@
  * 2019-06-03     onelife      refactor
  */
 /* Includes ------------------------------------------------------------------*/
+#include "include/rtgui.h"
 #include "include/font/font.h"
+
 #ifdef RTGUI_USING_FONT_FILE
 # ifndef RT_USING_DFS
 #  error "Please enable RT_USING_DFS for RTGUI_USING_FONT_FILE"

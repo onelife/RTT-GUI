@@ -24,28 +24,49 @@
  */
 #ifndef __RTGUI_BOX_H__
 #define __RTGUI_BOX_H__
-/* Includes ------------------------------------------------------------------*/
-#include "include/rtgui.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Includes ------------------------------------------------------------------*/
+#include "include/rtgui.h"
+
+#ifdef IMPORT_TYPES
+
 /* Exported defines ----------------------------------------------------------*/
+#define _BOX_METADATA                       CLASS_METADATA(box)
+#define IS_BOX(obj)                         IS_INSTANCE(obj, _BOX_METADATA)
+#define TO_BOX(obj)                         CAST_(obj, _BOX_METADATA, rtgui_box_t)
+
 #define CREATE_BOX_INSTANCE(obj, ort, sz)   \
     do {                                    \
         obj = (rtgui_box_t *)CREATE_INSTANCE(box, RT_NULL); \
         if (obj) {                          \
             box->orient = ort;              \
-            box->border_sz = sz;          \
+            box->border_sz = sz;            \
         }                                   \
     } while (0)
 
 /* Exported types ------------------------------------------------------------*/
+struct rtgui_box {
+    rtgui_obj_t _super;
+    rt_uint16_t orient;
+    rt_uint16_t border_sz;
+    rtgui_container_t *container;
+};
+
 /* Exported constants --------------------------------------------------------*/
+CLASS_PROTOTYPE(box);
+
+#undef __RTGUI_BOX_H__
+#else /* IMPORT_TYPES */
+
 /* Exported functions ------------------------------------------------------- */
 void rtgui_box_layout(rtgui_box_t *box);
 void rtgui_box_layout_rect(rtgui_box_t *box, rtgui_rect_t *rect);
+
+#endif /* IMPORT_TYPES */
 
 #ifdef __cplusplus
 }

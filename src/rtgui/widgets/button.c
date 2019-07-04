@@ -24,8 +24,8 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/region.h"
 #include "include/images/image.h"
+#include "include/widgets/label.h"
 #include "include/widgets/button.h"
 
 #ifdef RT_USING_ULOG
@@ -46,6 +46,7 @@ static void _button_constructor(void *obj);
 static void _button_destructor(void *obj);
 static rt_bool_t _button_event_handler(void *obj, rtgui_evt_generic_t *evt);
 static rt_bool_t _button_on_unfocus(void *obj, rtgui_evt_generic_t *evt);
+static void _theme_draw_button(rtgui_button_t *btn);
 
 /* Private variables ---------------------------------------------------------*/
 RTGUI_CLASS(
@@ -97,7 +98,7 @@ static rt_bool_t _button_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     switch (evt->base.type) {
     case RTGUI_EVENT_PAINT:
-        rtgui_theme_draw_button(btn);
+        _theme_draw_button(btn);
         break;
 
     case RTGUI_EVENT_KBD:
@@ -226,12 +227,7 @@ static rt_bool_t _button_on_unfocus(void *obj, rtgui_evt_generic_t *evt) {
     return done;
 }
 
-/* Public functions ----------------------------------------------------------*/
-RTGUI_MEMBER_SETTER(rtgui_button_t, button, rtgui_image_t*, press_img);
-RTGUI_MEMBER_SETTER(rtgui_button_t, button, rtgui_image_t*, unpress_img);
-RTGUI_MEMBER_SETTER(rtgui_button_t, button, rtgui_evt_hdl_t, on_button);
-
-void rtgui_theme_draw_button(rtgui_button_t *btn) {
+static void _theme_draw_button(rtgui_button_t *btn) {
     do {
         rtgui_dc_t *dc;
         rtgui_rect_t rect;
@@ -326,3 +322,8 @@ void rtgui_theme_draw_button(rtgui_button_t *btn) {
         LOG_W("draw button done");
     } while (0);
 }
+
+/* Public functions ----------------------------------------------------------*/
+RTGUI_MEMBER_SETTER(rtgui_button_t, button, rtgui_image_t*, press_img);
+RTGUI_MEMBER_SETTER(rtgui_button_t, button, rtgui_image_t*, unpress_img);
+RTGUI_MEMBER_SETTER(rtgui_button_t, button, rtgui_evt_hdl_t, on_button);

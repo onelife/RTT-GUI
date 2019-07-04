@@ -23,17 +23,15 @@
  */
 #ifndef __RTGUI_REGION_H__
 #define __RTGUI_REGION_H__
-/* Includes ------------------------------------------------------------------*/
-#include "./rtgui.h"
 
-#if defined(__cplusplus) || defined(c_plusplus)
+/* Includes ------------------------------------------------------------------*/
+#include "include/rtgui.h"
+
+#ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef enum {
-    FAILURE,
-    SUCCESS
-} op_status_t;
+#ifdef IMPORT_TYPES
 
 /* Exported defines ----------------------------------------------------------*/
 /*  true if rect r1 and r2 are overlap */
@@ -79,7 +77,41 @@ typedef enum {
         ((r1)->y2 <= (r2)->y2)  )
 
 /* Exported types ------------------------------------------------------------*/
+typedef struct rtgui_rect rtgui_rect_t;
+typedef struct rtgui_region_data rtgui_region_data_t;
+typedef struct rtgui_region rtgui_region_t;
+
+typedef enum {
+    FAILURE,
+    SUCCESS
+} r_op_status_t;
+
+typedef enum {
+    RTGUI_REGION_OUT,
+    RTGUI_REGION_IN,
+    RTGUI_REGION_PART,
+} r_contain_status_t;
+
+struct rtgui_rect {
+    rt_int16_t x1, y1, x2, y2;
+};
+
+struct rtgui_region_data {
+    rt_uint32_t size;                       /* total */
+    rt_uint32_t numRects;                   /* used */
+    // rtgui_rect_t rects[size];
+};
+
+struct rtgui_region {
+    rtgui_rect_t extents;
+    rtgui_region_data_t *data;
+};
+
 /* Exported constants --------------------------------------------------------*/
+
+#undef __RTGUI_REGION_H__
+#else /* IMPORT_TYPES */
+
 /* Exported functions ------------------------------------------------------- */
 void rtgui_region_init_empty(rtgui_region_t *region);
 void rtgui_region_init(rtgui_region_t *region,
@@ -89,27 +121,22 @@ void rtgui_region_init_with_extent(rtgui_region_t *region,
 void rtgui_region_uninit(rtgui_region_t *region);
 rt_uint32_t rtgui_region_num_rects(rtgui_region_t *region);
 rtgui_rect_t *rtgui_region_rects(rtgui_region_t *region);
-op_status_t rtgui_region_copy(rtgui_region_t *dst, rtgui_region_t *src);
+r_op_status_t rtgui_region_copy(rtgui_region_t *dst, rtgui_region_t *src);
 
 void rtgui_region_translate(rtgui_region_t *region, int x, int y);
 
-op_status_t rtgui_region_intersect(rtgui_region_t *dstRgn,
+r_op_status_t rtgui_region_intersect(rtgui_region_t *dstRgn,
     rtgui_region_t *rgn1, rtgui_region_t *rgn2);
-op_status_t rtgui_region_intersect_rect(rtgui_region_t *dstRgn,
+r_op_status_t rtgui_region_intersect_rect(rtgui_region_t *dstRgn,
     rtgui_region_t *reg1, rtgui_rect_t *rect);
-op_status_t rtgui_region_union(rtgui_region_t *dstRgn, rtgui_region_t *rgn1,
+r_op_status_t rtgui_region_union(rtgui_region_t *dstRgn, rtgui_region_t *rgn1,
     rtgui_region_t *rgn2);
-op_status_t rtgui_region_union_rect(rtgui_region_t *dst, rtgui_region_t *src,
+r_op_status_t rtgui_region_union_rect(rtgui_region_t *dst, rtgui_region_t *src,
     rtgui_rect_t *rect);
-op_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t *regM,
+r_op_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t *regM,
     rtgui_region_t *regS);
-op_status_t rtgui_region_subtract_rect(rtgui_region_t *regD,
+r_op_status_t rtgui_region_subtract_rect(rtgui_region_t *regD,
     rtgui_region_t *regM, rtgui_rect_t *rect);
-
-
-#define RTGUI_REGION_OUT    0
-#define RTGUI_REGION_IN     1
-#define RTGUI_REGION_PART   2
 
 int rtgui_region_contains_point(rtgui_region_t *region, int x, int y, rtgui_rect_t *box);
 rt_bool_t rtgui_region_contains_rect(rtgui_region_t *rgn, rtgui_rect_t *rect);
@@ -117,8 +144,8 @@ rt_bool_t rtgui_region_contains_rect(rtgui_region_t *rgn, rtgui_rect_t *rect);
 int rtgui_region_not_empty(rtgui_region_t *region);
 rtgui_rect_t *rtgui_region_extents(rtgui_region_t *region);
 
-op_status_t rtgui_region_append(rtgui_region_t *dest, rtgui_region_t *region);
-op_status_t rtgui_region_validate(rtgui_region_t *badreg, int *pOverlap);
+r_op_status_t rtgui_region_append(rtgui_region_t *dest, rtgui_region_t *region);
+r_op_status_t rtgui_region_validate(rtgui_region_t *badreg, int *pOverlap);
 
 void rtgui_region_reset(rtgui_region_t *region, rtgui_rect_t *rect);
 void rtgui_region_empty(rtgui_region_t *region);
@@ -127,8 +154,6 @@ void rtgui_region_draw_clip(rtgui_region_t *region, rtgui_dc_t *dc);
 rt_bool_t rtgui_region_is_flat(rtgui_region_t *region);
 
 /* rect functions */
-extern rtgui_rect_t rtgui_empty_rect;
-
 void rtgui_rect_move(rtgui_rect_t *rect, int x, int y);
 void rtgui_rect_move_to_point(rtgui_rect_t *rect, int x, int y);
 void rtgui_rect_move_align(const rtgui_rect_t *rect, rtgui_rect_t *to, int align);
@@ -151,14 +176,18 @@ rt_inline void rtgui_rect_init(rtgui_rect_t* rect, int x, int y, int width, int 
     rect->y2 = y + height;
 }
 
+#if 0
 #define RTGUI_RECT(rect, x, y, w, h)	\
 	do { \
 	rect.x1 = x; rect.y1 = y; \
 	rect.x2 = (x) + (w); rect.y2 = (y) + (h); \
 	} while (0)
+#endif
 
-#if defined(__cplusplus) || defined(c_plusplus)
+#endif /* IMPORT_TYPES */
+
+#ifdef __cplusplus
 }
 #endif
 
-#endif /* _PIXMAN_H_ */
+#endif /* __RTGUI_REGION_H__ */

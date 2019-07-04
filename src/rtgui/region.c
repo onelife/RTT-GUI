@@ -22,8 +22,8 @@
  * 2009-10-16     Bernard      first version
  */
 /* Includes ------------------------------------------------------------------*/
-#include "../include/rtgui.h"
-#include "../include/region.h"
+#include "include/rtgui.h"
+#include "include/region.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -36,9 +36,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define INT16_MIN                           (-32767-1)
-#define INT16_MAX                           (32767)
-
 // #define GOOD(rgn)                           RT_ASSERT(rtgui_region16_valid(rgn))
 #define GOOD(rgn)
 
@@ -168,16 +165,16 @@ if (!(rgn)->data || (((rgn)->data->numRects + (n)) > (rgn)->data->size)) \
         }                                   \
     }
 
-static op_status_t _invalid(rtgui_region_t *region) {
+static r_op_status_t _invalid(rtgui_region_t *region) {
     freeData(region);
     region->extents = _null_rect;
     region->data = &_bad_region_data;
     return FAILURE;
 }
 
-static op_status_t _alloc_rects(rtgui_region_t *region,
+static r_op_status_t _alloc_rects(rtgui_region_t *region,
     rt_uint32_t n) {
-    op_status_t ret;
+    r_op_status_t ret;
 
     ret = FAILURE;
 
@@ -254,8 +251,8 @@ rtgui_rect_t *rtgui_region_rects(rtgui_region_t *region) {
     return REGION_GET_RECTS(region);
 }
 
-op_status_t rtgui_region_copy(rtgui_region_t *dst, rtgui_region_t *src) {
-    op_status_t ret;
+r_op_status_t rtgui_region_copy(rtgui_region_t *dst, rtgui_region_t *src) {
+    r_op_status_t ret;
 
     GOOD(dst); GOOD(src);
     ret = SUCCESS;
@@ -391,7 +388,7 @@ rt_inline rt_uint32_t _coalesce(
  *
  *-----------------------------------------------------------------------
  */
-rt_inline op_status_t _expend_verticaly(rtgui_region_t *rgn, rtgui_rect_t *r,
+rt_inline r_op_status_t _expend_verticaly(rtgui_region_t *rgn, rtgui_rect_t *r,
     rtgui_rect_t *last_r, rt_int16_t y1, rt_int16_t y2) {
     rt_uint32_t num;
     rtgui_rect_t *end;
@@ -462,7 +459,7 @@ rt_inline op_status_t _expend_verticaly(rtgui_region_t *rgn, rtgui_rect_t *r,
  *-----------------------------------------------------------------------
  */
 
-typedef op_status_t (*overlapFunc)(
+typedef r_op_status_t (*overlapFunc)(
     rtgui_region_t *region,
     rtgui_rect_t *r1,
     rtgui_rect_t *end1,
@@ -472,7 +469,7 @@ typedef op_status_t (*overlapFunc)(
     rt_int16_t y2,
     int *pOverlap);
 
-static op_status_t region_op(
+static r_op_status_t region_op(
     rtgui_region_t *dstRgn,         /* destination rgn */
     rtgui_region_t *rgn1,           /* source rgn1 */
     rtgui_region_t *rgn2,           /* source rgn2 */
@@ -765,7 +762,7 @@ static void _set_extents(rtgui_region_t *rgn) {
  *
  *-----------------------------------------------------------------------
  */
-static op_status_t _intersect_func(
+static r_op_status_t _intersect_func(
     rtgui_region_t *rgn,
     rtgui_rect_t *r1,
     rtgui_rect_t *end1,
@@ -805,7 +802,7 @@ static op_status_t _intersect_func(
     return SUCCESS;
 }
 
-op_status_t rtgui_region_intersect(rtgui_region_t *dstRgn,
+r_op_status_t rtgui_region_intersect(rtgui_region_t *dstRgn,
     rtgui_region_t *rgn1, rtgui_region_t *rgn2) {
     GOOD(rgn1); GOOD(rgn2); GOOD(dstRgn);
 
@@ -851,7 +848,7 @@ op_status_t rtgui_region_intersect(rtgui_region_t *dstRgn,
 }
 RTM_EXPORT(rtgui_region_intersect);
 
-op_status_t rtgui_region_intersect_rect(rtgui_region_t *dstRgn,
+r_op_status_t rtgui_region_intersect_rect(rtgui_region_t *dstRgn,
     rtgui_region_t *rgn1, rtgui_rect_t *rect) {
     rtgui_region_t rgn;
 
@@ -896,7 +893,7 @@ RTM_EXPORT(rtgui_region_intersect_rect);
  *
  *-----------------------------------------------------------------------
  */
-static op_status_t _union_func(
+static r_op_status_t _union_func(
     rtgui_region_t *rgn,
     rtgui_rect_t *r1,
     rtgui_rect_t *end1,
@@ -953,7 +950,7 @@ static op_status_t _union_func(
 }
 
 /* Convenience function for performing union of region with a single rectangle */
-op_status_t rtgui_region_union(rtgui_region_t *dstRgn, rtgui_region_t *rgn1,
+r_op_status_t rtgui_region_union(rtgui_region_t *dstRgn, rtgui_region_t *rgn1,
     rtgui_region_t *rgn2) {
     int notUsed;
     /* Return SUCCESS if some overlap between rgn1, rgn2 */
@@ -1020,7 +1017,7 @@ op_status_t rtgui_region_union(rtgui_region_t *dstRgn, rtgui_region_t *rgn1,
     return SUCCESS;
 }
 
-op_status_t rtgui_region_union_rect(rtgui_region_t *dst, rtgui_region_t *src,
+r_op_status_t rtgui_region_union_rect(rtgui_region_t *dst, rtgui_region_t *src,
     rtgui_rect_t *rect) {
     rtgui_region_t rgn;
 
@@ -1054,7 +1051,7 @@ op_status_t rtgui_region_union_rect(rtgui_region_t *dst, rtgui_region_t *src,
  *      dstRgn is modified if rgn has rectangles.
  *
  */
-op_status_t rtgui_region_append(rtgui_region_t *dstRgn, rtgui_region_t *rgn) {
+r_op_status_t rtgui_region_append(rtgui_region_t *dstRgn, rtgui_region_t *rgn) {
     rt_uint32_t num1, num2, size;
     rtgui_rect_t *rect1, *rect2;
     rt_bool_t prepend;
@@ -1224,7 +1221,7 @@ static void _quick_sort_rects(rtgui_rect_t rects[], rt_uint32_t num) {
  *
  *-----------------------------------------------------------------------
  */
-op_status_t rtgui_region_validate(
+r_op_status_t rtgui_region_validate(
     rtgui_region_t *badreg,
     int *pOverlap) {
     /* Descriptor for regions under construction  in Step 2. */
@@ -1245,7 +1242,7 @@ op_status_t rtgui_region_validate(
     rtgui_rect_t   *rect;        /* Current box in rects         */
     rtgui_rect_t   *riBox;      /* Last box in ri[j].rgn            */
     rtgui_region_t   *hreg;       /* ri[j_half].rgn             */
-    op_status_t ret = SUCCESS;
+    r_op_status_t ret = SUCCESS;
 
     *pOverlap = FAILURE;
     if (!badreg->data) {
@@ -1430,7 +1427,7 @@ op_status_t rtgui_region_validate(
  *-----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-static op_status_t _subtract_func(
+static r_op_status_t _subtract_func(
     rtgui_region_t *rgn,
     rtgui_rect_t *r1,
     rtgui_rect_t *end1,
@@ -1537,7 +1534,7 @@ static op_status_t _subtract_func(
  *
  *-----------------------------------------------------------------------
  */
-op_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t *regM,
+r_op_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t *regM,
     rtgui_region_t *regS) {
     int notUsed;
 
@@ -1579,7 +1576,7 @@ op_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t *regM,
     return SUCCESS;
 }
 
-op_status_t rtgui_region_subtract_rect(rtgui_region_t *regD,
+r_op_status_t rtgui_region_subtract_rect(rtgui_region_t *regD,
     rtgui_region_t *regM, rtgui_rect_t *rect) {
     rtgui_region_t rgn;
 
@@ -1611,7 +1608,7 @@ op_status_t rtgui_region_subtract_rect(rtgui_region_t *regD,
  *-----------------------------------------------------------------------
  */
 #if 0
-op_status_t
+r_op_status_t
 rtgui_region_inverse(rtgui_region_t *dstRgn,       /* Destination region */
                      rtgui_region_t *rgn1,         /* Region to invert */
                      rtgui_rect_t *invRect)        /* Bounding box for inversion */

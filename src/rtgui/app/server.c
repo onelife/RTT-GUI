@@ -24,12 +24,11 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/driver.h"
 //#include <rtgui/touch.h>
 #include "include/widgets/window.h"
 #include "include/app/app.h"
-#include "include/app/topwin.h"
 #include "include/app/mouse.h"
+#include "include/app/topwin.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -95,7 +94,7 @@ static rt_bool_t _server_mouse_button_handler(rtgui_evt_generic_t *evt) {
 
         #ifdef RTGUI_USING_WINMOVE
             if (rtgui_winrect_is_moved() && (evt->mouse.button & \
-                (RTGUI_MOUSE_BUTTON_LEFT | RTGUI_MOUSE_BUTTON_UP))) {
+                (MOUSE_BUTTON_LEFT | MOUSE_BUTTON_UP))) {
                 rtgui_win_t *win;
                 rtgui_rect_t rect;
 
@@ -117,7 +116,7 @@ static rt_bool_t _server_mouse_button_handler(rtgui_evt_generic_t *evt) {
         if (!top) break;
 
         /* only raise window if the button is pressed down */
-        if ((evt->mouse.button & RTGUI_MOUSE_BUTTON_DOWN) && \
+        if ((evt->mouse.button & MOUSE_BUTTON_DOWN) && \
             (rtgui_topwin_get_focus() != top)) {
             rtgui_topwin_activate(top);
         }
@@ -141,17 +140,17 @@ static rt_bool_t _server_touch_handler(rtgui_evt_generic_t *evt) {
         RTGUI_EVENT_REINIT(evt, MOUSE_MOTION);
         evt->mouse.x = evt->touch.data.point.x;
         evt->mouse.y = evt->touch.data.point.y;
-        evt->mouse.button = RTGUI_MOUSE_BUTTON_NONE;
+        evt->mouse.button = MOUSE_BUTTON_NONE;
         return _server_mouse_motion_handler(evt);
     } else {
         RTGUI_EVENT_REINIT(evt, MOUSE_BUTTON);
         evt->mouse.x = evt->touch.data.point.x;
         evt->mouse.y = evt->touch.data.point.y;
-        evt->mouse.button = RTGUI_MOUSE_BUTTON_LEFT;
+        evt->mouse.button = MOUSE_BUTTON_LEFT;
         if (evt->touch.data.type == RTGUI_TOUCH_UP)
-            evt->mouse.button |= RTGUI_MOUSE_BUTTON_UP;
+            evt->mouse.button |= MOUSE_BUTTON_UP;
         else
-            evt->mouse.button |= RTGUI_MOUSE_BUTTON_DOWN;
+            evt->mouse.button |= MOUSE_BUTTON_DOWN;
         return _server_mouse_button_handler(evt);
      }
 }
@@ -221,7 +220,6 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     case RTGUI_EVENT_WIN_CREATE:
         if (RT_EOK != rtgui_topwin_add(evt->base.origin, evt->win_create.wid,
             evt->win_create.parent_window))
-        // if (RT_EOK != rtgui_topwin_add(&evt->win_create))
             ack = RT_ERROR;
         break;
 

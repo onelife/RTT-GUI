@@ -23,12 +23,22 @@
  * 2019-05-15     onelife      refactor and rename to "app.h"
  */
 
-#ifndef __APP_H__
-#define __APP_H__
+#ifndef __RTGUI_APP_H__
+#define __RTGUI_APP_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Includes ------------------------------------------------------------------*/
+#include "include/rtgui.h"
+
+#ifdef IMPORT_TYPES
+
+/* Exported defines ----------------------------------------------------------*/
+#define _APP_METADATA                       CLASS_METADATA(app)
+#define IS_APP(obj)                         IS_INSTANCE((obj), _APP_METADATA)
+#define TO_APP(obj)                         CAST_(obj, _APP_METADATA, rtgui_app_t)
 
 #define CREATE_SERVER_INSTANCE(obj, hdl, name) \
     do {                                    \
@@ -48,9 +58,43 @@ extern "C" {
 
 #define DELETE_APP_INSTANCE(obj)            rtgui_app_uninit(obj)
 
+#define APP_FLAG(a)                         (TO_APP(a)->flag)
+#define APP_FLAG_CLEAR(a, fname)            APP_FLAG(a) &= ~RTGUI_APP_FLAG_##fname
+#define APP_FLAG_SET(a, fname)              APP_FLAG(a) |= RTGUI_APP_FLAG_##fname
+#define IS_APP_FLAG(a, fname)               (APP_FLAG(a) & RTGUI_APP_FLAG_##fname)
 
-MEMBER_SETTER_GETTER_PROTOTYPE(rtgui_app_t, app, rtgui_idle_hdl_t, on_idle);
+/* Exported types ------------------------------------------------------------*/
+typedef enum rtgui_app_flag {
+    RTGUI_APP_FLAG_INIT                     = 0x04,
+    RTGUI_APP_FLAG_EXITED                   = RTGUI_APP_FLAG_INIT,
+    RTGUI_APP_FLAG_SHOWN                    = 0x08,
+    RTGUI_APP_FLAG_KEEP                     = 0x80,
+} rtgui_app_flag_t;
 
+struct rtgui_app {
+    rtgui_obj_t _super;
+    rt_thread_t tid;
+    rtgui_win_t *main_win;
+    char *name;
+    rtgui_app_flag_t flag;
+    rt_mailbox_t mb;
+    rtgui_image_t *icon;
+    rtgui_idle_hdl_t on_idle;
+    void *user_data;
+    /* PRIVATE */
+    rt_ubase_t ref_cnt;
+    rt_ubase_t win_cnt;
+    rt_ubase_t act_cnt;                     /* activate count */
+    rt_base_t exit_code;
+};
+
+/* Exported constants --------------------------------------------------------*/
+CLASS_PROTOTYPE(app);
+
+#undef __RTGUI_APP_H__
+#else /* IMPORT_TYPES */
+
+/* Exported functions ------------------------------------------------------- */
 rt_err_t rtgui_app_init(rtgui_app_t *app, const char *name, rt_bool_t is_srv);
 void rtgui_app_uninit(rtgui_app_t *app);
 
@@ -64,13 +108,16 @@ rtgui_app_t *rtgui_app_self(void);
 rt_err_t rtgui_app_set_as_wm(rtgui_app_t *app);
 
 MEMBER_SETTER_GETTER_PROTOTYPE(rtgui_app_t, app, rtgui_win_t*, main_win);
+MEMBER_SETTER_GETTER_PROTOTYPE(rtgui_app_t, app, rtgui_idle_hdl_t, on_idle);
 
 /* get the topwin belong app window activate count */
 unsigned int rtgui_get_app_act_cnt(void);
+
+#endif /* IMPORT_TYPES */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* end of include guard: __APP_H__ */
+#endif /* __RTGUI_APP_H__ */
 

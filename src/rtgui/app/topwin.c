@@ -25,11 +25,8 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-//#include <rtgui/rtgui_theme.h>
-#include "include/widgets/container.h"
-#include "include/widgets/window.h"
-#include "include/app/topwin.h"
 #include "include/app/mouse.h"
+#include "include/app/topwin.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -72,7 +69,7 @@
 /* Private function prototypes -----------------------------------------------*/
 static void _topwin_update_clip(void);
 static void topwin_redraw(rtgui_rect_t *rect);
-static void _topwin_activate_next_with_flag(enum rtgui_topwin_flag);
+static void _topwin_activate_next_with_flag(rtgui_topwin_flag_t flag);
 
 /* Private variables ---------------------------------------------------------*/
 static rt_list_t _topwin_list = RT_LIST_OBJECT_INIT(_topwin_list);
@@ -208,8 +205,8 @@ static rt_list_t *_topwin_free(rtgui_topwin_t *top) {
 
     /* free the monitor rect list, topwin node and title */
     while (top->monitor_list.next != RT_NULL) {
-        struct rtgui_mouse_monitor *monitor = rt_container_of(
-            top->monitor_list.next, struct rtgui_mouse_monitor, list);
+        rtgui_mouse_monitor_t *monitor = rt_container_of(
+            top->monitor_list.next, rtgui_mouse_monitor_t, list);
 
         top->monitor_list.next = top->monitor_list.next->next;
         rtgui_free(monitor);
@@ -577,9 +574,6 @@ rt_err_t rtgui_topwin_add(rtgui_app_t *app, rtgui_win_t *win,
         }
 
         rt_list_init(&top->children);
-
-        top->title = RT_NULL;
-        // mask
         rt_slist_init(&top->monitor_list);
     } while (0);
 
@@ -788,8 +782,8 @@ rt_err_t rtgui_topwin_move(rtgui_win_t *win, rt_int16_t x, rt_int16_t y) {
 
         /* move the monitor rect list */
         rt_slist_for_each(node, &(top->monitor_list)) {
-            struct rtgui_mouse_monitor *monitor;
-            monitor = rt_slist_entry(node, struct rtgui_mouse_monitor, list);
+            rtgui_mouse_monitor_t *monitor;
+            monitor = rt_slist_entry(node, rtgui_mouse_monitor_t, list);
             rtgui_rect_move(&(monitor->rect), dx, dy);
         }
 
@@ -955,6 +949,7 @@ rtgui_win_t* rtgui_topwin_get_next_shown_win(void) {
     return top->wid;
 }
 
+#if 0
 rtgui_obj_t* rtgui_topwin_get_object(rtgui_topwin_t *top,
     rtgui_app_t *app, rt_uint32_t id) {
     rtgui_obj_t *object;
@@ -979,31 +974,31 @@ rtgui_obj_t* rtgui_topwin_get_object(rtgui_topwin_t *top,
     return RT_NULL;
 }
 
-// rtgui_obj_t* rtgui_get_object(rtgui_app_t *app, rt_uint32_t id) {
-//     rtgui_obj_t *obj;
-//     rt_list_t *node;
+rtgui_obj_t* rtgui_get_object(rtgui_app_t *app, rt_uint32_t id) {
+    rtgui_obj_t *obj;
+    rt_list_t *node;
 
-//     obj = TO_OBJECT(app);
-//     if (obj->id == id) return obj;
+    obj = TO_OBJECT(app);
+    if (obj->id == id) return obj;
 
-//     rt_list_foreach(node, &_topwin_list, next) {
-//         rtgui_topwin_t *top;
+    rt_list_foreach(node, &_topwin_list, next) {
+        rtgui_topwin_t *top;
 
-//         top = get_topwin_by_list(node);
-//         if (top->app != app) continue;
+        top = get_topwin_by_list(node);
+        if (top->app != app) continue;
 
-//         obj = rtgui_topwin_get_object(top, app, id);
-//         if (obj) return obj;
-//     }
-//     return RT_NULL;
-// }
-// RTM_EXPORT(rtgui_get_object);
+        obj = rtgui_topwin_get_object(top, app, id);
+        if (obj) return obj;
+    }
+    return RT_NULL;
+}
+RTM_EXPORT(rtgui_get_object);
 
-// rtgui_obj_t* rtgui_get_self_object(rt_uint32_t id) {
-//     return rtgui_get_object(rtgui_app_self(), id);
-// }
-// RTM_EXPORT(rtgui_get_self_object);
-
+rtgui_obj_t* rtgui_get_self_object(rt_uint32_t id) {
+    return rtgui_get_object(rtgui_app_self(), id);
+}
+RTM_EXPORT(rtgui_get_self_object);
+#endif
 
 #ifdef RT_USING_FINSH
 #include "components/finsh/finsh.h"

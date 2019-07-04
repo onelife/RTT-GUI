@@ -691,10 +691,9 @@ static void rtgui_dc_buffer_blit_line(rtgui_dc_t *self, int x1, int x2, int y, r
 
 #ifdef RT_USING_DFS
 # include "components/dfs/include/dfs_posix.h"
-void rtgui_dc_buffer_dump(rtgui_dc_t *self, char *fn)
-{
-    struct dc_file_header
-    {
+
+void rtgui_dc_buffer_dump(rtgui_dc_t *self, char *fn) {
+    struct dc_file_header {
         int w, h;
         int format;
     } header;
@@ -709,10 +708,10 @@ void rtgui_dc_buffer_dump(rtgui_dc_t *self, char *fn)
     header.format = buffer->pixel_format;
 
     fd = open(fn, O_RDWR | O_CREAT | O_TRUNC, 0);
-    if (fd >= 0)
-    {
+    if (fd >= 0) {
         write(fd, &header, sizeof(header));
-        write(fd, buffer->pixel, header.w * header.h * rtgui_color_get_bpp(header.format));
+        write(fd, buffer->pixel,
+            header.w * header.h * rtgui_color_get_bpp(header.format));
         close(fd);
     }
 }

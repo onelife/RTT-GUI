@@ -22,7 +22,7 @@
  * 2019-05-23     onelife      rename to "class.c"
  */
 /* Includes ------------------------------------------------------------------*/
-#include "../include/rtgui.h"
+#include "include/rtgui.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL

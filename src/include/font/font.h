@@ -32,6 +32,58 @@
 extern "C" {
 #endif
 
+#ifdef IMPORT_TYPES
+
+/* Exported types ------------------------------------------------------------*/
+typedef struct rtgui_font_engine rtgui_font_engine_t;
+typedef struct rtgui_fnt_font rtgui_fnt_font_t;
+typedef struct rtgui_bmp_font rtgui_bmp_font_t;
+typedef struct rtgui_font rtgui_font_t;
+
+struct rtgui_font_engine {
+    rt_err_t (*font_init)(rtgui_font_t *font);
+    rt_err_t (*font_open)(rtgui_font_t *font);
+    void (*font_close)(rtgui_font_t *font);
+    rt_uint8_t (*font_draw_char)(rtgui_font_t *font, rtgui_dc_t *dc,
+    rt_uint16_t code, rtgui_rect_t *rect);
+    rt_uint8_t (*font_get_width)(rtgui_font_t *font, const char *text);
+};
+
+struct rtgui_fnt_font {
+    void *data;
+    const rt_uint16_t *offset;
+    const rt_uint8_t *width;
+    #ifdef RTGUI_USING_FONT_FILE
+        const char *fname;
+        int fd;
+    #endif
+};
+
+struct rtgui_bmp_font {
+    void *data;
+    #ifdef RTGUI_USING_FONT_FILE
+        const char *fname;
+        int fd;
+    #endif
+};
+
+struct rtgui_font {
+    char *family;                           /* font name */
+    const rtgui_font_engine_t *engine;      /* font engine */
+    const rt_uint16_t height;               /* font height */
+    const rt_uint16_t width;                /* font width */
+    const rt_uint16_t start;                /* start unicode */
+    const rt_uint16_t end;                  /* end unicode */
+    const rt_uint16_t dft;                  /* default unicode */
+    const rt_uint16_t size;                 /* char size in byte */
+    void *data;                             /* font private data */
+    rt_uint32_t refer_count;                /* refer count */
+    rt_slist_t list;                        /* the font list */
+};
+
+#undef __FONT_H__
+#else /* IMPORT_TYPES */
+
 /* Exported defines ----------------------------------------------------------*/
 #define UTF8_SIZE(byte0)                    \
     (((byte0 & 0xF0) == 0xF0) ? 4 : (       \
@@ -49,7 +101,6 @@ extern "C" {
      (sz == 1) ? 1 : (              \
      (utf[0] <= 0xC3) ? 1 : 0)))
 
-/* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 extern const rtgui_font_engine_t fnt_font_engine;
 extern const rtgui_font_engine_t bmp_font_engine;
@@ -90,6 +141,8 @@ void rtgui_font_get_metrics(rtgui_font_t *font, const char *text,
 #ifdef GUIENGINE_USING_FONTHZ
 rt_uint16_t UnicodeToGB2312(rt_uint16_t unicode);
 #endif
+
+#endif /* IMPORT_TYPES */
 
 #ifdef __cplusplus
 }

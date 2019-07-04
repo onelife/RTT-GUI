@@ -26,14 +26,15 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 
+/* Exported defines ----------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
+typedef struct rtgui_mouse_monitor rtgui_mouse_monitor_t;
+
 struct rtgui_mouse_monitor {
     rtgui_rect_t rect;
     rt_slist_t list;
 };
-typedef struct rtgui_mouse_monitor rtgui_mouse_monitor_t;
 
-/* Exported defines ----------------------------------------------------------*/
-/* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 rt_err_t rtgui_mouse_init(void);

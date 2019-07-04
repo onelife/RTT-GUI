@@ -47,7 +47,6 @@
 */
 
 #include "include/rtgui.h"
-#include "include/region.h"
 #include "include/blit.h"
 
 #ifdef RT_USING_ULOG
