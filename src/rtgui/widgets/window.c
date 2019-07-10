@@ -56,11 +56,6 @@ RTGUI_CLASS(
     _win_event_handler,
     sizeof(rtgui_win_t));
 
-static const rt_uint8_t close_byte[14] = {
-    0x06, 0x18, 0x03, 0x30, 0x01, 0xE0, 0x00,
-    0xC0, 0x01, 0xE0, 0x03, 0x30, 0x06, 0x18
-};
-
 /* Private functions ---------------------------------------------------------*/
 static void _win_constructor(void *obj) {
     rtgui_win_t *win = obj;
@@ -73,7 +68,7 @@ static void _win_constructor(void *obj) {
     win->app = rtgui_app_self();
     win->style = RTGUI_WIN_STYLE_DEFAULT;
     win->flag = RTGUI_WIN_FLAG_INIT;
-    win->modal = RTGUI_MODAL_OK;
+    // win->modal = RTGUI_MODAL_OK;
     win->update = 0;
     win->drawing = 0;
     // drawing_rect, outer_extent, outer_clip
@@ -204,20 +199,20 @@ static rt_bool_t _win_do_close(rtgui_win_t *win, rt_bool_t force) {
         rtgui_win_hide(win);
         WIN_FLAG_SET(win, CLOSED);
 
-        if (IS_WIN_FLAG(win, MODAL)) {
-            /* rtgui_win_end_modal clear RTGUI_WIN_FLAG_MODAL */
-            rtgui_win_end_modal(win, RTGUI_MODAL_CANCEL);
-        }
-
         win->app->win_cnt--;
         if (!win->app->win_cnt && !IS_APP_FLAG(win->app, KEEP))
             rtgui_app_exit(rtgui_app_self(), 0);
 
         if (IS_WIN_STYLE(win, DESTROY_ON_CLOSE))
+            /* will check if MODAL, then call rtgui_win_end_modal */
             DELETE_WIN_INSTANCE(win);
+
+        if (IS_WIN_FLAG(win, MODAL))
+            /* will clear RTGUI_WIN_FLAG_MODAL */
+            rtgui_win_end_modal(win, RTGUI_MODAL_CANCEL);
     } while (0);
 
-    LOG_D("win close done %d", done);
+    LOG_E("win close done %d", done);
     return done;
 }
 
@@ -386,16 +381,32 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
     rt_err_t ret = -RT_ERROR;
 
     do {
-        rtgui_widget_set_rect(TO_WIDGET(win), rect);
+        rtgui_rect_t fixed = *rect;
+
         win->parent = parent;
         if (title) {
             win->title = rt_strdup(title);
         }
         win->style = style;
 
-        if (!IS_WIN_STYLE(win, NO_BORDER) || !IS_WIN_STYLE(win, NO_TITLE)) {
-            rtgui_rect_t fixed = *rect;
+        if (!IS_WIN_STYLE(win, NO_BORDER))
+            rtgui_rect_inflate(&fixed, -TITLE_DEFAULT_BORDER);
+        if (!IS_WIN_STYLE(win, NO_TITLE))
+            fixed.y1 += TITLE_DEFAULT_HEIGHT;
 
+        rtgui_widget_set_rect(TO_WIDGET(win), &fixed);
+        rtgui_region_init_with_extent(&win->outer_clip, rect);
+        win->outer_extent = *rect;
+
+        LOG_W("win rect (%d,%d)-(%d,%d)", fixed.x1, fixed.y1, fixed.x2,
+            fixed.y2);
+        LOG_W("win ext (%d,%d)-(%d,%d)", TO_WIDGET(win)->extent.x1,
+            TO_WIDGET(win)->extent.y1,
+            TO_WIDGET(win)->extent.x2,
+            TO_WIDGET(win)->extent.y2);
+
+        if (!IS_WIN_STYLE(win, NO_TITLE)) {
+            /* create title */
             win->_title = TO_TITLE(CREATE_INSTANCE(title, RT_NULL));
             if (!win->_title) {
                 LOG_E("create title %s err", title);
@@ -404,22 +415,29 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
             }
             TO_WIDGET(win->_title)->toplevel = win;
 
-            if (!IS_WIN_STYLE(win, NO_BORDER))
-                rtgui_rect_inflate(&fixed, TITLE_BORDER_SIZE);
-            if (!IS_WIN_STYLE(win, NO_TITLE))
-                fixed.y1 -= TITLE_HEIGHT;
-            rtgui_widget_set_rect(TO_WIDGET(win->_title), &fixed);
+            LOG_W("title rect (%d,%d)-(%d,%d)", rect->x1, rect->y1, rect->x2,
+                rect->y2);
+
+            rtgui_widget_set_rect(TO_WIDGET(win->_title), rect);
             /* update title clip */
-            rtgui_region_subtract_rect(&(TO_WIDGET(win->_title)->clip),
-                &(TO_WIDGET(win->_title)->clip), &(TO_WIDGET(win)->extent));
+            LOG_W("title clip (%d,%d)-(%d,%d)", TO_WIDGET(win->_title)->clip.extents.x1,
+                TO_WIDGET(win->_title)->clip.extents.y1,
+                TO_WIDGET(win->_title)->clip.extents.x2,
+                TO_WIDGET(win->_title)->clip.extents.y2);
+
+            LOG_W("title ext (%d,%d)-(%d,%d)", TO_WIDGET(win->_title)->extent.x1,
+            TO_WIDGET(win->_title)->extent.y1,
+            TO_WIDGET(win->_title)->extent.x2,
+            TO_WIDGET(win->_title)->extent.y2);
+            // rtgui_region_subtract_rect(&(TO_WIDGET(win->_title)->clip),
+            //     &(TO_WIDGET(win->_title)->clip), &(TO_WIDGET(win)->extent));
+            // LOG_W("clip (%d,%d)-(%d,%d)", TO_WIDGET(win->_title)->clip.extents.x1,
+            //     TO_WIDGET(win->_title)->clip.extents.y1,
+            //     TO_WIDGET(win->_title)->clip.extents.x2,
+            //     TO_WIDGET(win->_title)->clip.extents.y2);
 
             /* always show title */
             rtgui_widget_show(TO_WIDGET(win->_title));
-            rtgui_region_init_with_extent(&win->outer_clip, &fixed);
-            win->outer_extent = fixed;
-        } else {
-            rtgui_region_init_with_extent(&win->outer_clip, rect);
-            win->outer_extent = *rect;
         }
 
         ret = _win_create_in_server(win);
@@ -440,15 +458,18 @@ void rtgui_win_uninit(rtgui_win_t *win) {
 
     if (!IS_WIN_FLAG(win, CLOSED)) {
         (void)_win_do_close(win, RT_TRUE);
+        /* if DESTROY_ON_CLOSE, then the win is already deleted */
         if (IS_WIN_STYLE(win, DESTROY_ON_CLOSE)) return;
     }
 
     if (IS_WIN_FLAG(win, MODAL)) {
-        /* set the RTGUI_WIN_STYLE_DESTROY_ON_CLOSE flag so the window will be
-         * destroyed after the event_loop */
+        LOG_W("uninit MODAL");
+        /* set the DESTROY_ON_CLOSE flag so the win will be destroyed in
+         * next event_loop? */
         WIN_STYLE_SET(win, DESTROY_ON_CLOSE);
         rtgui_win_end_modal(win, RTGUI_MODAL_CANCEL);
     } else {
+        LOG_W("uninit DELETE");
         DELETE_INSTANCE(win);
     }
 }
@@ -475,10 +496,14 @@ rt_err_t rtgui_win_enter_modal(rtgui_win_t *win) {
         WIN_FLAG_SET(win, MODAL);
         win->_ref_count = win->app->ref_cnt + 1;
         exit_code = rtgui_app_run(win->app);
-        LOG_E("modal %s ret %d", win->title, exit_code);
+        LOG_D("modal %s exit %d", win->title, exit_code);
 
-        WIN_FLAG_CLEAR(win, MODAL);
-        rtgui_win_hide(win);
+        if (IS_WIN_STYLE(win, DESTROY_ON_CLOSE)) {
+            DELETE_WIN_INSTANCE(win);
+        } else {
+            WIN_FLAG_CLEAR(win, MODAL);
+            rtgui_win_hide(win);
+        }
     } while (0);
 
     return ret;
@@ -504,7 +529,7 @@ void rtgui_win_end_modal(rtgui_win_t *win, rtgui_modal_code_t modal) {
         rtgui_app_exit(win->app, 0);
         cnt++;
         if (cnt >= 1000) {
-            LOG_E("call [rtgui_win_end_modal -> rtgui_app_exit] x%d!", cnt);
+            LOG_E("call rtgui_app_exit() x%d!", cnt);
             RT_ASSERT(cnt < 1000);
         }
     }
@@ -748,124 +773,3 @@ rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
 }
 RTM_EXPORT(rtgui_win_get_drawing);
 #endif /* GUIENGIN_USING_VFRAMEBUFFER */
-
-/* window drawing */
-void rtgui_theme_draw_win(rtgui_title_t *title) {
-    rtgui_win_t *win;
-    rtgui_dc_t *dc;
-
-    if (!title) return;
-
-    win = TO_WIDGET(title)->toplevel;
-    if (!win->_title) {
-        LOG_E("no title");
-        return;
-    }
-
-    /* begin drawing */
-    dc = rtgui_dc_begin_drawing(TO_WIDGET(win->_title));
-    if (!dc) {
-        LOG_E("no dc");
-        return;
-    }
-
-    do {
-        rtgui_rect_t rect;
-        rtgui_rect_t box_rect = {
-            0, 0, TITLE_CLOSE_BUTTON_WIDTH, TITLE_CLOSE_BUTTON_HEIGHT,
-        };
-        rt_uint16_t index, r, g, b, delta;
-
-        /* get rect */
-        rtgui_widget_get_rect(TO_WIDGET(win->_title), &rect);
-
-        /* draw border */
-        if (!IS_WIN_STYLE(win, NO_BORDER)) {
-            LOG_W("draw border");
-            rect.x2 -= 1;
-            rect.y2 -= 1;
-            WIDGET_FOREGROUND(win->_title) = RTGUI_RGB(212, 208, 200);
-            rtgui_dc_draw_hline(dc, rect.x1, rect.x2, rect.y1);
-            rtgui_dc_draw_vline(dc, rect.x1, rect.y1, rect.y2);
-
-            WIDGET_FOREGROUND(win->_title) = white;
-            rtgui_dc_draw_hline(dc, rect.x1 + 1, rect.x2 - 1, rect.y1 + 1);
-            rtgui_dc_draw_vline(dc, rect.x1 + 1, rect.y1 + 1, rect.y2 - 1);
-
-            WIDGET_FOREGROUND(win->_title) = RTGUI_RGB(128, 128, 128);
-            rtgui_dc_draw_hline(dc, rect.x1 + 1, rect.x2 - 1, rect.y2 - 1);
-            rtgui_dc_draw_vline(dc, rect.x2 - 1, rect.y1 + 1, rect.y2);
-
-            WIDGET_FOREGROUND(win->_title) = RTGUI_RGB(64, 64, 64);
-            rtgui_dc_draw_hline(dc, rect.x1, rect.x2, rect.y2);
-            rtgui_dc_draw_vline(dc, rect.x2, rect.y1, rect.y2 + 1);
-
-            /* shrink border */
-            rtgui_rect_inflate(&rect, -TITLE_BORDER_SIZE);
-        }
-
-        /* draw title */
-        if (!IS_WIN_STYLE(win, NO_TITLE)) {
-            LOG_W("draw title");
-            #define RGB_FACTOR  4
-
-            if (IS_WIN_FLAG(win, ACTIVATE)) {
-                r = 10 << RGB_FACTOR;
-                g = 36 << RGB_FACTOR;
-                b = 106 << RGB_FACTOR;
-                delta = (150 << RGB_FACTOR) / (rect.x2 - rect.x1);
-            } else {
-                r = 128 << RGB_FACTOR;
-                g = 128 << RGB_FACTOR;
-                b = 128 << RGB_FACTOR;
-                delta = (64 << RGB_FACTOR) / (rect.x2 - rect.x1);
-            }
-
-            for (index = rect.x1; index < rect.x2 + 1; index++) {
-                WIDGET_FOREGROUND(win->_title) = RTGUI_RGB(
-                    (r >> RGB_FACTOR), (g >> RGB_FACTOR), (b >> RGB_FACTOR));
-                rtgui_dc_draw_vline(dc, index, rect.y1, rect.y2);
-                r += delta;
-                g += delta;
-                b += delta;
-            }
-
-            #undef RGB_FACTOR
-
-            if (IS_WIN_FLAG(win, ACTIVATE))
-                WIDGET_FOREGROUND(win->_title) = white;
-            else
-                WIDGET_FOREGROUND(win->_title) = RTGUI_RGB(212, 208, 200);
-
-            rect.x1 += 4;
-            rect.y1 += 2;
-            rect.y2 = rect.y1 + TITLE_CLOSE_BUTTON_HEIGHT;
-            rtgui_dc_draw_text(dc, win->title, &rect);
-
-            if (!IS_WIN_STYLE(win, CLOSEBOX)) break;
-
-            /* get close button rect */
-            rtgui_rect_move_align(&rect, &box_rect,
-                RTGUI_ALIGN_CENTER_VERTICAL | RTGUI_ALIGN_RIGHT);
-            box_rect.x1 -= 3;
-            box_rect.x2 -= 3;
-            rtgui_dc_fill_rect(dc, &box_rect);
-
-            /* draw close box */
-            if (IS_WIN_FLAG(win, CB_PRESSED)) {
-                rtgui_dc_draw_border(dc, &box_rect, RTGUI_BORDER_SUNKEN);
-                WIDGET_FOREGROUND(win->_title) = red;
-                rtgui_dc_draw_word(dc, box_rect.x1, box_rect.y1 + 6, 7,
-                    close_byte);
-            } else {
-                rtgui_dc_draw_border(dc, &box_rect, RTGUI_BORDER_RAISE);
-                WIDGET_FOREGROUND(win->_title) = black;
-                rtgui_dc_draw_word(dc, box_rect.x1 - 1, box_rect.y1 + 5, 7,
-                    close_byte);
-            }
-        }
-    } while (0);
-
-    rtgui_dc_end_drawing(dc, RT_TRUE);
-    LOG_W("draw theme done");
-}

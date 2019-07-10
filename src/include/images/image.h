@@ -82,7 +82,8 @@ rtgui_image_t *rtgui_image_create_from_file(const char *type, const char *filena
 rtgui_image_t *rtgui_image_create(const char *filename, rt_bool_t load);
 #endif
 
-rtgui_image_t *rtgui_image_create_from_mem(const char *type, const rt_uint8_t *data, rt_size_t length, rt_bool_t load);
+rtgui_image_t *rtgui_image_create_from_mem(const char *type,
+    const rt_uint8_t *data, rt_size_t length, rt_bool_t load);
 void rtgui_image_destroy(rtgui_image_t *image);
 
 /* get image's rect */

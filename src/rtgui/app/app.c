@@ -406,6 +406,7 @@ void rtgui_app_exit(rtgui_app_t *app, rt_uint16_t code) {
 
     app->ref_cnt--;
     app->exit_code = code;
+    LOG_D("exit %s ref %d", app->name, app->ref_cnt);
 }
 RTM_EXPORT(rtgui_app_exit);
 

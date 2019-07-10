@@ -67,6 +67,9 @@ extern "C" {
 #define WIN_STYLE_SET(w, sname)             WIN_STYLE(w) |= RTGUI_WIN_STYLE_##sname
 #define IS_WIN_STYLE(w, sname)              (WIN_STYLE(w) & RTGUI_WIN_STYLE_##sname)
 
+#define WIN_SETTER(mname)                   rtgui_win_set_##mname
+#define WIN_GETTER(mname)                   rtgui_win_get_##mname
+
 #define RTGUI_WIN_MAGIC                     0xA5A55A5A
 
 /* Exported types ------------------------------------------------------------*/
@@ -79,8 +82,9 @@ typedef enum rtgui_win_style {
     RTGUI_WIN_STYLE_DESTROY_ON_CLOSE        = 0x0020,  /* destroy if closed */
     RTGUI_WIN_STYLE_ONTOP                   = 0x0040,  /* at top layer */
     RTGUI_WIN_STYLE_ONBTM                   = 0x0080,  /* at bottom layer */
-    RTGUI_WIN_STYLE_MAINWIN                 = 0x0106,  /* main window */
-    RTGUI_WIN_STYLE_DEFAULT                 = RTGUI_WIN_STYLE_CLOSEBOX | \
+    RTGUI_WIN_STYLE_MAINWIN                 = RTGUI_WIN_STYLE_NO_TITLE  | \
+                                              RTGUI_WIN_STYLE_NO_BORDER,
+    RTGUI_WIN_STYLE_DEFAULT                 = RTGUI_WIN_STYLE_CLOSEBOX  | \
                                               RTGUI_WIN_STYLE_MINIBOX,
 } rtgui_win_style_t;
 
@@ -112,7 +116,7 @@ struct rtgui_win {
     char *title;
     rtgui_win_style_t style;
     rtgui_win_flag_t flag;
-    rtgui_modal_code_t modal;
+    // rtgui_modal_code_t modal;
     rt_base_t update;                       /* update count */
     rt_base_t drawing;                      /* drawing count */
     rtgui_rect_t drawing_rect;
@@ -169,7 +173,6 @@ MEMBER_GETTER_PROTOTYPE(rtgui_win_t, win, char*, title);
 
 void rtgui_win_set_title(rtgui_win_t *win, const char *title);
 rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win);
-void rtgui_theme_draw_win(rtgui_title_t *wint);
 
 #endif /* IMPORT_TYPES */
 

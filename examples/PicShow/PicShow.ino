@@ -259,7 +259,7 @@ static void picShow_entry(void *param) {
 
   /* create win */
   CREATE_MAIN_WIN(win, picShow_handler, RT_NULL,
-    "PicWin", RTGUI_WIN_STYLE_NO_BORDER | RTGUI_WIN_STYLE_NO_TITLE);
+    "PicWin", RTGUI_WIN_STYLE_MAINWIN);
   if (!win) {
     rtgui_app_uninit(picShow);
     rt_kprintf("Create main win failed!\n");

@@ -63,6 +63,8 @@ extern "C" {
 #define APP_FLAG_SET(a, fname)              APP_FLAG(a) |= RTGUI_APP_FLAG_##fname
 #define IS_APP_FLAG(a, fname)               (APP_FLAG(a) & RTGUI_APP_FLAG_##fname)
 
+#define APP_SETTER(mname)                   rtgui_app_set_##mname
+
 /* Exported types ------------------------------------------------------------*/
 typedef enum rtgui_app_flag {
     RTGUI_APP_FLAG_INIT                     = 0x04,

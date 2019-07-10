@@ -1,5 +1,5 @@
 /*
- * File      : label.h
+ * File      : filelist.h
  * This file is part of RT-Thread GUI Engine
  * COPYRIGHT (C) 2006 - 2017, RT-Thread Development Team
  *
@@ -19,15 +19,11 @@
  *
  * Change Logs:
  * Date           Author       Notes
- * 2009-10-16     Bernard      first version
- * 2019-06-18     onelife      refactor
+ * 2010-01-06     Bernard      first version
+ * 2019-07-04     onelife      refactor
  */
-#ifndef __RTGUI_LABEL_H__
-#define __RTGUI_LABEL_H__
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef __RTGUI_FILELIST_H__
+#define __RTGUI_FILELIST_H__
 
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
@@ -35,43 +31,44 @@ extern "C" {
 #ifdef IMPORT_TYPES
 
 /* Exported defines ----------------------------------------------------------*/
-#define _LABEL_METADATA                     CLASS_METADATA(label)
-#define IS_LABEL(obj)                       IS_INSTANCE(obj, _LABEL_METADATA)
-#define TO_LABEL(obj)                       CAST_(obj, _LABEL_METADATA, rtgui_label_t)
+#define _FILELIST_METADATA                  CLASS_METADATA(filelist)
+#define IS_FILELIST(obj)                    IS_INSTANCE(obj, _FILELIST_METADATA)
+#define TO_FILELIST(obj)                    CAST_(obj, _FILELIST_METADATA, rtgui_filelist_t)
 
-#define CREATE_LABEL_INSTANCE(obj, hdl, text) \
+#define CREATE_FILELIST_INSTANCE(obj, dir, rect) \
     do {                                    \
-        obj = (rtgui_label_t *)CREATE_INSTANCE(label, hdl); \
+        obj = (rtgui_filelist_t *)CREATE_INSTANCE(filelist, SUPER_CLASS_HANDLER(filelist)); \
         if (!obj) break;                    \
-        if (rtgui_label_init(obj, text))    \
-            DELETE_INSTANCE(obj);           \
+        rtgui_widget_set_rect(TO_WIDGET(obj), rect); \
+        rtgui_filelist_set_dir(obj, dir);   \
     } while (0)
 
-#define DELETE_LABEL_INSTANCE(obj)          DELETE_INSTANCE(obj)
+#define DELETE_FILELIST_INSTANCE(obj)       DELETE_INSTANCE(obj)
 
-#define LABEL_GETTER(mname)                 rtgui_label_get_##mname
+#define FILELIST_SETTER(mname)              rtgui_filelist_set_##mname
 
 /* Exported types ------------------------------------------------------------*/
-struct rtgui_label {
-    rtgui_widget_t _super;
-    char *text;
+typedef struct rtgui_filelist rtgui_filelist_t;
+
+struct rtgui_filelist {
+    rtgui_list_t _super;
+    /* PRIVATE */
+    char *cur_dir;
+    // char *pattern;
+    rtgui_evt_hdl_t on_file;
 };
 
 /* Exported constants --------------------------------------------------------*/
-CLASS_PROTOTYPE(label);
+CLASS_PROTOTYPE(filelist);
 
-#undef __RTGUI_LABEL_H__
+#undef __RTGUI_FILELIST_H__
 #else /* IMPORT_TYPES */
 
 /* Exported functions ------------------------------------------------------- */
-rt_err_t *rtgui_label_init(rtgui_label_t *lab, const char *text);
-void rtgui_label_set_text(rtgui_label_t *lab, const char *text);
-MEMBER_GETTER_PROTOTYPE(rtgui_label_t, label, char*, text);
+void rtgui_filelist_set_dir(rtgui_filelist_t *filelist, const char *dir);
+MEMBER_GETTER_PROTOTYPE(rtgui_filelist_t, filelist, char*, cur_dir);
+MEMBER_SETTER_PROTOTYPE(rtgui_filelist_t, filelist, rtgui_evt_hdl_t, on_file);
 
 #endif /* IMPORT_TYPES */
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __RTGUI_LABEL_H__ */
+#endif /* __RTGUI_FILELIST_H__ */

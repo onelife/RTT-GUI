@@ -74,7 +74,7 @@ static void _widget_constructor(void *obj) {
     rtgui_region_init_with_extent(&wgt->clip, &wgt->extent);
 
     wgt->on_focus = RT_NULL;
-    wgt->on_unfocus  = RT_NULL;
+    wgt->on_unfocus = RT_NULL;
 
     wgt->gc.foreground = default_foreground;
     wgt->gc.background = default_background;
@@ -275,7 +275,6 @@ void rtgui_widget_get_rect(rtgui_widget_t *wgt, rtgui_rect_t *rect) {
 RTM_EXPORT(rtgui_widget_get_rect);
 
 RTGUI_MEMBER_SETTER(rtgui_widget_t, widget, rtgui_evt_hdl_t, on_focus);
-
 RTGUI_MEMBER_SETTER(rtgui_widget_t, widget, rtgui_evt_hdl_t, on_unfocus);
 
 rtgui_widget_t *rtgui_widget_get_next_sibling(rtgui_widget_t *wgt) {

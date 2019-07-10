@@ -257,7 +257,7 @@ static void _topwin_deactivate(rtgui_topwin_t *top) {
     if (rtgui_request(top->app, evt, RT_WAITING_FOREVER)) return;
 
     TOPWIN_FLAG_CLEAR(top, ACTIVATE);
-    LOG_E("deactive %s", top->wid->title);
+    LOG_D("deactive %s", top->wid->title);
 }
 
 /* Return 1 on the tree is truely moved. If the tree is already in position,

@@ -118,11 +118,6 @@ extern "C" {
 #define MEMBER_GETTER(cname, mname)          rtgui_##cname##_get_##mname
 #define MEMBER_SETTER(cname, mname)          rtgui_##cname##_set_##mname
 
-#define APP_SETTER(mname)                   rtgui_app_set_##mname
-#define WIDGET_SETTER(mname)                rtgui_widget_set_##mname
-#define WIDGET_GETTER(mname)                rtgui_widget_get_##mname
-#define LABEL_GETTER(mname)                 rtgui_label_get_##mname
-
 /* Exported types ------------------------------------------------------------*/
 typedef rt_uint32_t rtgui_color_t;
 typedef struct rtgui_point rtgui_point_t;
@@ -220,7 +215,7 @@ enum rtgui_border {
     RTGUI_BORDER_DOWN,
 };
 
-enum rtgui_alignment {
+typedef enum rtgui_alignment {
     RTGUI_ALIGN_NOT                         = 0x00,
     RTGUI_ALIGN_CENTER_HORIZONTAL           = 0x01,
     RTGUI_ALIGN_LEFT                        = RTGUI_ALIGN_NOT,
@@ -233,7 +228,7 @@ enum rtgui_alignment {
     RTGUI_ALIGN_EXPAND                      = 0x10,
     RTGUI_ALIGN_STRETCH                     = 0x20,
     RTGUI_ALIGN_TTF_SIZE                    = 0x40,
-};
+} rtgui_alignment_t;
 
 enum rtgui_text_style {
     RTGUI_TEXTSTYLE_NORMAL                  = 0x00,
@@ -260,6 +255,8 @@ typedef enum rtgui_blend_mode {
 #include "include/widgets/label.h"
 #include "include/widgets/button.h"
 #include "include/widgets/progress.h"
+#include "include/widgets/list.h"
+#include "include/widgets/filelist.h"
 #include "include/widgets/window.h"
 #include "include/app/app.h"
 #undef IMPORT_TYPES

@@ -214,7 +214,7 @@ static rt_bool_t _button_on_unfocus(void *obj, rtgui_evt_generic_t *evt) {
         rtgui_widget_get_rect(wgt, &rect);
 
         /* only clear focus rect */
-        rtgui_rect_inflate(&rect, -BORDER_SIZE_DEFAULT);
+        rtgui_rect_inflate(&rect, -WIDGET_DEFAULT_BORDER);
         gc = rtgui_dc_get_gc(dc);
         fc = gc->foreground;
         gc->foreground = gc->background;
@@ -275,7 +275,7 @@ static void _theme_draw_button(rtgui_button_t *btn) {
             rtgui_color_t fc;
             /* reset foreground and get default rect */
             rtgui_widget_get_rect(TO_WIDGET(btn), &rect);
-            rtgui_rect_inflate(&rect, -BORDER_SIZE_DEFAULT);
+            rtgui_rect_inflate(&rect, -WIDGET_DEFAULT_BORDER);
 
             fc = WIDGET_FOREGROUND(btn);
 
@@ -289,7 +289,7 @@ static void _theme_draw_button(rtgui_button_t *btn) {
             /* reset foreground and get default rect */
             rtgui_widget_get_rect(TO_WIDGET(btn), &rect);
             /* remove border */
-            rtgui_rect_inflate(&rect, -BORDER_SIZE_DEFAULT);
+            rtgui_rect_inflate(&rect, -WIDGET_DEFAULT_BORDER);
 
             if (IS_WIDGET_FLAG(btn, DISABLE)) {
                 rtgui_color_t fc;

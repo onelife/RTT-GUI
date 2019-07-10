@@ -366,7 +366,7 @@ rt_bool_t string_equal_func(const void *a, const void *b) {
     str1 = (const char *)a;
     str2 = (const char *)b;
 
-    if (0 == strcmp(str1, str2)) return RT_TRUE;
+    if (0 == rt_strcmp(str1, str2)) return RT_TRUE;
     return RT_FALSE;
 }
 

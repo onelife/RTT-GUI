@@ -121,8 +121,8 @@ rt_err_t *rtgui_label_init(rtgui_label_t *lab, const char *text) {
 
     /* set default rect */
     rtgui_font_get_metrics(rtgui_font_default(), text, &rect);
-    rect.x2 += (BORDER_SIZE_DEFAULT << 1);
-    rect.y2 += (BORDER_SIZE_DEFAULT << 1);
+    rect.x2 += (WIDGET_DEFAULT_BORDER << 1);
+    rect.y2 += (WIDGET_DEFAULT_BORDER << 1);
     rtgui_widget_set_rect(TO_WIDGET(lab), &rect);
     /* set text */
     lab->text = (char *)rt_strdup(text);

@@ -60,6 +60,8 @@ extern "C" {
 
 extern const rtgui_color_t default_foreground;
 extern const rtgui_color_t default_background;
+extern const rtgui_color_t selected_color;
+extern const rtgui_color_t disable_foreground;
 
 /* it's better use these color definitions */
 #define RED                RTGUI_RGB(0xff, 0x00, 0x00)

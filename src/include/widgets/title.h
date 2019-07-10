@@ -39,8 +39,8 @@ extern "C" {
 #define IS_TITLE(obj)                       IS_INSTANCE((obj), _TITLE_METADATA)
 #define TO_TITLE(obj)                       CAST_(obj, _TITLE_METADATA, rtgui_title_t)
 
-#define TITLE_HEIGHT                        (20)
-#define TITLE_BORDER_SIZE                   (2)
+#define TITLE_DEFAULT_HEIGHT                (20)
+#define TITLE_DEFAULT_BORDER                (2)
 #define TITLE_CLOSE_BUTTON_WIDTH            (16)
 #define TITLE_CLOSE_BUTTON_HEIGHT           (16)
 

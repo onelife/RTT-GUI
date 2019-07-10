@@ -189,7 +189,7 @@ static rt_err_t bmp_font_open(rtgui_font_t *font) {
     if (RT_EOK != ret) {
         LOG_E("open %s err [%d]", bmp_fnt->fname, ret);
     } else if (bmp_fnt->fname) {
-        LOG_D("open %s", bmp_fnt->fname);
+        // LOG_D("open %s", bmp_fnt->fname);
     }
     return ret;
 }
@@ -206,7 +206,7 @@ static void bmp_font_close(rtgui_font_t *font) {
             rtgui_free(bmp_fnt->data);
             bmp_fnt->data = RT_NULL;
         }
-        LOG_D("closed %s", bmp_fnt->fname);
+        // LOG_D("closed %s", bmp_fnt->fname);
     }
 }
 #endif

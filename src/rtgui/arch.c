@@ -485,8 +485,8 @@ static void rtgui_log_event(rtgui_app_t* tgt, rtgui_evt_generic_t *evt) {
     case RTGUI_EVENT_MOUSE_BUTTON:
     case RTGUI_EVENT_MOUSE_MOTION:
         rt_kprintf("(%03d, %03d) <%s %s> %s", evt->mouse.x, evt->mouse.y,
-            (evt->mouse.button & MOUSE_BUTTON_LEFT) ? "L" : "R",
-            (evt->mouse.button & MOUSE_BUTTON_DOWN) ? "down" : "up",
+            IS_MOUSE_EVENT_BUTTON(evt, LEFT) ? "L" : "R",
+            IS_MOUSE_EVENT_BUTTON(evt, DOWN) ? "down" : "up",
             evt->mouse.wid ? evt->mouse.wid->title : "???");
         break;
 
@@ -566,7 +566,7 @@ RTM_EXPORT(rtgui_request_sync);
 
 rt_err_t rtgui_response(rtgui_evt_generic_t *evt, rt_uint32_t val) {
     if (!evt->base.ack) {
-        LOG_W("no ack return");
+        LOG_D("no ack return");
         return RT_EOK;
     }
     EVT_LOG("[EVT] %p ack %d", evt, val);

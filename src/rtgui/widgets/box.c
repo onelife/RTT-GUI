@@ -58,7 +58,7 @@ static void _box_constructor(void *obj) {
 
     /* set proper of control */
     box->orient = RTGUI_HORIZONTAL;
-    box->border_sz = BORDER_SIZE_DEFAULT;
+    box->border_sz = WIDGET_DEFAULT_BORDER;
     box->container = RT_NULL;
 }
 

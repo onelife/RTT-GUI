@@ -292,20 +292,16 @@ void rtgui_dc_fill_gradient_rectv(rtgui_dc_t *dc, rtgui_rect_t *rect,
 }
 RTM_EXPORT(rtgui_dc_fill_gradient_rectv);
 
-void rtgui_dc_draw_focus_rect(rtgui_dc_t *dc, rtgui_rect_t *rect)
-{
-    int x, y;
+void rtgui_dc_draw_focus_rect(rtgui_dc_t *dc, rtgui_rect_t *rect) {
+    rt_int16_t x, y;
 
-    for (x = rect->x1; x < rect->x2 - 1; x += 2)
-    {
+    for (x = rect->x1; x < rect->x2 - 1; x += 2) {
         rtgui_dc_draw_point(dc, x, rect->y1);
-        rtgui_dc_draw_point(dc, x, rect->y2 - 1);
+        rtgui_dc_draw_point(dc, x, rect->y2);
     }
-
-    for (y = rect->y1; y < rect->y2; y += 2)
-    {
+    for (y = rect->y1; y < rect->y2; y += 2) {
         rtgui_dc_draw_point(dc, rect->x1, y);
-        rtgui_dc_draw_point(dc, rect->x2 - 1, y);
+        rtgui_dc_draw_point(dc, rect->x2, y);
     }
 }
 RTM_EXPORT(rtgui_dc_draw_focus_rect);

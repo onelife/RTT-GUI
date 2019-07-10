@@ -116,7 +116,7 @@ static rt_bool_t _server_mouse_button_handler(rtgui_evt_generic_t *evt) {
         if (!top) break;
 
         /* only raise window if the button is pressed down */
-        if ((evt->mouse.button & MOUSE_BUTTON_DOWN) && \
+        if (IS_MOUSE_EVENT_BUTTON(evt, DOWN) && \
             (rtgui_topwin_get_focus() != top)) {
             rtgui_topwin_activate(top);
         }

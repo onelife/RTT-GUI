@@ -52,6 +52,9 @@ extern "C" {
 #define WIDGET_FLAG_SET(w, fname)           WIDGET_FLAG(w) |= RTGUI_WIDGET_FLAG_##fname
 #define IS_WIDGET_FLAG(w, fname)            (WIDGET_FLAG(w) & RTGUI_WIDGET_FLAG_##fname)
 
+#define WIDGET_SETTER(mname)                rtgui_widget_set_##mname
+#define WIDGET_GETTER(mname)                rtgui_widget_get_##mname
+
 /* Exported types ------------------------------------------------------------*/
 typedef enum rtgui_widget_flag {
     RTGUI_WIDGET_FLAG_DEFAULT               = 0x0000,

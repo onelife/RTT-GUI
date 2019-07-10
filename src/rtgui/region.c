@@ -296,7 +296,7 @@ RTM_EXPORT(rtgui_region_copy);
  * _coalesce --
  *  Attempt to merge the boxes in the current band with those in the
  *  previous one.  We are guaranteed that the current band extends to
- *      the end of the rects array.  Used only by region_op.
+ *  the end of the rects array.  Used only by region_op.
  *
  * Results:
  *  The new index for the previous band.
@@ -305,15 +305,15 @@ RTM_EXPORT(rtgui_region_copy);
  *  If coalescing takes place:
  *      - rectangles in the previous band will have their y2 fields
  *        altered.
- *      - region->data->numRects will be decreased.
+ *      - rgn->data->numRects will be decreased.
  *
  *-----------------------------------------------------------------------
  */
 rt_inline rt_uint32_t _coalesce(
-    rtgui_region_t *region,         /* Region to coalesce */
-    rt_uint32_t prevStart,          /* Index of start of previous band */
+    rtgui_region_t *rgn,            /* Region to coalesce */
+    rt_uint32_t prvStart,           /* Index of start of previous band */
     rt_uint32_t curStart) {         /* Index of start of current band */
-    rtgui_rect_t *pPrevBox;         /* Current box in previous band */
+    rtgui_rect_t *pPrvBox;          /* Current box in previous band */
     rtgui_rect_t *pCurBox;          /* Current box in current band */
     rt_uint32_t numRects;           /* Number rectangles in both bands */
     rt_int16_t y2;                  /* Bottom of current band */
@@ -321,8 +321,8 @@ rt_inline rt_uint32_t _coalesce(
     /*
      * Figure out how many rectangles are in the band.
      */
-    numRects = curStart - prevStart;
-    RT_ASSERT(numRects == (region->data->numRects - curStart));
+    numRects = curStart - prvStart;
+    RT_ASSERT(numRects == (rgn->data->numRects - curStart));
 
     if (!numRects) return curStart;
 
@@ -330,9 +330,9 @@ rt_inline rt_uint32_t _coalesce(
      * The bands may only be coalesced if the bottom of the previous
      * matches the top scanline of the current.
      */
-    pPrevBox = REGION_RECT_AT(region, prevStart);
-    pCurBox = REGION_RECT_AT(region, curStart);
-    if (pPrevBox->y2 != pCurBox->y1) return curStart;
+    pPrvBox = REGION_RECT_AT(rgn, prvStart);
+    pCurBox = REGION_RECT_AT(rgn, curStart);
+    if (pPrvBox->y2 != pCurBox->y1) return curStart;
 
     /*
      * Make sure the bands have boxes in the same places. This
@@ -343,9 +343,9 @@ rt_inline rt_uint32_t _coalesce(
     y2 = pCurBox->y2;
 
     do {
-        if ((pPrevBox->x1 != pCurBox->x1) || (pPrevBox->x2 != pCurBox->x2))
+        if ((pPrvBox->x1 != pCurBox->x1) || (pPrvBox->x2 != pCurBox->x2))
             return curStart;
-        pPrevBox++;
+        pPrvBox++;
         pCurBox++;
         numRects--;
     } while (numRects);
@@ -354,22 +354,25 @@ rt_inline rt_uint32_t _coalesce(
      * The bands may be merged, so set the bottom y of each box
      * in the previous band to the bottom y of the current band.
      */
-    numRects = curStart - prevStart;
-    region->data->numRects -= numRects;
+    numRects = curStart - prvStart;
+    rgn->data->numRects -= numRects;
     do {
-        pPrevBox--;
-        pPrevBox->y2 = y2;
+        pPrvBox--;
+        pPrvBox->y2 = y2;
         numRects--;
     } while (numRects);
-    return prevStart;
+    return prvStart;
 }
 
 /* Quicky macro to avoid trivial reject procedure calls to _coalesce */
-#define coalesce(dstRgn, prevStart, cur_num) \
-    if ((cur_num - prevStart) == (dstRgn->data->numRects - cur_num)) { \
-        prevStart = _coalesce(dstRgn, prevStart, cur_num); \
+#define coalesce(dstRgn, prvStart, curStart) \
+    if ((curStart - prvStart) != (dstRgn->data->numRects - curStart)) { \
+        if ((0 != prvStart) || (0 != curStart)) { \
+            LOG_W("coalesce mismatch");     \
+            prvStart = curStart;            \
+        }                                   \
     } else {                                \
-        prevStart = cur_num;                \
+        prvStart = _coalesce(dstRgn, prvStart, curStart); \
     }
 
 /*-
@@ -383,7 +386,7 @@ rt_inline rt_uint32_t _coalesce(
  *  None.
  *
  * Side Effects:
- *  region->data->numRects is incremented and the rectangles overwritten
+ *  rgn->data->numRects is incremented and the rectangles overwritten
  *  with the rectangles we're passed.
  *
  *-----------------------------------------------------------------------
@@ -484,15 +487,15 @@ static r_op_status_t region_op(
     rt_uint32_t num2;
     rtgui_rect_t *end1;             /* the end of rect in rgn1 */
     rtgui_rect_t *end2;             /* the end of rect in rgn2 */
-    rt_uint32_t prevStart;
+    rt_uint32_t prvStart;          /* previous coalesce starting index */
+    rt_uint32_t curStart;           /* current coalesce starting index */
 
     rt_int16_t top_y;
-    rt_int16_t other_y1;
+    rt_int16_t lower_y1;
     rt_int16_t r1_start_y1;         /* rgn1 search start y1 */
     rt_int16_t r2_start_y1;         /* rgn2 search start y1 */
     rtgui_rect_t *r1_stop;          /* rgn1 search end r */
     rtgui_rect_t *r2_stop;          /* rgn2 search end r */
-    rt_uint32_t cur_num;            /* current number of rect in dstRgn */
 
     if (IS_REGION_INVALID(rgn1) || IS_REGION_INVALID(rgn2))
         return _invalid(dstRgn);
@@ -532,29 +535,29 @@ static r_op_status_t region_op(
 
     /*
      * Initialize top_y.
-     *  In the upcoming loop, top_y and other_y1 serve different functions depending
+     *  In the upcoming loop, top_y and lower_y1 serve different functions depending
      * on whether the band being handled is an overlapping or non-overlapping
      * band.
      *  In the case of a non-overlapping band (only one of the regions
      * has points in the band), top_y is the bottom of the most recent
      * intersection and thus clips the top of the rectangles in that band.
-     * other_y1 is the top of the next intersection between the two regions and
+     * lower_y1 is the top of the next intersection between the two regions and
      * serves to clip the bottom of the rectangles in the current band.
-     *  For an overlapping band (where the two regions intersect), other_y1 clips
+     *  For an overlapping band (where the two regions intersect), lower_y1 clips
      * the top of the rectangles of both regions and top_y clips the bottoms.
      */
     top_y = _MIN(r1->y1, r2->y1);
 
     /*
-     * prevStart serves to mark the start of the previous band so rectangles
+     * prvStart serves to mark the start of the previous band so rectangles
      * can be coalesced into larger rectangles. qv. _coalesce, above.
-     * In the beginning, there is no previous band, so prevStart == cur_num
-     * (cur_num is set later on, of course, but the first band will always
-     * start at index 0). prevStart and cur_num must be indices because of
+     * In the beginning, there is no previous band, so prvStart == curStart
+     * (curStart is set later on, of course, but the first band will always
+     * start at index 0). prvStart and curStart must be indices because of
      * the possible expansion, and resultant moving, of the new region's
      * array of rectangles.
      */
-    prevStart = 0;
+    prvStart = 0;
 
     do {
         RT_ASSERT(r1 != end1);
@@ -589,12 +592,12 @@ static r_op_status_t region_op(
                 btm = _MIN(r1->y2, r2_start_y1);
                 if (top < btm) {
                     /* has space */
-                    cur_num = dstRgn->data->numRects;
+                    curStart = dstRgn->data->numRects;
                     _expend_verticaly(dstRgn, r1, r1_stop, top, btm);
-                    coalesce(dstRgn, prevStart, cur_num);
+                    coalesce(dstRgn, prvStart, curStart);
                 }
             }
-            other_y1 = r2_start_y1;
+            lower_y1 = r2_start_y1;
         } else if (r2_start_y1 < r1_start_y1) {
             /* region2 r on top */
             if (merge_b2) {
@@ -606,28 +609,28 @@ static r_op_status_t region_op(
                 btm = _MIN(r2->y2, r1_start_y1);
                 if (top < btm) {
                     /* has space */
-                    cur_num = dstRgn->data->numRects;
+                    curStart = dstRgn->data->numRects;
                     _expend_verticaly(dstRgn, r2, r2_stop, top, btm);
-                    coalesce(dstRgn, prevStart, cur_num);
+                    coalesce(dstRgn, prvStart, curStart);
                 }
             }
-            other_y1 = r1_start_y1;
+            lower_y1 = r1_start_y1;
         } else {
-            other_y1 = r1_start_y1;
+            lower_y1 = r1_start_y1;
         }
 
         /*
          * Now see if we've hit an intersecting band. The two bands only
-         * intersect if top_y > other_y1
+         * intersect if top_y > lower_y1
          */
         top_y = _MIN(r1->y2, r2->y2);
-        if (top_y > other_y1) {
+        if (top_y > lower_y1) {
             /* overlap */
-            cur_num = dstRgn->data->numRects;
-            if (SUCCESS != func(dstRgn, r1, r1_stop, r2, r2_stop, other_y1,
+            curStart = dstRgn->data->numRects;
+            if (SUCCESS != func(dstRgn, r1, r1_stop, r2, r2_stop, lower_y1,
                 top_y, pOverlap))
                 return FAILURE;
-            coalesce(dstRgn, prevStart, cur_num);
+            coalesce(dstRgn, prvStart, curStart);
         }
 
         /*
@@ -655,9 +658,9 @@ static r_op_status_t region_op(
         top = _MAX(r1_start_y1, top_y);
         if (top < r1->y2) {
             /* has space */
-            cur_num = dstRgn->data->numRects;
+            curStart = dstRgn->data->numRects;
             _expend_verticaly(dstRgn, r1, r1_stop, top, r1->y2);
-            coalesce(dstRgn, prevStart, cur_num);
+            coalesce(dstRgn, prvStart, curStart);
             /* append the rest */
             _append_rects(dstRgn, r1_stop, end1);
         }
@@ -669,9 +672,9 @@ static r_op_status_t region_op(
         /* get space top */
         top = _MAX(r2_start_y1, top_y);
         if (top < r2->y2) {
-            cur_num = dstRgn->data->numRects;
+            curStart = dstRgn->data->numRects;
             _expend_verticaly(dstRgn, r2, r2_stop, top, r2->y2);
-            coalesce(dstRgn, prevStart, cur_num);
+            coalesce(dstRgn, prvStart, curStart);
             /* append the rest */
             _append_rects(dstRgn, r2_stop, end2);
         }
@@ -770,10 +773,10 @@ static r_op_status_t _intersect_func(
     rtgui_rect_t *end2,
     rt_int16_t y1,
     rt_int16_t y2,
-    int *nutUsed) {
+    int *notUsed) {
     rtgui_rect_t *end;
     rt_int16_t x1, x2;
-    (void)nutUsed;
+    (void)notUsed;
 
     RT_ASSERT(y1 < y2);
     RT_ASSERT(r1 != end1 && r2 != end2);
@@ -1227,8 +1230,8 @@ r_op_status_t rtgui_region_validate(
     /* Descriptor for regions under construction  in Step 2. */
     typedef struct {
         rtgui_region_t rgn;
-        rt_uint32_t prevStart;
-        rt_uint32_t cur_num;
+        rt_uint32_t prvStart;
+        rt_uint32_t curStart;
     } RegionInfo;
 
     rt_uint32_t num2;   /* Original num2 for badreg     */
@@ -1278,8 +1281,8 @@ r_op_status_t rtgui_region_validate(
     if (!ri) return _invalid(badreg);
     sizeRI = 4;
     numRI = 1;
-    ri[0].prevStart = 0;
-    ri[0].cur_num = 0;
+    ri[0].prvStart = 0;
+    ri[0].curStart = 0;
     ri[0].rgn = *badreg;
     rect = REGION_RECTS_PTR(&ri[0].rgn);
     ri[0].rgn.extents = *rect;
@@ -1322,8 +1325,8 @@ r_op_status_t rtgui_region_validate(
                 /* Put box into new band */
                 if (rgn->extents.x2 < riBox->x2) rgn->extents.x2 = riBox->x2;
                 if (rgn->extents.x1 > rect->x1)   rgn->extents.x1 = rect->x1;
-                coalesce(rgn, rit->prevStart, rit->cur_num);
-                rit->cur_num = rgn->data->numRects;
+                coalesce(rgn, rit->prvStart, rit->curStart);
+                rit->curStart = rgn->data->numRects;
                 RECTALLOC_BAIL(rgn, 1, bail);
                 *REGION_END_RECT(rgn) = *rect;
                 rgn->data->numRects++;
@@ -1344,8 +1347,8 @@ r_op_status_t rtgui_region_validate(
             rit = &ri[numRI];
         }
         numRI++;
-        rit->prevStart = 0;
-        rit->cur_num = 0;
+        rit->prvStart = 0;
+        rit->curStart = 0;
         rit->rgn.extents = *rect;
         rit->rgn.data = (rtgui_region_data_t *)RT_NULL;
         if (!_alloc_rects(&rit->rgn, (i + numRI) / numRI)) /* MUST force allocation */
@@ -1364,7 +1367,7 @@ r_op_status_t rtgui_region_validate(
         riBox = REGION_LAST_RECT(rgn);
         rgn->extents.y2 = riBox->y2;
         if (rgn->extents.x2 < riBox->x2) rgn->extents.x2 = riBox->x2;
-        coalesce(rgn, rit->prevStart, rit->cur_num);
+        coalesce(rgn, rit->prvStart, rit->curStart);
         if (rgn->data->numRects == 1) /* keep unions happy below */
         {
             freeData(rgn);
@@ -1415,7 +1418,7 @@ r_op_status_t rtgui_region_validate(
 /*-
  *-----------------------------------------------------------------------
  * _subtract_func --
- *  Overlapping band subtraction. x1 is the left-most point not yet
+ *  Overlapping band subtraction. x is the left-most point not yet
  *  checked.
  *
  * Results:
@@ -1426,7 +1429,6 @@ r_op_status_t rtgui_region_validate(
  *
  *-----------------------------------------------------------------------
  */
-/*ARGSUSED*/
 static r_op_status_t _subtract_func(
     rtgui_region_t *rgn,
     rtgui_rect_t *r1,
@@ -1435,36 +1437,36 @@ static r_op_status_t _subtract_func(
     rtgui_rect_t *end2,
     rt_int16_t y1,
     rt_int16_t y2,
-    int *nutUsed) {
+    int *notUsed) {
     rtgui_rect_t *end;
-    rt_int16_t x1;
-    (void)nutUsed;
+    rt_int16_t x;
+    (void)notUsed;
 
     RT_ASSERT(y1 < y2);
     RT_ASSERT((r1 != end1) && (r2 != end2));
 
     end = REGION_END_RECT(rgn);
-    x1 = r1->x1;
+    x = r1->x1;
 
     do {
-        if (r2->x2 <= x1) {
+        if (r2->x2 <= x) {
             /*
              * Subtrahend entirely to left of minuend: go to next subtrahend.
              */
             r2++;
-        } else if (r2->x1 <= x1) {
+        } else if (r2->x1 <= x) {
             /*
              * Subtrahend preceeds minuend: nuke left edge of minuend.
              */
-            x1 = r2->x2;
-            if (x1 >= r1->x2) {
+            x = r2->x2;
+            if (x >= r1->x2) {
                 /*
                  * Minuend completely covered: advance to next minuend and
                  * reset left fence to edge of new minuend.
                  */
                 r1++;
                 if (r1 != end1)
-                    x1 = r1->x1;
+                    x = r1->x1;
             } else {
                 /*
                  * Subtrahend now used up since it doesn't extend beyond
@@ -1477,17 +1479,17 @@ static r_op_status_t _subtract_func(
              * Left part of subtrahend covers part of minuend: add uncovered
              * part of minuend to region and skip to next subtrahend.
              */
-            RT_ASSERT(x1 < r2->x1);
-            _append_new_rect(rgn, end, x1, y1, r2->x1, y2);
+            RT_ASSERT(x < r2->x1);
+            _append_new_rect(rgn, end, x, y1, r2->x1, y2);
 
-            x1 = r2->x2;
-            if (x1 >= r1->x2) {
+            x = r2->x2;
+            if (x >= r1->x2) {
                 /*
                  * Minuend used up: advance to new...
                  */
                 r1++;
                 if (r1 != end1)
-                    x1 = r1->x1;
+                    x = r1->x1;
             } else {
                 /*
                  * Subtrahend used up
@@ -1498,11 +1500,11 @@ static r_op_status_t _subtract_func(
             /*
              * Minuend used up: add any remaining piece before advancing.
              */
-            if (r1->x2 > x1)
-                _append_new_rect(rgn, end, x1, y1, r1->x2, y2);
+            if (r1->x2 > x)
+                _append_new_rect(rgn, end, x, y1, r1->x2, y2);
             r1++;
             if (r1 != end1)
-                x1 = r1->x1;
+                x = r1->x1;
         }
     } while ((r1 != end1) && (r2 != end2));
 
@@ -1510,11 +1512,11 @@ static r_op_status_t _subtract_func(
      * Add remaining minuend rectangles to region.
      */
     while (r1 != end1) {
-        RT_ASSERT(x1 < r1->x2);
-        _append_new_rect(rgn, end, x1, y1, r1->x2, y2);
+        RT_ASSERT(x < r1->x2);
+        _append_new_rect(rgn, end, x, y1, r1->x2, y2);
         r1++;
         if (r1 != end1)
-            x1 = r1->x1;
+            x = r1->x1;
     }
     return SUCCESS;
 }

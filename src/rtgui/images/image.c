@@ -281,8 +281,7 @@ rtgui_image_t *rtgui_image_create_from_mem(const char *type,
 }
 RTM_EXPORT(rtgui_image_create_from_mem);
 
-void rtgui_image_destroy(rtgui_image_t *image)
-{
+void rtgui_image_destroy(rtgui_image_t *image) {
     RT_ASSERT(image != RT_NULL);
 
     image->engine->image_unload(image);

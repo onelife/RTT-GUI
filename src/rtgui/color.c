@@ -26,6 +26,8 @@
 
 const rtgui_color_t default_foreground = RTGUI_RGB(0x00, 0x00, 0x00);
 const rtgui_color_t default_background = RTGUI_RGB(212, 208, 200);
+const rtgui_color_t selected_color = RTGUI_RGB(0xc0, 0xc0, 0xc0);
+const rtgui_color_t disable_foreground = RTGUI_RGB(0x80, 0x80, 0x80);
 
 const rtgui_color_t red     = RTGUI_RGB(0xff, 0x00, 0x00);
 const rtgui_color_t green   = RTGUI_RGB(0x00, 0xff, 0x00);

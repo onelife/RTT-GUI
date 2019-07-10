@@ -292,7 +292,7 @@ typedef enum rtgui_kbd_mod {
     RTGUI_KMOD_CAPS     = 0x2000,
     RTGUI_KMOD_MODE     = 0x4000,
     RTGUI_KMOD_RESERVED = 0x8000
-} rtgui_kbd_mod_t ;
+} rtgui_kbd_mod_t;
 
 typedef enum rtgui_kbd_type {
     RTGUI_KEYDOWN,          /* Keys pressed */

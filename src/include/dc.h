@@ -203,9 +203,8 @@ int rtgui_dc_draw_thick_line(rtgui_dc_t * dst, rt_int16_t x1, rt_int16_t y1, rt_
 /*
  * draw a point on dc
  */
-rt_inline void rtgui_dc_draw_point(rtgui_dc_t *dc, int x, int y)
-{
-    dc->engine->draw_point(dc, x, y);
+rt_inline void rtgui_dc_draw_point(rtgui_dc_t *dc, int x, int y) {
+    return dc->engine->draw_point(dc, x, y);
 }
 
 /*
@@ -213,36 +212,36 @@ rt_inline void rtgui_dc_draw_point(rtgui_dc_t *dc, int x, int y)
  */
 rt_inline void rtgui_dc_draw_color_point(rtgui_dc_t *dc, int x, int y, 
     rtgui_color_t color) {
-    dc->engine->draw_color_point(dc, x, y, color);
+    return dc->engine->draw_color_point(dc, x, y, color);
 }
 
 /*
  * draw a vertical line on dc
  */
 rt_inline void rtgui_dc_draw_vline(rtgui_dc_t *dc, int x, int y1, int y2) {
-    dc->engine->draw_vline(dc, x, y1, y2);
+    return dc->engine->draw_vline(dc, x, y1, y2);
 }
 
 /*
  * draw a horizontal line on dc
  */
 rt_inline void rtgui_dc_draw_hline(rtgui_dc_t *dc, int x1, int x2, int y) {
-    dc->engine->draw_hline(dc, x1, x2, y);
+    return dc->engine->draw_hline(dc, x1, x2, y);
 }
 
 /*
  * fill a rect with background color
  */
 rt_inline void rtgui_dc_fill_rect(rtgui_dc_t *dc, rtgui_rect_t *rect) {
-    dc->engine->fill_rect(dc, rect);
+    return dc->engine->fill_rect(dc, rect);
 }
 
 /*
  * blit a dc (x, y) on another dc(rect)
  */
-rt_inline void rtgui_dc_blit(rtgui_dc_t *dc, struct rtgui_point *dc_point, rtgui_dc_t *dest, rtgui_rect_t *rect)
-{
-    dc->engine->blit(dc, dc_point, dest, rect);
+rt_inline void rtgui_dc_blit(rtgui_dc_t *dc, struct rtgui_point *point,
+    rtgui_dc_t *dst, rtgui_rect_t *rect) {
+    return dc->engine->blit(dc, point, dst, rect);
 }
 
 /* set gc of dc */
