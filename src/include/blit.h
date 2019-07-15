@@ -132,12 +132,8 @@ typedef void (*rtgui_blit_line_func)(rt_uint8_t *_dst, rt_uint8_t *_src,
 
 rtgui_blit_line_func rtgui_blit_line_get(rt_uint8_t dst_bpp, rt_uint8_t src_bpp);
 
-# if defined(UIENGINE_IMAGE_PNG) || defined(GUIENGINE_USING_HDC)
-void rtgui_blit(rtgui_blit_info_t * info);
-# endif
-
 # ifdef GUIENGINE_USING_HDC
-void rtgui_image_info_blit(rtgui_image_info_t* image, rtgui_dc_t* dc, rtgui_rect_t *dc_rect);
+void rtgui_blit(rtgui_blit_info_t * info);
 # endif
 
 #endif /* RTGUI_USING_DC_BUFFER */

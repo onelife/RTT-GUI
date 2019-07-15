@@ -27,9 +27,6 @@
 #include "include/rtgui.h"
 #include "include/images/image.h"
 #include "include/image_container.h"
-#ifdef GUIENGINE_USING_HDC
-#include "include/images/image_hdc.h"
-#endif
 #ifdef GUIENGINE_IMAGE_BMP
 # include "include/images/image_bmp.h"
 #endif
@@ -61,10 +58,6 @@ rt_err_t rtgui_system_image_init(void) {
     rt_err_t ret = RT_EOK;
 
     do {
-        #ifdef GUIENGINE_USING_HDC
-            /* always support HDC image */
-            rtgui_image_hdc_init();
-        #endif
         #ifdef GUIENGINE_IMAGE_XPM
             rtgui_image_xpm_init();
             LOG_D("XPM init");
