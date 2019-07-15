@@ -239,31 +239,31 @@ struct rtgui_event_timer {
 };
 
 /* window */
-#define _WINDOW_EVENT_BASE_ELEMENTS         \
+#define _WINDOW_EVENT_ELEMENTS         \
     struct rtgui_evt_base base;             \
     rtgui_win_t *wid;
 
 struct rtgui_event_win {
-    _WINDOW_EVENT_BASE_ELEMENTS;
+    _WINDOW_EVENT_ELEMENTS;
 };
 
 struct rtgui_event_win_create {
-    _WINDOW_EVENT_BASE_ELEMENTS;
+    _WINDOW_EVENT_ELEMENTS;
     rtgui_win_t *parent_window;
 };
 
 struct rtgui_event_win_move {
-    _WINDOW_EVENT_BASE_ELEMENTS;
+    _WINDOW_EVENT_ELEMENTS;
     rt_int16_t x, y;
 };
 
 struct rtgui_event_win_resize {
-    _WINDOW_EVENT_BASE_ELEMENTS;
+    _WINDOW_EVENT_ELEMENTS;
     rtgui_rect_t rect;
 };
 
 // struct rtgui_event_win_update_end {
-//     _WINDOW_EVENT_BASE_ELEMENTS;
+//     _WINDOW_EVENT_ELEMENTS;
 //     rtgui_rect_t rect;
 // };
 
@@ -289,19 +289,19 @@ struct rtgui_event_update_end {
 };
 
 struct rtgui_event_monitor {
-    _WINDOW_EVENT_BASE_ELEMENTS;
+    _WINDOW_EVENT_ELEMENTS;
     /* the monitor rect */
     rtgui_rect_t rect;
 };
 
 struct rtgui_event_paint {
-    _WINDOW_EVENT_BASE_ELEMENTS;
+    _WINDOW_EVENT_ELEMENTS;
     /* rect to be updated */
     rtgui_rect_t rect;
 };
 
 struct rtgui_event_clip_info {
-    _WINDOW_EVENT_BASE_ELEMENTS;
+    _WINDOW_EVENT_ELEMENTS;
     /* the number of rects */
     /*rt_uint32_t num_rect;*/
     /*rtgui_rect_t *rects*/
@@ -327,7 +327,7 @@ struct rt_completion {
 };
 
 struct rtgui_event_vpaint_req {
-    _WINDOW_EVENT_BASE_ELEMENTS;
+    _WINDOW_EVENT_ELEMENTS;
     struct rtgui_event_vpaint_req *origin;
     struct rt_completion *cmp;
     rtgui_dc_t* buffer;
@@ -349,7 +349,7 @@ enum rtgui_gesture_type {
 };
 
 struct rtgui_event_gesture {
-    _WINDOW_EVENT_BASE_ELEMENTS;
+    _WINDOW_EVENT_ELEMENTS;
     enum rtgui_gesture_type type;
     rt_uint32_t act_cnt;               /* window activate count */
 };
@@ -367,7 +367,7 @@ typedef enum rtgui_mouse_btn {
 } rtgui_mouse_btn_t;
 
 struct rtgui_event_mouse {
-    _WINDOW_EVENT_BASE_ELEMENTS;
+    _WINDOW_EVENT_ELEMENTS;
     rt_uint16_t x, y;
     rt_uint16_t button;
     rt_tick_t ts;                           /* timestamp */
@@ -379,7 +379,7 @@ struct rtgui_event_mouse {
 
 /* beyboard */
 struct rtgui_event_kbd {
-    _WINDOW_EVENT_BASE_ELEMENTS;
+    _WINDOW_EVENT_ELEMENTS;
     rt_uint32_t act_cnt;               /* window activate count */
     rt_uint16_t type;                       /* key down or up */
     rt_uint16_t key;                        /* current key */
@@ -434,7 +434,7 @@ struct rtgui_event_mv_model {
 #endif
 
 struct rtgui_event_command {
-    _WINDOW_EVENT_BASE_ELEMENTS;
+    _WINDOW_EVENT_ELEMENTS;
     rt_int32_t type;
     rt_int32_t command_id;
     char command_string[GUIENGINE_CMD_STRING_MAX];

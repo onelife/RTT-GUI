@@ -246,15 +246,13 @@ void rtgui_gfx_driver_vmode_exit(void) {
 }
 RTM_EXPORT(rtgui_gfx_driver_vmode_exit);
 
-rt_bool_t rtgui_graphic_driver_is_vmode(void) {
+rt_bool_t rtgui_gfx_driver_in_virtual_mode(void) {
     return (_cur_drv == &_vfb_drv);
 }
-RTM_EXPORT(rtgui_graphic_driver_is_vmode);
+RTM_EXPORT(rtgui_gfx_driver_in_virtual_mode);
 
-rtgui_dc_t*
-rtgui_graphic_driver_get_rect_buffer(const rtgui_gfx_driver_t *drv,
-                                     rtgui_rect_t *r)
-{
+rtgui_dc_t* rtgui_graphic_driver_get_rect_buffer(const rtgui_gfx_driver_t *drv,
+    rtgui_rect_t *r) {
     int w, h;
     struct rtgui_dc_buffer *buffer;
     rt_uint8_t *pixel, *dst;
@@ -831,7 +829,7 @@ RTM_EXPORT(rtgui_gfx_get_framebuffer);
 #ifdef CONFIG_TOUCH_DEVICE_NAME
 static void touch_available(void) {
     /* call by interrupt, send touch event to server */
-    // TODO(onelife): add a lock to prevent interrupt e.g. sd reading?
+    // TODO(onelife): add a lock to prevent interrupting e.g. sd reading?
     rt_size_t num;
     rtgui_touch_t *data;
     rtgui_evt_generic_t *evt;

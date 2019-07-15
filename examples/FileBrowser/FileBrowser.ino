@@ -127,7 +127,7 @@ static void fileBrowser_entry(void *param) {
   rtgui_get_screen_rect(&rect);
 
   /* filelist */
-  CREATE_FILELIST_INSTANCE(filelist, "/pic", &rect);
+  CREATE_FILELIST_INSTANCE(filelist, "/", &rect);
   if (!filelist) {
       rt_kprintf("Create filelist failed!\n");
       return;

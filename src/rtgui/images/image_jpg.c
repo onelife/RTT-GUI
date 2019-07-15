@@ -28,8 +28,8 @@
 
 #ifdef GUIENGINE_IMAGE_JPEG
 
-#include "include/blit.h"
 #include "include/images/image.h"
+#include "include/blit.h"
 #include "tjpgd/tjpgd.h"
 
 #ifdef RT_USING_ULOG
@@ -69,14 +69,12 @@ struct rtgui_image_jpeg {
 #define JPEG_MAX_OUTPUT_WIDTH       (16)
 #define display()                   (rtgui_get_gfx_device())
 
-/* Private macro -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 static rt_bool_t jpeg_check(rtgui_filerw_t *file);
 static rt_bool_t jpeg_load(rtgui_image_t *img, rtgui_filerw_t *file,
     rt_bool_t load_body);
 static void jpeg_unload(rtgui_image_t *img);
-static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc,
-    rtgui_rect_t *dst_rect);
+static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
 /* Private variables ---------------------------------------------------------*/
 rtgui_image_engine_t jpeg_engine = {
@@ -336,11 +334,10 @@ static void jpeg_unload(rtgui_image_t *img) {
     }
 }
 
-static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc,
-    rtgui_rect_t *dst_rect) {
+static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect) {
     struct rtgui_image_jpeg *jpeg;
 
-    if (!img || !dc || !dst_rect || !img->data) return;
+    if (!img || !dc || !rect || !img->data) return;
 
     jpeg = (struct rtgui_image_jpeg *)img->data;
     if (jpeg->pixel_format != display()->pixel_format) {
@@ -351,16 +348,16 @@ static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc,
     do {
         rt_uint16_t w, h;
 
-        w = _MIN(img->w, RECT_W(*dst_rect));
-        h = _MIN(img->h, RECT_H(*dst_rect));
+        w = _MIN(img->w, RECT_W(*rect));
+        h = _MIN(img->h, RECT_H(*rect));
 
         if (!jpeg->is_loaded) {
             JRESULT ret;
 
             jpeg->is_blit = RT_TRUE;
             jpeg->dc = dc;
-            jpeg->dst_x = dst_rect->x1;
-            jpeg->dst_y = dst_rect->y1;
+            jpeg->dst_x = rect->x1;
+            jpeg->dst_y = rect->y1;
             jpeg->dst_w = w;
             jpeg->dst_h = h;
 
@@ -385,8 +382,8 @@ static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc,
             /* output the image */
             for (y = 0; y < h; y++) {
                 ptr = jpeg->pixels + (y * jpeg->pitch);
-                dc->engine->blit_line(dc, dst_rect->x1, dst_rect->x1 + w + 1,
-                    dst_rect->y1 + y, ptr);
+                dc->engine->blit_line(dc, rect->x1, rect->x1 + w - 1,
+                    rect->y1 + y, ptr);
             }
         }
     }  while (0);

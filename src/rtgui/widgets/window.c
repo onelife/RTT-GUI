@@ -397,13 +397,8 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
         rtgui_widget_set_rect(TO_WIDGET(win), &fixed);
         rtgui_region_init_with_extent(&win->outer_clip, rect);
         win->outer_extent = *rect;
-
-        LOG_W("win rect (%d,%d)-(%d,%d)", fixed.x1, fixed.y1, fixed.x2,
-            fixed.y2);
-        LOG_W("win ext (%d,%d)-(%d,%d)", TO_WIDGET(win)->extent.x1,
-            TO_WIDGET(win)->extent.y1,
-            TO_WIDGET(win)->extent.x2,
-            TO_WIDGET(win)->extent.y2);
+        // LOG_D("win rect (%d,%d)-(%d,%d)", fixed.x1, fixed.y1, fixed.x2,
+        //     fixed.y2);
 
         if (!IS_WIN_STYLE(win, NO_TITLE)) {
             /* create title */
@@ -414,28 +409,9 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
                 break;
             }
             TO_WIDGET(win->_title)->toplevel = win;
-
-            LOG_W("title rect (%d,%d)-(%d,%d)", rect->x1, rect->y1, rect->x2,
-                rect->y2);
-
             rtgui_widget_set_rect(TO_WIDGET(win->_title), rect);
-            /* update title clip */
-            LOG_W("title clip (%d,%d)-(%d,%d)", TO_WIDGET(win->_title)->clip.extents.x1,
-                TO_WIDGET(win->_title)->clip.extents.y1,
-                TO_WIDGET(win->_title)->clip.extents.x2,
-                TO_WIDGET(win->_title)->clip.extents.y2);
-
-            LOG_W("title ext (%d,%d)-(%d,%d)", TO_WIDGET(win->_title)->extent.x1,
-            TO_WIDGET(win->_title)->extent.y1,
-            TO_WIDGET(win->_title)->extent.x2,
-            TO_WIDGET(win->_title)->extent.y2);
-            // rtgui_region_subtract_rect(&(TO_WIDGET(win->_title)->clip),
-            //     &(TO_WIDGET(win->_title)->clip), &(TO_WIDGET(win)->extent));
-            // LOG_W("clip (%d,%d)-(%d,%d)", TO_WIDGET(win->_title)->clip.extents.x1,
-            //     TO_WIDGET(win->_title)->clip.extents.y1,
-            //     TO_WIDGET(win->_title)->clip.extents.x2,
-            //     TO_WIDGET(win->_title)->clip.extents.y2);
-
+            // LOG_W("title rect (%d,%d)-(%d,%d)", rect->x1, rect->y1, rect->x2,
+            //     rect->y2);
             /* always show title */
             rtgui_widget_show(TO_WIDGET(win->_title));
         }

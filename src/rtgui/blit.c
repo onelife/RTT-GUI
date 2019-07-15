@@ -70,7 +70,7 @@ static void blit_line_rgb888_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
     (void)palette;
 
     for ( ; src < end; src += step, dst++) {
-        RGB_FROM_RGB888(*src, srcB, srcG, srcR);
+        RGB_FROM_RGB888(*src, srcR, srcG, srcB);
         RGB565_FROM_RGB(*dst, srcR, srcG, srcB);
     }
 }

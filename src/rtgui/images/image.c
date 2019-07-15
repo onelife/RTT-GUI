@@ -27,11 +27,11 @@
 #include "include/rtgui.h"
 #include "include/images/image.h"
 #include "include/image_container.h"
-#ifdef GUIENGINE_IMAGE_BMP
-# include "include/images/image_bmp.h"
-#endif
 #ifdef GUIENGINE_USING_HDC
 #include "include/images/image_hdc.h"
+#endif
+#ifdef GUIENGINE_IMAGE_BMP
+# include "include/images/image_bmp.h"
 #endif
 
 #ifdef RT_USING_ULOG
@@ -50,8 +50,8 @@ extern void rtgui_image_xpm_init(void);
 #ifdef GUIENGINE_IMAGE_JPEG
 extern rt_err_t rtgui_image_jpeg_init(void);
 #endif
-#if defined(GUIENGINE_IMAGE_PNG) || defined(GUIENGINE_IMAGE_LODEPNG)
-extern void rtgui_image_png_init(void);
+#ifdef GUIENGINE_IMAGE_PNG
+extern rt_err_t rtgui_image_png_init(void);
 #endif
 
 static rt_slist_t _rtgui_system_image_list = {RT_NULL};
@@ -79,8 +79,10 @@ rt_err_t rtgui_system_image_init(void) {
             if (RT_EOK != ret) break;
             LOG_D("JPEG init");
         #endif
-        #if defined(GUIENGINE_IMAGE_PNG) || defined(GUIENGINE_IMAGE_LODEPNG)
-            rtgui_image_png_init();
+        #ifdef GUIENGINE_IMAGE_PNG
+            ret = rtgui_image_png_init();
+            if (RT_EOK != ret) break;
+            LOG_D("PNG init");
         #endif
         #ifdef GUIENGINE_IMAGE_CONTAINER
             /* initialize image container */

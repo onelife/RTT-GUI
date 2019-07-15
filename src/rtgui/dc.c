@@ -1613,7 +1613,7 @@ RTM_EXPORT(rtgui_dc_get_gc);
  * get visible status of dc
  */
 rt_bool_t rtgui_dc_get_visible(rtgui_dc_t *dc) {
-    if (rtgui_graphic_driver_is_vmode()) return RT_TRUE;
+    if (rtgui_gfx_driver_in_virtual_mode()) return RT_TRUE;
 
     switch (dc->type) {
     case RTGUI_DC_CLIENT:
@@ -1807,7 +1807,7 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
         LOG_D("->draw cnt %d", win->drawing);
 
         /* always draw in virtual mode */
-        if (!rtgui_graphic_driver_is_vmode()) {
+        if (!rtgui_gfx_driver_in_virtual_mode()) {
             rtgui_widget_t *wgt = owner;
 
             WIDGET_FLAG_SET(owner, DC_VISIBLE);
@@ -1841,7 +1841,7 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
             rtgui_screen_unlock();
             LOG_E("no dc");
             break;
-        } else if ((win->drawing == 1) && !rtgui_graphic_driver_is_vmode()) {
+        } else if ((win->drawing == 1) && !rtgui_gfx_driver_in_virtual_mode()) {
             if (!IS_TITLE(win)) {
                 rtgui_evt_generic_t *evt;
 
@@ -1887,7 +1887,7 @@ void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
         LOG_D("<-draw cnt %d", win->drawing);
 
         if (win->drawing != 0) break;
-        if (rtgui_graphic_driver_is_vmode() || win->update || !update) break;
+        if (rtgui_gfx_driver_in_virtual_mode() || win->update || !update) break;
 
         if (!IS_TITLE(win)) {
             rtgui_evt_generic_t *evt;
