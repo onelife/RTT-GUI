@@ -39,6 +39,9 @@ extern "C" {
 #define IS_CONTAINER(obj)                   IS_INSTANCE((obj), _CONTAINER_METADATA)
 #define TO_CONTAINER(obj)                   CAST_(obj, _CONTAINER_METADATA, rtgui_container_t)
 
+#define CREATE_CONTAINER_INSTANCE(parent, hdl, rect) \
+    rtgui_create_container(TO_CONTAINER(parent), hdl, rect)
+
 /* Exported types ------------------------------------------------------------*/
 struct rtgui_container {
     rtgui_widget_t _super;
@@ -53,6 +56,8 @@ CLASS_PROTOTYPE(container);
 #else /* IMPORT_TYPES */
 
 /* Exported functions ------------------------------------------------------- */
+rtgui_container_t *rtgui_create_container(rtgui_container_t *cntr,
+    rtgui_evt_hdl_t hdl, rtgui_rect_t *rect);
 rt_bool_t rtgui_container_dispatch_mouse_event(rtgui_container_t *container,
     rtgui_evt_generic_t *event);
 void rtgui_container_add_child(rtgui_container_t *cntr, rtgui_widget_t *child);

@@ -106,7 +106,7 @@ static void rt_gui_demo_entry(void *param) {
   }
   rt_kprintf("*** create app ok\n");
 
-  CREATE_MAIN_WIN(main_win, dc_event_handler, RT_NULL, "UiWindow",
+  main_win = CREATE_MAIN_WIN(RT_NULL, dc_event_handler, "UiWindow",
     RTGUI_WIN_STYLE_DEFAULT);
   if (!main_win) {
     rtgui_app_uninit(app);

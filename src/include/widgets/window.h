@@ -40,21 +40,10 @@ extern "C" {
 #define IS_WIN(obj)                         IS_INSTANCE((obj), _WIN_METADATA)
 #define TO_WIN(obj)                         CAST_(obj, _WIN_METADATA, rtgui_win_t)
 
-#define CREATE_WIN_INSTANCE(obj, hdl, parent, title, style, rect) \
-    do {                                    \
-        obj = (rtgui_win_t *)CREATE_INSTANCE(win, hdl); \
-        if (!obj) break;                    \
-        if (rtgui_win_init(obj, parent, title, rect, style)) \
-            DELETE_INSTANCE(obj);           \
-    } while (0)
-
-#define CREATE_MAIN_WIN(obj, hdl, parent, title, style) \
-    do {                                    \
-        rtgui_rect_t rect;                  \
-        rtgui_get_mainwin_rect(&rect);      \
-        CREATE_WIN_INSTANCE(obj, hdl, parent, title, style, &rect); \
-    } while (0)
-
+#define CREATE_WIN_INSTANCE(parent, hdl, rect, title, style) \
+    rtgui_create_win(parent, hdl, rect, title, style)
+#define CREATE_MAIN_WIN(parent, hdl, title, style) \
+    rtgui_create_win(parent, hdl, RT_NULL, title, style)
 #define DELETE_WIN_INSTANCE(obj)            rtgui_win_uninit(obj)
 
 #define WIN_FLAG(w)                         (TO_WIN(w)->flag)
@@ -147,8 +136,8 @@ CLASS_PROTOTYPE(win);
 #else /* IMPORT_TYPES */
 
 /* Exported functions ------------------------------------------------------- */
-rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
-    const char *title, rtgui_rect_t *rect, rt_uint16_t style);
+rtgui_win_t *rtgui_create_win(rtgui_win_t *parent, rtgui_evt_hdl_t hdl,
+    rtgui_rect_t *rect, const char *title, rt_uint16_t style);
 void rtgui_win_uninit(rtgui_win_t *win);
 
 rt_err_t rtgui_win_show(rtgui_win_t *win, rt_bool_t is_modal);

@@ -25,6 +25,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 #include "include/images/image.h"
+#include "include/widgets/container.h"
 #include "include/widgets/label.h"
 #include "include/widgets/button.h"
 
@@ -324,6 +325,25 @@ static void _theme_draw_button(rtgui_button_t *btn) {
 }
 
 /* Public functions ----------------------------------------------------------*/
+rtgui_button_t *rtgui_create_button(rtgui_container_t *cntr,
+    rtgui_evt_hdl_t hdl, rtgui_button_flag_t flag, const char *text) {
+    rtgui_button_t *btn;
+    do {
+        btn = CREATE_INSTANCE(button, hdl);
+        if (!btn) break;
+        if (rtgui_label_init(TO_LABEL(btn), text)) {
+            DELETE_INSTANCE(btn);
+            break;
+        }
+        WIDGET_TEXTALIGN(btn) = RTGUI_ALIGN_CENTER;
+        btn->flag |= flag;
+        if (cntr)
+            rtgui_container_add_child(cntr, TO_WIDGET(btn));
+    } while (0);
+
+    return btn;
+}
+
 RTGUI_MEMBER_SETTER(rtgui_button_t, button, rtgui_image_t*, press_img);
 RTGUI_MEMBER_SETTER(rtgui_button_t, button, rtgui_image_t*, unpress_img);
 RTGUI_MEMBER_SETTER(rtgui_button_t, button, rtgui_evt_hdl_t, on_button);

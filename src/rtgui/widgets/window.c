@@ -199,20 +199,16 @@ static rt_bool_t _win_do_close(rtgui_win_t *win, rt_bool_t force) {
         rtgui_win_hide(win);
         WIN_FLAG_SET(win, CLOSED);
 
-        win->app->win_cnt--;
-        if (!win->app->win_cnt && !IS_APP_FLAG(win->app, KEEP))
-            rtgui_app_exit(rtgui_app_self(), 0);
-
         if (IS_WIN_STYLE(win, DESTROY_ON_CLOSE))
             /* will check if MODAL, then call rtgui_win_end_modal */
             DELETE_WIN_INSTANCE(win);
 
         if (IS_WIN_FLAG(win, MODAL))
             /* will clear RTGUI_WIN_FLAG_MODAL */
-            rtgui_win_end_modal(win, RTGUI_MODAL_CANCEL);
+            rtgui_win_end_modal(win, RTGUI_MODAL_OK);
     } while (0);
 
-    LOG_E("win close done %d", done);
+    LOG_D("_win_do_close %d", done);
     return done;
 }
 
@@ -369,14 +365,7 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     return done;
 }
 
-/* Public functions ----------------------------------------------------------*/
-RTGUI_MEMBER_SETTER(rtgui_win_t, win, rtgui_evt_hdl_t, on_activate);
-RTGUI_MEMBER_SETTER(rtgui_win_t, win, rtgui_evt_hdl_t, on_deactivate);
-RTGUI_MEMBER_SETTER(rtgui_win_t, win, rtgui_evt_hdl_t, on_close);
-RTGUI_MEMBER_SETTER(rtgui_win_t, win, rtgui_evt_hdl_t, on_key);
-RTGUI_MEMBER_GETTER(rtgui_win_t, win, char*, title);
-
-rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
+static rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
     const char *title, rtgui_rect_t *rect, rt_uint16_t style) {
     rt_err_t ret = -RT_ERROR;
 
@@ -427,11 +416,36 @@ rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
     }
     return ret;
 }
-RTM_EXPORT(rtgui_win_init);
+
+/* Public functions ----------------------------------------------------------*/
+RTGUI_MEMBER_SETTER(rtgui_win_t, win, rtgui_evt_hdl_t, on_activate);
+RTGUI_MEMBER_SETTER(rtgui_win_t, win, rtgui_evt_hdl_t, on_deactivate);
+RTGUI_MEMBER_SETTER(rtgui_win_t, win, rtgui_evt_hdl_t, on_close);
+RTGUI_MEMBER_SETTER(rtgui_win_t, win, rtgui_evt_hdl_t, on_key);
+RTGUI_MEMBER_GETTER(rtgui_win_t, win, char*, title);
+
+rtgui_win_t *rtgui_create_win(rtgui_win_t *parent, rtgui_evt_hdl_t hdl,
+    rtgui_rect_t *rect, const char *title, rt_uint16_t style) {
+    rtgui_win_t *win;
+
+    do {
+        rtgui_rect_t rect_;
+
+        win = CREATE_INSTANCE(win, hdl);
+        if (!win) break;
+        if (!rect) {
+            rtgui_get_mainwin_rect(&rect_);
+            rect = &rect_;
+        }
+        if (rtgui_win_init(win, parent, title, rect, style))
+            DELETE_INSTANCE(win);
+    } while (0);
+
+    return win;
+}
 
 void rtgui_win_uninit(rtgui_win_t *win) {
     win->_magic = 0;
-
     if (!IS_WIN_FLAG(win, CLOSED)) {
         (void)_win_do_close(win, RT_TRUE);
         /* if DESTROY_ON_CLOSE, then the win is already deleted */
@@ -445,7 +459,10 @@ void rtgui_win_uninit(rtgui_win_t *win) {
         WIN_STYLE_SET(win, DESTROY_ON_CLOSE);
         rtgui_win_end_modal(win, RTGUI_MODAL_CANCEL);
     } else {
-        LOG_W("uninit DELETE");
+        win->app->win_cnt--;
+        LOG_D("win_cnt %d", win->app->win_cnt);
+        if (!win->app->win_cnt && !IS_APP_FLAG(win->app, KEEP))
+            rtgui_app_exit(rtgui_app_self(), RT_EOK);
         DELETE_INSTANCE(win);
     }
 }
@@ -472,7 +489,7 @@ rt_err_t rtgui_win_enter_modal(rtgui_win_t *win) {
         WIN_FLAG_SET(win, MODAL);
         win->_ref_count = win->app->ref_cnt + 1;
         exit_code = rtgui_app_run(win->app);
-        LOG_D("modal %s exit %d", win->title, exit_code);
+        LOG_I("modal %s exit %d", win->title, exit_code);
 
         if (IS_WIN_STYLE(win, DESTROY_ON_CLOSE)) {
             DELETE_WIN_INSTANCE(win);
@@ -502,7 +519,7 @@ void rtgui_win_end_modal(rtgui_win_t *win, rtgui_modal_code_t modal) {
     if (!win || !IS_WIN_FLAG(win, MODAL)) return;
 
     while (win->_ref_count < win->app->ref_cnt) {
-        rtgui_app_exit(win->app, 0);
+        rtgui_app_exit(win->app, RT_EOK);
         cnt++;
         if (cnt >= 1000) {
             LOG_E("call rtgui_app_exit() x%d!", cnt);

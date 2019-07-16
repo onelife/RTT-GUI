@@ -31,6 +31,7 @@
 #include "components/dfs/include/dfs_posix.h"
 
 #include "include/images/image.h"
+#include "include/widgets/container.h"
 #include "include/widgets/list.h"
 #include "include/widgets/filelist.h"
 
@@ -374,6 +375,24 @@ static rt_bool_t _filelist_on_item(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 /* Public functions ----------------------------------------------------------*/
+rtgui_filelist_t *rtgui_create_filelist(rtgui_container_t *cntr,
+    rtgui_evt_hdl_t hdl, rtgui_rect_t *rect, const char *dir) {
+    rtgui_filelist_t *filelist;
+
+    do {
+        filelist = CREATE_INSTANCE(filelist, SUPER_CLASS_HANDLER(filelist));
+        if (!filelist) break;
+        if (rect)
+            rtgui_widget_set_rect(TO_WIDGET(filelist), rect);
+        rtgui_filelist_set_dir(filelist, dir);
+        FILELIST_SETTER(on_file)(filelist, hdl);
+        if (cntr)
+        rtgui_container_add_child(cntr, TO_WIDGET(filelist));
+    } while (0);
+
+    return filelist;
+}
+
 void rtgui_filelist_set_dir(rtgui_filelist_t *filelist, const char *dir_) {
     RT_ASSERT(filelist != RT_NULL);
 

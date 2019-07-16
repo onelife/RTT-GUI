@@ -239,7 +239,6 @@ static void picShow_entry(void *param) {
   rtgui_win_t *win;
   rtgui_container *cntr;
   rtgui_label_t* label;
-  rtgui_box_t *box;
   rtgui_button_t *btn1, *btn2;
   (void)param;
 
@@ -258,8 +257,8 @@ static void picShow_entry(void *param) {
   }
 
   /* create win */
-  CREATE_MAIN_WIN(win, picShow_handler, RT_NULL,
-    "PicWin", RTGUI_WIN_STYLE_MAINWIN);
+  win = CREATE_MAIN_WIN(RT_NULL, picShow_handler, "PicWin",
+    RTGUI_WIN_STYLE_MAINWIN);
   if (!win) {
     rtgui_app_uninit(picShow);
     rt_kprintf("Create main win failed!\n");
@@ -267,7 +266,10 @@ static void picShow_entry(void *param) {
   }
 
   /* label */
-  CREATE_LABEL_INSTANCE(label, picShow_label_handler, "PicShow Example");
+  rtgui_get_screen_rect(&rect);
+  rect.y2 = 15;
+  label = CREATE_LABEL_INSTANCE(win, picShow_label_handler, &rect,
+    "PicShow Example");
   if (!label) {
       rt_kprintf("Create label failed!\n");
       return;
@@ -275,35 +277,24 @@ static void picShow_entry(void *param) {
   WIDGET_BACKGROUND(TO_WIDGET(label)) = white;
   WIDGET_FOREGROUND(TO_WIDGET(label)) = blue;
 
-  rtgui_get_screen_rect(&rect);
-  rect.y2 = 15;
-  rtgui_widget_set_rect(TO_WIDGET(label), &rect);
-  rtgui_container_add_child(TO_CONTAINER(win), TO_WIDGET(label));
-
   /* progress bar */
-  CREATE_PROGRESS_INSTANCE(bar, picShow_progress_handler, RTGUI_HORIZONTAL, 100, &rect);
+  bar = CREATE_PROGRESS_INSTANCE(win, picShow_progress_handler, &rect,
+    RTGUI_HORIZONTAL, 100);
   if (!bar) {
       rt_kprintf("Create progress failed!\n");
       return;
   }
-  rtgui_container_add_child(TO_CONTAINER(win), TO_WIDGET(bar));
 
   /* buttons in container */
-  cntr = TO_CONTAINER(CREATE_INSTANCE(container, RT_NULL));
-  CREATE_BOX_INSTANCE(box, RTGUI_HORIZONTAL, 1);
-  rtgui_container_set_box(cntr, box);
-
-  CREATE_BUTTON_INSTANCE(btn1, picShow_btn1_handler, TYPE_NORMAL, "Next");
-  WIDGET_ALIGN(btn1) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
-  rtgui_container_add_child(cntr, TO_WIDGET(btn1));
-  CREATE_BUTTON_INSTANCE(btn2, picShow_btn2_handler, TYPE_PUSH, "Pause");
-  WIDGET_ALIGN(btn2) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
-  rtgui_container_add_child(cntr, TO_WIDGET(btn2));
-
   rtgui_get_screen_rect(&rect);
   rect.y1 = rect.y2 - 30;
-  rtgui_widget_set_rect(TO_WIDGET(cntr), &rect);  
-  rtgui_container_add_child(TO_CONTAINER(win), TO_WIDGET(cntr));
+  cntr = CREATE_CONTAINER_INSTANCE(win, RT_NULL, &rect);
+  (void)CREATE_BOX_INSTANCE(cntr, RTGUI_HORIZONTAL, 1);
+  btn1 = CREATE_BUTTON_INSTANCE(cntr, picShow_btn1_handler, NORMAL, "Next");
+  WIDGET_ALIGN(btn1) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
+  btn2 = CREATE_BUTTON_INSTANCE(cntr, picShow_btn2_handler, PUSH, "Pause");
+  WIDGET_ALIGN(btn2) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
+
 
   rtgui_win_show(win, RT_FALSE);
   rtgui_app_run(picShow);
@@ -355,8 +346,6 @@ void loop() {
     evt->command.type = (rt_int32_t)&info;
     evt->command.command_id = CMD_PIC_SHOW;
     rtgui_request(picShow, evt, RT_WAITING_FOREVER);
-    // rtgui_request_sync(picShow, evt);
-
     timeout = RT_FALSE;
   }
 }

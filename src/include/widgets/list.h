@@ -35,14 +35,8 @@
 #define IS_LIST(obj)                        IS_INSTANCE(obj, _LIST_METADATA)
 #define TO_LIST(obj)                        CAST_(obj, _LIST_METADATA, rtgui_list_t)
 
-#define CREATE_LIST_INSTANCE(obj, hdl, items, cnt, rect) \
-    do {                                    \
-        obj = (rtgui_list_t *)CREATE_INSTANCE(list, hdl); \
-        if (!obj) break;                    \
-        rtgui_widget_set_rect(TO_WIDGET(obj), rect); \
-        _rtgui_list_set_items(obj, items, cnt); \
-    } while (0)
-
+#define CREATE_LIST_INSTANCE(parent, hdl, rect, items, cnt) \
+    rtgui_create_list(TO_CONTAINER(parent), hdl, rect, items, cnt)
 #define DELETE_LIST_INSTANCE(obj)           DELETE_INSTANCE(obj)
 
 #define LIST_SETTER(mname)                  rtgui_list_set_##mname
@@ -75,8 +69,8 @@ CLASS_PROTOTYPE(list);
 #else /* IMPORT_TYPES */
 
 /* Exported functions ------------------------------------------------------- */
-void _rtgui_list_set_items(rtgui_list_t *list, rtgui_list_item_t *items,
-    rt_uint16_t count);
+rtgui_list_t *rtgui_create_list(rtgui_container_t *cntr, rtgui_evt_hdl_t hdl,
+    rtgui_rect_t *rect, rtgui_list_item_t *items, rt_uint16_t count);
 void rtgui_list_set_items(rtgui_list_t *list, rtgui_list_item_t *items,
     rt_uint16_t count);
 void rtgui_list_set_current(rtgui_list_t *list, rt_int32_t idx);

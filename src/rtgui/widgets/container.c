@@ -250,6 +250,22 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 /* Public functions ----------------------------------------------------------*/
+rtgui_container_t *rtgui_create_container(rtgui_container_t *cntr_,
+    rtgui_evt_hdl_t hdl, rtgui_rect_t *rect) {
+    rtgui_container_t *cntr;
+
+    do {
+        cntr = CREATE_INSTANCE(container, hdl);
+        if (!cntr) break;
+        if (rect)
+            rtgui_widget_set_rect(TO_WIDGET(cntr), rect);
+        if (cntr_)
+            rtgui_container_add_child(TO_CONTAINER(cntr_), TO_WIDGET(cntr));
+    } while (0);
+
+    return cntr;
+}
+
 void rtgui_container_add_child(rtgui_container_t *cntr, rtgui_widget_t *child) {
     rtgui_widget_t *parent;
 

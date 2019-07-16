@@ -60,7 +60,7 @@
 #endif /* RT_USING_ULOG */
 
 
-/* RGB888 / BGR888 -> RGB565 blending */
+/* RGB888 -> RGB565 blending */
 static void blit_line_rgb888_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
     rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
     rt_uint16_t *dst = (rt_uint16_t *)_dst;
@@ -71,6 +71,21 @@ static void blit_line_rgb888_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
 
     for ( ; src < end; src += step, dst++) {
         RGB_FROM_RGB888(*src, srcR, srcG, srcB);
+        RGB565_FROM_RGB(*dst, srcR, srcG, srcB);
+    }
+}
+
+/* BGR888 -> RGB565 blending */
+static void blit_line_bgr888_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint16_t *dst = (rt_uint16_t *)_dst;
+    rt_uint8_t *end = src + len;
+    rt_uint8_t step = _BIT2BYTE(GUIENGINE_RGB888_PIXEL_BITS) << scale;
+    rt_uint32_t srcR, srcG, srcB;
+    (void)palette;
+
+    for ( ; src < end; src += step, dst++) {
+        RGB_FROM_RGB888(*src, srcB, srcG, srcR);
         RGB565_FROM_RGB(*dst, srcR, srcG, srcB);
     }
 }
@@ -197,6 +212,9 @@ rtgui_blit_line_func2 rtgui_get_blit_line_func(rt_uint8_t src_fmt,
         switch (src_fmt) {
         case RTGRAPHIC_PIXEL_FORMAT_RGB888:
             return blit_line_rgb888_to_rgb565;
+
+        case RTGRAPHIC_PIXEL_FORMAT_BGR888:
+            return blit_line_bgr888_to_rgb565;
 
         case RTGRAPHIC_PIXEL_FORMAT_RGB565:
             return blit_line_rgb565_to_rgb565;

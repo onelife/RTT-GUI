@@ -39,14 +39,7 @@ extern "C" {
 #define IS_BOX(obj)                         IS_INSTANCE(obj, _BOX_METADATA)
 #define TO_BOX(obj)                         CAST_(obj, _BOX_METADATA, rtgui_box_t)
 
-#define CREATE_BOX_INSTANCE(obj, ort, sz)   \
-    do {                                    \
-        obj = (rtgui_box_t *)CREATE_INSTANCE(box, RT_NULL); \
-        if (obj) {                          \
-            box->orient = ort;              \
-            box->border_sz = sz;            \
-        }                                   \
-    } while (0)
+#define CREATE_BOX_INSTANCE(cntr, ort, sz)  rtgui_create_box(TO_CONTAINER(cntr), ort, sz)
 
 /* Exported types ------------------------------------------------------------*/
 struct rtgui_box {
@@ -63,6 +56,8 @@ CLASS_PROTOTYPE(box);
 #else /* IMPORT_TYPES */
 
 /* Exported functions ------------------------------------------------------- */
+rtgui_box_t *rtgui_create_box(rtgui_container_t *cntr, rt_uint16_t orient,
+    rt_uint16_t size);
 void rtgui_box_layout(rtgui_box_t *box);
 void rtgui_box_layout_rect(rtgui_box_t *box, rtgui_rect_t *rect);
 

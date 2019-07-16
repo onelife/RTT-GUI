@@ -293,7 +293,7 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
 
     case RTGUI_EVENT_APP_DESTROY:
-        rtgui_app_exit(app, 0);
+        rtgui_app_exit(app, RT_EOK);
         break;
 
     case RTGUI_EVENT_TIMER:
@@ -390,12 +390,13 @@ rt_inline void _rtgui_application_event_loop(rtgui_app_t *app) {
 rt_base_t rtgui_app_run(rtgui_app_t *app) {
     APP_FLAG_CLEAR(app, EXITED);
 
-    LOG_D("loop %s ", app->name);
+    LOG_D("loop %s %d", app->name, app->ref_cnt);
     _rtgui_application_event_loop(app);
+    LOG_D("loop %s exit %d", app->name, app->ref_cnt);
 
     if (!app->ref_cnt) {
         APP_FLAG_SET(app, EXITED);
-        LOG_D("exit %s", app->name);
+        LOG_I("exit %s", app->name);
     }
     return app->exit_code;
 }

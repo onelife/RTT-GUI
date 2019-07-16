@@ -25,6 +25,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 #include "include/images/image.h"
+#include "include/widgets/container.h"
 #include "include/widgets/list.h"
 
 #ifdef RT_USING_ULOG
@@ -326,8 +327,7 @@ static rt_bool_t _list_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     return done;
 }
 
-/* Public functions ----------------------------------------------------------*/
-void _rtgui_list_set_items(rtgui_list_t *list, rtgui_list_item_t *items,
+static void _list_set_items(rtgui_list_t *list, rtgui_list_item_t *items,
     rt_uint16_t count) {
     rt_uint16_t item_h = _theme_selected_item_height() + 2;
     rtgui_rect_t rect;
@@ -340,9 +340,27 @@ void _rtgui_list_set_items(rtgui_list_t *list, rtgui_list_item_t *items,
     list->count = count;
 }
 
+/* Public functions ----------------------------------------------------------*/
+rtgui_list_t *rtgui_create_list(rtgui_container_t *cntr, rtgui_evt_hdl_t hdl,
+    rtgui_rect_t *rect, rtgui_list_item_t *items, rt_uint16_t count) {
+    rtgui_list_t *list;
+
+    do {
+        list = CREATE_INSTANCE(list, hdl);
+        if (!list) break;
+        if (rect)
+            rtgui_widget_set_rect(TO_WIDGET(list), rect);
+        _list_set_items(list, items, count);
+        if (cntr)
+            rtgui_container_add_child(cntr, TO_WIDGET(list));
+    } while (0);
+
+    return list;
+}
+
 void rtgui_list_set_items(rtgui_list_t *list, rtgui_list_item_t *items,
     rt_uint16_t count) {
-    _rtgui_list_set_items(list, items, count);
+    _list_set_items(list, items, count);
     list->current = -1;
     rtgui_widget_update(TO_WIDGET(list));
 }

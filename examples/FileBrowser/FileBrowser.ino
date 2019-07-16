@@ -116,8 +116,8 @@ static void fileBrowser_entry(void *param) {
   }
 
   /* create win */
-  CREATE_MAIN_WIN(mainWin, RT_NULL, RT_NULL,
-    "FileBrowser", RTGUI_WIN_STYLE_MAINWIN);
+  mainWin = CREATE_MAIN_WIN(RT_NULL, RT_NULL, "FileBrowser",
+    RTGUI_WIN_STYLE_MAINWIN);
   if (!mainWin) {
     rtgui_app_uninit(fileBrs);
     rt_kprintf("Create mainWin failed!\n");
@@ -127,18 +127,15 @@ static void fileBrowser_entry(void *param) {
   rtgui_get_screen_rect(&rect);
 
   /* filelist */
-  CREATE_FILELIST_INSTANCE(filelist, "/", &rect);
+  filelist = CREATE_FILELIST_INSTANCE(mainWin, fileBrowser_on_file, &rect, "/");
   if (!filelist) {
       rt_kprintf("Create filelist failed!\n");
       return;
   }
-  FILELIST_SETTER(on_file)(filelist, fileBrowser_on_file);
-
-  rtgui_container_add_child(TO_CONTAINER(mainWin), TO_WIDGET(filelist));
 
   /* fileWin */
-  CREATE_WIN_INSTANCE(fileWin, fileWin_handler, RT_NULL, "PicWin",
-    RTGUI_WIN_STYLE_DEFAULT, &rect);
+  fileWin = CREATE_WIN_INSTANCE(RT_NULL, fileWin_handler, &rect, "PicWin",
+    RTGUI_WIN_STYLE_DEFAULT);
   if (!fileWin) {
       rt_kprintf("Create fileWin failed!\n");
       return;

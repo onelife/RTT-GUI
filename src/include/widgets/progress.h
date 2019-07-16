@@ -34,16 +34,8 @@
 #define IS_PROGRESS(obj)                    IS_INSTANCE(obj, _PROGRESS_METADATA)
 #define TO_PROGRESS(obj)                    CAST_(obj, _PROGRESS_METADATA, rtgui_progress_t)
 
-#define CREATE_PROGRESS_INSTANCE(obj, hdl, _orient, _range, rect) \
-    do {                                    \
-        obj = (rtgui_progress_t *)CREATE_INSTANCE(progress, hdl); \
-        if (!obj) break;                    \
-        obj->orient = _orient;              \
-        obj->range = _range;                \
-        if (rect != RT_NULL)                \
-            rtgui_widget_set_rect(TO_WIDGET(obj), rect); \
-    } while (0)
-
+#define CREATE_PROGRESS_INSTANCE(parent, hdl, rect, ort, rg) \
+    rtgui_create_progress(TO_CONTAINER(parent), hdl, rect, ort, rg)
 #define DELETE_PROGRESS_INSTANCE(obj)       DELETE_INSTANCE(obj)
 
 #define PROGRESS_WIDTH_DEFAULT              (100)
@@ -65,6 +57,9 @@ CLASS_PROTOTYPE(progress);
 #else /* IMPORT_TYPES */
 
 /* Exported functions ------------------------------------------------------- */
+rtgui_progress_t *rtgui_create_progress(rtgui_container_t *cntr,
+    rtgui_evt_hdl_t hdl, rtgui_rect_t *rect, rtgui_orient_t orient,
+    rt_uint16_t range);
 MEMBER_SETTER_GETTER_PROTOTYPE(rtgui_progress_t, progress, rt_uint16_t, range);
 MEMBER_SETTER_GETTER_PROTOTYPE(rtgui_progress_t, progress, rt_uint16_t, value);
 

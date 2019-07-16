@@ -39,14 +39,8 @@ extern "C" {
 #define IS_LABEL(obj)                       IS_INSTANCE(obj, _LABEL_METADATA)
 #define TO_LABEL(obj)                       CAST_(obj, _LABEL_METADATA, rtgui_label_t)
 
-#define CREATE_LABEL_INSTANCE(obj, hdl, text) \
-    do {                                    \
-        obj = (rtgui_label_t *)CREATE_INSTANCE(label, hdl); \
-        if (!obj) break;                    \
-        if (rtgui_label_init(obj, text))    \
-            DELETE_INSTANCE(obj);           \
-    } while (0)
-
+#define CREATE_LABEL_INSTANCE(parent, hdl, rect, text) \
+    rtgui_create_label(TO_CONTAINER(parent), hdl, rect, text)
 #define DELETE_LABEL_INSTANCE(obj)          DELETE_INSTANCE(obj)
 
 #define LABEL_GETTER(mname)                 rtgui_label_get_##mname
@@ -65,6 +59,8 @@ CLASS_PROTOTYPE(label);
 
 /* Exported functions ------------------------------------------------------- */
 rt_err_t *rtgui_label_init(rtgui_label_t *lab, const char *text);
+rtgui_label_t *rtgui_create_label(rtgui_container_t *cntr, rtgui_evt_hdl_t hdl,
+    rtgui_rect_t *rect, const char *text);
 void rtgui_label_set_text(rtgui_label_t *lab, const char *text);
 MEMBER_GETTER_PROTOTYPE(rtgui_label_t, label, char*, text);
 

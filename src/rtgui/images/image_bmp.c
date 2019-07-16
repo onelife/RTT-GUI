@@ -267,7 +267,7 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
             bmp->pixel_format = RTGRAPHIC_PIXEL_FORMAT_RGB565;
             bmp->pitch = bmp->w << 1;
         } else if (24 == bmp->bit_per_pixel) {
-            bmp->pixel_format = RTGRAPHIC_PIXEL_FORMAT_RGB888;
+            bmp->pixel_format = RTGRAPHIC_PIXEL_FORMAT_BGR888;
             bmp->pitch = bmp->w * _BIT2BYTE(bmp->bit_per_pixel);
         } else {
             err = -RT_ERROR;

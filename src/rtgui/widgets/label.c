@@ -25,6 +25,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 #include "include/font/font.h"
+#include "include/widgets/container.h"
 #include "include/widgets/label.h"
 
 #ifdef RT_USING_ULOG
@@ -130,6 +131,24 @@ rt_err_t *rtgui_label_init(rtgui_label_t *lab, const char *text) {
     return RT_EOK;
 }
 RTM_EXPORT(rtgui_label_init);
+
+rtgui_label_t *rtgui_create_label(rtgui_container_t *cntr, rtgui_evt_hdl_t hdl,
+    rtgui_rect_t *rect, const char *text) {
+    rtgui_label_t *lab;
+
+    do {
+        lab = CREATE_INSTANCE(label, hdl);
+        if (!lab) break;
+        if (rtgui_label_init(lab, text))
+            DELETE_INSTANCE(lab);
+        if (rect)
+            rtgui_widget_set_rect(TO_WIDGET(lab), rect);
+        if (cntr)
+            rtgui_container_add_child(cntr, TO_WIDGET(lab));
+    } while (0);
+
+    return lab;
+}
 
 void rtgui_label_set_text(rtgui_label_t *lab, const char *text) {
     if (lab->text) {

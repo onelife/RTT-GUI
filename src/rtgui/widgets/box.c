@@ -24,6 +24,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
+#include "include/widgets/container.h"
 #include "include/widgets/box.h"
 
 #ifdef RT_USING_ULOG
@@ -52,7 +53,6 @@ RTGUI_CLASS(
     sizeof(rtgui_box_t));
 
 /* Private functions ---------------------------------------------------------*/
-/* Public functions ----------------------------------------------------------*/
 static void _box_constructor(void *obj) {
     rtgui_box_t *box = obj;
 
@@ -235,6 +235,22 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
         /* point to next width */
         next_x = rect->x2 + box->border_sz;
     }
+}
+
+/* Public functions ----------------------------------------------------------*/
+rtgui_box_t *rtgui_create_box(rtgui_container_t *cntr, rt_uint16_t orient,
+    rt_uint16_t size) {
+    rtgui_box_t *box;
+
+    do {
+        box = CREATE_INSTANCE(box, RT_NULL);
+        if (!box) break;
+        box->orient = orient;
+        box->border_sz = size;
+        rtgui_container_set_box(TO_CONTAINER(cntr), box);
+    } while (0);
+
+    return box;
 }
 
 void rtgui_box_layout(rtgui_box_t *box) {

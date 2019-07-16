@@ -23,6 +23,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
+#include "include/widgets/container.h"
 #include "include/widgets/progress.h"
 
 #ifdef RT_USING_ULOG
@@ -147,6 +148,25 @@ static void _theme_draw_progress(rtgui_progress_t *bar) {
 }
 
 /* Public functions ----------------------------------------------------------*/
+rtgui_progress_t *rtgui_create_progress(rtgui_container_t *cntr,
+    rtgui_evt_hdl_t hdl, rtgui_rect_t *rect, rtgui_orient_t orient,
+    rt_uint16_t range) {
+    rtgui_progress_t *bar;
+
+    do {
+        bar = CREATE_INSTANCE(progress, hdl);
+        if (!bar) break;
+        bar->orient = orient;
+        bar->range = range;
+        if (rect)
+            rtgui_widget_set_rect(TO_WIDGET(bar), rect);
+        if (cntr)
+            rtgui_container_add_child(cntr, TO_WIDGET(bar));
+    } while (0);
+
+    return bar;
+}
+
 void rtgui_progress_set_range(rtgui_progress_t *bar, rt_uint16_t range) {
     if (bar->range != range) {
         bar->range = range;

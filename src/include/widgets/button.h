@@ -44,18 +44,8 @@ extern "C" {
 #define IS_BUTTON(obj)                      IS_INSTANCE(obj, _BUTTON_METADATA)
 #define TO_BUTTON(obj)                      CAST_(obj, _BUTTON_METADATA, rtgui_button_t)
 
-#define CREATE_BUTTON_INSTANCE(obj, hdl, _type, text) \
-    do {                                    \
-        obj = (rtgui_button_t *)CREATE_INSTANCE(button, hdl); \
-        if (!obj) break;                    \
-        if (rtgui_label_init(TO_LABEL(obj), text)) { \
-            DELETE_INSTANCE(obj);           \
-            break;                          \
-        }                                   \
-        WIDGET_TEXTALIGN(obj) = RTGUI_ALIGN_CENTER; \
-        BUTTON_FLAG_SET(obj, _type);        \
-    } while (0)
-
+#define CREATE_BUTTON_INSTANCE(parent, hdl, type, text) \
+    rtgui_create_button(TO_CONTAINER(parent), hdl, RTGUI_BUTTON_FLAG_TYPE_##type, text)
 #define DELETE_BUTTON_INSTANCE(obj)         DELETE_INSTANCE(obj)
 
 #define BUTTON_FLAG(b)                      (TO_BUTTON(b)->flag)
@@ -86,6 +76,8 @@ CLASS_PROTOTYPE(button);
 #else /* IMPORT_TYPES */
 
 /* Exported functions ------------------------------------------------------- */
+rtgui_button_t *rtgui_create_button(rtgui_container_t *cntr,
+    rtgui_evt_hdl_t hdl, rtgui_button_flag_t flag, const char *text);
 #define rtgui_button_get_text(obj)          \
     MEMBER_GETTER(label, text)(TO_LABEL(obj))
 #define rtgui_button_set_text(obj, _text)   \

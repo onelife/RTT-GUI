@@ -35,14 +35,8 @@
 #define IS_FILELIST(obj)                    IS_INSTANCE(obj, _FILELIST_METADATA)
 #define TO_FILELIST(obj)                    CAST_(obj, _FILELIST_METADATA, rtgui_filelist_t)
 
-#define CREATE_FILELIST_INSTANCE(obj, dir, rect) \
-    do {                                    \
-        obj = (rtgui_filelist_t *)CREATE_INSTANCE(filelist, SUPER_CLASS_HANDLER(filelist)); \
-        if (!obj) break;                    \
-        rtgui_widget_set_rect(TO_WIDGET(obj), rect); \
-        rtgui_filelist_set_dir(obj, dir);   \
-    } while (0)
-
+#define CREATE_FILELIST_INSTANCE(parent, hdl, rect, dir) \
+    rtgui_create_filelist(TO_CONTAINER(parent), hdl, rect, dir)
 #define DELETE_FILELIST_INSTANCE(obj)       DELETE_INSTANCE(obj)
 
 #define FILELIST_SETTER(mname)              rtgui_filelist_set_##mname
@@ -65,6 +59,8 @@ CLASS_PROTOTYPE(filelist);
 #else /* IMPORT_TYPES */
 
 /* Exported functions ------------------------------------------------------- */
+rtgui_filelist_t *rtgui_create_filelist(rtgui_container_t *cntr,
+    rtgui_evt_hdl_t hdl, rtgui_rect_t *rect, const char *dir);
 void rtgui_filelist_set_dir(rtgui_filelist_t *filelist, const char *dir);
 MEMBER_GETTER_PROTOTYPE(rtgui_filelist_t, filelist, char*, cur_dir);
 MEMBER_SETTER_PROTOTYPE(rtgui_filelist_t, filelist, rtgui_evt_hdl_t, on_file);
