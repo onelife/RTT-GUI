@@ -92,7 +92,7 @@ extern const rt_uint8_t* rtgui_blit_expand_byte[9];
 /* xxx <= RGB */
 #ifdef RTGUI_BIG_ENDIAN_OUTPUT
 # define RGB565_FROM_RGB(pixel, r, g, b) {                              \
-    pixel = ((g >> 2) << 13) | ((b >> 3) << 8) | ((r >> 3) << 3) | (g >> 5);  \
+    pixel = ((g >> 2) << 13) | ((b >> 3) << 8) | ((r >> 3) << 3) | (g >> 5); \
 }
 #else
 # define RGB565_FROM_RGB(pixel, r, g, b) {                              \

@@ -27,7 +27,7 @@
 
 #ifdef GUIENGINE_IMAGE_XPM
 
-#include "include/images/image.h"
+#include "include/image.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -348,9 +348,9 @@ static void xpm_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect) {
 }
 
 /* Public functions ----------------------------------------------------------*/
-void rtgui_image_xpm_init(void) {
+rt_err_t rtgui_image_xpm_init(void) {
     /* register xpm engine */
-    rtgui_image_register_engine(&xpm_engine);
+    return rtgui_image_register_engine(&xpm_engine);
 }
 
 #endif /* GUIENGINE_IMAGE_XPM */

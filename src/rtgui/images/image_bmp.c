@@ -29,8 +29,7 @@
 #ifdef GUIENGINE_IMAGE_BMP
 
 #include "include/blit.h"
-#include "include/images/image.h"
-#include "include/images/image_bmp.h"
+#include "include/image.h"
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -57,7 +56,7 @@ typedef struct rtgui_image_bmp {
     rt_uint32_t pixel_offset;
     rt_uint32_t w, h;
     rt_uint8_t scale;
-    rt_uint8_t bit_per_pixel;
+    rt_uint8_t bits_per_pixel;
     rt_uint8_t pixel_format;
     rt_uint32_t pitch;
     rt_uint8_t pad;
@@ -195,8 +194,8 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
             bmp->w = (rt_uint32_t)*(rt_uint16_t *)&temp[0];
             bmp->h = (rt_uint32_t)*(rt_uint16_t *)&temp[2];
             /* get bits per pixel */
-            bmp->bit_per_pixel = (rt_uint8_t)*(rt_uint16_t *)&temp[6];
-            LOG_D("bitPP %d", bmp->bit_per_pixel);
+            bmp->bits_per_pixel = (rt_uint8_t)*(rt_uint16_t *)&temp[6];
+            LOG_D("bitPP %d", bmp->bits_per_pixel);
         } else {
             /* BITMAPINFOHEADER and later */
             if (32 != rtgui_filerw_read(file, temp, 1, 32)) break;
@@ -204,15 +203,15 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
             bmp->w = *(rt_uint32_t *)&temp[0];
             bmp->h = *(rt_uint32_t *)&temp[4];
             /* get bits per pixel */
-            bmp->bit_per_pixel = (rt_uint8_t)*(rt_uint16_t *)&temp[10];
-            LOG_D("bitPP %d", bmp->bit_per_pixel);
-            if (bmp->bit_per_pixel > 32) {
+            bmp->bits_per_pixel = (rt_uint8_t)*(rt_uint16_t *)&temp[10];
+            LOG_D("bitPP %d", bmp->bits_per_pixel);
+            if (bmp->bits_per_pixel > 32) {
                 err = -RT_ERROR;
-                LOG_E("bad BMP bitPP %d",  bmp->bit_per_pixel);
+                LOG_E("bad BMP bitPP %d",  bmp->bits_per_pixel);
                 break;
             }
             /* The 16bpp and 32bpp images are always stored uncompressed */
-            if ((16 != bmp->bit_per_pixel) && (32 != bmp->bit_per_pixel)) {
+            if ((16 != bmp->bits_per_pixel) && (32 != bmp->bits_per_pixel)) {
                 /* check compression */
                 rt_uint32_t comp = *(rt_uint32_t *)&temp[12];
                 if (comp != BI_RGB) {
@@ -228,9 +227,9 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
 
         /* load palette */
         if (!ncolors) {
-            ncolors = 1 << bmp->bit_per_pixel;
+            ncolors = 1 << bmp->bits_per_pixel;
         }
-        if (bmp->bit_per_pixel <= 8) {
+        if (bmp->bits_per_pixel <= 8) {
             if (rtgui_filerw_seek(
                 file, 14 + headerSize, RTGUI_FILE_SEEK_SET) < 0) {
                 break;
@@ -250,25 +249,25 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
 
         /* set bmp info */
         bmp->scale = scale;
-        if (1 == bmp->bit_per_pixel) {
+        if (1 == bmp->bits_per_pixel) {
             bmp->pixel_format = RTGRAPHIC_PIXEL_FORMAT_MONO;
             bmp->pitch = (bmp->w + 7) >> 3;
-        } else if (2 == bmp->bit_per_pixel) {
+        } else if (2 == bmp->bits_per_pixel) {
             bmp->pixel_format = RTGRAPHIC_PIXEL_FORMAT_RGB2I;
             bmp->pitch = (bmp->w + 3) >> 2;
-        } else if (4 == bmp->bit_per_pixel) {
+        } else if (4 == bmp->bits_per_pixel) {
             bmp->pixel_format = RTGRAPHIC_PIXEL_FORMAT_RGB4I;
             bmp->pitch = (bmp->w + 1) >> 1;
-        } else if (8 == bmp->bit_per_pixel) {
+        } else if (8 == bmp->bits_per_pixel) {
             bmp->pixel_format = RTGRAPHIC_PIXEL_FORMAT_RGB8I;
             bmp->pitch = bmp->w;
-        } else if (16 == bmp->bit_per_pixel) {
+        } else if (16 == bmp->bits_per_pixel) {
             /* assume RGB565 */
             bmp->pixel_format = RTGRAPHIC_PIXEL_FORMAT_RGB565;
             bmp->pitch = bmp->w << 1;
-        } else if (24 == bmp->bit_per_pixel) {
+        } else if (24 == bmp->bits_per_pixel) {
             bmp->pixel_format = RTGRAPHIC_PIXEL_FORMAT_BGR888;
-            bmp->pitch = bmp->w * _BIT2BYTE(bmp->bit_per_pixel);
+            bmp->pitch = bmp->w * _BIT2BYTE(bmp->bits_per_pixel);
         } else {
             err = -RT_ERROR;
             LOG_E("bad BMP format");
@@ -501,173 +500,191 @@ static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc,
     }
 }
 
-/*
- * config BMP header.
- */
-void rtgui_image_bmp_header_cfg(struct rtgui_image_bmp_header *bhr,
-    rt_int32_t w, rt_int32_t h, rt_uint16_t bits_per_pixel) {
-    int image_size = w * h * _BIT2BYTE(bits_per_pixel);
-    int header_size = sizeof(struct rtgui_image_bmp_header);
-
-    bhr->bfType = 0x4d42; /* BM */
-    bhr->bfSize = header_size + image_size; /* data size */
-    bhr->bfReserved1 = 0;
-    bhr->bfReserved2 = 0;
-    bhr->bfOffBits = header_size;
-
-    bhr->biSize = 40; /* sizeof BITMAPINFOHEADER */
-    bhr->biWidth = w;
-    bhr->biHeight = h;
-    bhr->biPlanes = 1;
-    bhr->biBitCount = bits_per_pixel;
-    bhr->biCompression = BI_BITFIELDS;
-    bhr->biSizeImage = image_size;
-    bhr->biXPelsPerMeter = 0;
-    bhr->biYPelsPerMeter = 0;
-    bhr->biClrUsed = 0;
-    bhr->biClrImportant = 0;
-    if (bhr->biBitCount == 16 && bhr->biCompression == BI_BITFIELDS) {
-        bhr->bfSize += 12;
-        bhr->bfOffBits += 12;
-    }
-}
-
-#ifdef GUIENGINE_USING_DFS_FILERW
-# define WRITE_CLUSTER_SIZE  2048
-
-void bmp_align_write(rtgui_filerw_t *file, char *dest,
-    char *src, rt_int32_t len, rt_int32_t *count) {
-    rt_int32_t len_bak = len;
-
-    while (len) {
-        if (*count >= WRITE_CLUSTER_SIZE) {
-            rtgui_filerw_write(file, dest, 1, WRITE_CLUSTER_SIZE);
-            *count = 0;
-        }
-        *(dest + *count) = *(src + (len_bak - len));
-        len--;
-        (*count)++;
-    }
-}
-
-/*
- * Grab screen and save as a BMP file
- * MACRO RGB_CONVERT_TO_BGR: If the pixel of colors is BGR mode, defined it.
- */
-void screenshot(const char *filename) {
-    rtgui_filerw_t *file;
-    int w, h, i, pitch;
-    rt_uint16_t *src;
-    rt_uint32_t mask;
-    struct rtgui_image_bmp_header bhr;
-    rtgui_gfx_driver_t *grp = display();
-    #ifdef RGB_CONVERT_TO_BGR
-        int j;
-        rt_uint16_t *line_buf;
-        rt_uint16_t color, tmp;
-    #endif
-    char *pixel_buf;
-    rt_int32_t write_count = 0;
-
-    file = rtgui_filerw_create_file(filename, "wb");
-    if (!file) {
-        rt_kprintf("create file failed\n");
-        return;
-    }
-
-    w = grp->width;
-    h = grp->height;
-
-    pitch = w * sizeof(rt_uint16_t);
-    #ifdef RGB_CONVERT_TO_BGR
-        line_buf = rtgui_malloc(pitch);
-        if (!line_buf) {
-            rt_kprintf("no memory!\n");
-            return;
-        }
-    #endif
-    pixel_buf = rtgui_malloc(WRITE_CLUSTER_SIZE);
-    if (!pixel_buf) {
-        rt_kprintf("no memory!\n");
-    #ifdef RGB_CONVERT_TO_BGR
-            rtgui_free(line_buf);
-    #endif
-        return;
-    }
-
-    rtgui_image_bmp_header_cfg(&bhr, w, h, grp->bits_per_pixel);
-    bmp_align_write(file, pixel_buf, (char *)&bhr,
-        sizeof(struct rtgui_image_bmp_header), &write_count);
-
-    if (BI_BITFIELDS == bhr.biCompression) {
-        mask = 0xF800; /* Red Mask */
-        bmp_align_write(file, pixel_buf, (char *)&mask, 4, &write_count);
-        mask = 0x07E0; /* Green Mask */
-        bmp_align_write(file, pixel_buf, (char *)&mask, 4, &write_count);
-        mask = 0x001F; /* Blue Mask */
-        bmp_align_write(file, pixel_buf, (char *)&mask, 4, &write_count);
-    }
-    rtgui_screen_lock(RT_WAITING_FOREVER);
-    if (grp->framebuffer) {
-        src = (rt_uint16_t *)grp->framebuffer;
-        src += w * h;
-        for (i = 0; i < h; i++) {
-            src -= w;
-            #ifdef RGB_CONVERT_TO_BGR
-                for (j = 0; j < w; j++)
-                {
-                    tmp = *(src + j);
-                    color  = (tmp & 0x001F) << 11;
-                    color += (tmp & 0x07E0);
-                    color += (tmp & 0xF800) >> 11;
-
-                    *(line_buf + i) = color;
-                }
-                bmp_align_write(file, pixel_buf, (char *)line_buf, pitch, &write_count);
-            #else
-                bmp_align_write(file, pixel_buf, (char *)src, pitch, &write_count);
-            #endif
-        }
-    } else {
-        rtgui_color_t pixel_color;
-        rt_uint16_t write_color;
-        int x;
-
-        for (i = h - 1; i >= 0; i--) {
-            x = 0;
-            if ((i % 10) == 0) rt_kprintf(">", i);
-            while (x < w) {
-                grp->ops->get_pixel(&pixel_color, x, i);
-                write_color = rtgui_color_to_565p(pixel_color);
-                bmp_align_write(file, pixel_buf, (char *)&write_color,
-                    sizeof(rt_uint16_t), &write_count);
-                x++;
-            }
-        }
-    }
-    /* write The tail of the last */
-    if (write_count < WRITE_CLUSTER_SIZE) {
-        rtgui_filerw_write(file, pixel_buf, 1, write_count);
-    }
-    rtgui_screen_unlock();
-    #ifdef RGB_CONVERT_TO_BGR
-        rtgui_free(line_buf);
-    #endif
-    rtgui_free(pixel_buf);
-    rt_kprintf("bmp create succeed.\n");
-    rtgui_filerw_close(file);
-}
-
-#ifdef RT_USING_FINSH
-# include "components/finsh/finsh.h"
-FINSH_FUNCTION_EXPORT(screenshot, usage: screenshot(filename));
-# endif
-#endif
-
 /* Public functions ----------------------------------------------------------*/
 rt_err_t rtgui_image_bmp_init(void) {
     /* register bmp engine */
     return rtgui_image_register_engine(&bmp_engine);
 }
+
+
+#if defined(RT_USING_DFS) && defined(RT_USING_FINSH)
+#include "components/finsh/finsh.h"
+#define WRITE_BUFFER_SIZE           (512)
+
+#pragma pack(push)
+#pragma pack(2)
+struct bmp_header {
+    /* The Win32 BMP file header (14 bytes) */
+    rt_uint16_t bfType;
+    rt_uint32_t bfSize;
+    rt_uint16_t bfReserved1;
+    rt_uint16_t bfReserved2;
+    rt_uint32_t bfOffBits;
+
+    /* The Win32 BITMAPINFOHEADER struct (40 bytes) */
+    rt_uint32_t biSize;
+    rt_int32_t  biWidth;
+    rt_int32_t  biHeight;
+    rt_uint16_t biPlanes;
+    rt_uint16_t biBitCount;
+    rt_uint32_t biCompression;
+    rt_uint32_t biSizeImage;
+    rt_int32_t  biXPelsPerMeter;
+    rt_int32_t  biYPelsPerMeter;
+    rt_uint32_t biClrUsed;
+    rt_uint32_t biClrImportant;
+};
+#pragma pack(pop)
+
+static void bmp_set_header(struct bmp_header *hdr, rt_uint32_t w, rt_uint32_t h,
+    rt_uint8_t bits_per_pixel) {
+    rt_uint32_t img_size = w * h * _BIT2BYTE(bits_per_pixel);
+
+    /* BMP header */
+    hdr->bfType = 0x4d42;           /* "BM" */
+    hdr->bfSize = sizeof(struct bmp_header) + 12 + img_size;
+    hdr->bfReserved1 = 0;
+    hdr->bfReserved2 = 0;
+    hdr->bfOffBits = sizeof(struct bmp_header) + 12;
+    /* DIB header (BITMAPV2INFOHEADER: BITMAPINFOHEADER + RGB bit masks) */
+    hdr->biSize = 40;
+    hdr->biWidth = w;
+    hdr->biHeight = h;
+    hdr->biPlanes = 1;              /* Fixed */
+    hdr->biBitCount = bits_per_pixel;
+    hdr->biCompression = BI_BITFIELDS;
+    hdr->biSizeImage = img_size;
+    hdr->biXPelsPerMeter = 0;
+    hdr->biYPelsPerMeter = 0;
+    hdr->biClrUsed = 0;
+    hdr->biClrImportant = 0;
+}
+
+/* Grab screen and save as BMP file */
+rt_err_t screenshot(const char *filename) {
+    int file = -1;
+    rt_uint8_t *buf = RT_NULL;
+    rt_bool_t locked = RT_FALSE;
+    rt_err_t ret = RT_EOK;
+
+    do {
+        struct bmp_header *hdr;
+        rt_uint32_t w = display()->width;
+        rt_uint32_t h = display()->height;
+
+        buf = rtgui_malloc(WRITE_BUFFER_SIZE);
+        if (RT_NULL == buf) {
+            LOG_E("no mem");
+            break;
+        }
+        file = open(filename, O_CREAT | O_WRONLY);
+        if (file < 0) {
+            ret = -RT_EIO;
+            LOG_E("bad file");
+            break;
+        }
+
+        /* header */
+        hdr = (struct bmp_header *)buf;
+        bmp_set_header(hdr, w, h, display()->bits_per_pixel);
+        if (write(file, buf, sizeof(struct bmp_header)) < 0) {
+            ret = -RT_EIO;
+            LOG_E("bad write");
+            break;
+        }
+
+        if (BI_BITFIELDS == hdr->biCompression) {
+            rt_uint32_t *mask = (rt_uint32_t *)buf;
+
+            *(mask++) = 0x0000F800;     /* Red Mask */
+            *(mask++) = 0x000007E0;     /* Green Mask */
+            *(mask++) = 0x0000001F;     /* Blue Mask */
+            if (write(file, buf, 12) < 0) {
+                ret = -RT_EIO;
+                LOG_E("bad write");
+                break;
+            }
+        }
+
+        rtgui_screen_lock(RT_WAITING_FOREVER);
+        locked = RT_TRUE;
+
+        if (display()->framebuffer) {
+            if (write(file, display()->framebuffer,
+                w * h * _BIT2BYTE(display()->bits_per_pixel)) < 0) {
+                ret = -RT_EIO;
+                LOG_E("bad write");
+                break;
+            }
+        } else {
+            rt_uint32_t len, i;
+            rtgui_color_t pixel;
+            rt_uint32_t x;
+            rt_int32_t y;
+
+            rt_kprintf("\n00%%\r");
+            if (RTGRAPHIC_PIXEL_FORMAT_RGB565 == display()->pixel_format) {
+                rt_uint16_t *c;
+
+                len = WRITE_BUFFER_SIZE / sizeof(rt_uint16_t);
+                i = 0;
+                c = (rt_uint16_t *)buf;
+
+                for (y = h - 1; y >= 0; y--) {
+                    rt_kprintf("%02d%%\r", (h - 1 - y) * 100 / h);
+                    for (x = 0; x < w; x++) {
+                        display()->ops->get_pixel(&pixel, x, y);
+                        if (i >= len) {
+                            if (write(file, buf, sizeof(rt_uint16_t) * i) < 0) {
+                                ret = -RT_EIO;
+                                LOG_E("bad write");
+                                break;
+                            }
+                            i = 0;
+                        }
+                        *(c + i++) = ((pixel & 0x00f80000) >> 8) | \
+                                     ((pixel & 0x0000fc00) >> 5) | \
+                                     ((pixel & 0x000000f8) >> 3);
+                    }
+                    if (RT_EOK != ret) break;
+                }
+                if (RT_EOK != ret) break;
+                if (i) {
+                    if (write(file, buf, sizeof(rt_uint16_t) * i) < 0) {
+                        ret = -RT_EIO;
+                        LOG_E("bad write");
+                        break;
+                    }
+                }
+            } else {
+                /* TODO */
+                ret = -RT_ERROR;
+                LOG_E("not implemented");
+                break;
+            }
+            rt_kprintf("Done %s\n", filename);
+        }
+    } while (0);
+
+    if (locked) rtgui_screen_unlock();
+    if (buf) rtgui_free(buf);
+    if (file >= 0) {
+        fsync(file);
+        close(file);
+    }
+
+    return ret;
+}
+FINSH_FUNCTION_EXPORT(screenshot, usage: screenshot(filename));
+
+int prtscn(int argc, char **argv) {
+    if (argc != 2) {
+        rt_kprintf("\nusage: prtscn(filename)\n");
+        return -1;
+    }
+    return screenshot(argv[1]);
+}
+
+#endif /* defined(RT_USING_DFS) && defined(RT_USING_FINSH) */
 
 #endif /* GUIENGINE_IMAGE_BMP */

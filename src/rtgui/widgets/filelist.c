@@ -30,7 +30,7 @@
 #endif
 #include "components/dfs/include/dfs_posix.h"
 
-#include "include/images/image.h"
+#include "include/image.h"
 #include "include/widgets/container.h"
 #include "include/widgets/list.h"
 #include "include/widgets/filelist.h"

@@ -24,7 +24,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/images/image.h"
+#include "include/image.h"
 #include "include/widgets/container.h"
 #include "include/widgets/label.h"
 #include "include/widgets/button.h"

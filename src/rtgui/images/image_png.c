@@ -27,7 +27,7 @@
 
 #ifdef GUIENGINE_IMAGE_PNG
 
-#include "include/images/image.h"
+#include "include/image.h"
 #include "include/blit.h"
 #include "lodepng/lodepng.h"
 

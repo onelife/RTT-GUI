@@ -25,11 +25,8 @@
  */
 
 #include "include/rtgui.h"
-#include "include/images/image.h"
+#include "include/image.h"
 #include "include/image_container.h"
-#ifdef GUIENGINE_IMAGE_BMP
-# include "include/images/image_bmp.h"
-#endif
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
@@ -42,7 +39,10 @@
 #endif /* RT_USING_ULOG */
 
 #ifdef GUIENGINE_IMAGE_XPM
-extern void rtgui_image_xpm_init(void);
+extern rt_err_t rtgui_image_xpm_init(void);
+#endif
+#ifdef GUIENGINE_IMAGE_BMP
+extern rt_err_t rtgui_image_bmp_init(void);
 #endif
 #ifdef GUIENGINE_IMAGE_JPEG
 extern rt_err_t rtgui_image_jpeg_init(void);
@@ -59,7 +59,8 @@ rt_err_t rtgui_system_image_init(void) {
 
     do {
         #ifdef GUIENGINE_IMAGE_XPM
-            rtgui_image_xpm_init();
+            ret = rtgui_image_xpm_init();
+            if (RT_EOK != ret) break;
             LOG_D("XPM init");
         #endif
         #ifdef GUIENGINE_IMAGE_BMP

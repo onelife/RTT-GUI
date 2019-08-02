@@ -24,7 +24,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 #ifdef RTGUI_USING_MOUSE_CURSOR
-#include "include/images/image.h"
+#include "include/image.h"
 #endif
 #include "include/app/mouse.h"
 

@@ -86,10 +86,8 @@ static void _pixel_mono_get_pixel(rtgui_color_t *c, int x, int y) {
 }
 
 static void _pixel_rgb565_get_pixel(rtgui_color_t *c, int x, int y) {
-    rtgui_color_t pixel;
-
-    graphic_ops()->get_pixel(&pixel, x, y);
-    *c = rtgui_color_from_565((rt_uint16_t)pixel);
+    graphic_ops()->get_pixel(c, x, y);
+    // *c = rtgui_color_from_565((rt_uint16_t)pixel);
 }
 
 static void _pixel_rgb565p_get_pixel(rtgui_color_t *c, int x, int y) {

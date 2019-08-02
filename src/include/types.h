@@ -174,7 +174,7 @@ struct rtgui_line {
 #include "include/driver.h"
 #include "include/region.h"
 #include "include/font/font.h"
-#include "include/images/image.h"
+#include "include/image.h"
 #undef IMPORT_TYPES
 
 /* graphic context */

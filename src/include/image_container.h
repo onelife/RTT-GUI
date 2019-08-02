@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 #include "include/rtgui.h"
-#include "include/images/image.h"
+#include "include/image.h"
 
 #if defined(GUIENGINE_IMAGE_CONTAINER)
 /* image item in image container */

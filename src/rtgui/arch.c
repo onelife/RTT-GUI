@@ -25,7 +25,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#include "include/images/image.h"
+#include "include/image.h"
 #include "include/font/font.h"
 #include "include/app/app.h"
 #include "include/arch.h"

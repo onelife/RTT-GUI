@@ -28,7 +28,7 @@
 
 #ifdef GUIENGINE_IMAGE_JPEG
 
-#include "include/images/image.h"
+#include "include/image.h"
 #include "include/blit.h"
 #include "tjpgd/tjpgd.h"
 
