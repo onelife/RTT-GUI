@@ -1,32 +1,87 @@
 /***************************************************************************//**
- * @file    FileBrowser.ino
- * @brief   RTT-GUI library "FileBrowser" example
+ * @file    FileBrowserDesign.ino
+ * @brief   RTT-GUI library "FileBrowserDesign" example
  * @author  onelife <onelife.real[at]gmail.com>
  ******************************************************************************/
 #include <rtt.h>
 #include <rttgui.h>
 
 #define LOG_LVL LOG_LVL_INFO
-#define LOG_TAG "APP_FB "
+#define LOG_TAG "APP_FBD"
 #include <log.h>
 
 #define PATH_SEPARATOR                  '/'
 #define MAX_PATH_LENGTH                 (128)
 
+static rt_bool_t fileWin_handler(void *obj, rtgui_evt_generic_t *evt);
+static rt_bool_t fileBrowser_on_close(void *obj, rtgui_evt_generic_t *evt);
+static rt_bool_t fileBrowser_on_file(void *obj, rtgui_evt_generic_t *evt);
+
+static char design[] = "\
+APP: {\n\
+  PARAM: {\n\
+    // name, handler\n\
+    \"FileBrowser\", NULL,\n\
+  },\n\
+\n\
+  MWIN: {\n\
+    PARAM: {\n\
+      // title, handler\n\
+      \"FileBrowser\", NULL,\n\
+    },\n\
+\n\
+    FILELIST: {\n\
+      PARAM: {\n\
+        // size, handler, dir\n\
+        NULL, on_file, \"/\",\n\
+      },\n\
+    },\n\
+  },\n\
+\n\
+  WIN: {\n\
+    PARAM: {\n\
+      // title, size, handler, on_close\n\
+      \"PicWin\", NULL, fwin, on_close,\n\
+    },\n\
+    ID: 0,\n\
+  },\n\
+}\n\
+";
+
 static const char bmp[] = "bmp";
 static const char jpeg[] = "jpeg";
 static const char* format = RT_NULL;
 
-static rtgui_app_t *fileBrs;
-static rtgui_win_t *mainWin;
 static rtgui_win_t *fileWin;
 static char path[MAX_PATH_LENGTH];
+static uint32_t offset = 0;
 
+static design_contex_t ctx;
+static const hdl_tbl_entr_t hdl_tbl[] = {
+  { "on_file",  (void *)fileBrowser_on_file },
+  { "fwin",     (void *)fileWin_handler },
+  { "on_close", (void *)fileBrowser_on_close },
+  { RT_NULL,    RT_NULL },
+};
+static obj_tbl_entr_t obj_tbl[1];
+
+
+static rt_err_t design_read(char **buf, rt_uint32_t *sz) {
+  if (offset >= sizeof(design)) {
+    *sz = 0;
+    return -RT_EEMPTY;
+  }
+
+  *buf = design;
+  *sz = sizeof(design);
+  offset += *sz;
+  return RT_EOK;
+}
 
 static rt_bool_t fileBrowser_on_close(void *obj, rtgui_evt_generic_t *evt) {
   (void)obj;
   (void)evt;
-  (void)rtgui_win_show(mainWin, RT_FALSE);
+  (void)rtgui_win_show(ctx.win, RT_FALSE);
 
   return RT_TRUE;
 }
@@ -104,50 +159,24 @@ static rt_bool_t fileBrowser_on_file(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 static void fileBrowser_entry(void *param) {
-  rtgui_rect_t rect;
-  rtgui_filelist_t *filelist;
   (void)param;
 
-  /* create app */
-  CREATE_APP_INSTANCE(fileBrs, RT_NULL, "FileBrowser");
-  if (!fileBrs) {
-    LOG_E("Create app failed!");
-    return;
+  if (RT_EOK != rtgui_design_init(&ctx, design_read, hdl_tbl, obj_tbl, 1)) {
+    LOG_E("Design init failed!");
   }
-
-  /* create win */
-  mainWin = CREATE_MAIN_WIN(RT_NULL, "FileBrowser",
-    RTGUI_WIN_STYLE_MAINWIN);
-  if (!mainWin) {
-    rtgui_app_uninit(fileBrs);
-    LOG_E("Create mainWin failed!");
-    return;
+  if (RT_EOK != rtgui_design_parse(&ctx)) {
+    LOG_E("Design parsing failed!");
   }
+  fileWin = (rtgui_win_t *)obj_tbl[0];
+  LOG_I("fileWin @%p", fileWin);
 
-  rtgui_get_screen_rect(&rect);
 
-  /* filelist */
-  filelist = CREATE_FILELIST_INSTANCE(mainWin, fileBrowser_on_file, &rect, "/");
-  if (!filelist) {
-      LOG_E("Create filelist failed!");
-      return;
-  }
-
-  /* fileWin */
-  fileWin = CREATE_WIN_INSTANCE(RT_NULL, fileWin_handler, &rect, "PicWin",
-    RTGUI_WIN_STYLE_DEFAULT);
-  if (!fileWin) {
-      LOG_E("Create fileWin failed!");
-      return;
-  }
-  WIN_SETTER(on_close)(fileWin, fileBrowser_on_close);  
-
-  rtgui_win_show(mainWin, RT_FALSE);
-  rtgui_app_run(fileBrs);
+  rtgui_win_show(ctx.win, RT_FALSE);
+  rtgui_app_run(ctx.app);
 
   DELETE_WIN_INSTANCE(fileWin);
-  DELETE_WIN_INSTANCE(mainWin);
-  rtgui_app_uninit(fileBrs);
+  DELETE_WIN_INSTANCE(ctx.win);
+  rtgui_app_uninit(ctx.app);
 }
 
 // RT-Thread function called by "RT_T.begin()"

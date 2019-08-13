@@ -13,6 +13,7 @@
 #define CMD_PIC_SHOW  0xFF01
 #define CMD_PIC_DELAY 0xFF02
 #define PIC_DIR       "/pic"
+#define DESIGN_FILE   "/design/PicShow.gui"
 #define TIMER_TICKS   (1 * RT_TICK_PER_SECOND)
 #define TIMER_COUNT   (5)
 
@@ -20,6 +21,13 @@ struct picShow_info {
   char* path;
   const char* format;
 };
+
+static rt_bool_t picShow_handler(void *obj, rtgui_evt_generic_t *evt);
+static rt_bool_t picShow_label_handler(void *obj, rtgui_evt_generic_t *evt);
+static rt_bool_t picShow_progress_handler(void *obj, rtgui_evt_generic_t *evt);
+static rt_bool_t picShow_btn1_handler(void *obj, rtgui_evt_generic_t *evt);
+static rt_bool_t picShow_btn2_handler(void *obj, rtgui_evt_generic_t *evt);
+static void picShow_timeout(rtgui_timer_t *tmr, void *param);
 
 static const char bmp[] = "bmp";
 static const char jpeg[] = "jpeg";
@@ -29,12 +37,34 @@ static rt_uint8_t tmrCnt = 0;
 static rt_bool_t timeout = RT_TRUE;
 static rt_bool_t pause = RT_FALSE;
 
-static rtgui_app_t *picShow;
 static rtgui_progress_t *bar;
+static rtgui_box_t *sizer;
 static DIR* dir = RT_NULL;
 static struct dirent* dirent = RT_NULL;
 static char path[20];
+static char buf[512];
+static int designFile = -1;
 
+static design_contex_t ctx;
+static const hdl_tbl_entr_t hdl_tbl[] = {
+  { "picwin",   (void *)picShow_handler },
+  { "lab",      (void *)picShow_label_handler },
+  { "progress", (void *)picShow_progress_handler },
+  { "btn1",     (void *)picShow_btn1_handler },
+  { "btn2",     (void *)picShow_btn2_handler },
+  { "timer",    (void *)picShow_timeout },
+  { RT_NULL,    RT_NULL },
+};
+static obj_tbl_entr_t obj_tbl[3];
+
+
+static rt_err_t design_read(char **_buf, rt_uint32_t *sz) {
+  *sz = (rt_uint32_t)read(designFile, buf, sizeof(buf));
+
+  *_buf = buf;
+  *sz = sizeof(buf);
+  return RT_EOK;
+}
 
 static rt_bool_t get_pic(struct picShow_info *info) {
   if (!dir) {
@@ -82,7 +112,7 @@ static rt_bool_t picShow_handler(void *obj, rtgui_evt_generic_t *evt) {
     done = RT_FALSE;
 
 
-    rtgui_timer_stop(picTmr);
+    if (picTmr) rtgui_timer_stop(picTmr);
     timeout = RT_FALSE;
     tmrCnt = 0;
 
@@ -109,7 +139,7 @@ static rt_bool_t picShow_handler(void *obj, rtgui_evt_generic_t *evt) {
     dlyEvt->command.wid = RT_NULL;
     dlyEvt->command.type = 0;
     dlyEvt->command.command_id = CMD_PIC_DELAY;
-    rtgui_request(picShow, dlyEvt, RT_WAITING_FOREVER);
+    rtgui_request(ctx.app, dlyEvt, RT_WAITING_FOREVER);
 
     if (!pause) {
       rtgui_timer_start(picTmr);
@@ -185,7 +215,7 @@ static rt_bool_t picShow_btn1_handler(void *obj, rtgui_evt_generic_t *evt) {
       picEvt->command.wid = RT_NULL;
       picEvt->command.type = (rt_int32_t)&info;
       picEvt->command.command_id = CMD_PIC_SHOW;
-      rtgui_request(picShow, picEvt, RT_WAITING_FOREVER);
+      rtgui_request(ctx.app, picEvt, RT_WAITING_FOREVER);
     }
     done = RT_TRUE;
   } while (0);
@@ -236,74 +266,37 @@ static void picShow_timeout(rtgui_timer_t *tmr, void *param) {
 }
 
 static void picShow_entry(void *param) {
-  rtgui_rect_t rect;
-  rtgui_win_t *win;
-  rtgui_label_t* label;
-  rtgui_container *cntr;
-  rtgui_box_t *sizer;
-  rtgui_button_t *btn1, *btn2;
   (void)param;
 
-  /* create app */
-  CREATE_APP_INSTANCE(picShow, RT_NULL, "PicShow");
-  if (!picShow) {
-    LOG_E("Create app failed!");
+  designFile = open(DESIGN_FILE, O_RDONLY);
+  if (designFile < 0) {
+    LOG_E("Open %s failed!", DESIGN_FILE);
     return;
   }
 
-  picTmr = rtgui_timer_create(TIMER_TICKS, RT_TIMER_FLAG_PERIODIC,
-    picShow_timeout, RT_NULL);
-  if (!picTmr) {
-    LOG_E("Create timer failed!");
-    return;
+  if (RT_EOK != rtgui_design_init(&ctx, design_read, hdl_tbl, obj_tbl, 3)) {
+    close(designFile);
+    LOG_E("Design init failed!");
   }
-
-  /* create win */
-  win = CREATE_MAIN_WIN(picShow_handler, "PicWin",
-    RTGUI_WIN_STYLE_MAINWIN);
-  if (!win) {
-    rtgui_app_uninit(picShow);
-    LOG_E("Create mainWin failed!");
-    return;
+  if (RT_EOK != rtgui_design_parse(&ctx)) {
+    close(designFile);
+    LOG_E("Design parsing failed!");
   }
-
-  /* label */
-  rtgui_get_screen_rect(&rect);
-  rect.y2 = 15;
-  label = CREATE_LABEL_INSTANCE(win, picShow_label_handler, &rect,
-    "PicShow Example");
-  if (!label) {
-      LOG_E("Create label failed!");
-      return;
-  }
-  WIDGET_BACKGROUND(TO_WIDGET(label)) = white;
-  WIDGET_FOREGROUND(TO_WIDGET(label)) = blue;
-
-  /* progress bar */
-  bar = CREATE_PROGRESS_INSTANCE(win, picShow_progress_handler, &rect,
-    RTGUI_HORIZONTAL, 100);
-  if (!bar) {
-      LOG_E("Create progress failed!");
-      return;
-  }
-
-  /* buttons in container */
-  rtgui_get_screen_rect(&rect);
-  rect.y1 = rect.y2 - 30;
-  cntr = CREATE_CONTAINER_INSTANCE(win, RT_NULL, &rect);
-  sizer = CREATE_BOX_INSTANCE(cntr, RTGUI_HORIZONTAL, 1);
-  btn1 = CREATE_BUTTON_INSTANCE(cntr, picShow_btn1_handler, NORMAL, "Next");
-  WIDGET_ALIGN(btn1) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
-  btn2 = CREATE_BUTTON_INSTANCE(cntr, picShow_btn2_handler, PUSH, "Pause");
-  WIDGET_ALIGN(btn2) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
+  close(designFile);
+  picTmr = (rtgui_timer_t *)obj_tbl[0];
+  bar = (rtgui_progress_t *)obj_tbl[1];
+  sizer = (rtgui_box_t *)obj_tbl[2];
+  LOG_I("picTmr @%p", picTmr);
+  LOG_I("bar @%p", bar);
+  LOG_I("sizer @%p", sizer);
   rtgui_box_layout(sizer);
 
 
-  rtgui_win_show(win, RT_FALSE);
-  rtgui_app_run(picShow);
+  rtgui_win_show(ctx.win, RT_FALSE);
+  rtgui_app_run(ctx.app);
 
-  DELETE_WIN_INSTANCE(win);
-  rtgui_app_uninit(picShow);
+  DELETE_WIN_INSTANCE(ctx.win);
+  rtgui_app_uninit(ctx.app);
 }
 
 // RT-Thread function called by "RT_T.begin()"
@@ -327,7 +320,7 @@ void loop() {
   struct picShow_info info;
   rtgui_evt_generic_t *evt;
 
-  while (!picShow || IS_APP_FLAG(picShow, EXITED)) {
+  while (!ctx.app || IS_APP_FLAG(ctx.app, EXITED)) {
     LOG_I("Waiting app");
     rt_thread_sleep(100);
   }
@@ -348,7 +341,7 @@ void loop() {
     evt->command.wid = RT_NULL;
     evt->command.type = (rt_int32_t)&info;
     evt->command.command_id = CMD_PIC_SHOW;
-    rtgui_request(picShow, evt, RT_WAITING_FOREVER);
+    rtgui_request(ctx.app, evt, RT_WAITING_FOREVER);
     timeout = RT_FALSE;
   }
 }

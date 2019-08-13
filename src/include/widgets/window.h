@@ -41,9 +41,9 @@ extern "C" {
 #define TO_WIN(obj)                         CAST_(obj, _WIN_METADATA, rtgui_win_t)
 
 #define CREATE_WIN_INSTANCE(parent, hdl, rect, title, style) \
-    rtgui_create_win(parent, hdl, rect, title, style)
-#define CREATE_MAIN_WIN(parent, hdl, title, style) \
-    rtgui_create_win(parent, hdl, RT_NULL, title, style)
+    rtgui_create_win(TO_WIN(parent), hdl, rect, title, style)
+#define CREATE_MAIN_WIN(hdl, title, style)  \
+    rtgui_create_win(RT_NULL, hdl, RT_NULL, title, style)
 #define DELETE_WIN_INSTANCE(obj)            rtgui_win_uninit(obj)
 
 #define WIN_FLAG(w)                         (TO_WIN(w)->flag)

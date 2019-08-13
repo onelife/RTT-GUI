@@ -42,8 +42,6 @@
 #define FILELIST_SETTER(mname)              rtgui_filelist_set_##mname
 
 /* Exported types ------------------------------------------------------------*/
-typedef struct rtgui_filelist rtgui_filelist_t;
-
 struct rtgui_filelist {
     rtgui_list_t _super;
     /* PRIVATE */

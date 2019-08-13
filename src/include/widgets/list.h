@@ -42,9 +42,6 @@
 #define LIST_SETTER(mname)                  rtgui_list_set_##mname
 
 /* Exported types ------------------------------------------------------------*/
-typedef struct rtgui_list_item rtgui_list_item_t;
-typedef struct rtgui_list rtgui_list_t;
-
 struct rtgui_list_item {
     char *name;
     rtgui_image_t *image;

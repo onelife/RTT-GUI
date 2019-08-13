@@ -18,6 +18,7 @@ extern "C" {
     #include "include/widgets/filelist.h"
     #include "include/widgets/window.h"
     #include "include/app/app.h"
+    #include "include/design.h"
 }
 
 class RT_GUI {

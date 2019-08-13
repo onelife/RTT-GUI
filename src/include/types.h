@@ -140,6 +140,9 @@ typedef struct rtgui_title rtgui_title_t;
 typedef struct rtgui_label rtgui_label_t;
 typedef struct rtgui_button rtgui_button_t;
 typedef struct rtgui_progress rtgui_progress_t;
+typedef struct rtgui_list_item rtgui_list_item_t;
+typedef struct rtgui_list rtgui_list_t;
+typedef struct rtgui_filelist rtgui_filelist_t;
 typedef struct rtgui_win rtgui_win_t;
 typedef struct rtgui_app rtgui_app_t;
 

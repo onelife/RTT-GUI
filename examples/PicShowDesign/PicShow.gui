@@ -1,0 +1,78 @@
+APP: {
+  PARAM: {
+    // name, handler
+    "PicShow", NULL,
+  },
+
+  TIMER: {
+    PARAM: {
+      // handler, flag, tick
+      // flag: 0, ONE_SHOT; 2, PERIODIC
+      timer, 2, 100,
+    },
+    ID: 0,
+  },
+
+  MWIN: {
+    PARAM: {
+      // title, handler
+      "PicWin", picwin,
+    },
+
+    LABEL: {
+      PARAM: {
+        // size, handler, text
+        [0, 0, 240, 15,], lab, "PicShow Example",
+      },
+      // white in ARGB888 format
+      BACKGROUND: 0xffffffff,
+      // blue in ARGB888 format
+      FOREGROUND: 0xff0000ff,
+    },
+
+    PROGRESS: {
+      PARAM: {
+        // size, handler, orient, range
+        // orient: 1, HORIZONTAL; 2, VERTICAL
+        [0, 0, 240, 15,], progress, 1, 100,
+      },
+      ID: 1,
+    },
+
+    CONTAINER: {
+      PARAM: {
+          // size, handler
+          [0, 290, 240, 320,], NULL,
+      },
+
+      BOX: {
+        PARAM: {
+          // orient, border size
+          // orient: 1, HORIZONTAL; 2, VERTICAL
+          1, 1,
+        },
+        ID: 2,
+      },
+
+      BUTTON: {
+        PARAM: {
+          // handler, type, text
+          // type: 0x00, NORMAL; 0x10, PUSH
+          btn1, 0, "Next",
+        },
+        // RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND
+        ALIGN: 0x30,
+      },
+
+      BUTTON: {
+        PARAM: {
+          // handler, type, text
+          // type: 0x00, NORMAL; 0x10, PUSH
+          btn2, 0x10, "Pause",
+        },
+        // RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND
+        ALIGN: 0x30,
+      },
+    },
+  },
+}

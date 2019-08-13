@@ -22,7 +22,7 @@
  * 2009-10-16     Bernard      first version
  */
 #include "rtconfig.h"
-#include "../include/color.h"
+#include "include/color.h"
 
 const rtgui_color_t default_foreground = RTGUI_RGB(0x00, 0x00, 0x00);
 const rtgui_color_t default_background = RTGUI_RGB(212, 208, 200);
