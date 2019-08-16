@@ -126,7 +126,7 @@ void rtgui_dc_trans_get_new_wh(struct rtgui_dc_trans *dct,
         NORMALIZE(topleft.x);
         NORMALIZE(bottomright.x);
 
-        neww = _MAX(topright.x, _UI_ABS(topleft.x - bottomright.x))
+        neww = _MAX(topright.x, _ABS(topleft.x - bottomright.x))
                + dct->m.m[4];
         NORMALIZE(neww);
 
@@ -140,7 +140,7 @@ void rtgui_dc_trans_get_new_wh(struct rtgui_dc_trans *dct,
         NORMALIZE(topleft.y);
         NORMALIZE(bottomright.y);
 
-        newh = _MAX(topright.y, _UI_ABS(topleft.y - bottomright.y))
+        newh = _MAX(topright.y, _ABS(topleft.y - bottomright.y))
                + dct->m.m[5];
         NORMALIZE(newh);
 

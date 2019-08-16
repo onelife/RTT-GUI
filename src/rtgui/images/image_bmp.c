@@ -160,6 +160,7 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
         rt_uint32_t ncolors = 0;
         rt_uint8_t scale = 0;
         rt_uint32_t headerSize;
+        rt_uint16_t bits_per_pixel;
         rt_bool_t loadAlpha = RT_FALSE;   /* in palette */
         lineBuf = RT_NULL;
 
@@ -182,38 +183,49 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
         err = -RT_ERROR;
         if ((temp[0] != 'B') || (temp[1] != 'M')) break;
         /* get pixel array offset */
-        bmp->pixel_offset = *(rt_uint32_t *)&temp[10];
+        bmp->pixel_offset = ((rt_uint32_t)temp[10] <<  0) | \
+                            ((rt_uint32_t)temp[11] <<  8) | \
+                            ((rt_uint32_t)temp[12] << 16) | \
+                            ((rt_uint32_t)temp[13] << 24);
         /* get BMP header size */
-        headerSize = *(rt_uint32_t *)&temp[14];
-
+        headerSize = ((rt_uint32_t)temp[14] <<  0) | \
+                     ((rt_uint32_t)temp[15] <<  8) | \
+                     ((rt_uint32_t)temp[16] << 16) | \
+                     ((rt_uint32_t)temp[17] << 24);
         err = -RT_EIO;
         if (12 == headerSize) {
             /* BITMAPCOREHEADER */
             if (8 != rtgui_filerw_read(file, temp, 1, 8)) break;
             /* get image size */
-            bmp->w = (rt_uint32_t)*(rt_uint16_t *)&temp[0];
-            bmp->h = (rt_uint32_t)*(rt_uint16_t *)&temp[2];
+            bmp->w = ((rt_uint32_t)temp[0] << 0) | \
+                     ((rt_uint32_t)temp[1] << 8);
+            bmp->h = ((rt_uint32_t)temp[2] << 0) | \
+                     ((rt_uint32_t)temp[3] << 8);
             /* get bits per pixel */
-            bmp->bits_per_pixel = (rt_uint8_t)*(rt_uint16_t *)&temp[6];
-            LOG_D("bitPP %d", bmp->bits_per_pixel);
+            bits_per_pixel = ((rt_uint32_t)temp[6] << 0) | \
+                             ((rt_uint32_t)temp[7] << 8);
         } else {
             /* BITMAPINFOHEADER and later */
             if (32 != rtgui_filerw_read(file, temp, 1, 32)) break;
             /* get image size */
-            bmp->w = *(rt_uint32_t *)&temp[0];
-            bmp->h = *(rt_uint32_t *)&temp[4];
+            bmp->w = ((rt_uint32_t)temp[0] <<  0) | \
+                     ((rt_uint32_t)temp[1] <<  8) | \
+                     ((rt_uint32_t)temp[2] << 16) | \
+                     ((rt_uint32_t)temp[3] << 24);
+            bmp->h = ((rt_uint32_t)temp[4] <<  0) | \
+                     ((rt_uint32_t)temp[5] <<  8) | \
+                     ((rt_uint32_t)temp[6] << 16) | \
+                     ((rt_uint32_t)temp[7] << 24);
             /* get bits per pixel */
-            bmp->bits_per_pixel = (rt_uint8_t)*(rt_uint16_t *)&temp[10];
-            LOG_D("bitPP %d", bmp->bits_per_pixel);
-            if (bmp->bits_per_pixel > 32) {
-                err = -RT_ERROR;
-                LOG_E("bad BMP bitPP %d",  bmp->bits_per_pixel);
-                break;
-            }
+            bits_per_pixel = ((rt_uint32_t)temp[10] << 0) | \
+                             ((rt_uint32_t)temp[11] << 8);
             /* The 16bpp and 32bpp images are always stored uncompressed */
-            if ((16 != bmp->bits_per_pixel) && (32 != bmp->bits_per_pixel)) {
+            if ((16 != bits_per_pixel) && (32 != bits_per_pixel)) {
                 /* check compression */
-                rt_uint32_t comp = *(rt_uint32_t *)&temp[12];
+                rt_uint32_t comp = ((rt_uint32_t)temp[12] <<  0) | \
+                                   ((rt_uint32_t)temp[13] <<  8) | \
+                                   ((rt_uint32_t)temp[14] << 16) | \
+                                   ((rt_uint32_t)temp[15] << 24);
                 if (comp != BI_RGB) {
                     err = -RT_ERROR;
                     LOG_E("bad BMP comp %d", comp);
@@ -222,8 +234,20 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
                 LOG_D("comp %d", comp);
             }
             /* get number of colors */
-            ncolors = *(rt_uint32_t *)&temp[28];
+            ncolors = ((rt_uint32_t)temp[28] <<  0) | \
+                      ((rt_uint32_t)temp[29] <<  8) | \
+                      ((rt_uint32_t)temp[30] << 16) | \
+                      ((rt_uint32_t)temp[31] << 24);
         }
+
+        /* check bits per pixel */
+        if (bits_per_pixel > 32) {
+            err = -RT_ERROR;
+            LOG_E("bad BMP bitPP %d", bits_per_pixel);
+            break;
+        }
+        LOG_D("bitPP %d", bits_per_pixel);
+        bmp->bits_per_pixel = (rt_uint8_t)bits_per_pixel;
 
         /* load palette */
         if (!ncolors) {

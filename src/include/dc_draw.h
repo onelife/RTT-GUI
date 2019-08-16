@@ -334,8 +334,6 @@ do { \
  * Define line drawing macro
  */
 
-#define ABS(_x) ((_x) < 0 ? -(_x) : (_x))
-
 /* Horizontal line */
 #define HLINE(type, op, draw_end) \
 { \
@@ -427,8 +425,8 @@ do { \
     int x, xinc1, xinc2; \
     int y, yinc1, yinc2; \
  \
-    deltax = ABS(x2 - x1); \
-    deltay = ABS(y2 - y1); \
+    deltax = _ABS(x2 - x1); \
+    deltay = _ABS(y2 - y1); \
  \
     if (deltax >= deltay) { \
         numpixels = deltax + 1; \

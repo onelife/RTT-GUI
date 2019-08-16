@@ -52,7 +52,7 @@ extern "C" {
 #define _MAX(x, y)                          (((x) > (y)) ? (x) : (y))
 
 #define _BIT2BYTE(bits)                     ((bits + 7) >> 3)
-#define _UI_ABS(x)                          (((x) >= 0) ? (x) : -(x))
+#define _ABS(x)                             (((x) >= 0) ? (x) : -(x))
 
 #define RECT_W(r)                           ((r).x2 - (r).x1 + 1)
 #define RECT_H(r)                           ((r).y2 - (r).y1 + 1)

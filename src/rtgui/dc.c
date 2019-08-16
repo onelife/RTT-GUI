@@ -76,8 +76,8 @@ void rtgui_dc_draw_line(rtgui_dc_t *dc, int x1, int y1, int x2, int y2)
 
 #define rtgui_sgn(x) ((x<0)?-1:((x>0)?1:0)) /* macro to return the sign of a number */
 
-        dxabs = _UI_ABS(dx);
-        dyabs = _UI_ABS(dy);
+        dxabs = _ABS(dx);
+        dyabs = _ABS(dy);
         sdx = rtgui_sgn(dx);
         sdy = rtgui_sgn(dy);
         x = dyabs >> 1;

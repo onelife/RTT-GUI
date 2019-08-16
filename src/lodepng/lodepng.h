@@ -26,8 +26,11 @@ freely, subject to the following restrictions:
 #ifndef LODEPNG_H
 #define LODEPNG_H
 
+// #include <string.h> /*for size_t*/
+#include "include/rtthread.h"
 #include "guiconfig.h"
-#include <string.h> /*for size_t*/
+
+#define size_t rt_size_t
 
 extern const char* LODEPNG_VERSION_STRING;
 

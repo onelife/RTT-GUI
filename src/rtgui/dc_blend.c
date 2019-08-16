@@ -348,7 +348,7 @@ _dc_draw_line1(rtgui_dc_t * dst, int x1, int y1, int x2, int y2, rtgui_color_t c
     {
         VLINE(rt_uint8_t, DRAW_FASTSETPIXEL1, draw_end);
     }
-    else if (ABS(x1 - x2) == ABS(y1 - y2))
+    else if (_ABS(x1 - x2) == _ABS(y1 - y2))
     {
         DLINE(rt_uint8_t, DRAW_FASTSETPIXEL1, draw_end);
     }
@@ -377,7 +377,7 @@ _dc_draw_line2(rtgui_dc_t * dst, int x1, int y1, int x2, int y2, rtgui_color_t c
     {
         VLINE(rt_uint16_t, DRAW_FASTSETPIXEL2, draw_end);
     }
-    else if (ABS(x1 - x2) == ABS(y1 - y2))
+    else if (_ABS(x1 - x2) == _ABS(y1 - y2))
     {
         DLINE(rt_uint16_t, DRAW_FASTSETPIXEL2, draw_end);
     }
@@ -417,7 +417,7 @@ _dc_draw_line3(rtgui_dc_t * dst, int x1, int y1, int x2, int y2, rtgui_color_t c
     {
         VLINE(rt_uint8_t, DRAW_FASTSETPIXEL3, draw_end);
     }
-    else if (ABS(x1 - x2) == ABS(y1 - y2))
+    else if (_ABS(x1 - x2) == _ABS(y1 - y2))
     {
         DLINE(rt_uint8_t, DRAW_FASTSETPIXEL3, draw_end);
     }
@@ -447,7 +447,7 @@ _dc_draw_line4(rtgui_dc_t * dst, int x1, int y1, int x2, int y2, rtgui_color_t c
     {
         VLINE(rt_uint32_t, DRAW_FASTSETPIXEL4, draw_end);
     }
-    else if (ABS(x1 - x2) == ABS(y1 - y2))
+    else if (_ABS(x1 - x2) == _ABS(y1 - y2))
     {
         DLINE(rt_uint32_t, DRAW_FASTSETPIXEL4, draw_end);
     }
@@ -978,7 +978,7 @@ _dc_blend_line_rgb565(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
             break;
         }
     }
-    else if (ABS(x1 - x2) == ABS(y1 - y2))
+    else if (_ABS(x1 - x2) == _ABS(y1 - y2))
     {
         switch (blendMode)
         {
@@ -1083,7 +1083,7 @@ _dc_blend_line_bgr565(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
             break;
         }
     }
-    else if (ABS(x1 - x2) == ABS(y1 - y2))
+    else if (_ABS(x1 - x2) == _ABS(y1 - y2))
     {
         switch (blendMode)
         {
@@ -1218,7 +1218,7 @@ _dc_blend_line_rgb888(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
 #endif
         }
     }
-    else if (ABS(x1 - x2) == ABS(y1 - y2))
+    else if (_ABS(x1 - x2) == _ABS(y1 - y2))
     {
         switch (blendMode)
         {
@@ -1338,7 +1338,7 @@ _dc_blend_line_argb8888(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
             break;
         }
     }
-    else if (ABS(x1 - x2) == ABS(y1 - y2))
+    else if (_ABS(x1 - x2) == _ABS(y1 - y2))
     {
         switch (blendMode)
         {

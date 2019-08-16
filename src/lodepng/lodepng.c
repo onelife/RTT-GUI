@@ -30,9 +30,14 @@ Rename this file to lodepng.cpp to use it for C++, or to lodepng.c to use it for
 
 #include "lodepng.h"
 
-#include <limits.h> /* LONG_MAX */
-#include <stdio.h> /* file handling */
-#include <stdlib.h> /* allocations */
+// #include <limits.h> /* LONG_MAX */
+// #include <stdio.h> /* file handling */
+// #include <stdlib.h> /* allocations */
+#include "include/rtgui.h"
+
+#define memcpy rt_memcpy
+#define strlen rt_strlen
+#define abs _ABS
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1310) /*Visual Studio: A few warning types are not desired here.*/
 #pragma warning( disable : 4244 ) /*implicit conversions: not warned by gcc -Wall -Wextra and requires too much casts*/
