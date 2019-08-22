@@ -92,9 +92,6 @@ struct rtgui_dc_buffer {
     rt_uint8_t blend_mode;		/* RTGUI_BLENDMODE: None/Blend/Add/Mod */
     rt_uint16_t width, height;
     rt_uint16_t pitch;
-    #ifdef GUIENGINE_IMAGE_CONTAINER
-        struct rtgui_image_item *image_item;
-    #endif
     rt_uint8_t pixel_alpha;
     rt_uint8_t *pixel;
 };
@@ -114,10 +111,6 @@ struct rtgui_dc_buffer {
 /* create a buffer dc */
 rtgui_dc_t *rtgui_dc_buffer_create(int width, int height);
 rtgui_dc_t *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w, int h);
-#ifdef GUIENGINE_IMAGE_CONTAINER
-rtgui_dc_t *rtgui_img_dc_create_pixformat(rt_uint8_t pixel_format, rt_uint8_t *pixel, 
-    struct rtgui_image_item *image_item);
-#endif
 rtgui_dc_t *rtgui_dc_buffer_create_from_dc(rtgui_dc_t* dc);
 void rtgui_dc_buffer_set_alpha(rtgui_dc_t* dc, rt_uint8_t pixel_alpha);
 

@@ -1671,8 +1671,7 @@ rtgui_region_inverse(rtgui_region_t *dstRgn,       /* Destination region */
 
 rt_bool_t rtgui_region_contains_rect(rtgui_region_t *rgn, rtgui_rect_t *rect) {
     rt_int16_t x, y;
-    rtgui_rect_t *pbox;
-    rtgui_rect_t *pboxEnd;
+    rtgui_rect_t *pbox, *pboxEnd;
     int partIn, partOut;
     int num2;
 
@@ -1759,7 +1758,7 @@ rt_bool_t rtgui_region_contains_rect(rtgui_region_t *rgn, rtgui_rect_t *rect) {
 /* rtgui_region_translate (rgn, x, y)
    translates in place
 */
-void rtgui_region_translate(rtgui_region_t *rgn, int x, int y)
+void rtgui_region_translate(rtgui_region_t *rgn, int x, int y) 
 {
     int x1, x2, y1, y2;
     int nbox;
@@ -1843,8 +1842,7 @@ void rtgui_region_translate(rtgui_region_t *rgn, int x, int y)
     }
 }
 
-void rtgui_region_reset(rtgui_region_t *rgn, rtgui_rect_t *rect)
-{
+void rtgui_region_reset(rtgui_region_t *rgn, rtgui_rect_t *rect) {
     GOOD(rgn);
     freeData(rgn);
 
@@ -1853,50 +1851,44 @@ void rtgui_region_reset(rtgui_region_t *rgn, rtgui_rect_t *rect)
 RTM_EXPORT(rtgui_region_reset);
 
 /* box is "return" value */
-int rtgui_region_contains_point(rtgui_region_t *rgn,
-                                int x, int y,
-                                rtgui_rect_t *box)
-{
+rt_bool_t rtgui_region_contains_point(rtgui_region_t *rgn, int x, int y,
+    rtgui_rect_t *box) {
     rtgui_rect_t *pbox, *pboxEnd;
     int num2;
 
     GOOD(rgn);
     num2 = REGION_DATA_NUM_RECTS(rgn);
     if (!num2 || !IS_P_INSIDE(&rgn->extents, x, y))
-        return -RT_ERROR;
+        return RT_FALSE;
 
-    if (num2 == 1)
-    {
+    if (num2 == 1) {
         *box = rgn->extents;
-        return RT_EOK;
+        return RT_TRUE;
     }
 
     for (pbox = REGION_RECTS_PTR(rgn), pboxEnd = pbox + num2;
-            pbox != pboxEnd;
-            pbox++)
-    {
+         pbox != pboxEnd;
+         pbox++) {
         if (y >= pbox->y2)
             continue;       /* not there yet */
         if ((y < pbox->y1) || (x < pbox->x1))
-            break;      /* missed it */
+            break;          /* missed it */
         if (x >= pbox->x2)
             continue;       /* not there yet */
         *box = *pbox;
-        return RT_EOK;
+        return RT_TRUE;
     }
 
-    return -RT_ERROR;
+    return RT_FALSE;
 }
 
-int rtgui_region_not_empty(rtgui_region_t *rgn)
-{
+rt_bool_t rtgui_region_not_empty(rtgui_region_t *rgn) {
     GOOD(rgn);
 
-    return(!REGION_NO_RECT(rgn));
+    return (!REGION_NO_RECT(rgn));
 }
 
-void rtgui_region_empty(rtgui_region_t *rgn)
-{
+void rtgui_region_empty(rtgui_region_t *rgn) {
     GOOD(rgn);
     freeData(rgn);
 
@@ -1904,8 +1896,7 @@ void rtgui_region_empty(rtgui_region_t *rgn)
     rgn->data = &_null_region_data;
 }
 
-rtgui_rect_t *rtgui_region_extents(rtgui_region_t *rgn)
-{
+rtgui_rect_t *rtgui_region_extents(rtgui_region_t *rgn) {
     GOOD(rgn);
     return(&rgn->extents);
 }
@@ -2019,8 +2010,8 @@ void rtgui_rect_move_align(const rtgui_rect_t *rect, rtgui_rect_t *to,
         to->x2 += dw;
     } else if (align & RTGUI_ALIGN_CENTER_HORIZONTAL) {
         /* align to center horizontal */
-        to->x1 += dw >> 1;
-        to->x2 += dw >> 1;
+        to->x1 += (dw >> 1);
+        to->x2 += (dw >> 1);
     }
 
     if (align & RTGUI_ALIGN_BOTTOM) {
@@ -2029,8 +2020,8 @@ void rtgui_rect_move_align(const rtgui_rect_t *rect, rtgui_rect_t *to,
         to->y2 += dh;
     } else if (align & RTGUI_ALIGN_CENTER_VERTICAL) {
         /* align to center vertical */
-        to->y1 += dh >> 1;
-        to->y2 += dh >> 1;
+        to->y1 += (dh >> 1);
+        to->y2 += (dh >> 1);
     }
 }
 RTM_EXPORT(rtgui_rect_move_align);

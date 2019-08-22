@@ -283,9 +283,9 @@ static void _filelist_constructor(void *obj) {
 
     if (!_contex.count) {
         _contex.file_img = rtgui_image_create_from_mem("xpm",
-            (const rt_uint8_t *)file_xpm, sizeof(file_xpm), RT_TRUE);
+            (const rt_uint8_t *)file_xpm, sizeof(file_xpm), -1, RT_TRUE);
         _contex.folder_img = rtgui_image_create_from_mem("xpm",
-            (const rt_uint8_t *)folder_xpm, sizeof(folder_xpm), RT_TRUE);
+            (const rt_uint8_t *)folder_xpm, sizeof(folder_xpm), -1, RT_TRUE);
     }
     _contex.count++;
 }

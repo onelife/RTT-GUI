@@ -1776,8 +1776,8 @@ void rtgui_dc_rect_to_device(rtgui_dc_t *dc, rtgui_rect_t *rect)
 RTM_EXPORT(rtgui_dc_rect_to_device);
 
 extern struct rt_mutex cursor_lock;
-extern void rtgui_mouse_show_cursor(void);
-extern void rtgui_mouse_hide_cursor(void);
+extern void rtgui_cursor_show(void);
+extern void rtgui_cursor_hide(void);
 
 rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
     rtgui_dc_t *dc;
@@ -1800,27 +1800,22 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
             if (IS_RECT_NO_SIZE(parent->clip.extents)) break;
         }
 
-        /* increase drawing count */
-        if (win->drawing == 0)
-            RECT_CLEAR(win->drawing_rect);
-        win->drawing++;
-        LOG_D("->draw cnt %d", win->drawing);
-
         /* always draw in virtual mode */
         if (!rtgui_gfx_driver_in_virtual_mode()) {
-            rtgui_widget_t *wgt = owner;
+            rtgui_widget_t *parent = owner->parent;
+            rt_bool_t visible = RT_TRUE;
 
-            WIDGET_FLAG_SET(owner, DC_VISIBLE);
             /* check if widget visible */
-            while (wgt) {
-                if (!IS_WIDGET_FLAG(wgt, SHOWN)) {
-                    /* reset dc visible */
-                    WIDGET_FLAG_CLEAR(owner, DC_VISIBLE);
-                    win->drawing--;
+            while (parent && visible) {
+                if (!IS_WIDGET_FLAG(parent, SHOWN)) {
+                    visible = RT_FALSE;
+                    LOG_W("dc invisible");
                     break;
                 }
-                wgt = wgt->parent;
+                parent = parent->parent;
             }
+            if (!visible) break;
+            WIDGET_FLAG_SET(owner, DC_VISIBLE);
         }
 
         rtgui_screen_lock(RT_WAITING_FOREVER);
@@ -1832,30 +1827,36 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
             LOG_D("hw dc");
         } else {
             dc = rtgui_dc_client_create(owner);
-            LOG_D("client dc");
+            LOG_E("client dc");
         }
-
         if (!dc) {
-            /* restore drawing counter */
-            win->drawing--;
             rtgui_screen_unlock();
             LOG_E("no dc");
             break;
-        } else if ((win->drawing == 1) && !rtgui_gfx_driver_in_virtual_mode()) {
-            if (!IS_TITLE(win)) {
-                rtgui_evt_generic_t *evt;
+        }
 
-                /* send RTGUI_EVENT_UPDATE_BEGIN */
-                RTGUI_CREATE_EVENT(evt, UPDATE_BEGIN, RT_WAITING_FOREVER);
-                if (!evt) break;
-                evt->update_begin.rect = TO_WIDGET(win)->extent;
-                (void)rtgui_send_request(evt, RT_WAITING_FOREVER);
-            } else {
-                #ifdef RTGUI_USING_MOUSE_CURSOR
-                    rt_mutex_take(&cursor_lock, RT_WAITING_FOREVER);
-                    rtgui_mouse_hide_cursor();
-                    // LOG_E("hide in dc bg");
-                #endif
+        /* increase drawing count */
+        win->drawing++;
+        LOG_D("->draw cnt %d", win->drawing);
+
+        if (win->drawing == 1) {
+            RECT_CLEAR(win->drawing_rect);
+            if (!rtgui_gfx_driver_in_virtual_mode()) {
+                if (!IS_TITLE(win)) {
+                    rtgui_evt_generic_t *evt;
+
+                    /* send RTGUI_EVENT_UPDATE_BEGIN */
+                    RTGUI_CREATE_EVENT(evt, UPDATE_BEGIN, RT_WAITING_FOREVER);
+                    if (!evt) break;
+                    evt->update_begin.rect = TO_WIDGET(win)->extent;
+                    (void)rtgui_send_request(evt, RT_WAITING_FOREVER);
+                } else {
+                    #ifdef RTGUI_USING_CURSOR
+                        rt_mutex_take(&cursor_lock, RT_WAITING_FOREVER);
+                        rtgui_cursor_hide();
+                        // LOG_E("hide in dc bg");
+                    #endif
+                }
             }
         }
     } while (0);
@@ -1898,10 +1899,10 @@ void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
             evt->update_end.rect = owner->extent;  // win->drawing_rect?
             (void)rtgui_send_request(evt, RT_WAITING_FOREVER);
         } else {
-            #ifdef RTGUI_USING_MOUSE_CURSOR
+            #ifdef RTGUI_USING_CURSOR
                 rt_mutex_release(&cursor_lock);
                 /* show cursor */
-                rtgui_mouse_show_cursor();
+                rtgui_cursor_show();
                 // LOG_E("show in dc ed");
             #endif
 

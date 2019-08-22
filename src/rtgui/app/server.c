@@ -64,7 +64,7 @@ static rt_bool_t _server_mouse_motion_handler(rtgui_evt_generic_t *evt) {
 
         if (top && top->monitor_list.next) {
             /* check whether the monitor exist */
-            if (!rtgui_mouse_monitor_contains_point(&(top->monitor_list), x, y))
+            if (!rtgui_monitor_contain_point(&(top->monitor_list), x, y))
                 break;
         }
 
@@ -77,7 +77,7 @@ static rt_bool_t _server_mouse_motion_handler(rtgui_evt_generic_t *evt) {
     } while (0);
 
     /* move mouse */
-    rtgui_mouse_moveto(x, y);
+    rtgui_cursor_move(x, y);
 
     return done;
 }
@@ -93,12 +93,12 @@ static rt_bool_t _server_mouse_button_handler(rtgui_evt_generic_t *evt) {
         y = evt->mouse.y;
 
         #ifdef RTGUI_USING_WINMOVE
-            if (rtgui_winrect_is_moved() && (evt->mouse.button & \
+            if (rtgui_winmove_is_moving() && (evt->mouse.button & \
                 (MOUSE_BUTTON_LEFT | MOUSE_BUTTON_UP))) {
                 rtgui_win_t *win;
                 rtgui_rect_t rect;
 
-                if (rtgui_winrect_moved_done(&rect, &win)) {
+                if (rtgui_winmove_done(&rect, &win)) {
                     /* send RTGUI_EVENT_WIN_MOVE */
                     RTGUI_EVENT_REINIT(evt, WIN_MOVE);
                     evt->win_move.wid = win;
@@ -129,7 +129,7 @@ static rt_bool_t _server_mouse_button_handler(rtgui_evt_generic_t *evt) {
     } while (0);
 
     /* move mouse */
-    rtgui_mouse_moveto(x, y);
+    rtgui_cursor_move(x, y);
 
     return done;
 }
@@ -273,8 +273,8 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
 
     case RTGUI_EVENT_UPDATE_BEGIN:
-        #ifdef RTGUI_USING_MOUSE_CURSOR
-            rtgui_mouse_hide_cursor();
+        #ifdef RTGUI_USING_CURSOR
+            rtgui_cursor_hide();
         #endif
         break;
 
@@ -286,8 +286,8 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
                 rtgui_gfx_update_screen(drv,
                     &(evt->update_end.rect));
             }
-            #ifdef RTGUI_USING_MOUSE_CURSOR
-                rtgui_mouse_show_cursor();
+            #ifdef RTGUI_USING_CURSOR
+                rtgui_cursor_show();
             #endif
         }
         break;
@@ -334,8 +334,8 @@ static void server_entry(void *pram) {
     }
 
     /* init mouse and show */
-    #ifdef RTGUI_USING_MOUSE_CURSOR
-        rtgui_mouse_show_cursor();
+    #ifdef RTGUI_USING_CURSOR
+        rtgui_cursor_show();
     #endif
 
     /* loop event handler */
@@ -356,7 +356,7 @@ rt_err_t rtgui_server_init(void) {
     rt_err_t ret;
 
     do {
-        ret = rtgui_mouse_init();
+        ret = rtgui_cursor_init();
         if (RT_EOK != ret) break;
 
         tid = rt_thread_create(

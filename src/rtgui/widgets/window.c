@@ -386,8 +386,8 @@ static rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
         rtgui_widget_set_rect(TO_WIDGET(win), &fixed);
         rtgui_region_init_with_extent(&win->outer_clip, rect);
         win->outer_extent = *rect;
-        // LOG_D("win rect (%d,%d)-(%d,%d)", fixed.x1, fixed.y1, fixed.x2,
-        //     fixed.y2);
+        LOG_D("win rect (%d,%d)-(%d,%d)", fixed.x1, fixed.y1, fixed.x2,
+            fixed.y2);
 
         if (!IS_WIN_STYLE(win, NO_TITLE)) {
             /* create title */
@@ -399,8 +399,8 @@ static rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
             }
             TO_WIDGET(win->_title)->toplevel = win;
             rtgui_widget_set_rect(TO_WIDGET(win->_title), rect);
-            // LOG_W("title rect (%d,%d)-(%d,%d)", rect->x1, rect->y1, rect->x2,
-            //     rect->y2);
+            LOG_W("title rect (%d,%d)-(%d,%d)", rect->x1, rect->y1, rect->x2,
+                rect->y2);
             /* always show title */
             rtgui_widget_show(TO_WIDGET(win->_title));
         }
@@ -618,23 +618,37 @@ void rtgui_win_update_clip(rtgui_win_t *win) {
     if (IS_WIN_FLAG(win, CLOSED)) return;
 
     if (win->_title) {
-        /* Reset the inner clip of title. */
-        TO_WIDGET(win->_title)->extent = win->outer_extent;
-        rtgui_region_copy(
-            &TO_WIDGET(win->_title)->clip, &win->outer_clip);
-        rtgui_region_subtract_rect(
-            &TO_WIDGET(win->_title)->clip,
-            &TO_WIDGET(win->_title)->clip,
-            &TO_WIDGET(win)->extent);
-        /* Reset the inner clip of window. */
-        rtgui_region_intersect_rect(
-            &TO_WIDGET(win)->clip,
-            &win->outer_clip,
-            &TO_WIDGET(win)->extent);
+        rtgui_rect_t fixed = win->outer_extent;
+
+        if (!IS_WIN_STYLE(win, NO_BORDER))
+            rtgui_rect_inflate(&fixed, -TITLE_DEFAULT_BORDER);
+        fixed.y1 += TITLE_DEFAULT_HEIGHT;
+
+        rtgui_widget_set_rect(TO_WIDGET(win->_title), &win->outer_extent);
+        TO_WIDGET(win)->extent = fixed;
+        // /* Reset the inner clip of title. */
+        // LOG_E("update t %d %d %d %d", TO_WIDGET(win->_title)->extent.x1, TO_WIDGET(win->_title)->extent.y1,
+        //     TO_WIDGET(win->_title)->extent.x2, TO_WIDGET(win->_title)->extent.y2);
+        // LOG_E("update wo %d %d %d %d", win->outer_extent.x1, win->outer_extent.y1,
+        //     win->outer_extent.x2, win->outer_extent.y2);
+        // LOG_E("update w %d %d %d %d", TO_WIDGET(win)->extent.x1, TO_WIDGET(win)->extent.y1,
+        //     TO_WIDGET(win)->extent.x2, TO_WIDGET(win)->extent.y2);
+        // TO_WIDGET(win->_title)->extent = win->outer_extent;
+        // rtgui_region_copy(
+        //     &TO_WIDGET(win->_title)->clip, &win->outer_clip);
+        // rtgui_region_subtract_rect(
+        //     &TO_WIDGET(win->_title)->clip,
+        //     &TO_WIDGET(win->_title)->clip,
+        //     &TO_WIDGET(win)->extent);
+        // /* Reset the inner clip of window. */
+        // rtgui_region_intersect_rect(
+        //     &TO_WIDGET(win)->clip,
+        //     &win->outer_clip,
+        //     &TO_WIDGET(win)->extent);
     } else {
         TO_WIDGET(win)->extent = win->outer_extent;
-        rtgui_region_copy(&TO_WIDGET(win)->clip, &win->outer_clip);
     }
+    rtgui_region_copy(&TO_WIDGET(win)->clip, &win->outer_clip);
 
     /* update the clip info of each child */
     cntr = TO_CONTAINER(win);

@@ -10,17 +10,12 @@
 #define LOG_TAG "APP_FB "
 #include <log.h>
 
-#define PATH_SEPARATOR                  '/'
-#define MAX_PATH_LENGTH                 (128)
+#define PATH_SEPARATOR  '/'
+#define PATH_LEN_MAX    (128)
 
-static const char bmp[] = "bmp";
-static const char jpeg[] = "jpeg";
-static const char* format = RT_NULL;
-
-static rtgui_app_t *fileBrs;
 static rtgui_win_t *mainWin;
 static rtgui_win_t *fileWin;
-static char path[MAX_PATH_LENGTH];
+static rtgui_picture_t *pic;
 
 
 static rt_bool_t fileBrowser_on_close(void *obj, rtgui_evt_generic_t *evt) {
@@ -29,43 +24,6 @@ static rt_bool_t fileBrowser_on_close(void *obj, rtgui_evt_generic_t *evt) {
   (void)rtgui_win_show(mainWin, RT_FALSE);
 
   return RT_TRUE;
-}
-
-static rt_bool_t fileWin_handler(void *obj, rtgui_evt_generic_t *evt) {
-  rtgui_dc_t *dc;
-  rtgui_rect_t rect;
-  rtgui_image_t *img;
-  rt_bool_t done = RT_FALSE;
-
-  do {
-    if (DEFAULT_HANDLER(obj))
-      done = DEFAULT_HANDLER(obj)(obj, evt);
-
-    if (!IS_EVENT_TYPE(evt, PAINT)) break;
-    done = RT_FALSE;
-    LOG_I("Loading %s: %s", format, path);
-
-    dc = rtgui_dc_begin_drawing(TO_WIDGET(obj));
-    if (!dc) {
-      LOG_E("No DC!");
-      break;
-    }
-
-    rtgui_dc_get_rect(dc, &rect);
-
-    img = rtgui_image_create_from_file(format, path, RT_FALSE);
-    if (img) {
-        rtgui_image_blit(img, dc, &rect);
-        rtgui_image_destroy(img);
-    } else {
-      LOG_E("Load %s filed!", path);
-    }
-
-    rtgui_dc_end_drawing(dc, RT_TRUE);
-    done = RT_TRUE;
-  } while (0);
-
-  return done;
 }
 
 static rt_bool_t fileBrowser_on_file(void *obj, rtgui_evt_generic_t *evt) {
@@ -77,16 +35,15 @@ static rt_bool_t fileBrowser_on_file(void *obj, rtgui_evt_generic_t *evt) {
     rtgui_list_item_t *item = &SUPER_(filelist).items[SUPER_(filelist).current];
     char *ptr;
     rt_uint8_t len, len2;
+    char path[PATH_LEN_MAX];
 
-    format = RT_NULL;
     if ((ptr = rt_strstr(item->name, ".bmp")) || \
-      (ptr = rt_strstr(item->name, ".BMP")))
-      format = bmp;
-    else if ((ptr = rt_strstr(item->name, ".jpg")) || \
-      (ptr = rt_strstr(item->name, ".JPG")))
-      format = jpeg;
-
-    if (!format) break;
+        (ptr = rt_strstr(item->name, ".BMP"))) {
+    } else if ((ptr = rt_strstr(item->name, ".jpg")) || \
+               (ptr = rt_strstr(item->name, ".JPG"))) {
+    } else {
+      break;
+    }
 
     len = rt_strlen(filelist->cur_dir);
     len2 = ptr - item->name + 4;
@@ -96,6 +53,7 @@ static rt_bool_t fileBrowser_on_file(void *obj, rtgui_evt_generic_t *evt) {
     rt_strncpy(path + len, item->name, len2);
     path[len + len2] = '\x00';
 
+    PICTURE_SETTER(path)(pic, path);
     rtgui_win_show(fileWin, RT_TRUE);
     done = RT_TRUE;
   } while (0);
@@ -104,6 +62,8 @@ static rt_bool_t fileBrowser_on_file(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 static void fileBrowser_entry(void *param) {
+  rtgui_app_t *fileBrs;
+  rtgui_box_t *sizer;
   rtgui_rect_t rect;
   rtgui_filelist_t *filelist;
   (void)param;
@@ -134,13 +94,26 @@ static void fileBrowser_entry(void *param) {
   }
 
   /* fileWin */
-  fileWin = CREATE_WIN_INSTANCE(RT_NULL, fileWin_handler, &rect, "PicWin",
+  fileWin = CREATE_WIN_INSTANCE(RT_NULL, RT_NULL, &rect, "FileWin",
     RTGUI_WIN_STYLE_DEFAULT);
   if (!fileWin) {
       LOG_E("Create fileWin failed!");
       return;
   }
-  WIN_SETTER(on_close)(fileWin, fileBrowser_on_close);  
+  WIN_SETTER(on_close)(fileWin, fileBrowser_on_close);
+  sizer = CREATE_BOX_INSTANCE(fileWin, RTGUI_HORIZONTAL, 0);
+
+  // rtgui_widget_get_rect(TO_WIDGET(fileWin), &rect);
+  pic = CREATE_PICTURE_INSTANCE(fileWin, RT_NULL, RT_NULL, RT_NULL,
+    CENTER_HORIZONTAL, RT_TRUE);
+  if (!pic) {
+      LOG_E("Create picture failed!");
+      return;
+  }
+  WIDGET_ALIGN(pic) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
+  rtgui_box_layout(sizer);
+  rtgui_widget_get_rect(TO_WIDGET(pic), &rect);
+  LOG_E("pic rect (%d,%d)-(%d, %d)", rect.x1, rect.y1, rect.x2, rect.y2);
 
   rtgui_win_show(mainWin, RT_FALSE);
   rtgui_app_run(fileBrs);

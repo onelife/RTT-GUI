@@ -255,7 +255,7 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         if (evt->mouse.act_cnt == app->act_cnt)
             done = _app_dispatch_event_to_win(app, evt);
         // if (!done && IS_EVENT_TYPE(evt, MOUSE_BUTTON)) {
-        //     rtgui_mouse_moveto(evt->mouse.x, evt->mouse.y);
+        //     rtgui_cursor_move(evt->mouse.x, evt->mouse.y);
         //     done = RT_TRUE;
         // }
         break;

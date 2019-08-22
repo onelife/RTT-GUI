@@ -63,7 +63,8 @@ struct rtgui_image_png {
 
 /* Private function prototypes -----------------------------------------------*/
 static rt_bool_t png_check(rtgui_filerw_t *file);
-static rt_bool_t png_load(rtgui_image_t *img, rtgui_filerw_t *file, rt_bool_t load_body);
+static rt_bool_t png_load(rtgui_image_t *img, rtgui_filerw_t *file,
+    rt_int32_t scale, rt_bool_t load_body);
 static void png_unload(rtgui_image_t *img);
 static void png_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
@@ -96,7 +97,7 @@ static rt_bool_t png_check(rtgui_filerw_t *file) {
 }
 
 static rt_bool_t png_load(rtgui_image_t *img, rtgui_filerw_t *file,
-    rt_bool_t load_body) {
+    rt_int32_t scale, rt_bool_t load_body) {
     /* LodePNG:
        - Do decoding in one call, use a lot of memory
        - Do allocate output buffer itself 
@@ -105,6 +106,7 @@ static rt_bool_t png_load(rtgui_image_t *img, rtgui_filerw_t *file,
     struct rtgui_image_png *png;
     rt_uint8_t *buf;
     rt_err_t err;
+    (void)scale;
 
     buf = RT_NULL;
     err = RT_EOK;

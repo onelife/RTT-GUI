@@ -72,7 +72,7 @@ struct rtgui_image_jpeg {
 /* Private function prototypes -----------------------------------------------*/
 static rt_bool_t jpeg_check(rtgui_filerw_t *file);
 static rt_bool_t jpeg_load(rtgui_image_t *img, rtgui_filerw_t *file,
-    rt_bool_t load_body);
+    rt_int32_t scale, rt_bool_t load_body);
 static void jpeg_unload(rtgui_image_t *img);
 static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
@@ -101,11 +101,10 @@ static rt_uint16_t tjpgd_in_func(JDEC *jdec, rt_uint8_t *buff,
     struct rtgui_image_jpeg *jpeg = jdec->device;
 
     if (!buff) {
-        if (rtgui_filerw_seek(jpeg->file, ndata, RTGUI_FILE_SEEK_CUR) < 0) {
+        if (rtgui_filerw_seek(jpeg->file, ndata, RTGUI_FILE_SEEK_CUR) < 0)
             return 0;
-        } else {
+        else
             return ndata;
-        }
     } else {
         return rtgui_filerw_read(jpeg->file, (void *)buff, 1, ndata);
     }
@@ -204,7 +203,7 @@ static rt_bool_t jpeg_check(rtgui_filerw_t *file) {
 }
 
 static rt_bool_t jpeg_load(rtgui_image_t *img, rtgui_filerw_t *file,
-    rt_bool_t load_body) {
+    rt_int32_t scale, rt_bool_t load_body) {
     struct rtgui_image_jpeg *jpeg;
     rt_err_t err;
 
@@ -212,7 +211,6 @@ static rt_bool_t jpeg_load(rtgui_image_t *img, rtgui_filerw_t *file,
 
     do {
         JRESULT ret;
-        rt_uint8_t scale = 0;
 
         jpeg = rtgui_malloc(sizeof(struct rtgui_image_jpeg));
         if (!jpeg) {
@@ -246,9 +244,13 @@ static rt_bool_t jpeg_load(rtgui_image_t *img, rtgui_filerw_t *file,
         }
 
         /* get scale */
-        while (scale < JPEG_MAX_SCALING_FACTOR) {
-            if (display()->width > (jpeg->tjpgd.width >> scale)) break;
-            scale++;
+        if (scale == 0) {
+            while (scale < JPEG_MAX_SCALING_FACTOR) {
+                if (display()->width > (jpeg->tjpgd.width >> scale)) break;
+                scale++;
+            }
+        } else if (scale < 0) {
+            scale = 0;
         }
         if (scale >= JPEG_MAX_SCALING_FACTOR) {
             scale = JPEG_MAX_SCALING_FACTOR;
@@ -374,6 +376,21 @@ static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect) {
             if (JDR_OK != ret) {
                 LOG_E("jd_decomp %d", ret);
                 break;
+            } else {
+                /* reload for next blit */
+                rtgui_filerw_t *file = jpeg->file;
+                rt_int32_t scale;
+
+                if (!jpeg->tjpgd.scale)
+                    scale = -1;
+                else
+                    scale = jpeg->tjpgd.scale;
+
+                LOG_D("JPG reload");
+                if (jpeg->pixels) rtgui_free(jpeg->pixels);
+                if (jpeg->buf) rtgui_free(jpeg->buf);
+                rtgui_free(jpeg);
+                (void)jpeg_load(img, file, scale, RT_FALSE);
             }
         } else { /* (!jpeg->is_loaded) */
             rt_uint16_t y;
@@ -387,6 +404,13 @@ static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect) {
             }
         }
     }  while (0);
+
+    #ifdef RTGUI_BIG_ENDIAN_OUTPUT
+    if (!jpeg->is_loaded && jpeg->pixels) {
+        rtgui_free(jpeg->pixels);
+        jpeg->pixels = RT_NULL;
+    }
+    #endif
 }
 
 /* Public functions ----------------------------------------------------------*/

@@ -176,19 +176,19 @@ static void _dc_client_draw_hline(rtgui_dc_t *self, int x1, int x2, int y) {
 static void _dc_client_fill_rect(rtgui_dc_t *self, rtgui_rect_t *rect) {
     register rt_base_t idx;
     rtgui_widget_t *owner;
-    rtgui_color_t foreground;
+    rtgui_color_t fc;
 
     if (!self || !rtgui_dc_get_visible(self)) return;
     owner = rt_container_of(self, rtgui_widget_t, dc_type);
 
-    foreground = owner->gc.foreground;
+    fc = owner->gc.foreground;
     owner->gc.foreground = owner->gc.background;
 
     /* fill rect */
     for (idx = rect->y1; idx < rect->y2; idx++)
         _dc_client_draw_hline(self, rect->x1, rect->x2, idx);
 
-    owner->gc.foreground = foreground;
+    owner->gc.foreground = fc;
 }
 
 static void _dc_client_blit_line(rtgui_dc_t *self, int x1, int x2, int y,

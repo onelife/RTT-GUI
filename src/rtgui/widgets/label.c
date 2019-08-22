@@ -139,8 +139,10 @@ rtgui_label_t *rtgui_create_label(rtgui_container_t *cntr, rtgui_evt_hdl_t hdl,
     do {
         lab = CREATE_INSTANCE(label, hdl);
         if (!lab) break;
-        if (rtgui_label_init(lab, text))
+        if (rtgui_label_init(lab, text)) {
             DELETE_INSTANCE(lab);
+            break;
+        }
         if (rect)
             rtgui_widget_set_rect(TO_WIDGET(lab), rect);
         if (cntr)

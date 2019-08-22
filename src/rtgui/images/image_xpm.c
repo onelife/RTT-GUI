@@ -42,7 +42,7 @@
 /* Private function prototype ------------------------------------------------*/
 static rt_bool_t xpm_check(rtgui_filerw_t *file);
 static rt_bool_t xpm_load(rtgui_image_t *img, rtgui_filerw_t *file,
-    rt_bool_t load);
+    rt_int32_t scale, rt_bool_t load);
 static void xpm_unload(rtgui_image_t *img);
 static void xpm_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
@@ -224,9 +224,10 @@ static rt_bool_t xpm_check(rtgui_filerw_t *file) {
 }
 
 static rt_bool_t xpm_load(rtgui_image_t *img, rtgui_filerw_t *file,
-    rt_bool_t load) {
+    rt_int32_t scale, rt_bool_t load) {
     struct color_hash *palette = RT_NULL;
     rt_err_t err;
+    (void)scale;
     (void)load;     // always load?
 
     if (!img) return RT_FALSE;
@@ -249,7 +250,7 @@ static rt_bool_t xpm_load(rtgui_image_t *img, rtgui_filerw_t *file,
         len = rt_strlen(xpm[0]);
 
         /* get info */
-        idx = _str2int(xpm[0],          len,        &w) + 1;
+        idx =  _str2int(xpm[0],         len,        &w) + 1;
         idx += _str2int(xpm[0] + idx,   len - idx,  &h) + 1;
         idx += _str2int(xpm[0] + idx,   len - idx,  &ncolors) + 1;
         idx += _str2int(xpm[0] + idx,   len - idx,  &name_sz) + 1;

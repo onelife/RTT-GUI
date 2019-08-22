@@ -108,7 +108,7 @@ static rt_bool_t fileWin_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     rtgui_dc_get_rect(dc, &rect);
 
-    img = rtgui_image_create_from_file(format, path, RT_FALSE);
+    img = rtgui_image_create_from_file(format, path, 0, RT_FALSE);
     if (img) {
         rtgui_image_blit(img, dc, &rect);
         rtgui_image_destroy(img);

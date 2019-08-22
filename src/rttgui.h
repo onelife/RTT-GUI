@@ -14,6 +14,7 @@ extern "C" {
     #include "include/widgets/label.h"
     #include "include/widgets/button.h"
     #include "include/widgets/progress.h"
+    #include "include/widgets/picture.h"
     #include "include/widgets/list.h"
     #include "include/widgets/filelist.h"
     #include "include/widgets/window.h"

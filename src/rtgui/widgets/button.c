@@ -192,8 +192,8 @@ static rt_bool_t _button_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 }
 
 static rt_bool_t _button_on_unfocus(void *obj, rtgui_evt_generic_t *evt) {
-    rtgui_dc_t *dc;
     rt_bool_t done = RT_FALSE;
+    rtgui_dc_t *dc;
     (void)evt;
 
     do {
@@ -221,10 +221,9 @@ static rt_bool_t _button_on_unfocus(void *obj, rtgui_evt_generic_t *evt) {
         gc->foreground = gc->background;
         rtgui_dc_draw_focus_rect(dc, &rect);
         gc->foreground = fc;
-
     } while (0);
 
-    rtgui_dc_end_drawing(dc, RT_TRUE);
+    if (dc) rtgui_dc_end_drawing(dc, RT_TRUE);
     return done;
 }
 

@@ -120,6 +120,11 @@ static rt_bool_t _widget_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         done = rtgui_widget_onupdate_toplvl(obj, evt->update_toplvl.toplvl);
         break;
 
+    case RTGUI_EVENT_RESIZE:
+        rtgui_widget_set_rectangle(wgt, evt->resize.x, evt->resize.y,
+            evt->resize.w, evt->resize.h);
+        break;
+
     case RTGUI_EVENT_PAINT:
     default:
         if (SUPER_CLASS_HANDLER(widget))
@@ -206,14 +211,14 @@ void rtgui_widget_set_border(rtgui_widget_t *wgt, rt_uint32_t style) {
 }
 RTM_EXPORT(rtgui_widget_set_border);
 
-RTGUI_MEMBER_SETTER(rtgui_widget_t, widget, int, min_width);
+RTGUI_MEMBER_SETTER(rtgui_widget_t, widget, rt_int16_t, min_width);
 
-RTGUI_MEMBER_SETTER(rtgui_widget_t, widget, int, min_height);
+RTGUI_MEMBER_SETTER(rtgui_widget_t, widget, rt_int16_t, min_height);
 
-void rtgui_widget_set_minsize(rtgui_widget_t *wgt, int width, int height) {
+void rtgui_widget_set_minsize(rtgui_widget_t *wgt, rt_int16_t w, rt_int16_t h) {
     RT_ASSERT(wgt != RT_NULL);
-    WIDGET_SETTER(min_width)(wgt, width);
-    WIDGET_SETTER(min_height)(wgt, height);
+    WIDGET_SETTER(min_width)(wgt, w);
+    WIDGET_SETTER(min_height)(wgt, h);
 }
 RTM_EXPORT(rtgui_widget_set_minsize);
 
@@ -252,13 +257,14 @@ void rtgui_widget_set_rect(rtgui_widget_t *wgt, const rtgui_rect_t *rect) {
 }
 RTM_EXPORT(rtgui_widget_set_rect);
 
-void rtgui_widget_set_rectangle(rtgui_widget_t *wgt, int x, int y,
-    int width, int height) {
+void rtgui_widget_set_rectangle(rtgui_widget_t *wgt, rt_int16_t x, rt_int16_t y,
+    rt_int16_t w, rt_int16_t h) {
+    LOG_D("rectangle %d %d %d %d", x, y, w, h);
     rtgui_rect_t rect = {
         .x1 = x,
         .y1 = y,
-        .x2 = x + width,
-        .y2 = y + height,
+        .x2 = x + w - 1,
+        .y2 = y + h - 1,
     };
     rtgui_widget_set_rect(wgt, &rect);
 }

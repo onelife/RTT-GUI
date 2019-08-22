@@ -114,7 +114,7 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
                 #ifdef RTGUI_USING_WINMOVE
                     } else {
-                        rtgui_winrect_set(win);
+                        rtgui_winmove_start(win);
                 #endif
                     }
                 } else if (IS_MOUSE_EVENT_BUTTON(evt, UP)) {
@@ -129,14 +129,14 @@ static rt_bool_t _title_event_handler(void *obj, rtgui_evt_generic_t *evt) {
                         _theme_draw_title(title_);
                         #ifdef RTGUI_USING_WINMOVE
                             /* Reset the window movement state machine. */
-                            (void)rtgui_winrect_moved_done(RT_NULL, RT_NULL);
+                            (void)rtgui_winmove_done(RT_NULL, RT_NULL);
                         #endif
                     }
                 }
             }
         } else if (evt->mouse.button & MOUSE_BUTTON_DOWN) {
             #ifdef RTGUI_USING_WINMOVE
-                rtgui_winrect_set(win);
+                rtgui_winmove_start(win);
             #endif
         }
         done = RT_TRUE;
@@ -209,8 +209,8 @@ static void _theme_draw_title(rtgui_title_t *title) {
         if (!IS_WIN_STYLE(win, NO_TITLE)) {
             rt_uint16_t idx, r, g, b, delta;
 
-            // LOG_D("draw title (%d,%d)-(%d,%d)", rect.x1, rect.y1, rect.x2,
-            //     rect.y2);
+            LOG_D("draw title (%d,%d)-(%d,%d)", rect.x1, rect.y1, rect.x2,
+                rect.y2);
             if (IS_WIN_FLAG(win, ACTIVATE)) {
                 r = 10 << RGB_FACTOR;
                 g = 36 << RGB_FACTOR;
@@ -223,7 +223,7 @@ static void _theme_draw_title(rtgui_title_t *title) {
                 delta = (64 << RGB_FACTOR) / RECT_W(rect);
             }
 
-            for (idx = rect.x1; idx < rect.x2 + 1; idx++) {
+            for (idx = rect.x1; idx <= rect.x2; idx++) {
                 WIDGET_FOREGROUND(win->_title) = RTGUI_RGB(
                     (r >> RGB_FACTOR), (g >> RGB_FACTOR), (b >> RGB_FACTOR));
                 rtgui_dc_draw_vline(dc, idx, rect.y1,

@@ -94,9 +94,6 @@ rtgui_dc_t *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w, int
         dc->height = h;
         dc->pitch = w * rtgui_color_get_bpp(pixel_format);
 
-#ifdef GUIENGINE_IMAGE_CONTAINER
-        dc->image_item = RT_NULL;
-#endif
         dc->pixel = rtgui_malloc(h * dc->pitch);
         if (!dc->pixel)
         {
@@ -111,39 +108,6 @@ rtgui_dc_t *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w, int
     return RT_NULL;
 }
 RTM_EXPORT(rtgui_dc_buffer_create_pixformat);
-
-#ifdef GUIENGINE_IMAGE_CONTAINER
-rtgui_dc_t *rtgui_img_dc_create_pixformat(rt_uint8_t pixel_format,
-        rt_uint8_t *pixel, struct rtgui_image_item *image_item)
-{
-    struct rtgui_dc_buffer *dc;
-
-    dc = (struct rtgui_dc_buffer *)rtgui_malloc(sizeof(struct rtgui_dc_buffer));
-    if (dc)
-    {
-        dc->_super.type = RTGUI_DC_BUFFER;
-        dc->_super.engine = &dc_buffer_engine;
-        dc->gc.foreground = default_foreground;
-        dc->gc.background = default_background;
-        dc->gc.font = rtgui_font_default();
-        dc->gc.textalign = RTGUI_ALIGN_LEFT | RTGUI_ALIGN_TOP;
-        dc->pixel_format = pixel_format;
-        dc->pixel_alpha = 255;
-
-        dc->width = image_item->image->w;
-        dc->height = image_item->image->h;
-        dc->pitch = image_item->image->w * rtgui_color_get_bpp(pixel_format);
-
-        dc->image_item = image_item;
-        dc->pixel = pixel;
-
-        return &(dc->_super);
-    }
-
-    return RT_NULL;
-}
-RTM_EXPORT(rtgui_img_dc_create_pixformat);
-#endif
 
 rtgui_dc_t *rtgui_dc_buffer_create_from_dc(rtgui_dc_t* dc)
 {
@@ -197,14 +161,6 @@ static rt_bool_t rtgui_dc_buffer_fini(rtgui_dc_t *dc)
     struct rtgui_dc_buffer *buffer = (struct rtgui_dc_buffer *)dc;
 
     if (dc->type != RTGUI_DC_BUFFER) return RT_FALSE;
-
-#ifdef GUIENGINE_IMAGE_CONTAINER
-    if (buffer->image_item)
-    {
-        rtgui_image_container_put(buffer->image_item);
-        buffer->pixel = RT_NULL;
-    }
-#endif
 
     if (buffer->pixel)
         rtgui_free(buffer->pixel);

@@ -140,6 +140,7 @@ typedef struct rtgui_title rtgui_title_t;
 typedef struct rtgui_label rtgui_label_t;
 typedef struct rtgui_button rtgui_button_t;
 typedef struct rtgui_progress rtgui_progress_t;
+typedef struct rtgui_picture rtgui_picture_t;
 typedef struct rtgui_list_item rtgui_list_item_t;
 typedef struct rtgui_list rtgui_list_t;
 typedef struct rtgui_filelist rtgui_filelist_t;
@@ -258,6 +259,7 @@ typedef enum rtgui_blend_mode {
 #include "include/widgets/label.h"
 #include "include/widgets/button.h"
 #include "include/widgets/progress.h"
+#include "include/widgets/picture.h"
 #include "include/widgets/list.h"
 #include "include/widgets/filelist.h"
 #include "include/widgets/window.h"

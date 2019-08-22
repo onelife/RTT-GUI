@@ -46,7 +46,7 @@ struct rtgui_image_engine {
     /* image engine function */
     rt_bool_t (*image_check)(rtgui_filerw_t *file);
     rt_bool_t (*image_load)(rtgui_image_t *image, rtgui_filerw_t *file,
-        rt_bool_t load);
+        rt_int32_t scale, rt_bool_t load);
     void (*image_unload)(rtgui_image_t *image);
     void (*image_blit)(rtgui_image_t *image, rtgui_dc_t *dc,
         rtgui_rect_t *rect);
@@ -78,12 +78,13 @@ rt_err_t rtgui_system_image_init(void);
 
 #ifdef GUIENGINE_USING_DFS_FILERW
 rtgui_image_engine_t *rtgui_image_get_engine_by_filename(const char *fn);
-rtgui_image_t *rtgui_image_create_from_file(const char *type, const char *filename, rt_bool_t load);
-rtgui_image_t *rtgui_image_create(const char *filename, rt_bool_t load);
+rtgui_image_t *rtgui_image_create_from_file(const char *type, const char *fn,
+    rt_int32_t scale, rt_bool_t load);
+rtgui_image_t *rtgui_image_create(const char *fn, rt_int32_t scale,
+    rt_bool_t load);
 #endif
-
 rtgui_image_t *rtgui_image_create_from_mem(const char *type,
-    const rt_uint8_t *data, rt_size_t length, rt_bool_t load);
+    const rt_uint8_t *data, rt_size_t size, rt_int32_t scale, rt_bool_t load);
 void rtgui_image_destroy(rtgui_image_t *image);
 
 /* get image's rect */

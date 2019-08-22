@@ -138,10 +138,10 @@ r_op_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t *regM,
 r_op_status_t rtgui_region_subtract_rect(rtgui_region_t *regD,
     rtgui_region_t *regM, rtgui_rect_t *rect);
 
-int rtgui_region_contains_point(rtgui_region_t *region, int x, int y, rtgui_rect_t *box);
+rt_bool_t rtgui_region_contains_point(rtgui_region_t *region, int x, int y, rtgui_rect_t *box);
 rt_bool_t rtgui_region_contains_rect(rtgui_region_t *rgn, rtgui_rect_t *rect);
 
-int rtgui_region_not_empty(rtgui_region_t *region);
+rt_bool_t rtgui_region_not_empty(rtgui_region_t *region);
 rtgui_rect_t *rtgui_region_extents(rtgui_region_t *region);
 
 r_op_status_t rtgui_region_append(rtgui_region_t *dest, rtgui_region_t *region);
@@ -168,8 +168,8 @@ rtgui_rect_t *rtgui_rect_set(rtgui_rect_t *rect, int x, int y, int w, int h);
 rt_bool_t rtgui_rect_is_empty(const rtgui_rect_t *rect);
 void rtgui_rect_union(rtgui_rect_t *src, rtgui_rect_t *dest);
 
-rt_inline void rtgui_rect_init(rtgui_rect_t* rect, int x, int y, int width, int height)
-{
+rt_inline void rtgui_rect_init(rtgui_rect_t* rect, int x, int y, int width,
+    int height) {
     rect->x1 = x;
     rect->y1 = y;
     rect->x2 = x + width;

@@ -170,8 +170,7 @@ static void rtgui_dc_hw_draw_vline(rtgui_dc_t *self, int x, int y1, int y2)
 /*
  * draw a logic horizontal line on device
  */
-static void rtgui_dc_hw_draw_hline(rtgui_dc_t *self,
-    int x1, int x2, int y) {
+static void rtgui_dc_hw_draw_hline(rtgui_dc_t *self, int x1, int x2, int y) {
     struct rtgui_dc_hw *dc;
 
     if (!self) return;
@@ -194,15 +193,14 @@ static void rtgui_dc_hw_draw_hline(rtgui_dc_t *self,
     dc->hw_driver->ops->draw_hline(&(dc->owner->gc.foreground), x1, x2, y);
 }
 
-static void rtgui_dc_hw_fill_rect(rtgui_dc_t *self, rtgui_rect_t *rect)
-{
+static void rtgui_dc_hw_fill_rect(rtgui_dc_t *self, rtgui_rect_t *rect) {
     rtgui_color_t color;
     register rt_base_t y1, y2, x1, x2;
     struct rtgui_dc_hw *dc;
 
     RT_ASSERT(self != RT_NULL);
     RT_ASSERT(rect);
-    dc = (struct rtgui_dc_hw *) self;
+    dc = (struct rtgui_dc_hw *)self;
 
     /* get background color */
     color = dc->owner->gc.background;
@@ -232,9 +230,7 @@ static void rtgui_dc_hw_fill_rect(rtgui_dc_t *self, rtgui_rect_t *rect)
 
     /* fill rect */
     for (; y1 < y2; y1++)
-    {
         dc->hw_driver->ops->draw_hline(&color, x1, x2, y1);
-    }
 }
 
 static void rtgui_dc_hw_blit_line(rtgui_dc_t *self, int x1, int x2, int y, rt_uint8_t *line_data)

@@ -205,8 +205,8 @@ static rt_list_t *_topwin_free(rtgui_topwin_t *top) {
 
     /* free the monitor rect list, topwin node and title */
     while (top->monitor_list.next != RT_NULL) {
-        rtgui_mouse_monitor_t *monitor = rt_container_of(
-            top->monitor_list.next, rtgui_mouse_monitor_t, list);
+        rtgui_monitor_t *monitor = rt_container_of(
+            top->monitor_list.next, rtgui_monitor_t, list);
 
         top->monitor_list.next = top->monitor_list.next->next;
         rtgui_free(monitor);
@@ -223,6 +223,10 @@ static void _topwin_activate(rtgui_topwin_t *top) {
     rtgui_evt_generic_t *evt;
 
     if (IS_TOPWIN_FLAG(top, NO_FOCUS)) return;
+
+    #ifdef RTGUI_USING_CURSOR
+        if (top->wid->drawing > 0) rtgui_cursor_hide();
+    #endif
 
     /* send RTGUI_EVENT_WIN_ACTIVATE */
     RTGUI_CREATE_EVENT(evt, WIN_ACTIVATE, RT_WAITING_FOREVER);
@@ -249,6 +253,10 @@ static void _topwin_activate_next_with_flag(rtgui_topwin_flag_t flag) {
  * tree has changed, make sure it has already updated outside. */
 static void _topwin_deactivate(rtgui_topwin_t *top) {
     rtgui_evt_generic_t *evt;
+
+    #ifdef RTGUI_USING_CURSOR
+        if (top->wid->drawing > 0) rtgui_cursor_show();
+    #endif
 
     /* send RTGUI_EVENT_WIN_DEACTIVATE */
     RTGUI_CREATE_EVENT(evt, WIN_DEACTIVATE, RT_WAITING_FOREVER);
@@ -630,12 +638,6 @@ rt_err_t rtgui_topwin_activate(rtgui_topwin_t *top) {
             break;
         }
 
-        /* create RTGUI_EVENT_PAINT */
-        RTGUI_CREATE_EVENT(evt, PAINT, RT_WAITING_FOREVER);
-        if (!evt) {
-            ret = -RT_ENOMEM;
-            break;
-        }
         no_focus = IS_TOPWIN_FLAG(top, NO_FOCUS);
 
         if (!no_focus) {
@@ -666,12 +668,18 @@ rt_err_t rtgui_topwin_activate(rtgui_topwin_t *top) {
             _topwin_activate(top);
         }
 
-        /* send RTGUI_EVENT_PAINT */
-        if (moved) {
-            _rtgui_topwin_draw_tree(_topwin_get_root(top), evt);
-        } else {
-            _rtgui_topwin_draw_tree(top, evt);
+        /* create RTGUI_EVENT_PAINT */
+        RTGUI_CREATE_EVENT(evt, PAINT, RT_WAITING_FOREVER);
+        if (!evt) {
+            ret = -RT_ENOMEM;
+            break;
         }
+
+        /* send RTGUI_EVENT_PAINT */
+        if (moved)
+            _rtgui_topwin_draw_tree(_topwin_get_root(top), evt);
+        else
+            _rtgui_topwin_draw_tree(top, evt);
     } while (0);
 
     LOG_D("active %s, ret %d", top->wid->title, ret);
@@ -782,8 +790,8 @@ rt_err_t rtgui_topwin_move(rtgui_win_t *win, rt_int16_t x, rt_int16_t y) {
 
         /* move the monitor rect list */
         rt_slist_for_each(node, &(top->monitor_list)) {
-            rtgui_mouse_monitor_t *monitor;
-            monitor = rt_slist_entry(node, rtgui_mouse_monitor_t, list);
+            rtgui_monitor_t *monitor;
+            monitor = rt_slist_entry(node, rtgui_monitor_t, list);
             rtgui_rect_move(&(monitor->rect), dx, dy);
         }
 
@@ -890,7 +898,7 @@ void rtgui_topwin_append_monitor_rect(rtgui_win_t *win, rtgui_rect_t *rect) {
     top = _topwin_search_win_in_list(win, &_topwin_list);
     if (!top) return;
     /* append rect to top window monitor rect list */
-    rtgui_mouse_monitor_append(&(top->monitor_list), rect);
+    rtgui_monitor_append(&(top->monitor_list), rect);
 }
 
 void rtgui_topwin_remove_monitor_rect(rtgui_win_t *win,
@@ -904,7 +912,7 @@ void rtgui_topwin_remove_monitor_rect(rtgui_win_t *win,
     top = _topwin_search_win_in_list(win, &_topwin_list);
     if (!top) return;
     /* remove rect from top window monitor rect list */
-    rtgui_mouse_monitor_remove(&(top->monitor_list), rect);
+    rtgui_monitor_remove(&(top->monitor_list), rect);
 }
 
 rtgui_topwin_t *rtgui_topwin_get_focus(void) {

@@ -126,7 +126,7 @@ static rt_bool_t picShow_handler(void *obj, rtgui_evt_generic_t *evt) {
     rect.y1 += 15;
     rect.y2 -= 30;
 
-    img = rtgui_image_create_from_file(info->format, info->path, RT_FALSE);
+    img = rtgui_image_create_from_file(info->format, info->path, 0, RT_FALSE);
     if (img) {
         rtgui_image_blit(img, dc, &rect);
         rtgui_image_destroy(img);

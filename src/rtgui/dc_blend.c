@@ -781,8 +781,8 @@ rtgui_dc_blend_point(rtgui_dc_t * dst, int x, int y, rtgui_blend_mode_t blendMod
         x = x + owner->extent.x1;
         y = y + owner->extent.y1;
 
-        if (rtgui_region_contains_point(&(owner->clip), x, y, &rect) != RT_EOK)
-            return ;
+        if (!rtgui_region_contains_point(&(owner->clip), x, y, &rect))
+            return;
     }
     else if (dst->type == RTGUI_DC_HW)
     {
@@ -883,7 +883,7 @@ rtgui_dc_blend_points(rtgui_dc_t *dst, const rtgui_point_t *points, int count,
             x = x + owner->extent.x1;
             y = y + owner->extent.y1;
 
-            if (rtgui_region_contains_point(&(owner->clip), x, y, &rect) != RT_EOK)
+            if (!rtgui_region_contains_point(&(owner->clip), x, y, &rect))
                 continue;
 
             func(dst, x, y, blendMode, r, g, b, a);

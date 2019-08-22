@@ -44,7 +44,7 @@
 /* Private function prototype ------------------------------------------------*/
 static rt_bool_t bmp_check(rtgui_filerw_t *file);
 static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
-    rt_bool_t load);
+    rt_int32_t scale, rt_bool_t load);
 static void bmp_unload(rtgui_image_t *img);
 static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
@@ -150,7 +150,7 @@ static rtgui_image_palette_t *bmp_load_palette(rtgui_filerw_t *file,
 }
 
 static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
-    rt_bool_t load_body) {
+    rt_int32_t scale, rt_bool_t load_body) {
     rtgui_image_bmp_t *bmp;
     rt_uint8_t *lineBuf;
     rt_err_t err;
@@ -158,7 +158,6 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
     do {
         rt_uint8_t temp[32];
         rt_uint32_t ncolors = 0;
-        rt_uint8_t scale = 0;
         rt_uint32_t headerSize;
         rt_uint16_t bits_per_pixel;
         rt_bool_t loadAlpha = RT_FALSE;   /* in palette */
@@ -263,9 +262,13 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
         }
 
         /* get scale */
-        while (scale < BMP_MAX_SCALING_FACTOR) {
-            if (display()->width > (bmp->w >> scale)) break;
-            scale++;
+        if (scale == 0) {
+            while (scale < BMP_MAX_SCALING_FACTOR) {
+                if (display()->width > (bmp->w >> scale)) break;
+                scale++;
+            }
+        } else if (scale < 0) {
+            scale = 0;
         }
         if (scale >= BMP_MAX_SCALING_FACTOR) {
             scale = BMP_MAX_SCALING_FACTOR;
@@ -422,7 +425,6 @@ static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc,
         /* the minimum rect */
         w = _MIN(img->w, RECT_W(*dst_rect));
         h = _MIN(img->h, RECT_H(*dst_rect));
-        LOG_D("bmp_blit w %d, h %d, load %d", w, h, bmp->is_loaded);
 
         if (!bmp->is_loaded) {
             rtgui_blit_line_func2 blit_line;
@@ -482,7 +484,7 @@ static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc,
 
                 /* output the line */
                 dc->engine->blit_line(dc, dst_rect->x1, dst_rect->x1 + w - 1,
-                    dst_rect->y1 + (h - y + 1), lineBuf2);
+                    dst_rect->y1 + (h - 1 - y), lineBuf2);
 
                 /* skip padding bytes  */
                 if (bmp->pad) {

@@ -39,6 +39,10 @@ extern "C" {
 #define TO_WIDGET(obj)                      CAST_(obj, _WIDGET_METADATA, rtgui_widget_t)
 
 #define WIDGET_ALIGN(w)                     (TO_WIDGET(w)->align)
+#define WIDGET_ALIGN_CLEAR(w, fname)        WIDGET_ALIGN(w) &= ~RTGUI_ALIGN_##fname
+#define WIDGET_ALIGN_SET(w, fname)          WIDGET_ALIGN(w) |= RTGUI_ALIGN_##fname
+#define IS_WIDGET_ALIGN(w, fname)           (WIDGET_ALIGN(w) & RTGUI_ALIGN_##fname)
+
 #define WIDGET_BORDER(w)                    (TO_WIDGET(w)->border)
 #define WIDGET_BORDER_STYLE(w)              (TO_WIDGET(w)->border_style)
 #define WIDGET_FOREGROUND(w)                (TO_WIDGET(w)->gc.foreground)
@@ -73,7 +77,7 @@ struct rtgui_widget {
     rtgui_win_t *toplevel;                  /* parent window */
     rt_slist_t sibling;                     /* children and sibling */
     rt_uint32_t flag;
-    rt_int32_t align;
+    rt_uint32_t align;
     rt_uint16_t border;
     rt_uint16_t border_style;
     rt_int16_t min_width, min_height;
@@ -98,13 +102,13 @@ CLASS_PROTOTYPE(widget);
 MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, wgt, rtgui_widget_t*, parent);
 rtgui_win_t *rtgui_widget_get_toplevel(rtgui_widget_t *wgt);
 void rtgui_widget_set_border(rtgui_widget_t *wgt, rt_uint32_t style);
-MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, widget, int, min_width);
-MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, widget, int, min_height);
-void rtgui_widget_set_minsize(rtgui_widget_t *wgt, int width, int height);
+MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, widget, rt_int16_t, min_width);
+MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, widget, rt_int16_t, min_height);
+void rtgui_widget_set_minsize(rtgui_widget_t *wgt, rt_int16_t w, rt_int16_t h);
 MEMBER_GETTER_PROTOTYPE(rtgui_widget_t, widget, rtgui_rect_t, extent);
 void rtgui_widget_set_rect(rtgui_widget_t *wgt, const rtgui_rect_t *rect);
-void rtgui_widget_set_rectangle(rtgui_widget_t *wgt, int x, int y,
-    int width, int height);
+void rtgui_widget_set_rectangle(rtgui_widget_t *wgt, rt_int16_t x, rt_int16_t y,
+    rt_int16_t w, rt_int16_t h);
 void rtgui_widget_get_rect(rtgui_widget_t *wgt, rtgui_rect_t *rect);
 MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, widget, rtgui_evt_hdl_t, on_focus);
 MEMBER_SETTER_PROTOTYPE(rtgui_widget_t, widget, rtgui_evt_hdl_t, on_unfocus);
