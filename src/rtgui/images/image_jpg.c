@@ -404,13 +404,6 @@ static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect) {
             }
         }
     }  while (0);
-
-    #ifdef RTGUI_BIG_ENDIAN_OUTPUT
-    if (!jpeg->is_loaded && jpeg->pixels) {
-        rtgui_free(jpeg->pixels);
-        jpeg->pixels = RT_NULL;
-    }
-    #endif
 }
 
 /* Public functions ----------------------------------------------------------*/
