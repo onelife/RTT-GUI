@@ -165,13 +165,12 @@ void rtgui_dc_draw_vertical_line(rtgui_dc_t *dc, int x, int y1, int y2)
 }
 RTM_EXPORT(rtgui_dc_draw_vertical_line);
 
-void rtgui_dc_draw_rect(rtgui_dc_t *dc, rtgui_rect_t *rect)
-{
+void rtgui_dc_draw_rect(rtgui_dc_t *dc, rtgui_rect_t *rect) {
     rtgui_dc_draw_hline(dc, rect->x1, rect->x2, rect->y1);
-    rtgui_dc_draw_hline(dc, rect->x1, rect->x2, rect->y2 - 1);
+    rtgui_dc_draw_hline(dc, rect->x1, rect->x2, rect->y2);
 
-    rtgui_dc_draw_vline(dc, rect->x1, rect->y1, rect->y2);
-    rtgui_dc_draw_vline(dc, rect->x2 - 1, rect->y1, rect->y2);
+    rtgui_dc_draw_vline(dc, rect->x1, rect->y1 - 1, rect->y2 - 1);
+    rtgui_dc_draw_vline(dc, rect->x2, rect->y1 - 1, rect->y2 - 1);
 }
 RTM_EXPORT(rtgui_dc_draw_rect);
 
@@ -253,17 +252,16 @@ void rtgui_dc_fill_round_rect(rtgui_dc_t *dc, rtgui_rect_t *rect, int r)
 RTM_EXPORT(rtgui_dc_fill_round_rect);
 
 void rtgui_dc_draw_shaded_rect(rtgui_dc_t *dc, rtgui_rect_t *rect,
-                               rtgui_color_t c1, rtgui_color_t c2)
-{
+    rtgui_color_t c1, rtgui_color_t c2) {
     RT_ASSERT(dc != RT_NULL);
 
     RTGUI_DC_FC(dc) = c1;
     rtgui_dc_draw_vline(dc, rect->x1, rect->y1, rect->y2);
-    rtgui_dc_draw_hline(dc, rect->x1 + 1, rect->x2, rect->y1);
+    rtgui_dc_draw_hline(dc, rect->x1 + 1, rect->x2 - 1, rect->y1);
 
     RTGUI_DC_FC(dc) = c2;
-    rtgui_dc_draw_vline(dc, rect->x2 - 1, rect->y1, rect->y2);
-    rtgui_dc_draw_hline(dc, rect->x1, rect->x2, rect->y2 - 1);
+    rtgui_dc_draw_vline(dc, rect->x2, rect->y1, rect->y2);
+    rtgui_dc_draw_hline(dc, rect->x1 + 1, rect->x2 - 1, rect->y2);
 }
 RTM_EXPORT(rtgui_dc_draw_shaded_rect);
 
@@ -295,11 +293,11 @@ RTM_EXPORT(rtgui_dc_fill_gradient_rectv);
 void rtgui_dc_draw_focus_rect(rtgui_dc_t *dc, rtgui_rect_t *rect) {
     rt_int16_t x, y;
 
-    for (x = rect->x1; x < rect->x2 - 1; x += 2) {
+    for (x = rect->x1; x <= rect->x2; x += 2) {
         rtgui_dc_draw_point(dc, x, rect->y1);
         rtgui_dc_draw_point(dc, x, rect->y2);
     }
-    for (y = rect->y1; y < rect->y2; y += 2) {
+    for (y = rect->y1; y <= rect->y2; y += 2) {
         rtgui_dc_draw_point(dc, rect->x1, y);
         rtgui_dc_draw_point(dc, rect->x2, y);
     }

@@ -186,20 +186,20 @@ static void _theme_draw_title(rtgui_title_t *title) {
             // LOG_D("draw border (%d,%d)-(%d,%d)", rect.x1, rect.y1, rect.x2,
             //     rect.y2);
             WIDGET_FOREGROUND(win->_title) = RTGUI_RGB(212, 208, 200);
-            rtgui_dc_draw_hline(dc, rect.x1, rect.x2 - 1, rect.y1);
-            rtgui_dc_draw_vline(dc, rect.x1, rect.y1 + 1, rect.y2 - 2);
+            rtgui_dc_draw_hline(dc, rect.x1, rect.x2, rect.y1);
+            rtgui_dc_draw_vline(dc, rect.x1, rect.y1 + 1, rect.y2 - 1);
 
             WIDGET_FOREGROUND(win->_title) = white;
-            rtgui_dc_draw_hline(dc, rect.x1 + 1, rect.x2 - 2, rect.y1 + 1);
-            rtgui_dc_draw_vline(dc, rect.x1 + 1, rect.y1 + 2, rect.y2 - 3);
+            rtgui_dc_draw_hline(dc, rect.x1 + 1, rect.x2 - 1, rect.y1 + 1);
+            rtgui_dc_draw_vline(dc, rect.x1 + 1, rect.y1 + 2, rect.y2 - 2);
 
             WIDGET_FOREGROUND(win->_title) = RTGUI_RGB(128, 128, 128);
-            rtgui_dc_draw_hline(dc, rect.x1 + 1, rect.x2 - 2, rect.y2 - 2);
-            rtgui_dc_draw_vline(dc, rect.x2 - 2, rect.y1 + 2, rect.y2 - 2);
+            rtgui_dc_draw_hline(dc, rect.x1 + 1, rect.x2 - 1, rect.y2 - 1);
+            rtgui_dc_draw_vline(dc, rect.x2 - 1, rect.y1 + 2, rect.y2 - 2);
 
             WIDGET_FOREGROUND(win->_title) = RTGUI_RGB(64, 64, 64);
-            rtgui_dc_draw_hline(dc, rect.x1, rect.x2 - 1, rect.y2 - 1);
-            rtgui_dc_draw_vline(dc, rect.x2 - 1, rect.y1 + 1, rect.y2 - 2);
+            rtgui_dc_draw_hline(dc, rect.x1, rect.x2, rect.y2);
+            rtgui_dc_draw_vline(dc, rect.x2, rect.y1 + 1, rect.y2 - 1);
 
             /* shrink border */
             rtgui_rect_inflate(&rect, -TITLE_DEFAULT_BORDER);

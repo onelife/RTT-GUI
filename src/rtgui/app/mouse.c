@@ -54,22 +54,18 @@
 struct rtgui_cursor {
     /* screen byte per pixel */
     rt_uint16_t byte_pp;
-    /* screen pitch */
-    rt_uint16_t screen_pitch;
     /* current cursor x and y */
     rt_uint16_t cx, cy;
 
     #ifdef RTGUI_USING_CURSOR
+        /* cursor rect */
+        rtgui_rect_t rect;
         /* show cursor and show cursor count */
         rt_bool_t show_cursor;
         rt_base_t cursor_count;
-        /* cursor pitch */
-        rt_uint16_t cursor_pitch;
-        /* cursor rect info */
-        rtgui_rect_t rect;
         /* cursor image and saved cursor */
         rtgui_image_t *cursor_image;
-        rt_uint8_t *rect_copy;
+        void *rect_copy;
     #endif /* RTGUI_USING_CURSOR */
 
     #ifdef RTGUI_USING_WINMOVE
@@ -86,6 +82,8 @@ typedef struct rtgui_cursor rtgui_cursor_t;
 /* Private define ------------------------------------------------------------*/
 #define WIN_MOVE_BORDER                     (4)
 #define display()                           (rtgui_get_gfx_device())
+#define display_pitch                       \
+    (display()->width * _BIT2BYTE(display()->bits_per_pixel))
 
 /* Private variables ---------------------------------------------------------*/
 static rtgui_cursor_t *_cursor;
@@ -152,71 +150,97 @@ static rtgui_cursor_t *_cursor;
 
 /* display the saved cursor area to screen */
 static void _cursor_rect_restore(void) {
-    rt_uint8_t *cursor_ptr, *fb_ptr;
-    rt_base_t height, pitch, idx;
+    rt_uint8_t *fb;
+    rt_uint16_t h_max;
 
-    fb_ptr = rtgui_gfx_get_framebuffer(RT_NULL);
-    if (!fb_ptr) return;
+    h_max = _MIN(_cursor->cy + _cursor->cursor_image->h, display()->height);
 
-    cursor_ptr = _cursor->rect_copy;
-    fb_ptr += _cursor->cy * _cursor->screen_pitch + \
-              _cursor->cx * _cursor->byte_pp;
+    fb = rtgui_gfx_get_framebuffer(RT_NULL);
+    if (fb) {
+        rt_uint8_t *ptr;
+        rt_uint16_t pitch, len, y;
 
-    height = ((_cursor->cy + _cursor->cursor_image->h) < display()->height) ? \
-             _cursor->cursor_image->h : \
-             display()->height - _cursor->cy;
-    pitch = ((_cursor->cx + _cursor->cursor_image->w) < display()->width) ? \
-            _cursor->cursor_pitch : \
-            (display()->width - _cursor->cx) * _cursor->byte_pp;
+        ptr = _cursor->rect_copy;
+        pitch = _cursor->cursor_image->w * _cursor->byte_pp;
+        len = (display()->width > (_cursor->cx + _cursor->cursor_image->w)) ? \
+            _cursor->cursor_image->w : display()->width - 1 - _cursor->cx;
+        len *= _cursor->byte_pp;
+        fb += _cursor->cy * display_pitch + _cursor->cx * _cursor->byte_pp;
 
-    for (idx = 0; idx < height; idx++) {
-        rt_memcpy(fb_ptr, cursor_ptr, pitch);
-        fb_ptr += _cursor->screen_pitch;
-        cursor_ptr += _cursor->cursor_pitch;
+        for (y = _cursor->cy; y < h_max; y++) {
+            rt_memcpy(fb, ptr, len);
+            fb += display_pitch;
+            ptr += pitch;
+        }
+    } else {
+        #if 0 //TODO(onelife): rect_copy needs to be updated
+        rtgui_color_t *pixel;
+        rt_uint16_t w_max, x, y;
+
+        pixel = _cursor->rect_copy;
+        w_max = _MIN(_cursor->cx + _cursor->cursor_image->w, display()->width);
+
+        for (y = _cursor->cy; y < h_max; y++)
+            for (x = _cursor->cx; x < w_max; x++, pixel++)
+                display()->ops->set_pixel(pixel, x, y);
+        #endif
     }
 }
 
 /* save the cursor coverage area from screen */
 static void _cursor_rect_save(void) {
-    rt_uint8_t *cursor_ptr, *fb_ptr;
-    rt_base_t height, pitch, idx;
+    rt_uint8_t *fb;
+    rt_uint16_t h_max;
 
-    fb_ptr = rtgui_gfx_get_framebuffer(RT_NULL);
-    if (!fb_ptr) return;
+    h_max = _MIN(_cursor->cy + _cursor->cursor_image->h, display()->height);
 
-    cursor_ptr = _cursor->rect_copy;
-    fb_ptr += _cursor->cy * _cursor->screen_pitch + \
-              _cursor->cx * _cursor->byte_pp;
+    fb = rtgui_gfx_get_framebuffer(RT_NULL);
+    if (fb) {
+        rt_uint8_t *ptr;
+        rt_uint16_t pitch, len, y;
 
-    height = ((_cursor->cy + _cursor->cursor_image->h) < display()->height) ? \
-             _cursor->cursor_image->h : \
-             display()->height - _cursor->cy;
-    pitch = ((_cursor->cx + _cursor->cursor_image->w) < display()->width) ? \
-            _cursor->cursor_pitch : \
-            (display()->width - _cursor->cx) * _cursor->byte_pp;
+        ptr = _cursor->rect_copy;
+        pitch = _cursor->cursor_image->w * _cursor->byte_pp;
+        len = (display()->width > (_cursor->cx + _cursor->cursor_image->w)) ? \
+            _cursor->cursor_image->w : display()->width - 1 - _cursor->cx;
+        len *= _cursor->byte_pp;
+        fb += _cursor->cy * display_pitch + _cursor->cx * _cursor->byte_pp;
 
-    for (idx = 0; idx < height; idx++) {
-        rt_memcpy(cursor_ptr, fb_ptr, pitch);
-        fb_ptr += _cursor->screen_pitch;
-        cursor_ptr += _cursor->cursor_pitch;
+        for (y = _cursor->cy; y < h_max; y++) {
+            rt_memcpy(ptr, fb, len);
+            fb += display_pitch;
+            ptr += pitch;
+        }
+    } else {
+        #if 0 //TODO(onelife): rect_copy needs to be updated
+        rtgui_color_t *pixel;
+        rt_uint16_t w_max, x, y;
+
+        pixel = _cursor->rect_copy;
+        w_max = _MIN(_cursor->cx + _cursor->cursor_image->w, display()->width);
+
+        for (y = _cursor->cy; y < h_max; y++)
+            for (x = _cursor->cx; x < w_max; x++, pixel++)
+                display()->ops->get_pixel(pixel, x, y);
+        #endif
     }
 }
 
 static void _cursor_draw(void) {
     rtgui_rect_t rect;
-    rtgui_color_t *col;
+    rtgui_color_t *pixel;
     rt_uint16_t x, y;
 
     rtgui_cursor_get_rect(&rect);
     rtgui_rect_move(&rect, _cursor->cx, _cursor->cy);
-    col = (rtgui_color_t *)_cursor->cursor_image->data;
-    LOG_E("cursor %d %d %d %d", rect.x1, rect.y1, rect.x2, rect.y2);
+    pixel = (rtgui_color_t *)_cursor->cursor_image->data;
+    LOG_D("cursor @ (%d,%d)-(%d,%d)", rect.x1, rect.y1, rect.x2, rect.y2);
 
     /* draw */
     for (y = rect.y1; y < rect.y2; y++)
-        for (x = rect.x1; x < rect.x2; x++, col++)
-            if (0xff != RTGUI_RGB_A(*col))
-                display()->ops->set_pixel(col, x, y);
+        for (x = rect.x1; x < rect.x2; x++, pixel++)
+            if (0xff != RTGUI_RGB_A(*pixel))
+                display()->ops->set_pixel(pixel, x, y);
 
     /* update rect */
     rtgui_gfx_update_screen(display(), &rect);
@@ -236,11 +260,11 @@ static void _cursor_draw(void) {
 
     /* show winrect */
     static void rtgui_winmove_show(void) {
-        rtgui_color_t col;
+        rtgui_color_t pixel;
         rtgui_rect_t win_rect, win_rect_inner, screen_rect;
         rt_uint16_t x, y;
 
-        col = black;
+        pixel = black;
         win_rect = _cursor->win_rect;
         win_rect_inner = win_rect;
         rtgui_rect_inflate(&win_rect_inner, -WIN_MOVE_BORDER);
@@ -252,25 +276,25 @@ static void _cursor_draw(void) {
         for (y = win_rect.y1; y < win_rect.y2; y ++)
             for (x = win_rect.x1; x < win_rect_inner.x1; x++)
                 if ((x + y) & 0x01)
-                    display()->ops->set_pixel(&col, x, y);
+                    display()->ops->set_pixel(&pixel, x, y);
 
         /* draw right */
         for (y = win_rect.y1; y < win_rect.y2; y ++)
             for (x = win_rect_inner.x2; x < win_rect.x2; x++)
                 if ((x + y) & 0x01)
-                    display()->ops->set_pixel(&col, x, y);
+                    display()->ops->set_pixel(&pixel, x, y);
 
         /* draw top border */
         for (y = win_rect.y1; y < win_rect_inner.y1; y ++)
             for (x = win_rect_inner.x1; x < win_rect_inner.x2; x++)
                 if ((x + y) & 0x01)
-                    display()->ops->set_pixel(&col, x, y);
+                    display()->ops->set_pixel(&pixel, x, y);
 
         /* draw bottom border */
         for (y = win_rect_inner.y2; y < win_rect.y2; y ++)
             for (x = win_rect_inner.x1; x < win_rect_inner.x2; x++)
                 if ((x + y) & 0x01)
-                    display()->ops->set_pixel(&col, x, y);
+                    display()->ops->set_pixel(&pixel, x, y);
 
         /* update rect */
         rtgui_gfx_update_screen(display(), &win_rect);
@@ -289,42 +313,42 @@ static void _cursor_draw(void) {
         rtgui_rect_intersect(&screen_rect, &win_rect);
 
         /* restore win left */
-        fb_ptr = fb + win_rect.y1 * _cursor->screen_pitch + \
+        fb_ptr = fb + win_rect.y1 * display_pitch + \
                  win_rect.x1 * _cursor->byte_pp;
         win_ptr = _cursor->win_left;
         pitch = WIN_MOVE_BORDER * _cursor->byte_pp;
         fb_memcpy(
             win_ptr, fb_ptr,
-            pitch, _cursor->screen_pitch,
+            pitch, display_pitch,
             RECT_H(win_rect), pitch);
 
         /* restore winrect right */
-        fb_ptr = fb + win_rect.y1 * _cursor->screen_pitch + \
+        fb_ptr = fb + win_rect.y1 * display_pitch + \
                  (win_rect.x2 - WIN_MOVE_BORDER) * _cursor->byte_pp;
         win_ptr = _cursor->win_right;
         pitch = WIN_MOVE_BORDER * _cursor->byte_pp;
         fb_memcpy(
             win_ptr, fb_ptr,
-            pitch, _cursor->screen_pitch,
+            pitch, display_pitch,
             RECT_H(win_rect), pitch);
 
         /* restore winrect top */
-        fb_ptr = fb + win_rect.y1 * _cursor->screen_pitch + \
+        fb_ptr = fb + win_rect.y1 * display_pitch + \
                  (win_rect.x1 + WIN_MOVE_BORDER) * _cursor->byte_pp;
         win_ptr = _cursor->win_top;
         pitch = (RECT_W(win_rect) - WIN_MOVE_BORDER * 2) * _cursor->byte_pp;
         fb_memcpy(
             win_ptr, fb_ptr,
-            pitch, _cursor->screen_pitch,
+            pitch, display_pitch,
             WIN_MOVE_BORDER, pitch);
 
         /* restore winrect bottom */
-        fb_ptr = fb + (win_rect.y2 - WIN_MOVE_BORDER) * _cursor->screen_pitch + \
+        fb_ptr = fb + (win_rect.y2 - WIN_MOVE_BORDER) * display_pitch + \
                  (win_rect.x1 + WIN_MOVE_BORDER) * _cursor->byte_pp;
         win_ptr = _cursor->win_bottom;
         fb_memcpy(
             win_ptr, fb_ptr,
-            pitch, _cursor->screen_pitch,
+            pitch, display_pitch,
             WIN_MOVE_BORDER, pitch);
     }
 
@@ -344,42 +368,42 @@ static void _cursor_draw(void) {
         _cursor->has_win_copy = RT_TRUE;
 
         /* save winrect left */
-        fb_ptr = fb + win_rect.y1 * _cursor->screen_pitch + \
+        fb_ptr = fb + win_rect.y1 * display_pitch + \
                  win_rect.x1 * _cursor->byte_pp;
         win_ptr = _cursor->win_left;
         pitch = WIN_MOVE_BORDER * _cursor->byte_pp;
         fb_memcpy(
             fb_ptr, win_ptr,
-            _cursor->screen_pitch, pitch,
+            display_pitch, pitch,
             RECT_H(win_rect), pitch);
 
         /* save winrect right */
-        fb_ptr = fb + win_rect.y1 * _cursor->screen_pitch + \
+        fb_ptr = fb + win_rect.y1 * display_pitch + \
                  (win_rect.x2 - WIN_MOVE_BORDER) * _cursor->byte_pp;
         win_ptr = _cursor->win_right;
         pitch = WIN_MOVE_BORDER * _cursor->byte_pp;
         fb_memcpy(
             fb_ptr, win_ptr,
-            _cursor->screen_pitch, pitch,
+            display_pitch, pitch,
             RECT_H(win_rect), pitch);
 
         /* save winrect top */
-        fb_ptr = fb + win_rect.y1 * _cursor->screen_pitch + \
+        fb_ptr = fb + win_rect.y1 * display_pitch + \
                  (win_rect.x1 + WIN_MOVE_BORDER) * _cursor->byte_pp;
         win_ptr = _cursor->win_top;
         pitch = (RECT_W(win_rect) - WIN_MOVE_BORDER * 2) * _cursor->byte_pp;
         fb_memcpy(
             fb_ptr, win_ptr,
-            _cursor->screen_pitch, pitch,
+            display_pitch, pitch,
             WIN_MOVE_BORDER, pitch);
 
         /* save winrect bottom */
-        fb_ptr = fb + (win_rect.y2 - WIN_MOVE_BORDER) * _cursor->screen_pitch + \
+        fb_ptr = fb + (win_rect.y2 - WIN_MOVE_BORDER) * display_pitch + \
                  (win_rect.x1 + WIN_MOVE_BORDER) * _cursor->byte_pp;
         win_ptr = _cursor->win_bottom;
         fb_memcpy(
             fb_ptr, win_ptr,
-            _cursor->screen_pitch, pitch,
+            display_pitch, pitch,
             WIN_MOVE_BORDER, pitch);
     }
 #endif /* RTGUI_USING_WINMOVE */
@@ -398,8 +422,14 @@ rt_err_t rtgui_cursor_init(void) {
         }
 
         rt_memset(_cursor, 0x00, sizeof(rtgui_cursor_t));
+        #if 0 //TODO(onelife): rect_copy needs to be updated
+        if (rtgui_gfx_get_framebuffer(RT_NULL))
+            _cursor->byte_pp = _BIT2BYTE(display()->bits_per_pixel);
+        else
+            _cursor->byte_pp = 4;   /* ARGB format */
+        #else
         _cursor->byte_pp = _BIT2BYTE(display()->bits_per_pixel);
-        _cursor->screen_pitch = display()->width * _cursor->byte_pp;
+        #endif
 
         #ifdef RTGUI_USING_CURSOR
             /* init lock */
@@ -419,11 +449,10 @@ rt_err_t rtgui_cursor_init(void) {
             _cursor->rect.x1 = _cursor->rect.y1 = 0;
             _cursor->rect.x2 = _cursor->cursor_image->w;
             _cursor->rect.y2 = _cursor->cursor_image->h;
-            _cursor->cursor_pitch = _cursor->cursor_image->w * _cursor->byte_pp;
             _cursor->show_cursor = RT_TRUE;
             _cursor->cursor_count = 0;
-            _cursor->rect_copy = rtgui_malloc(
-                _cursor->cursor_image->h * _cursor->cursor_pitch);
+            _cursor->rect_copy = rtgui_malloc(_cursor->cursor_image->h * \
+                _cursor->cursor_image->w * _cursor->byte_pp);
             if (!_cursor->rect_copy) {
                 ret = -RT_ENOMEM;
                 break;

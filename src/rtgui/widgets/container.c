@@ -45,8 +45,7 @@
 /* Private function prototypes -----------------------------------------------*/
 static void _container_constructor(void *obj);
 static void _container_destructor(void *obj);
-static rt_bool_t _container_event_handler(void *obj,
-    rtgui_evt_generic_t *evt);
+static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt);
 static rt_bool_t _container_dispatch_event(rtgui_container_t *cntr,
     rtgui_evt_generic_t *evt);
 
@@ -233,7 +232,11 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
 
     case RTGUI_EVENT_RESIZE:
-        /* re-layout cntr */
+        rtgui_widget_move_to_logic(wgt,
+            evt->resize.x - wgt->extent.x1, evt->resize.y - wgt->extent.y1);
+        if (SUPER_CLASS_HANDLER(container))
+            (void)SUPER_CLASS_HANDLER(container)(cntr, evt);
+        /* do layout */
         rtgui_container_layout(cntr);
         done = RT_TRUE;
         break;

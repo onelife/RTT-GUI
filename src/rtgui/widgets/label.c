@@ -120,11 +120,10 @@ static void _theme_draw_label(rtgui_label_t *lab) {
 rt_err_t *rtgui_label_init(rtgui_label_t *lab, const char *text) {
     rtgui_rect_t rect;
 
-    /* set default rect */
+    /* set min size */
     rtgui_font_get_metrics(rtgui_font_default(), text, &rect);
-    rect.x2 += (WIDGET_DEFAULT_BORDER << 1);
-    rect.y2 += (WIDGET_DEFAULT_BORDER << 1);
-    rtgui_widget_set_rect(TO_WIDGET(lab), &rect);
+    TO_WIDGET(lab)->min_width  = RECT_W(rect);
+    TO_WIDGET(lab)->min_height = RECT_H(rect);
     /* set text */
     lab->text = (char *)rt_strdup(text);
 

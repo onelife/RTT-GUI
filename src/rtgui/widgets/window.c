@@ -626,25 +626,6 @@ void rtgui_win_update_clip(rtgui_win_t *win) {
 
         rtgui_widget_set_rect(TO_WIDGET(win->_title), &win->outer_extent);
         TO_WIDGET(win)->extent = fixed;
-        // /* Reset the inner clip of title. */
-        // LOG_E("update t %d %d %d %d", TO_WIDGET(win->_title)->extent.x1, TO_WIDGET(win->_title)->extent.y1,
-        //     TO_WIDGET(win->_title)->extent.x2, TO_WIDGET(win->_title)->extent.y2);
-        // LOG_E("update wo %d %d %d %d", win->outer_extent.x1, win->outer_extent.y1,
-        //     win->outer_extent.x2, win->outer_extent.y2);
-        // LOG_E("update w %d %d %d %d", TO_WIDGET(win)->extent.x1, TO_WIDGET(win)->extent.y1,
-        //     TO_WIDGET(win)->extent.x2, TO_WIDGET(win)->extent.y2);
-        // TO_WIDGET(win->_title)->extent = win->outer_extent;
-        // rtgui_region_copy(
-        //     &TO_WIDGET(win->_title)->clip, &win->outer_clip);
-        // rtgui_region_subtract_rect(
-        //     &TO_WIDGET(win->_title)->clip,
-        //     &TO_WIDGET(win->_title)->clip,
-        //     &TO_WIDGET(win)->extent);
-        // /* Reset the inner clip of window. */
-        // rtgui_region_intersect_rect(
-        //     &TO_WIDGET(win)->clip,
-        //     &win->outer_clip,
-        //     &TO_WIDGET(win)->extent);
     } else {
         TO_WIDGET(win)->extent = win->outer_extent;
     }
@@ -679,10 +660,6 @@ void rtgui_win_set_rect(rtgui_win_t *win, rtgui_rect_t *rect) {
 RTM_EXPORT(rtgui_win_set_rect);
 
 void rtgui_win_set_title(rtgui_win_t *win, const char *title) {
-    /* send title to server */
-    // if (IS_WIN_FLAG(win, CONNECTED)) {
-    // }
-
     /* modify in local side */
     if (win->title) {
         rtgui_free(win->title);

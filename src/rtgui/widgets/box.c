@@ -106,48 +106,48 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
     /* layout each widget */
     rt_slist_for_each(node, &(box->container->children)) {
         rtgui_widget_t *wgt = rt_slist_entry(node, rtgui_widget_t, sibling);
-        rtgui_rect_t *rect;
+        rtgui_rect_t rect;
         rtgui_evt_generic_t *evt;
 
         if (!IS_WIDGET_FLAG(wgt, SHOWN)) continue;
 
         /* get extent of widget */
-        rect = &(wgt->extent);
+        rect = wgt->extent;
         /* reset rect */
-        rtgui_rect_init(rect, 0, 0, wgt->min_width, wgt->min_height);
+        rtgui_rect_init(&rect, 0, 0, wgt->min_width - 1, wgt->min_height - 1);
         /* left in default */
-        rtgui_rect_move(rect, next_x, next_y);
+        rtgui_rect_move(&rect, next_x, next_y);
 
         /* expand on horizontal */
         if (IS_WIDGET_ALIGN(wgt, EXPAND))
-            rect->x2 = rect->x1 + (rt_int16_t)box_size - 1;
+            rect.x2 = rect.x1 + (rt_int16_t)box_size - 1;
         /* center */
         if (IS_WIDGET_ALIGN(wgt, CENTER_VERTICAL)) {
             rt_uint32_t mid;
 
-            mid = box_size - RECT_W(*rect);
+            mid = box_size - RECT_W(rect);
             mid = mid / 2;
 
-            rect->x1 = next_x + mid;
-            rect->x2 = next_x + box_size - mid - 1;
+            rect.x1 = next_x + mid;
+            rect.x2 = next_x + box_size - mid - 1;
         } else if (IS_WIDGET_ALIGN(wgt, RIGHT)) {
             /* right */
-            rect->x1 = next_x + box_size - RECT_W(*rect);
-            rect->x2 = next_x + box_size - 1;
+            rect.x1 = next_x + box_size - RECT_W(rect);
+            rect.x2 = next_x + box_size - 1;
         }
 
         if (IS_WIDGET_ALIGN(wgt, STRETCH))
-            rect->y2 = rect->y1 + space - 1;
+            rect.y2 = rect.y1 + space - 1;
 
-        LOG_D("rect (%d,%d)-(%d,%d)", rect->x1, rect->y1, rect->x2, rect->y2);
+        LOG_D("rect (%d,%d)-(%d,%d)", rect.x1, rect.y1, rect.x2, rect.y2);
         /* send RTGUI_EVENT_RESIZE */
         RTGUI_CREATE_EVENT(evt, RESIZE, RT_WAITING_FOREVER);
         if (evt) {
             /* process resize event */
-            evt->resize.x = rect->x1;
-            evt->resize.y = rect->y1;
-            evt->resize.w = RECT_W(*rect);
-            evt->resize.h = RECT_H(*rect);
+            evt->resize.x = rect.x1;
+            evt->resize.y = rect.y1;
+            evt->resize.w = RECT_W(rect);
+            evt->resize.h = RECT_H(rect);
             (void)EVENT_HANDLER(wgt)(wgt, evt);
             RTGUI_FREE_EVENT(evt);
         } else {
@@ -156,14 +156,7 @@ static void rtgui_box_layout_vertical(rtgui_box_t *box,
         }
 
         /* point to next height */
-        next_y = rect->y2 + box->border_sz;
-
-        if (IS_CONTAINER(wgt)) {
-            rtgui_container_t *cntr = TO_CONTAINER(wgt);
-
-            if (cntr->layout_box)
-                rtgui_box_layout(cntr->layout_box);
-        }
+        next_y = rect.y2 + 1 + box->border_sz;
     }
 }
 
@@ -204,47 +197,47 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
     rt_slist_for_each(node, &(box->container->children)) {
         rtgui_widget_t *wgt = rt_slist_entry(node, rtgui_widget_t, sibling);
         rtgui_evt_generic_t *evt;
-        rtgui_rect_t *rect;
+        rtgui_rect_t rect;
 
         if (!IS_WIDGET_FLAG(wgt, SHOWN)) continue;
 
         /* get extent of widget */
-        rect = &(wgt->extent);
+        rect = wgt->extent;
         /* reset rect */
-        rtgui_rect_init(rect, 0, 0, wgt->min_width, wgt->min_height);
+        rtgui_rect_init(&rect, 0, 0, wgt->min_width - 1, wgt->min_height - 1);
         /* top in default */
-        rtgui_rect_move(rect, next_x, next_y);
+        rtgui_rect_move(&rect, next_x, next_y);
 
         /* expand on vertical */
         if (IS_WIDGET_ALIGN(wgt, EXPAND))
-            rect->y2 = rect->y1 + (rt_int16_t)box_size - 1;
+            rect.y2 = rect.y1 + (rt_int16_t)box_size - 1;
         /* center */
         if (IS_WIDGET_ALIGN(wgt, CENTER_HORIZONTAL)) {
             rt_uint32_t mid;
 
-            mid = box_size - RECT_H(*rect);
+            mid = box_size - RECT_H(rect);
             mid = mid / 2;
 
-            rect->y1 = next_y + mid;
-            rect->y2 = next_y + box_size - mid - 1;
+            rect.y1 = next_y + mid;
+            rect.y2 = next_y + box_size - mid - 1;
         } else if (IS_WIDGET_ALIGN(wgt, RIGHT)) {
             /* right */
-            rect->y1 = next_y + box_size - RECT_H(*rect);
-            rect->y2 = next_y + box_size - 1;
+            rect.y1 = next_y + box_size - RECT_H(rect);
+            rect.y2 = next_y + box_size - 1;
         }
 
         if (IS_WIDGET_ALIGN(wgt, STRETCH))
-            rect->x2 = rect->x1 + space - 1;
+            rect.x2 = rect.x1 + space - 1;
 
-        LOG_D("rect (%d,%d)-(%d,%d)", rect->x1, rect->y1, rect->x2, rect->y2);
+        LOG_D("rect (%d,%d)-(%d,%d)", rect.x1, rect.y1, rect.x2, rect.y2);
         /* send RTGUI_EVENT_RESIZE */
         RTGUI_CREATE_EVENT(evt, RESIZE, RT_WAITING_FOREVER);
         if (evt) {
             /* process resize event */
-            evt->resize.x = rect->x1;
-            evt->resize.y = rect->y1;
-            evt->resize.w = RECT_W(*rect);
-            evt->resize.h = RECT_H(*rect);
+            evt->resize.x = rect.x1;
+            evt->resize.y = rect.y1;
+            evt->resize.w = RECT_W(rect);
+            evt->resize.h = RECT_H(rect);
             (void)EVENT_HANDLER(wgt)(wgt, evt);
             RTGUI_FREE_EVENT(evt);
         } else {
@@ -253,14 +246,7 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
         }
 
         /* point to next width */
-        next_x = rect->x2 + box->border_sz;
-
-        if (IS_CONTAINER(wgt)) {
-            rtgui_container_t *cntr = TO_CONTAINER(wgt);
-
-            if (cntr->layout_box)
-                rtgui_box_layout(cntr->layout_box);
-        }
+        next_x = rect.x2 + 1 + box->border_sz;
     }
 }
 

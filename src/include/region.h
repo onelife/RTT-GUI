@@ -76,6 +76,11 @@ extern "C" {
         ((r1)->y1 >= (r2)->y1)  &&  \
         ((r1)->y2 <= (r2)->y2)  )
 
+/* true if rect r has no size */
+#define IS_R_NO_SIZE(r)             \
+    (   ((r)->x1 == (r)->x2)    &&  \
+        ((r)->y1 == (r)->y2)    )
+
 /* Exported types ------------------------------------------------------------*/
 typedef struct rtgui_rect rtgui_rect_t;
 typedef struct rtgui_region_data rtgui_region_data_t;

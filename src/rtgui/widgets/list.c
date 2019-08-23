@@ -399,13 +399,11 @@ void _theme_draw_selected(rtgui_dc_t *dc, rtgui_rect_t *rect) {
     bc = RTGUI_DC_FC(dc);
     RTGUI_DC_FC(dc) = selected_color;
 
-    rtgui_dc_draw_hline(dc, rect->x1 + 3, rect->x2 - 2, rect->y1 + 1);
-    rtgui_dc_draw_hline(dc, rect->x1 + 3, rect->x2 - 2, rect->y2 - 2);
-    rtgui_dc_draw_vline(dc, rect->x1 + 2, rect->y1 + 2, rect->y2 - 3);
-    rtgui_dc_draw_vline(dc, rect->x2 - 1, rect->y1 + 2, rect->y2 - 3);
+    rtgui_dc_draw_vline(dc, rect->x1 + 2, rect->y1 + 2, rect->y2 - 2);
+    rtgui_dc_draw_vline(dc, rect->x2 - 2, rect->y1 + 2, rect->y2 - 2);
 
-    for (idx = rect->y1 + 2; idx < rect->y2 - 2; idx++)
-        rtgui_dc_draw_hline(dc, rect->x1 + 3, rect->x2 - 2, idx);
+    for (idx = rect->y1 + 1; idx <= rect->y2 - 1; idx++)
+        rtgui_dc_draw_hline(dc, rect->x1 + 3, rect->x2 - 3, idx);
 
     RTGUI_DC_FC(dc) = bc;
 }

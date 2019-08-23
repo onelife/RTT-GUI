@@ -110,11 +110,7 @@ static void _theme_draw_progress(rtgui_progress_t *bar) {
 
         if (!bar->range) break;
 
-        rect.x2++;
-        rect.y2++;
-        rtgui_rect_inflate(&rect, -2);
-        rect.x2--;
-        rect.y2--;
+        rtgui_rect_inflate(&rect, -WIDGET_DEFAULT_BORDER);
 
         if (RTGUI_VERTICAL == bar->orient) {
             /* vertical bar grows from bottom to top */
@@ -130,15 +126,17 @@ static void _theme_draw_progress(rtgui_progress_t *bar) {
             rtgui_dc_fill_rect(dc, &rect);
         } else {
             /* horizontal bar grows from left to right */
-            val = (rt_uint16_t)((rt_uint32_t)RECT_W(rect) * \
+            val = (rt_uint16_t)((rt_uint32_t)(RECT_W(rect) - 1) * \
                 (bar->range - bar->value) / bar->range);
 
-            rect.x2 -= val;
             WIDGET_BACKGROUND(bar) = WIDGET_FOREGROUND(bar);
+            rect.x2 -= val;
             rtgui_dc_fill_rect(dc, &rect);
+
+            WIDGET_BACKGROUND(bar) = bc;
+            if (!val) break;
             rect.x1 = rect.x2;
             rect.x2 += val;
-            WIDGET_BACKGROUND(bar) = bc;
             rtgui_dc_fill_rect(dc, &rect);
         }
     } while (0);

@@ -230,8 +230,6 @@ void rtgui_widget_set_rect(rtgui_widget_t *wgt, const rtgui_rect_t *rect) {
     /* set extent and extent_visiable */
     wgt->extent = *rect;
     wgt->extent_visiable = *rect;
-    if (IS_CONTAINER(wgt))
-        rtgui_container_layout(TO_CONTAINER(wgt));
 
     /* reset min_width and min_height */
     wgt->min_width  = RECT_W(wgt->extent);
@@ -246,13 +244,6 @@ void rtgui_widget_set_rect(rtgui_widget_t *wgt, const rtgui_rect_t *rect) {
             rtgui_win_update_clip(wgt->toplevel);
         else
             rtgui_widget_update_clip(wgt->parent);
-    }
-
-    /* move to logic position if container */
-    if (IS_CONTAINER(wgt)) {
-        int delta_x = rect->x1 - wgt->extent.x1;
-        int delta_y = rect->y1 - wgt->extent.y1;
-        rtgui_widget_move_to_logic(wgt, delta_x, delta_y);
     }
 }
 RTM_EXPORT(rtgui_widget_set_rect);
@@ -368,8 +359,7 @@ void rtgui_widget_move_to_logic(rtgui_widget_t *wgt, int dx, int dy) {
     rtgui_rect_t rect;
     rtgui_widget_t *parent;
 
-    if (wgt == RT_NULL)
-        return;
+    if (!wgt) return;
 
     /* give clip of this widget back to parent */
     parent = wgt->parent;
@@ -377,22 +367,20 @@ void rtgui_widget_move_to_logic(rtgui_widget_t *wgt, int dx, int dy) {
     if (parent)
         rect = parent->extent_visiable;
 
-    /* we should find out the none-transparent parent */
+    /* find the non-transparent parent */
     while (parent && IS_WIDGET_FLAG(parent, TRANSPARENT))
         parent = parent->parent;
     if (parent) {
         /* reset clip info */
         rtgui_region_init_with_extent(&(wgt->clip), &(wgt->extent));
         rtgui_region_intersect_rect(&(wgt->clip), &(wgt->clip), &rect);
-
         /* give back the extent */
         rtgui_region_union(&(parent->clip), &(parent->clip), &(wgt->clip));
     }
 
-    /* move this widget (and its children if it's a container) to destination 
-       point */
+    /* move this widget (and its children) to destination point */
     _widget_move(wgt, dx, dy);
-    /* update this widget */
+    /* update clip */
     rtgui_widget_update_clip(wgt);
 }
 RTM_EXPORT(rtgui_widget_move_to_logic);
@@ -505,20 +493,14 @@ void rtgui_widget_update_clip(rtgui_widget_t *wgt) {
     /* get the parent without transparent */
     while (parent && IS_WIDGET_FLAG(parent, TRANSPARENT))
         parent = parent->parent;
-
     if (parent) {
         /* return clip to parent */
         rtgui_region_union(&(parent->clip), &(parent->clip), &(wgt->clip));
         /* subtract widget clip in parent clip */
         if (!IS_WIDGET_FLAG(wgt, TRANSPARENT) && IS_CONTAINER(parent))
-            rtgui_region_subtract_rect(&(parent->clip), &(parent->clip),
-                &(wgt->extent_visiable));
+            rtgui_region_subtract_rect(
+                &(parent->clip), &(parent->clip), &(wgt->extent_visiable));
     }
-
-    /*
-     * note: since the layout widget introduction, the sibling widget should 
-       not intersect.
-     */
 
     /* update children's clip */
     if (IS_CONTAINER(wgt)) {

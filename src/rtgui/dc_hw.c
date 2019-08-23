@@ -92,43 +92,36 @@ static rt_bool_t rtgui_dc_hw_fini(rtgui_dc_t *dc)
 /*
  * draw a logic point on device
  */
-static void rtgui_dc_hw_draw_point(rtgui_dc_t *self, int x, int y)
-{
+static void rtgui_dc_hw_draw_point(rtgui_dc_t *self, int x, int y) {
     struct rtgui_dc_hw *dc;
 
     RT_ASSERT(self != RT_NULL);
     dc = (struct rtgui_dc_hw *) self;
 
-    if (x < 0 || y < 0)
-        return;
+    if (x < 0 || y < 0) return;
 
     x = x + dc->owner->extent.x1;
-    if (x >= dc->owner->extent.x2)
-        return;
+    if (x > dc->owner->extent.x2) return;
     y = y + dc->owner->extent.y1;
-    if (y >= dc->owner->extent.y2)
-        return;
+    if (y > dc->owner->extent.y2) return;
 
     /* draw this point */
     dc->hw_driver->ops->set_pixel(&(dc->owner->gc.foreground), x, y);
 }
 
-static void rtgui_dc_hw_draw_color_point(rtgui_dc_t *self, int x, int y, rtgui_color_t color)
-{
+static void rtgui_dc_hw_draw_color_point(rtgui_dc_t *self, int x, int y,
+    rtgui_color_t color) {
     struct rtgui_dc_hw *dc;
 
     RT_ASSERT(self != RT_NULL);
     dc = (struct rtgui_dc_hw *) self;
 
-    if (x < 0 || y < 0)
-        return;
+    if (x < 0 || y < 0) return;
 
     x = x + dc->owner->extent.x1;
-    if (x >= dc->owner->extent.x2)
-        return;
+    if (x > dc->owner->extent.x2) return;
     y = y + dc->owner->extent.y1;
-    if (y >= dc->owner->extent.y2)
-        return;
+    if (y > dc->owner->extent.y2) return;
 
     /* draw this point */
     dc->hw_driver->ops->set_pixel(&color, x, y);
@@ -137,31 +130,25 @@ static void rtgui_dc_hw_draw_color_point(rtgui_dc_t *self, int x, int y, rtgui_c
 /*
  * draw a logic vertical line on device
  */
-static void rtgui_dc_hw_draw_vline(rtgui_dc_t *self, int x, int y1, int y2)
-{
+static void rtgui_dc_hw_draw_vline(rtgui_dc_t *self, int x, int y1, int y2) {
     struct rtgui_dc_hw *dc;
 
     RT_ASSERT(self != RT_NULL);
-    dc = (struct rtgui_dc_hw *) self;
+    dc = (struct rtgui_dc_hw *)self;
 
-    if (x < 0)
-        return;
+    if (x < 0) return;
     x = x + dc->owner->extent.x1;
-    if (x >= dc->owner->extent.x2)
-        return;
+    if (x > dc->owner->extent.x2) return;
+
     y1 = y1 + dc->owner->extent.y1;
     y2 = y2 + dc->owner->extent.y1;
 
     if (y1 > y2)
         _int_swap(y1, y2);
-    if (y1 > dc->owner->extent.y2 || y2 < dc->owner->extent.y1)
-        return;
+    if (y1 > dc->owner->extent.y2 || y2 < dc->owner->extent.y1) return;
 
-    if (y1 < dc->owner->extent.y1)
-        y1 = dc->owner->extent.y1;
-    if (y2 > dc->owner->extent.y2)
-        y2 = dc->owner->extent.y2;
-
+    if (y1 < dc->owner->extent.y1) y1 = dc->owner->extent.y1;
+    if (y2 > dc->owner->extent.y2) y2 = dc->owner->extent.y2;
 
     /* draw vline */
     dc->hw_driver->ops->draw_vline(&(dc->owner->gc.foreground), x, y1, y2);
@@ -173,17 +160,17 @@ static void rtgui_dc_hw_draw_vline(rtgui_dc_t *self, int x, int y1, int y2)
 static void rtgui_dc_hw_draw_hline(rtgui_dc_t *self, int x1, int x2, int y) {
     struct rtgui_dc_hw *dc;
 
-    if (!self) return;
+    RT_ASSERT(self != RT_NULL);
     dc = (struct rtgui_dc_hw *)self;
 
     if (y < 0) return;
     y = y + dc->owner->extent.y1;
-    if (y >= dc->owner->extent.y2) return;
+    if (y > dc->owner->extent.y2) return;
 
     /* convert logic to device */
     x1 = x1 + dc->owner->extent.x1;
     x2 = x2 + dc->owner->extent.x1;
-    if (x1 > x2) _int_swap(x1, x2);
+    if (x1 > x2)_int_swap(x1, x2);
     if ((x1 > dc->owner->extent.x2) || (x2 < dc->owner->extent.x1)) return;
 
     if (x1 < dc->owner->extent.x1) x1 = dc->owner->extent.x1;
@@ -207,29 +194,21 @@ static void rtgui_dc_hw_fill_rect(rtgui_dc_t *self, rtgui_rect_t *rect) {
 
     /* convert logic to device */
     x1 = rect->x1 + dc->owner->extent.x1;
-    if (x1 > dc->owner->extent.x2)
-        return;
-    if (x1 < dc->owner->extent.x1)
-        x1 = dc->owner->extent.x1;
+    if (x1 > dc->owner->extent.x2) return;
+    if (x1 < dc->owner->extent.x1) x1 = dc->owner->extent.x1;
     x2 = rect->x2 + dc->owner->extent.x1;
-    if (x2 < dc->owner->extent.x1)
-        return;
-    if (x2 > dc->owner->extent.x2)
-        x2 = dc->owner->extent.x2;
+    if (x2 < dc->owner->extent.x1) return;
+    if (x2 > dc->owner->extent.x2) x2 = dc->owner->extent.x2;
 
     y1 = rect->y1 + dc->owner->extent.y1;
-    if (y1 > dc->owner->extent.y2)
-        return;
-    if (y1 < dc->owner->extent.y1)
-        y1 = dc->owner->extent.y1;
+    if (y1 > dc->owner->extent.y2) return;
+    if (y1 < dc->owner->extent.y1) y1 = dc->owner->extent.y1;
     y2 = rect->y2 + dc->owner->extent.y1;
-    if (y2 < dc->owner->extent.y1)
-        return;
-    if (y2 > dc->owner->extent.y2)
-        y2 = dc->owner->extent.y2;
+    if (y2 < dc->owner->extent.y1) return;
+    if (y2 > dc->owner->extent.y2) y2 = dc->owner->extent.y2;
 
     /* fill rect */
-    for (; y1 < y2; y1++)
+    for (; y1 <= y2; y1++)
         dc->hw_driver->ops->draw_hline(&color, x1, x2, y1);
 }
 
