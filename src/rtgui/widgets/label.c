@@ -101,7 +101,7 @@ static void _theme_draw_label(rtgui_label_t *lab) {
 
         dc = rtgui_dc_begin_drawing(TO_WIDGET(lab));
         if (!dc) {
-            LOG_E("no dc");
+            LOG_W("no dc");
             break;
         }
 

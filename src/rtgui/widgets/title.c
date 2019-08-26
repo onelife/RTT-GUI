@@ -169,7 +169,7 @@ static void _theme_draw_title(rtgui_title_t *title) {
     /* begin drawing */
     dc = rtgui_dc_begin_drawing(TO_WIDGET(win->_title));
     if (!dc) {
-        LOG_E("no dc");
+        LOG_W("no dc");
         return;
     }
 

@@ -90,7 +90,7 @@ static void _theme_draw_progress(rtgui_progress_t *bar) {
 
     dc = rtgui_dc_begin_drawing(TO_WIDGET(bar));
     if (!dc) {
-        LOG_E("no dc");
+        LOG_W("no dc");
         return;
     }
 

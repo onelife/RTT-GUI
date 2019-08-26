@@ -59,13 +59,13 @@
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static const rtgui_rect_t _null_rect = {
+static rtgui_rect_t _null_rect = {
     0, 0, 0, 0
 };
-static const rtgui_region_data_t _null_region_data = {
+static rtgui_region_data_t _null_region_data = {
     0, 0
 };
-static const rtgui_region_data_t  _bad_region_data = {
+static rtgui_region_data_t  _bad_region_data = {
     0, 0
 };
 

@@ -76,8 +76,7 @@ static void fileBrowser_entry(void *param) {
   }
 
   /* create win */
-  mainWin = CREATE_MAIN_WIN(RT_NULL, "FileBrowser",
-    RTGUI_WIN_STYLE_MAINWIN);
+  mainWin = CREATE_MAIN_WIN(RT_NULL, "FileBrowser", RTGUI_WIN_STYLE_MAINWIN);
   if (!mainWin) {
     rtgui_app_uninit(fileBrs);
     LOG_E("Create mainWin failed!");
@@ -103,7 +102,6 @@ static void fileBrowser_entry(void *param) {
   WIN_SETTER(on_close)(fileWin, fileBrowser_on_close);
   sizer = CREATE_BOX_INSTANCE(fileWin, RTGUI_HORIZONTAL, 0);
 
-  // rtgui_widget_get_rect(TO_WIDGET(fileWin), &rect);
   pic = CREATE_PICTURE_INSTANCE(fileWin, RT_NULL, RT_NULL, RT_NULL,
     CENTER_HORIZONTAL, RT_TRUE);
   if (!pic) {
@@ -112,8 +110,7 @@ static void fileBrowser_entry(void *param) {
   }
   WIDGET_ALIGN(pic) = RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND;
   rtgui_box_layout(sizer);
-  rtgui_widget_get_rect(TO_WIDGET(pic), &rect);
-  LOG_E("pic rect (%d,%d)-(%d, %d)", rect.x1, rect.y1, rect.x2, rect.y2);
+
 
   rtgui_win_show(mainWin, RT_FALSE);
   rtgui_app_run(fileBrs);

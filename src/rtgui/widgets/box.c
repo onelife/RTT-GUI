@@ -182,6 +182,9 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
             total_size += wgt->min_width;
         total_size += box->border_sz;
     }
+    // LOG_W("stretch_cnt %d", stretch_cnt);
+    // LOG_W("total_size %d", total_size);
+    // LOG_W("extent %d %d %d %d", extent->x1, extent->y1, extent->x2, extent->y2);
 
     /* calculate the width for each spaces */
     if (stretch_cnt)
@@ -192,6 +195,9 @@ static void rtgui_box_layout_horizontal(rtgui_box_t *box,
     next_x = extent->x1 + box->border_sz;
     next_y = extent->y1 + box->border_sz;
     box_size = RECT_H(*extent) - box->border_sz * 2;
+    // LOG_W("next_x %d", next_x);
+    // LOG_W("next_y %d", next_y);
+    // LOG_W("box_size %d", box_size);
 
     /* layout each widget */
     rt_slist_for_each(node, &(box->container->children)) {

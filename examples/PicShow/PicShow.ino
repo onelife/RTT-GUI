@@ -203,8 +203,7 @@ static void picShow_entry(void *param) {
   }
 
   /* create win */
-  win = CREATE_MAIN_WIN(RT_NULL, "PicWin",
-    RTGUI_WIN_STYLE_MAINWIN);
+  win = CREATE_MAIN_WIN(RT_NULL, "PicWin", RTGUI_WIN_STYLE_MAINWIN);
   if (!win) {
     rtgui_app_uninit(picShow);
     LOG_E("Create mainWin failed!");
@@ -288,6 +287,8 @@ void loop() {
     LOG_I("Waiting app");
     rt_thread_sleep(100);
   }
+  /* let the window show first */
+  rt_thread_sleep(20);
 
   while (RT_TRUE) {
     if (!timeout) {

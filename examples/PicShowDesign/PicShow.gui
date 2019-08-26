@@ -16,42 +16,69 @@ APP: {
   MWIN: {
     PARAM: {
       // title, handler
-      "PicWin", picwin,
+      "PicWin", NULL,
+    },
+
+    BOX: {
+      PARAM: {
+        // orient, border size
+        // orient: 1, HORIZONTAL; 2, VERTICAL
+        2, 0,
+      },
+      ID: 1,
     },
 
     LABEL: {
       PARAM: {
         // size, handler, text
-        [0, 0, 240, 15,], lab, "PicShow Example",
+        NULL, NULL, "PicShow Example",
       },
       // white in ARGB888 format
       BACKGROUND: 0xffffffff,
       // blue in ARGB888 format
       FOREGROUND: 0xff0000ff,
+      MIN_HEIGHT: 15,
+      // 0x10, EXPAND; 0x20, STRETCH
+      ALIGN: 0x10,
+      ID: 2,
     },
 
     PROGRESS: {
       PARAM: {
         // size, handler, orient, range
         // orient: 1, HORIZONTAL; 2, VERTICAL
-        [0, 0, 240, 15,], progress, 1, 100,
+        NULL, NULL, 1, 100,
       },
-      ID: 1,
+      ID: 3,
+    },
+
+    PICTURE: {
+      PARAM: {
+        // size, handler, path, align, auto-resize
+        // align: 0x00, LEFT / TOP; 0x01, CENTER_HORIZONTAL; 0x02, RIGHT; 0x08, CENTER_VERTICAL; 0x04, BOTTOM
+        // resize: 0, False; 1, True
+        NULL, pic, NULL, 0x01, 1,
+      },
+      // RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND
+      ALIGN: 0x30,
+      ID: 4,
     },
 
     CONTAINER: {
       PARAM: {
           // size, handler
-          [0, 290, 240, 320,], NULL,
+          NULL, NULL,
       },
+      MIN_HEIGHT: 30,
+      // 0x10, EXPAND; 0x20, STRETCH
+      ALIGN: 0x10,
 
       BOX: {
         PARAM: {
           // orient, border size
           // orient: 1, HORIZONTAL; 2, VERTICAL
-          1, 1,
+          1, 0,
         },
-        ID: 2,
       },
 
       BUTTON: {

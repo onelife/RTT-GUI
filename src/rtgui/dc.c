@@ -1786,7 +1786,7 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
     do {
         rtgui_win_t *win = owner->toplevel;
         if (!win) {
-            LOG_E("no toplevel");
+            LOG_W("no toplevel");
             break;
         }
 
@@ -1825,7 +1825,7 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
             LOG_D("hw dc");
         } else {
             dc = rtgui_dc_client_create(owner);
-            LOG_E("client dc");
+            LOG_W("client dc");
         }
         if (!dc) {
             rtgui_screen_unlock();

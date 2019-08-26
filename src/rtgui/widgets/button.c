@@ -234,7 +234,7 @@ static void _theme_draw_button(rtgui_button_t *btn) {
 
         dc = rtgui_dc_begin_drawing(TO_WIDGET(btn));
         if (!dc) {
-            LOG_E("no dc");
+            LOG_W("no dc");
             break;
         }
 

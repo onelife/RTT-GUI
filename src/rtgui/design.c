@@ -29,6 +29,7 @@
 #include "include/widgets/label.h"
 #include "include/widgets/button.h"
 #include "include/widgets/progress.h"
+#include "include/widgets/picture.h"
 #include "include/widgets/list.h"
 #include "include/widgets/filelist.h"
 #include "include/widgets/window.h"
@@ -36,7 +37,7 @@
 
 #ifdef RT_USING_ULOG
 # define LOG_LVL                    RTGUI_LOG_LEVEL
-# define LOG_TAG                    "GUI_CLS"
+# define LOG_TAG                    "GUI_DSN"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
 # define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
@@ -56,11 +57,14 @@ enum object_token_type {
   OBJ_LABEL,
   OBJ_BUTTON,
   OBJ_PROGRESS,
+  OBJ_PICTURE,
   //OBJ_LIST,
   OBJ_FILELIST,
   ATTR_ID,
   ATTR_BACKGROUND,
   ATTR_FOREGROUND,
+  ATTR_MIN_HEIGHT,
+  ATTR_MIN_WIDTH,
   ATTR_ALIGN,
 };
 
@@ -180,7 +184,17 @@ static rt_bool_t _parse_string(design_contex_t *ctx, char *buf) {
 
         /* the preceding mark */
         next = _get_next(ctx);
-        if ('"' != next) {
+        if ('N' == next) {
+            /* check if NULL */
+            len = _parse_token(ctx, buf, STRING_MAX_SIZE, ',');
+            if (!len) break;
+            if (rt_strncmp("ULL", buf, 3)) {
+                LOG_E("|string| expect \"NULL\" got \"N%s\"", buf);
+                break;
+            }
+            *buf = '\0';
+            return RT_TRUE;
+        } else if ('"' != next) {
             LOG_E("|string| expect \"\"\" got \"%c\"", next);
             break;
         }
@@ -321,6 +335,15 @@ static rt_bool_t _parse_size(design_contex_t *ctx, rtgui_rect_t *size) {
                 LOG_E("|size| expect \"NULL\" got \"N%s\"", buf);
                 break;
             }
+            size = RT_NULL;
+        } else if ('D' == next) {
+            /* check if DEFAULT */
+            len = _parse_token(ctx, buf, NUMBER_MAX_SIZE, ',');
+            if (!len) break;
+            if (rt_strncmp("EFAULT", buf, 6)) {
+                LOG_E("|size| expect \"DEFAULT\" got \"D%s\"", buf);
+                break;
+            }
             rtgui_get_screen_rect(size);
         } else if ('[' != next) {
         /* the preceding mark */
@@ -355,7 +378,12 @@ static rt_bool_t _parse_size(design_contex_t *ctx, rtgui_rect_t *size) {
             }
         }
 
-        LOG_D("|size| (%d,%d)-(%d,%d)", size->x1, size->y1, size->x2, size->y2);
+        if (!size) {
+            LOG_D("|size| (NULL)");
+        } else {
+            LOG_D("|size| (%d,%d)-(%d,%d)", size->x1, size->y1, size->x2,
+                size->y2);
+        }
         return RT_TRUE;
     } while (0);
 
@@ -387,11 +415,14 @@ static enum object_token_type _get_object_type(char *buf) {
     if (!rt_strncmp("LABEL", buf, 5))       return OBJ_LABEL;
     if (!rt_strncmp("ALIGN", buf, 5))       return ATTR_ALIGN;
     if (!rt_strncmp("BUTTON", buf, 6))      return OBJ_BUTTON;
+    if (!rt_strncmp("PICTURE", buf, 7))     return OBJ_PICTURE;
     if (!rt_strncmp("PROGRESS", buf, 8))    return OBJ_PROGRESS;
     if (!rt_strncmp("FILELIST", buf, 8))    return OBJ_FILELIST;
     if (!rt_strncmp("CONTAINER", buf, 9))   return OBJ_CONTAINER;
+    if (!rt_strncmp("MIN_WIDTH", buf, 9))   return ATTR_MIN_WIDTH;
     if (!rt_strncmp("BACKGROUND", buf, 10)) return ATTR_BACKGROUND;
     if (!rt_strncmp("FOREGROUND", buf, 10)) return ATTR_FOREGROUND;
+    if (!rt_strncmp("MIN_HEIGHT", buf, 10)) return ATTR_MIN_HEIGHT;
     return OBJ_UNKNOWN;
 }
 
@@ -424,7 +455,7 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             rt_uint32_t num;
 
             if (!_parse_number(ctx, &num)) break;
-            if (num > ctx->obj_sz) {
+            if (num >= ctx->obj_sz) {
                 LOG_E("|object| ID overflow");
                 break;
             }
@@ -441,6 +472,19 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             } else {
                 WIDGET_FOREGROUND(TO_WIDGET(parent)) = color;
                 LOG_D("|FOREGROUND| 0x%04x", color);
+            }
+            is_attr = RT_TRUE;
+        } else if ((ATTR_MIN_HEIGHT == type) || (ATTR_MIN_WIDTH == type)) {
+            rt_uint32_t num;
+
+            if (!_parse_number(ctx, &num)) break;
+            num &= 0x0000ffff;
+            if (ATTR_MIN_HEIGHT == type) {
+                WIDGET_SETTER(min_height)(TO_WIDGET(parent), (rt_int16_t)num);
+                LOG_D("|MIN_HEIGHT| %d", num);
+            } else {
+                WIDGET_SETTER(min_width)(TO_WIDGET(parent), (rt_int16_t)num);
+                LOG_D("|MIN_WIDTH| %d", num);
             }
             is_attr = RT_TRUE;
         } else if (ATTR_ALIGN == type) {
@@ -657,6 +701,27 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             }
             LOG_D("|PROGRESS| %p -> %p", bar, parent);
             self = (void *)bar;
+        } else if (OBJ_PICTURE == type) {
+            char str[STRING_MAX_SIZE + 1];
+            rtgui_rect_t rect;
+            rtgui_evt_hdl_t hdl;
+            rt_uint32_t num1, num2;
+            rtgui_picture_t *pic;
+
+            if (!_parse_size(ctx, &rect)) break;
+            if (!_parse_handler(ctx, (void**)&hdl)) break;
+            if (!_parse_string(ctx, str)) break;
+            if (!_parse_number(ctx, &num1)) break;
+            if (!_parse_number(ctx, &num2)) break;
+
+            pic = rtgui_create_picture(TO_CONTAINER(parent), hdl, &rect,
+                str[0] == '\0' ? RT_NULL : str, num1, !(num2 == 0));
+            if (!pic) {
+                LOG_E("|PICTURE| Create failed!");
+                break;
+            }
+            LOG_D("|PICTURE| %p -> %p", pic, parent);
+            self = (void *)pic;
         } else if (OBJ_FILELIST == type) {
             char str[STRING_MAX_SIZE + 1];
             rtgui_rect_t rect;

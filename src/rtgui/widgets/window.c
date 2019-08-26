@@ -399,7 +399,7 @@ static rt_err_t rtgui_win_init(rtgui_win_t *win, rtgui_win_t *parent,
             }
             TO_WIDGET(win->_title)->toplevel = win;
             rtgui_widget_set_rect(TO_WIDGET(win->_title), rect);
-            LOG_W("title rect (%d,%d)-(%d,%d)", rect->x1, rect->y1, rect->x2,
+            LOG_D("title rect (%d,%d)-(%d,%d)", rect->x1, rect->y1, rect->x2,
                 rect->y2);
             /* always show title */
             rtgui_widget_show(TO_WIDGET(win->_title));
@@ -629,7 +629,8 @@ void rtgui_win_update_clip(rtgui_win_t *win) {
     } else {
         TO_WIDGET(win)->extent = win->outer_extent;
     }
-    rtgui_region_copy(&TO_WIDGET(win)->clip, &win->outer_clip);
+    rtgui_region_intersect_rect(&TO_WIDGET(win)->clip, &win->outer_clip,
+        &TO_WIDGET(win)->extent);
 
     /* update the clip info of each child */
     cntr = TO_CONTAINER(win);
