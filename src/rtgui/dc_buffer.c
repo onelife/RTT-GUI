@@ -27,6 +27,7 @@
 #ifdef RTGUI_USING_DC_BUFFER
 
 #include "include/blit.h"
+#include "include/font/font.h"
 #include "include/dc_draw.h"
 
 static rt_bool_t rtgui_dc_buffer_fini(rtgui_dc_t *dc);
@@ -52,6 +53,8 @@ const rtgui_dc_engine_t dc_buffer_engine =
     rtgui_dc_buffer_fini,
 };
 
+rtgui_point_t rtgui_empty_point = {0, 0};
+
 #define _dc_get_pitch(dc)           \
     (dc->pitch)
 #define _dc_get_pixel(dc, x, y)     \
@@ -73,13 +76,12 @@ rtgui_dc_t *rtgui_dc_buffer_create(int w, int h)
 }
 RTM_EXPORT(rtgui_dc_buffer_create);
 
-rtgui_dc_t *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w, int h)
-{
+rtgui_dc_t *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w,
+    int h) {
     struct rtgui_dc_buffer *dc;
 
     dc = (struct rtgui_dc_buffer *)rtgui_malloc(sizeof(struct rtgui_dc_buffer));
-    if (dc)
-    {
+    if (dc) {
         dc->_super.type = RTGUI_DC_BUFFER;
         dc->_super.engine = &dc_buffer_engine;
         dc->gc.foreground = default_foreground;
@@ -95,8 +97,7 @@ rtgui_dc_t *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w, int
         dc->pitch = w * rtgui_color_get_bpp(pixel_format);
 
         dc->pixel = rtgui_malloc(h * dc->pitch);
-        if (!dc->pixel)
-        {
+        if (!dc->pixel) {
             rtgui_free(dc);
             return RT_NULL;
         }

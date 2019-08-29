@@ -2079,26 +2079,26 @@ void rtgui_rect_inflate(rtgui_rect_t *rect, int d) {
 }
 RTM_EXPORT(rtgui_rect_inflate);
 
-/* put the intersect of src rect and dest rect to dest */
-void rtgui_rect_intersect(rtgui_rect_t *src, rtgui_rect_t *dest) {
-    if (dest->x1 < src->x1) dest->x1 = src->x1;
-    if (dest->y1 < src->y1) dest->y1 = src->y1;
-    if (dest->x2 > src->x2) dest->x2 = src->x2;
-    if (dest->y2 > src->y2) dest->y2 = src->y2;
+/* put the intersect of src rect and dst rect to dst */
+void rtgui_rect_intersect(rtgui_rect_t *src, rtgui_rect_t *dst) {
+    dst->x1 = _MAX(src->x1, dst->x1);
+    dst->y1 = _MAX(src->y1, dst->y1);
+    dst->x2 = _MIN(src->x2, dst->x2);
+    dst->y2 = _MIN(src->y2, dst->y2);
 }
 RTM_EXPORT(rtgui_rect_intersect);
 
-/* union src rect into dest rect */
-void rtgui_rect_union(rtgui_rect_t *src, rtgui_rect_t *dest) {
-    if (rtgui_rect_is_empty(dest)) {
-        *dest = *src;
+/* union src rect into dst rect */
+void rtgui_rect_union(rtgui_rect_t *src, rtgui_rect_t *dst) {
+    if (rtgui_rect_is_empty(dst)) {
+        *dst = *src;
         return;
     }
 
-    if (dest->x1 > src->x1) dest->x1 = src->x1;
-    if (dest->y1 > src->y1) dest->y1 = src->y1;
-    if (dest->x2 < src->x2) dest->x2 = src->x2;
-    if (dest->y2 < src->y2) dest->y2 = src->y2;
+    dst->x1 = _MIN(src->x1, dst->x1);
+    dst->y1 = _MIN(src->y1, dst->y1);
+    dst->x2 = _MAX(src->x2, dst->x2);
+    dst->y2 = _MAX(src->y2, dst->y2);
 }
 RTM_EXPORT(rtgui_rect_union);
 

@@ -67,7 +67,6 @@ extern "C" {
 
 /* Global variables ----------------------------------------------------------*/
 extern struct rt_mempool *rtgui_event_pool;
-extern rtgui_point_t rtgui_empty_point;
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/

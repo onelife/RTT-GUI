@@ -63,8 +63,8 @@ void rtgui_get_screen_rect(rtgui_rect_t *rect);
 
 void rtgui_screen_lock(rt_int32_t timeout);
 void rtgui_screen_unlock(void);
-int rtgui_screen_lock_freeze(void);
-void rtgui_screen_lock_thaw(int value);
+rt_uint8_t rtgui_screen_lock_freeze(void);
+void rtgui_screen_lock_thaw(rt_uint8_t cnt);
 
 rt_err_t rtgui_request(rtgui_app_t *app, rtgui_evt_generic_t *evt,
     rt_int32_t timeout);

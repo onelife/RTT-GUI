@@ -310,8 +310,8 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
     #ifdef GUIENGIN_USING_VFRAMEBUFFER
         case RTGUI_EVENT_VPAINT_REQ:
-            evt->vpaint_req.origin->buffer = rtgui_win_get_drawing(win);
-            rt_completion_done(evt->vpaint_req.origin->cmp);
+            evt->vpaint_req.buffer = rtgui_win_get_drawing(win);
+            // rt_completion_done(evt->vpaint_req.origin->cmp);
             break;
     #endif
 
@@ -693,7 +693,7 @@ RTM_EXPORT(rtgui_win_set_title);
 
 #ifdef GUIENGIN_USING_VFRAMEBUFFER
 
-rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
+rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t *win) {
     rtgui_dc_t *dc;
     rtgui_rect_t rect;
 
@@ -722,7 +722,7 @@ rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
         /* remove clip */
         rtgui_region_reset(&win->outer_clip,
                            &TO_WIDGET(win)->extent);
-        rtgui_region_intersect(&win->outer_clip, &region);
+        rtgui_region_intersect(&win->outer_clip, &win->outer_clip, &region);
         rtgui_win_update_clip(win);
         /* use virtual framebuffer */
         rtgui_widget_update(TO_WIDGET(win));
@@ -730,14 +730,15 @@ rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
         /* get the extent of widget */
         rect = WIDGET_GETTER(extent)(TO_WIDGET(win));
 
-        dc = rtgui_graphic_driver_get_rect_buffer(RT_NULL, &rect);
+        dc = rtgui_gfx_driver_get_buffer(RT_NULL, &rect);
 
         rtgui_gfx_driver_vmode_exit();
 
         /* restore the clip information of window */
         rtgui_region_reset(&TO_WIDGET(win)->clip,
                            &TO_WIDGET(win)->extent);
-        rtgui_region_intersect(&(TO_WIDGET(win)->clip), &clip_region);
+        rtgui_region_intersect(&(TO_WIDGET(win)->clip), &(TO_WIDGET(win)->clip),
+            &clip_region);
         rtgui_region_uninit(&region);
         rtgui_region_uninit(&clip_region);
 
@@ -745,31 +746,25 @@ rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win) {
     } else {
         /* send vpaint_req to the window and wait for response */
         rtgui_evt_generic_t *evt;
-        struct rt_completion cmp;
-        int freeze;
+        rt_uint8_t hold;
 
         /* make sure the screen is not locked. */
-        freeze = rtgui_screen_lock_freeze();
+        hold = rtgui_screen_lock_freeze();
 
         /* send RTGUI_EVENT_VPAINT_REQ */
-        evt = (rtgui_evt_generic_t *)rt_mp_alloc(
-            rtgui_event_pool, RT_WAITING_FOREVER);
-        if (evt) {
-            RTGUI_EVENT_VPAINT_REQ_INIT(&evt->vpaint_req, win, &cmp);
-            ret = rtgui_request(win->app, evt, RT_WAITING_FOREVER);
-            if (ret) {
-                LOG_E("vpaint req %s err [%d]", win->wid->title, ret);
-                return RT_NULL;
-            }
-        } else {
-            LOG_E("get mp err");
+        RTGUI_CREATE_EVENT(evt, VPAINT_REQ, RT_WAITING_FOREVER);
+        if (!evt) return RT_NULL;
+        evt->vpaint_req.wid = win;
+        evt->vpaint_req.buffer = RT_NULL;
+        if (!rtgui_send_request(evt, RT_WAITING_FOREVER)) {
+            LOG_E("tx vpaint req %s err", evt->vpaint_req.wid->title);
             return RT_NULL;
         }
 
-        rt_completion_wait(evt->vpaint_req.cmp, RT_WAITING_FOREVER);
+        // rt_completion_wait(evt->vpaint_req.cmp, RT_WAITING_FOREVER);
         /* wait for vpaint_ack event */
-        dc = evt->vpaint_req.buffer;
-        rtgui_screen_lock_thaw(freeze);
+        // dc = evt->vpaint_req.buffer;
+        rtgui_screen_lock_thaw(hold);
     }
 
     return dc;

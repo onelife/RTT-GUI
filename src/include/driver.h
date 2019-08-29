@@ -90,10 +90,10 @@ rt_uint8_t *rtgui_gfx_get_framebuffer(const rtgui_gfx_driver_t *driver);
 #ifdef GUIENGIN_USING_VFRAMEBUFFER
 void rtgui_gfx_driver_vmode_enter(void);
 void rtgui_gfx_driver_vmode_exit(void);
-rtgui_dc_t* rtgui_graphic_driver_get_rect_buffer(const rtgui_gfx_driver_t *driver, rtgui_rect_t *rect);
-rt_bool_t rtgui_gfx_driver_in_virtual_mode(void);
+rtgui_dc_t* rtgui_gfx_driver_get_buffer(const rtgui_gfx_driver_t *driver, rtgui_rect_t *rect);
+rt_bool_t rtgui_gfx_driver_is_vmode(void);
 #else /* GUIENGIN_USING_VFRAMEBUFFER */
-# define rtgui_gfx_driver_in_virtual_mode()    (RT_FALSE)
+# define rtgui_gfx_driver_is_vmode()    (RT_FALSE)
 #endif /* GUIENGIN_USING_VFRAMEBUFFER */
 
 #ifdef CONFIG_TOUCH_DEVICE_NAME

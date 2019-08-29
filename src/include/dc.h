@@ -108,11 +108,12 @@ struct rtgui_dc_buffer {
 #else /* IMPORT_TYPES */
 
 /* Exported functions ------------------------------------------------------- */
-/* create a buffer dc */
+#ifdef RTGUI_USING_DC_BUFFER
 rtgui_dc_t *rtgui_dc_buffer_create(int width, int height);
 rtgui_dc_t *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w, int h);
 rtgui_dc_t *rtgui_dc_buffer_create_from_dc(rtgui_dc_t* dc);
 void rtgui_dc_buffer_set_alpha(rtgui_dc_t* dc, rt_uint8_t pixel_alpha);
+#endif
 
 /* create a widget dc */
 rtgui_dc_t *rtgui_dc_widget_create(rtgui_widget_t * owner);

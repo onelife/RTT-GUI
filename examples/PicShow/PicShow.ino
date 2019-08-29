@@ -326,7 +326,7 @@ static void picShow_entry(void *param) {
 // RT-Thread function called by "RT_T.begin()"
 void rt_setup(void) {
   rt_thread_t tid = rt_thread_create(
-    "picShow", picShow_entry, RT_NULL, 2048, 25, 10);
+    "picShow", picShow_entry, RT_NULL, 3 * 512, 25, 10);
   if (tid) {
     rt_thread_startup(tid);
   } else {

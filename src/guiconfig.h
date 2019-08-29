@@ -41,9 +41,8 @@
 #define RTGUI_BIG_ENDIAN_OUTPUT
 #define CONFIG_USING_FONT_FILE              (1)
 
-#define RTGUI_MQ_SIZE                       (32)
-#define RTGUI_MB_SIZE                       (32)
-#define RTGUI_EVENT_POOL_NUMBER             (64)
+#define RTGUI_MB_SIZE                       (16)
+#define RTGUI_EVENT_POOL_NUMBER             (32)
 #define RTGUI_EVENT_RESEND_DELAY            (RT_TICK_PER_SECOND / 50)
 
 
@@ -52,7 +51,6 @@
 // #define RTGUI_OBJECT_TRACE
 #define RTGUI_LOG_EVENT
 // #define RTGUI_USING_CURSOR
-// #define RTGUI_USING_DC_BUFFER
 
 /* Font */
 #define GUIENGINE_USING_FONT12
@@ -85,15 +83,11 @@
 # define GUIENGINE_SVR_THREAD_TIMESLICE     (10)
 #endif
 #ifndef GUIENGIN_SVR_THREAD_STACK_SIZE
-# define GUIENGIN_SVR_THREAD_STACK_SIZE     (2 * 1024)
+# define GUIENGIN_SVR_THREAD_STACK_SIZE     (2 * 512)
 #endif
 
-// #define GUIENGIN_APP_THREAD_PRIORITY        25
-// #define GUIENGIN_APP_THREAD_TIMESLICE       10
-// #define GUIENGIN_APP_THREAD_STACK_SIZE      4 * 1024
-
-// #define GUIENGIN_USING_DESKTOP_WINDOW
 // #define GUIENGIN_USING_CALIBRATION
+// #define RTGUI_USING_DC_BUFFER
 // #define GUIENGIN_USING_VFRAMEBUFFER
 
 #ifndef GUIENGINE_RGB888_PIXEL_BITS

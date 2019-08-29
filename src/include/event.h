@@ -326,9 +326,8 @@ struct rt_completion {
 
 struct rtgui_event_vpaint_req {
     _WINDOW_EVENT_ELEMENTS;
-    struct rtgui_event_vpaint_req *origin;
-    struct rt_completion *cmp;
-    rtgui_dc_t* buffer;
+    // struct rt_completion *cmp;
+    rtgui_dc_t *buffer;
 };
 
 /* gesture */

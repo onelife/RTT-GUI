@@ -67,6 +67,8 @@ APP: {
 
 * PicShowDesign
   - Similar to "PicShow" but using text based design
+  - The design is read from a file at SD card location `/design/PicShow.gui`
+  - Please copy the design file to SD card before run the example
 
 * FileBrowser
   - File brower program
@@ -76,6 +78,7 @@ APP: {
 
 * FileBrowserDesign
   - Similar to "FileBrowser" but using text based design
+  - The design is stored in a constant variable
 
 
 ## Dependence

@@ -117,23 +117,17 @@ const rt_uint8_t* rtgui_blit_expand_byte[9] = {
     lookup_8
 };
 
-rt_uint8_t rtgui_color_get_bits(rt_uint8_t pixel_format)
-{
+rt_uint8_t rtgui_color_get_bits(rt_uint8_t pixel_format) {
     if (pixel_format <= RTGRAPHIC_PIXEL_FORMAT_ARGB888)
         return pixel_bits_table[pixel_format];
-
     /* use 32 as the default */
     return 32;
 }
 RTM_EXPORT(rtgui_color_get_bits);
 
 rt_uint8_t rtgui_color_get_bpp(rt_uint8_t pixel_format) {
-    rt_uint8_t bpp = 4;
-
-    if (pixel_format <= RTGRAPHIC_PIXEL_FORMAT_ARGB888) {
-        bpp = _BIT2BYTE(pixel_bits_table[pixel_format]);
-    }
-
-    return bpp;
+    if (pixel_format <= RTGRAPHIC_PIXEL_FORMAT_ARGB888)
+        return _BIT2BYTE(pixel_bits_table[pixel_format]);
+    return 4;
 }
 RTM_EXPORT(rtgui_color_get_bpp);

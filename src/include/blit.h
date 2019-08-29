@@ -132,7 +132,7 @@ typedef void (*rtgui_blit_line_func)(rt_uint8_t *_dst, rt_uint8_t *_src,
 
 rtgui_blit_line_func rtgui_blit_line_get(rt_uint8_t dst_bpp, rt_uint8_t src_bpp);
 
-# ifdef GUIENGINE_USING_HDC
+# ifdef RTGUI_USING_DC_BUFFER
 void rtgui_blit(rtgui_blit_info_t * info);
 # endif
 

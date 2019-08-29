@@ -625,24 +625,22 @@ void rtgui_screen_unlock(void) {
 }
 RTM_EXPORT(rtgui_screen_unlock);
 
-int rtgui_screen_lock_freeze(void) {
-    int hold = 0;
+rt_uint8_t rtgui_screen_lock_freeze(void) {
+    rt_uint8_t hold = 0;
 
-    if (_screen_lock.owner == rt_thread_self())
-    {
-        int index;
+    if (_screen_lock.owner == rt_thread_self()) {
+        rt_uint8_t cnt;
 
-        index = hold = _screen_lock.hold;
-        while (index --) rt_mutex_release(&_screen_lock);
+        cnt = hold = _screen_lock.hold;
+        while (cnt--) rt_mutex_release(&_screen_lock);
     }
 
     return hold;
 }
 RTM_EXPORT(rtgui_screen_lock_freeze);
 
-void rtgui_screen_lock_thaw(int value)
-{
-    while (value--) rt_mutex_take(&_screen_lock, RT_WAITING_FOREVER);
+void rtgui_screen_lock_thaw(rt_uint8_t cnt) {
+    while (cnt--) rt_mutex_take(&_screen_lock, RT_WAITING_FOREVER);
 }
 RTM_EXPORT(rtgui_screen_lock_thaw);
 

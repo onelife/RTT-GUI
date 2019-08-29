@@ -1494,7 +1494,7 @@ static void blit_color_to_argb888_alpha(rtgui_blit_info_t *info) {
     }
 }
 
-#ifdef GUIENGINE_USING_HDC
+#ifdef RTGUI_USING_DC_BUFFER
 
 void rtgui_blit(rtgui_blit_info_t *info) {
     if (!info->src_h || !info->src_w || !info->dst_h || !info->dst_w)
@@ -1579,6 +1579,6 @@ void rtgui_blit(rtgui_blit_info_t *info) {
 }
 RTM_EXPORT(rtgui_blit);
 
-#endif /* defined(UIENGINE_IMAGE_PNG) || defined(GUIENGINE_USING_HDC) */
+#endif /* RTGUI_USING_DC_BUFFER */
 
 #endif /* RTGUI_USING_DC_BUFFER */
