@@ -153,7 +153,7 @@ rt_bool_t rtgui_container_dispatch_mouse_event(rtgui_container_t *cntr,
     focus = TO_WIDGET(cntr)->toplevel->focused;
     done = RT_FALSE;
 
-    /* call children's event handler, return once handled */
+    /* call children's event handler and return once handled */
     rt_slist_for_each(node, &(cntr->children)) {
         rtgui_widget_t *child = rt_slist_entry(node, rtgui_widget_t, sibling);
         /* check if hit the child */
@@ -205,9 +205,6 @@ static rt_bool_t _container_event_handler(void *obj, rtgui_evt_generic_t *evt) {
     case RTGUI_EVENT_MOUSE_MOTION:
         /* inform children mouse event */
         done = rtgui_container_dispatch_mouse_event(cntr, evt);
-        break;
-
-    case RTGUI_EVENT_KBD:
         break;
 
     case RTGUI_EVENT_SHOW:

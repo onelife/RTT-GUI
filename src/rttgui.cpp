@@ -24,12 +24,28 @@ void RT_GUI::begin(void) {
     rt_err_t ret;
 
     dev = rt_device_find(CONFIG_GUI_DEVICE_NAME);
+    if (!dev) {
+        LOG_E("No \"%s\"", CONFIG_GUI_DEVICE_NAME);
+    }
     RT_ASSERT(RT_NULL != dev);
     ret = rtgui_set_gfx_device(dev);
     RT_ASSERT(RT_EOK == ret);
     #ifdef CONFIG_TOUCH_DEVICE_NAME
     dev = rt_device_find(CONFIG_TOUCH_DEVICE_NAME);
+    if (!dev) {
+        LOG_E("No \"%s\"", CONFIG_TOUCH_DEVICE_NAME);
+    }
+    RT_ASSERT(RT_NULL != dev);
     ret = rtgui_set_touch_device(dev);
+    RT_ASSERT(RT_EOK == ret);
+    #endif
+    #ifdef CONFIG_KEY_DEVICE_NAME
+    dev = rt_device_find(CONFIG_KEY_DEVICE_NAME);
+    if (!dev) {
+        LOG_E("No \"%s\"", CONFIG_KEY_DEVICE_NAME);
+    }
+    RT_ASSERT(RT_NULL != dev);
+    ret = rtgui_set_key_device(dev);
     RT_ASSERT(RT_EOK == ret);
     #endif
     ret = rtgui_system_init();

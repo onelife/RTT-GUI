@@ -1,6 +1,81 @@
 # RTT-GUI
 
-This project is forked from [RT-Thread Package -- GUI Engine](https://github.com/RT-Thread-packages/gui_engine) (an open source embedded GUI framework) and heavily refactored. 
+This project is forked from [RT-Thread Package -- GUI Engine](https://github.com/RT-Thread-packages/gui_engine) (an open source embedded GUI framework) and heavily refactored.
+
+Beside programmatically UI design, a JSON like, text based UI configuration is also available. Following is an example.
+
+```javascript
+APP: {
+  PARAM: {
+    // name, handler
+    "FileBrowser", NULL,
+  },
+
+  MWIN: {
+    PARAM: {
+      // title, handler
+      "FileBrowser", NULL,
+    },
+
+    FILELIST: {
+      PARAM: {
+        // size, handler, dir
+        DEFAULT, on_file, "/",
+      },
+    },
+  },
+
+  WIN: {
+    PARAM: {
+      // title, size, handler, on_close handler
+      "FileWin", DEFAULT, NULL, on_close,
+    },
+    ID: 0,
+
+    BOX: {
+      PARAM: {
+        // orient, border size
+        // orient: 1, HORIZONTAL; 2, VERTICAL
+        1, 0,
+      },
+      ID: 1,
+    },
+
+    PICTURE: {
+      PARAM: {
+        // size, handler, path, align, auto-resize
+        // align: 0x00, LEFT / TOP; 0x01, CENTER_HORIZONTAL; 0x02, RIGHT; 0x08, CENTER_VERTICAL; 0x04, BOTTOM
+        // resize: 0, False; 1, True
+        NULL, NULL, NULL, 0x01, 1,
+      },
+      // RTGUI_ALIGN_STRETCH | RTGUI_ALIGN_EXPAND
+      ALIGN: 0x30,
+      ID: 2,
+    },
+  },
+}
+```
+
+
+## Examples ##
+
+* PicShow
+  - Picture slideshow program
+  - Read `*.jpg` and `*.bmp` files from SD card location `/pic`
+  - The interval is 5 seconds
+  - Widgets used: `window`, `box` (sizer), `picture`, `label`, `progress` (bar) and `button`
+
+* PicShowDesign
+  - Similar to "PicShow" but using text based design
+
+* FileBrowser
+  - File brower program
+  - Show the content of SD card
+  - Preview is available for `*.jpg` and `*.bmp` files
+  - Widgets used: `window`, `box` (sizer), `filelist` and `picture`
+
+* FileBrowserDesign
+  - Similar to "FileBrowser" but using text based design
 
 
 ## Dependence
@@ -30,12 +105,13 @@ This project is forked from [RT-Thread Package -- GUI Engine](https://github.com
 | Container | Widget | A container (as parent) contains other widgets (as children) |
 | Box (Sizer) | Object | Attached to container to define the layout of its children |
 | Window | Container | |
-| Title (Bar) | Widget | The title bar of a window |
+| Title (Bar) | Widget | The title bar of window widget |
 | Label | Widget | |
 | Button | Label | |
 | Progress (Bar) | Widget | |
 | List | Widget | |
 | File List | List | |
+| Picture | Widget | A widget to show image |
 
 
 ## Available Image Formats ##
@@ -57,7 +133,7 @@ This project is forked from [RT-Thread Package -- GUI Engine](https://github.com
 | HZ12 | Simplified Chinese |
 | HZ16 | Simplified Chinese |
 
-The HZ12 and HZ16 are too huge to load to memory, so please load them from SD card instead by: Enable "CONFIG_USING_FONT_FILE" in "guiconfig.h" and copy [hz12.fnt and hz16.fnt](./bin/font) to SD `\font\` directory.
+The HZ12 and HZ16 are too huge to load to memory, so please load them from SD card instead by: Enable "CONFIG_USING_FONT_FILE" in "guiconfig.h" and copy [hz12.fnt and hz16.fnt](./bin/font) to SD `\font` directory.
 
 May do the same for ASCII12 and ASCII16 to save memory.
 

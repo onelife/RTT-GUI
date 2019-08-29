@@ -330,25 +330,43 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
 
     case RTGUI_EVENT_KBD:
-        /* we should dispatch key event firstly */
         if (!IS_WIN_FLAG(win, HANDLE_KEY)) {
             rtgui_widget_t *wgt = win->focused;
-
-            /* we should dispatch the key event just once. Once entered the
-             * dispatch mode, we should swtich to key handling mode. */
+            /* When dispatching, handle KBD event by self */
             WIN_FLAG_SET(win, HANDLE_KEY);
-            /* dispatch the key event */
-            while (wgt) {
-                if (EVENT_HANDLER(wgt)) {
-                    done = EVENT_HANDLER(wgt)(wgt, evt);
-                    if (done) break;
+
+            if ((void *)win != (void *)wgt) {
+                /* dispatch to focused widget */
+                while (wgt && ((void *)win != (void *)wgt)) {
+                    if (EVENT_HANDLER(wgt)) {
+                        done = EVENT_HANDLER(wgt)(wgt, evt);
+                        if (done) break;
+                    }
+                    wgt = wgt->parent;
                 }
-                wgt = wgt->parent;
+            } else {
+                /* dispatch to the focusable children */
+                rtgui_container_t *cntr = TO_CONTAINER(win);
+                rt_slist_t *node;
+
+                /* call children's event handler and return once handled */
+                rt_slist_for_each(node, &(cntr->children)) {
+                    rtgui_widget_t *child = rt_slist_entry(
+                        node, rtgui_widget_t, sibling);
+                    if (IS_WIDGET_FLAG(child, FOCUSABLE)) {
+                        rtgui_widget_focus(child);
+                        if (EVENT_HANDLER(child)) {
+                            done = EVENT_HANDLER(child)(child, evt);
+                            if (done) break;
+                        }
+                    }
+                }
             }
+
+            /* restore flag */
             WIN_FLAG_CLEAR(win, HANDLE_KEY);
-        } else if (!win->on_key) {
-            /* in key handling mode(it may reach here in
-             * win->focused->evt_hdl call) */
+        } else if (win->on_key) {
+            /* handle KBD event */
             done = win->on_key(TO_OBJECT(win), evt);
         }
         break;

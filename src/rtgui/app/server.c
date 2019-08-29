@@ -162,7 +162,7 @@ static rt_bool_t _server_keyboard_handler(rtgui_evt_generic_t *evt) {
     /* todo: handle input method and global shortcut */
     top = rtgui_topwin_get_focus();
     if (top) {
-        RT_ASSERT(top->flag & RTGUI_TOPWIN_FLAG_ACTIVATE);  // TODO(onelife): ?
+        RT_ASSERT(top->flag & RTGUI_TOPWIN_FLAG_ACTIVATE);
 
         /* send RTGUI_EVENT_KBD */
         /* change owner to server */
@@ -171,6 +171,7 @@ static rt_bool_t _server_keyboard_handler(rtgui_evt_generic_t *evt) {
         evt->kbd.wid = top->wid;
         evt->kbd.act_cnt = rtgui_get_app_act_cnt();
         rtgui_request(top->app, evt, RT_WAITING_NO);
+        /* avoid free event */
         done = RT_FALSE;
     }
 
@@ -204,16 +205,16 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         done = _server_mouse_button_handler(evt);
         break;
 
+    case RTGUI_EVENT_KBD:
+        /* handle keyboard event */
+        done = _server_keyboard_handler(evt);
+        break;
+
     case RTGUI_EVENT_TOUCH:
         /* handle touch event */
         LOG_D("touch: %x, %d (%d,%d)", evt->touch.data.id, evt->touch.data.type,
             evt->touch.data.point.x, evt->touch.data.point.y);
         done = _server_touch_handler(evt);
-        break;
-
-    case RTGUI_EVENT_KBD:
-        /* handle keyboard event */
-        done = _server_keyboard_handler(evt);
         break;
 
     /* window */
@@ -313,7 +314,8 @@ static rt_bool_t _server_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         evt->base.origin->mb->parent.parent.name, done);
 
     if (!done && !IS_EVENT_TYPE(evt, MOUSE_MOTION) && \
-        !IS_EVENT_TYPE(evt, MOUSE_BUTTON)) {
+        !IS_EVENT_TYPE(evt, MOUSE_BUTTON) && \
+        !IS_EVENT_TYPE(evt, KBD)) {
         LOG_E("[SrvEVT] %p not done", evt);
     }
     if (done && evt && !IS_EVENT_TYPE(evt, TIMER)) {

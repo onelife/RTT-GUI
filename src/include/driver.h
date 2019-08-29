@@ -101,6 +101,11 @@ rt_err_t rtgui_set_touch_device(rt_device_t dev);
 GETTER_PROTOTYPE(touch_device, rt_device_t);
 #endif /* CONFIG_TOUCH_DEVICE_NAME */
 
+#ifdef CONFIG_KEY_DEVICE_NAME
+rt_err_t rtgui_set_key_device(rt_device_t dev);
+GETTER_PROTOTYPE(key_device, rt_device_t);
+#endif /* CONFIG_KEY_DEVICE_NAME */
+
 #ifdef RTGUI_USING_HW_CURSOR
 void rtgui_cursor_set_device(const char* device_name);
 void rtgui_cursor_set_position(rt_uint16_t x, rt_uint16_t y);

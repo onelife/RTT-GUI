@@ -81,11 +81,15 @@ extern "C" {
 #define IS_TIMER_EVENT_STATE(e, sname)      (e->timer.timer->state == RTGUI_TIMER_ST_##sname)
 /* mouse */
 #define IS_MOUSE_EVENT_BUTTON(e, bname)     (e->mouse.button & MOUSE_BUTTON_##bname)
+/* keyboard */
+#define IS_KBD_EVENT_KEY(e, kname)          (e->kbd.data.key == RTGUIK_##kname)
+#define IS_KBD_EVENT_MOD(e, mname)          (e->kbd.data.mod == RTGUI_KMOD_##mname)
+#define IS_KBD_EVENT_MOD_LR(e, mname)       (e->kbd.data.mod & (RTGUI_KMOD_L##mname | RTGUI_KMOD_R##mname))
+#define IS_KBD_EVENT_TYPE(e, tname)         (e->kbd.data.type == RTGUI_KEY##tname)
 /* touch */
 #define IS_TOUCH_EVENT_TYPE(e, tname)       (e->touch.data.type == RTGUI_TOUCH_##tname)
 
-
-// TODO: below?
+// TODO: ?
 #define RTGUI_EVENT_VPAINT_REQ_INIT(e, win, cm) \
     do {                                    \
         RTGUI_EVENT_REINIT(e, VPAINT_REQ);  \
@@ -102,12 +106,6 @@ extern "C" {
         RTGUI_EVENT_REINIT(e, GESTURE);     \
         (e)->type = gtype;                  \
     } while (0)
-
-/* keyboard */
-#define IS_KBD_EVENT_KEY(e, kname)          (e->kbd.key == RTGUIK_##kname)
-#define IS_KBD_EVENT_MOD(e, mname)          (e->kbd.mod == RTGUI_KMOD_##mname)
-#define IS_KBD_EVENT_MOD2(e, mname)         (e->kbd.mod & (RTGUI_KMOD_L##mname | RTGUI_KMOD_R##mname))
-#define IS_KBD_EVENT_TYPE(e, tname)         (e->kbd.type == RTGUI_KEY##tname)
 
 /* user command */
 #define RTGUI_CMD_UNKNOWN                   0x00
@@ -239,7 +237,7 @@ struct rtgui_event_timer {
 };
 
 /* window */
-#define _WINDOW_EVENT_ELEMENTS         \
+#define _WINDOW_EVENT_ELEMENTS              \
     struct rtgui_evt_base base;             \
     rtgui_win_t *wid;
 
@@ -351,7 +349,7 @@ enum rtgui_gesture_type {
 struct rtgui_event_gesture {
     _WINDOW_EVENT_ELEMENTS;
     enum rtgui_gesture_type type;
-    rt_uint32_t act_cnt;               /* window activate count */
+    rt_uint32_t act_cnt;
 };
 
 /* mouse */
@@ -370,24 +368,28 @@ struct rtgui_event_mouse {
     _WINDOW_EVENT_ELEMENTS;
     rt_uint16_t x, y;
     rt_uint16_t button;
-    rt_tick_t ts;                           /* timestamp */
-    /* id of touch session(from down to up). Different session should have
-     * different id. id should never be 0. */
+    rt_tick_t time;                         /* timestamp */
+    /* id of touch session (from down to up). Different session should have
+     * different id. Id should never be 0. */
     rt_uint32_t id;
-    rt_uint32_t act_cnt;               /* window activate count */
+    rt_uint32_t act_cnt;
 };
 
 /* beyboard */
-struct rtgui_event_kbd {
-    _WINDOW_EVENT_ELEMENTS;
-    rt_uint32_t act_cnt;               /* window activate count */
-    rt_uint16_t type;                       /* key down or up */
-    rt_uint16_t key;                        /* current key */
-    rt_uint16_t mod;                        /* current key modifiers */
-    rt_uint16_t unicode;                    /* translated character */
+struct rtgui_key {
+    rtgui_kbd_key_t key;
+    rtgui_kbd_mod_t mod;
+    rtgui_kbd_type_t type;
+    //TODO:? rt_uint16_t unicode;                    /* translated character */
 };
 
-/* touch */
+struct rtgui_event_kbd {
+    _WINDOW_EVENT_ELEMENTS;
+    rt_uint32_t act_cnt;
+    rtgui_key_t data;
+};
+
+/* touch (handled by server) */
 typedef enum rtgui_touch_type {
     RTGUI_TOUCH_NONE                        = 0x00,
     RTGUI_TOUCH_UP                          = 0x01,
@@ -401,7 +403,6 @@ struct rtgui_touch {
     rtgui_point_t point;
 };
 
-/* handled by server */
 struct rtgui_event_touch {
     struct rtgui_evt_base base;
     rtgui_touch_t data;

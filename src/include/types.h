@@ -148,6 +148,7 @@ typedef struct rtgui_win rtgui_win_t;
 typedef struct rtgui_app rtgui_app_t;
 
 /* event */
+typedef struct rtgui_key rtgui_key_t;
 typedef struct rtgui_touch rtgui_touch_t;
 typedef struct rtgui_event_timer rtgui_event_timer_t;
 typedef union rtgui_evt_generic rtgui_evt_generic_t;

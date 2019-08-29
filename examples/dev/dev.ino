@@ -34,9 +34,9 @@ static rt_bool_t show_demo(rtgui_win_t *win) {
     rtgui_image_t *img;
     rtgui_rect_t draw_rect;
 
-    // img = rtgui_image_create_from_mem("png", _picture_png, sizeof(_picture_png), RT_TRUE);
-    // img = rtgui_image_create_from_file("png", "/pic/logo.png", RT_TRUE);
-    // img = rtgui_image_create_from_file("bmp", "/pic/test_565.bmp", RT_FALSE);
+    // img = rtgui_image_create_from_mem("png", _picture_png, sizeof(_picture_png), 0, RT_TRUE);
+    // img = rtgui_image_create_from_file("png", "/pic/logo.png", 0, RT_TRUE);
+    // img = rtgui_image_create_from_file("bmp", "/pic/test_565.bmp", 0, RT_FALSE);
     img = rtgui_image_create_from_file("jpg", "/pic/test9.jpg", 0, RT_FALSE);
     if (img) {
       draw_rect.x1 = 10;
@@ -106,7 +106,7 @@ static void rt_gui_demo_entry(void *param) {
   }
   rt_kprintf("*** create app ok\n");
 
-  main_win = CREATE_MAIN_WIN(RT_NULL, dc_event_handler, "UiWindow",
+  main_win = CREATE_MAIN_WIN(dc_event_handler, "UiWindow",
     RTGUI_WIN_STYLE_DEFAULT);
   if (!main_win) {
     rtgui_app_uninit(app);

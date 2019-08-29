@@ -598,6 +598,11 @@ rt_err_t screenshot(const char *filename) {
         rt_uint32_t w = display()->width;
         rt_uint32_t h = display()->height;
 
+        if (!display()->framebuffer && !display()->ops->get_pixel) {
+            LOG_E("no pixel read");
+            break;
+        }
+
         buf = rtgui_malloc(WRITE_BUFFER_SIZE);
         if (RT_NULL == buf) {
             LOG_E("no mem");

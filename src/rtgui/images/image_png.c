@@ -112,7 +112,6 @@ static rt_bool_t png_load(rtgui_image_t *img, rtgui_filerw_t *file,
     err = RT_EOK;
 
     do {
-
         png = rtgui_malloc(sizeof(struct rtgui_image_png));
         if (!png) {
             err = -RT_ENOMEM;

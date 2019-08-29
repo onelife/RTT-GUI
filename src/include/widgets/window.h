@@ -63,14 +63,14 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 typedef enum rtgui_win_style {
-    RTGUI_WIN_STYLE_NO_FOCUS                = 0x0001,  /* non-focused */
-    RTGUI_WIN_STYLE_NO_TITLE                = 0x0002,  /* no title */
-    RTGUI_WIN_STYLE_NO_BORDER               = 0x0004,  /* no border */
-    RTGUI_WIN_STYLE_CLOSEBOX                = 0x0008,  /* close button */
-    RTGUI_WIN_STYLE_MINIBOX                 = 0x0010,  /* minimize button */
-    RTGUI_WIN_STYLE_DESTROY_ON_CLOSE        = 0x0020,  /* destroy if closed */
-    RTGUI_WIN_STYLE_ONTOP                   = 0x0040,  /* at top layer */
-    RTGUI_WIN_STYLE_ONBTM                   = 0x0080,  /* at bottom layer */
+    RTGUI_WIN_STYLE_NO_FOCUS                = 0x0001,   /* non-focused */
+    RTGUI_WIN_STYLE_NO_TITLE                = 0x0002,   /* no title */
+    RTGUI_WIN_STYLE_NO_BORDER               = 0x0004,   /* no border */
+    RTGUI_WIN_STYLE_CLOSEBOX                = 0x0008,   /* close button */
+    RTGUI_WIN_STYLE_MINIBOX                 = 0x0010,   /* minimize button */
+    RTGUI_WIN_STYLE_DESTROY_ON_CLOSE        = 0x0020,   /* destroy if closed */
+    RTGUI_WIN_STYLE_ONTOP                   = 0x0040,   /* at top layer */
+    RTGUI_WIN_STYLE_ONBTM                   = 0x0080,   /* at bottom layer */
     RTGUI_WIN_STYLE_MAINWIN                 = RTGUI_WIN_STYLE_NO_TITLE  | \
                                               RTGUI_WIN_STYLE_NO_BORDER,
     RTGUI_WIN_STYLE_DEFAULT                 = RTGUI_WIN_STYLE_CLOSEBOX  | \
@@ -82,13 +82,9 @@ typedef enum rtgui_win_flag {
     RTGUI_WIN_FLAG_MODAL                    = 0x01,
     RTGUI_WIN_FLAG_CLOSED                   = 0x02,
     RTGUI_WIN_FLAG_ACTIVATE                 = 0x04,
-    RTGUI_WIN_FLAG_IN_MODAL                 = 0x08,  /* modaled by other */
-    RTGUI_WIN_FLAG_CONNECTED                = 0x10,  /* with server */
-    /* "window" handles or dispatchs KBD event to its focused widget by function
-        "_win_event_handler()".
-        RTGUI_WIN_FLAG_HANDLE_KEY indicates key-handling mode.
-     */
-    RTGUI_WIN_FLAG_HANDLE_KEY               = 0x20,
+    RTGUI_WIN_FLAG_IN_MODAL                 = 0x08,     /* modaled by other */
+    RTGUI_WIN_FLAG_CONNECTED                = 0x10,     /* with server */
+    RTGUI_WIN_FLAG_HANDLE_KEY               = 0x20,     /* to RX KBD event */
     RTGUI_WIN_FLAG_CB_PRESSED               = 0x40,
 } rtgui_win_flag_t;
 
@@ -117,11 +113,7 @@ struct rtgui_win {
     rtgui_evt_hdl_t on_activate;
     rtgui_evt_hdl_t on_deactivate;
     rtgui_evt_hdl_t on_close;
-    /* KBD event is sent to the focused widget. In case a KBD event is either
-        handked by the focused widget nor it's parents, it finally is handled by
-        function "on_key()".
-     */
-    rtgui_evt_hdl_t on_key;
+    rtgui_evt_hdl_t on_key;                 /* fallback KBD event handler */
     void *user_data;
     /* PRIVATE */
     rt_err_t (*_do_show)(rtgui_win_t *win);

@@ -59,7 +59,9 @@ RTGUI_CLASS(
 static void _picture_constructor(void *obj) {
     rtgui_picture_t *pic = obj;
 
-    WIDGET_TEXTALIGN(pic) = RTGUI_ALIGN_CENTER;
+    WIDGET_FLAG_SET(obj, FOCUSABLE);
+    WIDGET_TEXTALIGN(obj) = RTGUI_ALIGN_CENTER;
+
     pic->path = RT_NULL;
     pic->image = RT_NULL;
 }

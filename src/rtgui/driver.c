@@ -26,7 +26,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 
-#ifdef CONFIG_TOUCH_DEVICE_NAME
+#if defined(CONFIG_TOUCH_DEVICE_NAME) || defined(CONFIG_KEY_DEVICE_NAME)
 # include "components/arduino/drv_common.h"
 #endif
 
@@ -48,11 +48,14 @@
 /* Private variables ---------------------------------------------------------*/
 static rtgui_gfx_driver_t _gfx_drv;
 static rtgui_gfx_driver_t *_cur_drv = &_gfx_drv;
-
 #ifdef CONFIG_TOUCH_DEVICE_NAME
     static rt_bool_t _touch_done = RT_FALSE;
     static rt_device_t _touch;
     RTGUI_GETTER(touch_device, rt_device_t, _touch);
+#endif
+#ifdef CONFIG_KEY_DEVICE_NAME
+    static rt_device_t _key;
+    RTGUI_GETTER(key_device, rt_device_t, _key);
 #endif
 
 /* Private functions ---------------------------------------------------------*/
@@ -866,6 +869,42 @@ rt_err_t rtgui_set_touch_device(rt_device_t dev) {
     return ret;
 }
 #endif /* CONFIG_TOUCH_DEVICE_NAME */
+
+#ifdef CONFIG_KEY_DEVICE_NAME
+static void key_available(void) {
+    /* call by interrupt, send touch event to server */
+    rt_size_t len;
+
+    do {
+        rtgui_key_t data;
+        rtgui_evt_generic_t *evt;
+
+        len = rt_device_read(_key, 0, &data, 1);
+        if (!len) break;
+
+        /* send RTGUI_EVENT_TOUCH */
+        RTGUI_CREATE_EVENT(evt, KBD, RT_WAITING_NO);
+        if (!evt) break;
+        rt_memcpy(&evt->kbd.data, &data, sizeof(rtgui_key_t));
+        (void)rtgui_send_request(evt, RT_WAITING_NO);
+    } while (len > 0);
+}
+
+rt_err_t rtgui_set_key_device(rt_device_t dev) {
+    rt_err_t ret;
+
+    do {
+        ret = rt_device_open(dev, 0);
+        if (RT_EOK != ret) break;
+        /* set touch indicator */
+        ret = rt_device_control(dev, RT_DEVICE_CTRL_SET_RX_INDICATOR,
+            key_available);
+        _key = dev;
+    } while (0);
+
+    return ret;
+}
+#endif /* CONFIG_KEY_DEVICE_NAME */
 
 
 #ifdef RTGUI_USING_HW_CURSOR
