@@ -128,9 +128,8 @@ void rt_setup(void) {
   rt_thread_t tid;
 
   tid = rt_thread_create(
-          "mygui",
-          rt_gui_demo_entry, RT_NULL,
-          2048, 25, 10);
+    "mygui", rt_gui_demo_entry, RT_NULL,
+    CONFIG_APP_STACK_SIZE, CONFIG_APP_PRIORITY, CONFIG_APP_TIMESLICE);
 
   if (tid) {
     rt_thread_startup(tid);

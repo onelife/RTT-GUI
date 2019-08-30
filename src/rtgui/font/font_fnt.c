@@ -26,9 +26,9 @@
 #include "include/rtgui.h"
 #include "include/font/font.h"
 
-#ifdef RTGUI_USING_FONT_FILE
+#if (CONFIG_USING_FONT_FILE)
 # ifndef RT_USING_DFS
-#  error "Please enable RT_USING_DFS for RTGUI_USING_FONT_FILE"
+#  error "Please enable RT_USING_DFS for CONFIG_USING_FONT_FILE"
 # endif
 # include "components/dfs/include/dfs_posix.h"
 #endif
@@ -43,7 +43,7 @@
 #endif /* RT_USING_ULOG */
 
 /* Private function prototype ------------------------------------------------*/
-#ifdef RTGUI_USING_FONT_FILE
+#if (CONFIG_USING_FONT_FILE)
 static rt_err_t fnt_font_open(rtgui_font_t *font);
 static void fnt_font_close(rtgui_font_t *font);
 #endif
@@ -58,7 +58,7 @@ static rt_uint8_t fnt_font_get_width(rtgui_font_t *font, const char *utf8);
 /* Exported constants --------------------------------------------------------*/
 const rtgui_font_engine_t fnt_font_engine = {
     .font_init = RT_NULL,
-    #ifdef RTGUI_USING_FONT_FILE
+    #if (CONFIG_USING_FONT_FILE)
         .font_open = fnt_font_open,
         .font_close = fnt_font_close,
     #else
@@ -69,10 +69,10 @@ const rtgui_font_engine_t fnt_font_engine = {
     .font_get_width = fnt_font_get_width,
 };
 
-#ifdef GUIENGINE_USING_FONT12
+#if (CONFIG_USING_FONT_12)
 #include "include/font/asc12font.h"
 
-# ifdef RTGUI_USING_FONT_FILE
+# if (CONFIG_USING_FONT_FILE)
     static rtgui_fnt_font_t _asc12 = {
         .data = RT_NULL,
         .offset = _sysfont_offset,
@@ -101,10 +101,10 @@ const rtgui_font_engine_t fnt_font_engine = {
         .refer_count = 1,
         .list = { RT_NULL },
     };
-#endif /* GUIENGINE_USING_FONT12 */
+#endif /* CONFIG_USING_FONT_12 */
 
 /* Private functions ---------------------------------------------------------*/
-#ifdef RTGUI_USING_FONT_FILE
+#if (CONFIG_USING_FONT_FILE)
 static rt_err_t fnt_font_open(rtgui_font_t *font) {
     rtgui_fnt_font_t *fnt_font;
     rt_err_t ret;
@@ -155,7 +155,7 @@ static void fnt_font_close(rtgui_font_t *font) {
         LOG_D("closed %s", fnt_font->fname);
     }
 }
-#endif
+#endif /* CONFIG_USING_FONT_FILE */
 
 static const rt_uint8_t *_fnt_font_get_data(rtgui_font_t *font,
     rt_uint16_t code) {
@@ -166,7 +166,7 @@ static const rt_uint8_t *_fnt_font_get_data(rtgui_font_t *font,
     offset = fnt_font->offset[code - font->start];
     size = fnt_font->width[code - font->start] * 2;
 
-    #ifdef RTGUI_USING_FONT_FILE
+    #if (CONFIG_USING_FONT_FILE)
         if (fnt_font->fname) {
             do {
                 if (fnt_font->fd < 0) {
@@ -189,7 +189,7 @@ static const rt_uint8_t *_fnt_font_get_data(rtgui_font_t *font,
 
         return fnt_font->data + offset;
 
-    #ifdef RTGUI_USING_FONT_FILE
+    #if (CONFIG_USING_FONT_FILE)
         }
     #endif
 }

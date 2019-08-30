@@ -37,16 +37,16 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-#ifdef GUIENGINE_IMAGE_XPM
+#if (CONFIG_USING_IMAGE_XPM)
 extern rt_err_t rtgui_image_xpm_init(void);
 #endif
-#ifdef GUIENGINE_IMAGE_BMP
+#if (CONFIG_USING_IMAGE_BMP)
 extern rt_err_t rtgui_image_bmp_init(void);
 #endif
-#ifdef GUIENGINE_IMAGE_JPEG
+#if (CONFIG_USING_IMAGE_JPEG)
 extern rt_err_t rtgui_image_jpeg_init(void);
 #endif
-#ifdef GUIENGINE_IMAGE_PNG
+#if (CONFIG_USING_IMAGE_PNG)
 extern rt_err_t rtgui_image_png_init(void);
 #endif
 
@@ -57,22 +57,22 @@ rt_err_t rtgui_system_image_init(void) {
     rt_err_t ret = RT_EOK;
 
     do {
-        #ifdef GUIENGINE_IMAGE_XPM
+        #if (CONFIG_USING_IMAGE_XPM)
             ret = rtgui_image_xpm_init();
             if (RT_EOK != ret) break;
             LOG_D("XPM init");
         #endif
-        #ifdef GUIENGINE_IMAGE_BMP
+        #if (CONFIG_USING_IMAGE_BMP)
             ret = rtgui_image_bmp_init();
             if (RT_EOK != ret) break;
             LOG_D("BMP init");
         #endif
-        #ifdef GUIENGINE_IMAGE_JPEG
+        #if (CONFIG_USING_IMAGE_JPEG)
             ret = rtgui_image_jpeg_init();
             if (RT_EOK != ret) break;
             LOG_D("JPEG init");
         #endif
-        #ifdef GUIENGINE_IMAGE_PNG
+        #if (CONFIG_USING_IMAGE_PNG)
             ret = rtgui_image_png_init();
             if (RT_EOK != ret) break;
             LOG_D("PNG init");
@@ -98,7 +98,7 @@ static rtgui_image_engine_t *rtgui_image_get_engine(const char *type) {
     return RT_NULL;
 }
 
-#ifdef GUIENGINE_USING_DFS_FILERW
+#ifdef RTGUI_USING_DFS_FILERW
 
 rtgui_image_engine_t *rtgui_image_get_engine_by_filename(const char *fn) {
     rt_slist_t *node;
@@ -224,7 +224,7 @@ rtgui_image_t *rtgui_image_create(const char *fn, rt_int32_t scale,
 }
 RTM_EXPORT(rtgui_image_create);
 
-#endif /* GUIENGINE_USING_DFS_FILERW */
+#endif /* RTGUI_USING_DFS_FILERW */
 
 rtgui_image_t *rtgui_image_create_from_mem(const char *type,
     const rt_uint8_t *data, rt_size_t size, rt_int32_t scale, rt_bool_t load) {

@@ -249,7 +249,8 @@ static void picShow_entry(void *param) {
 // RT-Thread function called by "RT_T.begin()"
 void rt_setup(void) {
   rt_thread_t tid = rt_thread_create(
-    "picShow", picShow_entry, RT_NULL, 2048, 25, 10);
+    "picShow", picShow_entry, RT_NULL,
+    CONFIG_APP_STACK_SIZE, CONFIG_APP_PRIORITY, CONFIG_APP_TIMESLICE);
   if (tid) {
     rt_thread_startup(tid);
   } else {
@@ -283,7 +284,7 @@ void loop() {
       rt_thread_sleep(20);
       continue;
     }
-    LOG_I("In loop TX: %s", info.path);
+    LOG_I("In loop TX: %s", path);
 
     PICTURE_SETTER(path)(pic, path);
     timeout = RT_FALSE;

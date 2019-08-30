@@ -364,9 +364,9 @@ rt_err_t rtgui_server_init(void) {
         tid = rt_thread_create(
             "rtgui",
             server_entry, RT_NULL,
-            GUIENGIN_SVR_THREAD_STACK_SIZE,
-            GUIENGINE_SVR_THREAD_PRIORITY,
-            GUIENGINE_SVR_THREAD_TIMESLICE);
+            RTGUI_SERVER_STACK_SIZE,
+            RTGUI_SERVER_PRIORITY,
+            RTGUI_SERVER_TIMESLICE);
         if (!tid) {
             ret = -RT_ENOMEM;
             break;

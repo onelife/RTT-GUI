@@ -53,7 +53,7 @@ struct rtgui_fnt_font {
     void *data;
     const rt_uint16_t *offset;
     const rt_uint8_t *width;
-    #ifdef RTGUI_USING_FONT_FILE
+    #if (CONFIG_USING_FONT_FILE)
         const char *fname;
         int fd;
     #endif
@@ -61,7 +61,7 @@ struct rtgui_fnt_font {
 
 struct rtgui_bmp_font {
     void *data;
-    #ifdef RTGUI_USING_FONT_FILE
+    #if (CONFIG_USING_FONT_FILE)
         const char *fname;
         int fd;
     #endif
@@ -106,15 +106,15 @@ extern const rtgui_font_engine_t fnt_font_engine;
 extern const rtgui_font_engine_t bmp_font_engine;
 
 /* Exported variables --------------------------------------------------------*/
-#ifdef GUIENGINE_USING_FONT12
+#if (CONFIG_USING_FONT_12)
 extern rtgui_font_t rtgui_font_asc12;
-# ifdef GUIENGINE_USING_FONTHZ
+# if (CONFIG_USING_FONT_HZ)
 extern rtgui_font_t rtgui_font_hz12;
 # endif
 #endif
-#ifdef GUIENGINE_USING_FONT16
+#if (CONFIG_USING_FONT_16)
 extern rtgui_font_t rtgui_font_asc16;
-# ifdef GUIENGINE_USING_FONTHZ
+# if (CONFIG_USING_FONT_HZ)
 extern rtgui_font_t rtgui_font_hz16;
 # endif
 #endif
@@ -138,7 +138,7 @@ rt_uint32_t rtgui_font_get_string_width(rtgui_font_t *font, const char *text);
 void rtgui_font_get_metrics(rtgui_font_t *font, const char *text,
     rtgui_rect_t *rect);
 
-#ifdef GUIENGINE_USING_FONTHZ
+#if (CONFIG_USING_FONT_HZ)
 rt_uint16_t UnicodeToGB2312(rt_uint16_t unicode);
 #endif
 

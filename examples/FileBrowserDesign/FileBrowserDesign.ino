@@ -166,7 +166,8 @@ static void fileBrowser_entry(void *param) {
 // RT-Thread function called by "RT_T.begin()"
 void rt_setup(void) {
   rt_thread_t tid = rt_thread_create(
-    "FileBrowser", fileBrowser_entry, RT_NULL, 2048, 25, 10);
+    "FileBrowser", fileBrowser_entry, RT_NULL,
+    4 * 512, CONFIG_APP_PRIORITY, CONFIG_APP_TIMESLICE);
   if (tid) {
     rt_thread_startup(tid);
   } else {

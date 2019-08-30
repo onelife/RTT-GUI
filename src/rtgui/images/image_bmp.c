@@ -26,7 +26,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 
-#ifdef GUIENGINE_IMAGE_BMP
+#if (CONFIG_USING_IMAGE_BMP)
 
 #include "include/blit.h"
 #include "include/image.h"
@@ -311,7 +311,7 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
 
         err = RT_EOK;
         if (load_body) {
-            rtgui_blit_line_func2 blit_line;
+            rtgui_blit_line_func blit_line;
             rt_uint16_t y;
             rt_uint8_t *dst;
 
@@ -427,7 +427,7 @@ static void bmp_blit(rtgui_image_t *img, rtgui_dc_t *dc,
         h = _MIN(img->h, RECT_H(*dst_rect));
 
         if (!bmp->is_loaded) {
-            rtgui_blit_line_func2 blit_line;
+            rtgui_blit_line_func blit_line;
             rt_uint16_t y;
 
             /* prepare to decode */
@@ -718,4 +718,4 @@ int prtscn(int argc, char **argv) {
 
 #endif /* defined(RT_USING_DFS) && defined(RT_USING_FINSH) */
 
-#endif /* GUIENGINE_IMAGE_BMP */
+#endif /* CONFIG_USING_IMAGE_BMP */

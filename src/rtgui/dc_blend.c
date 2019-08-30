@@ -71,10 +71,13 @@
   Andreas Schiffler -- aschiffler at ferzkopp dot net
 */
 
+#include "include/rtgui.h"
+
+#ifdef RTGUI_USING_DC_BUFFER
+
 #include <stdlib.h>
 #include <math.h>
 
-#include "include/rtgui.h"
 #include "include/dc_draw.h"
 
 #define hw_driver               (rtgui_get_gfx_device())
@@ -1156,7 +1159,7 @@ _dc_blend_line_rgb888(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
     {
         switch (blendMode)
         {
-#ifdef GUIENGINE_USING_RGB888_AS_32BIT
+#ifdef RTGUI_USING_RGB888_AS_32BIT
         case RTGUI_BLENDMODE_BLEND:
             HLINE(rt_uint32_t, DRAW_SETPIXEL_BLEND_RGB888, draw_end);
             break;
@@ -1189,7 +1192,7 @@ _dc_blend_line_rgb888(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
     {
         switch (blendMode)
         {
-#ifdef GUIENGINE_USING_RGB888_AS_32BIT
+#ifdef RTGUI_USING_RGB888_AS_32BIT
         case RTGUI_BLENDMODE_BLEND:
             VLINE(rt_uint32_t, DRAW_SETPIXEL_BLEND_RGB888, draw_end);
             break;
@@ -1222,7 +1225,7 @@ _dc_blend_line_rgb888(rtgui_dc_t * dst, int x1, int y1, int x2, int y2,
     {
         switch (blendMode)
         {
-#ifdef GUIENGINE_USING_RGB888_AS_32BIT
+#ifdef RTGUI_USING_RGB888_AS_32BIT
         case RTGUI_BLENDMODE_BLEND:
             DLINE(rt_uint32_t, DRAW_SETPIXEL_BLEND_RGB888, draw_end);
             break;
@@ -1618,7 +1621,7 @@ _dc_blend_fill_rect_rgb888(rtgui_dc_t * dst, const rtgui_rect_t * rect,
 
     switch (blendMode)
     {
-#ifdef GUIENGINE_USING_RGB888_AS_32BIT
+#ifdef RTGUI_USING_RGB888_AS_32BIT
     case RTGUI_BLENDMODE_BLEND:
         FILLRECT(rt_uint32_t, DRAW_SETPIXEL_BLEND_RGB888);
         break;
@@ -2804,3 +2807,5 @@ int rtgui_dc_draw_thick_line(rtgui_dc_t * dst, rt_int16_t x1, rt_int16_t y1, rt_
     return(0);
 }
 RTM_EXPORT(rtgui_dc_draw_thick_line);
+
+#endif /* RTGUI_USING_DC_BUFFER */

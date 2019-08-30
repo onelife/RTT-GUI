@@ -76,7 +76,7 @@ struct rtgui_image {
 /* Exported functions ------------------------------------------------------- */
 rt_err_t rtgui_system_image_init(void);
 
-#ifdef GUIENGINE_USING_DFS_FILERW
+#ifdef RTGUI_USING_DFS_FILERW
 rtgui_image_engine_t *rtgui_image_get_engine_by_filename(const char *fn);
 rtgui_image_t *rtgui_image_create_from_file(const char *type, const char *fn,
     rt_int32_t scale, rt_bool_t load);

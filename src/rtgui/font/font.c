@@ -55,13 +55,13 @@ rt_err_t rtgui_font_system_init(void) {
     ret = RT_EOK;
 
     do {
-        #ifdef GUIENGINE_USING_FONT12
+        #if (CONFIG_USING_FONT_12)
             ret = rtgui_font_system_add_font(&rtgui_font_asc12);
             if (RT_EOK != ret) break;
             _default_font = &rtgui_font_asc12;
             LOG_D("add asc12");
 
-        # ifdef GUIENGINE_USING_FONTHZ
+        # if (CONFIG_USING_FONT_HZ)
             ret = rtgui_font_system_add_font(&rtgui_font_hz12);
             if (RT_EOK != ret) break;
             _default_font = &rtgui_font_hz12;
@@ -69,13 +69,13 @@ rt_err_t rtgui_font_system_init(void) {
         # endif
         #endif
 
-        #ifdef GUIENGINE_USING_FONT16
+        #if (CONFIG_USING_FONT_16)
             ret = rtgui_font_system_add_font(&rtgui_font_asc16);
             if (RT_EOK != ret) break;
             _default_font = &rtgui_font_asc16;
             LOG_D("add asc16");
 
-        # ifdef GUIENGINE_USING_FONTHZ
+        # if (CONFIG_USING_FONT_HZ)
             ret = rtgui_font_system_add_font(&rtgui_font_hz16);
             if (RT_EOK != ret) break;
             _default_font = &rtgui_font_hz16;
@@ -174,7 +174,7 @@ void rtgui_font_draw(rtgui_font_t *font, rtgui_dc_t *dc, const char *text,
 
     if (!rt_strcasecmp(font->family, "asc")) {
         ascii = font;
-        #ifdef GUIENGINE_USING_FONTHZ
+        #if (CONFIG_USING_FONT_HZ)
             non_ascii = rtgui_font_refer("hz", font->height);
         #else
             non_ascii = RT_NULL;
@@ -201,13 +201,18 @@ void rtgui_font_draw(rtgui_font_t *font, rtgui_dc_t *dc, const char *text,
             rt_uint16_t code;
             rtgui_font_t *_font;
 
-            if (IS_ASCII(utf8, size) && ascii) {
+            #if (CONFIG_USING_FONT_HZ)
+                if (IS_ASCII(utf8, size) && ascii) {
+                    code = UTF8_TO_UNICODE(utf8, size);
+                    _font = ascii;
+                } else {
+                    code = UnicodeToGB2312(UTF8_TO_UNICODE(utf8, size));
+                     _font = non_ascii;
+                }
+            #else
                 code = UTF8_TO_UNICODE(utf8, size);
                 _font = ascii;
-            } else {
-                code = UnicodeToGB2312(UTF8_TO_UNICODE(utf8, size));
-                 _font = non_ascii;
-            }
+            #endif
 
             /* draw a char */
             text_rect.x1 += rtgui_font_draw_char(_font, dc, code, &text_rect);
@@ -259,7 +264,7 @@ rt_uint32_t rtgui_font_get_string_width(rtgui_font_t *font, const char *text) {
 
     if (!rt_strcasecmp(font->family, "asc")) {
         ascii = font;
-        #ifdef GUIENGINE_USING_FONTHZ
+        #if (CONFIG_USING_FONT_HZ)
             non_ascii = rtgui_font_refer("hz", font->height);
         #else
             non_ascii = RT_NULL;

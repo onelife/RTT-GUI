@@ -68,150 +68,161 @@ static rtgui_gfx_driver_t *_cur_drv = &_gfx_drv;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
-/* pixel type device operations */
-static void _pixel_mono_set_pixel(rtgui_color_t *c, int x, int y) {
-    rtgui_color_t pixel = rtgui_color_to_mono(*c);
-    graphic_ops()->set_pixel(&pixel, x, y);
-}
-
-static void _pixel_mono_get_pixel(rtgui_color_t *c, int x, int y) {
-    rtgui_color_t pixel;
-
-    graphic_ops()->get_pixel(&pixel, x, y);
-    *c = rtgui_color_from_mono(pixel);
-}
-
-static void _pixel_mono_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
-    rtgui_color_t pixel = rtgui_color_to_mono(*c);
-    graphic_ops()->draw_hline(&pixel, x1, x2, y);
-}
-
-static void _pixel_mono_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
-    rtgui_color_t pixel = rtgui_color_to_mono(*c);
-    graphic_ops()->draw_vline(&pixel, x, y1, y2);
-}
-
-
-static void _pixel_rgb565_set_pixel(rtgui_color_t *c, int x, int y) {
-    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565(*c);
-    graphic_ops()->set_pixel(&pixel, x, y);
-}
-
-static void _pixel_rgb565_get_pixel(rtgui_color_t *c, int x, int y) {
-    graphic_ops()->get_pixel(c, x, y);
-    // *c = rtgui_color_from_565((rt_uint16_t)pixel);
-}
-
-static void _pixel_rgb565_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
-    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565(*c);
-    graphic_ops()->draw_hline(&pixel, x1, x2, y);
-}
-
-static void _pixel_rgb565_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
-    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565(*c);
-    graphic_ops()->draw_vline(&pixel, x, y1, y2);
-}
-
-
-static void _pixel_rgb565p_set_pixel(rtgui_color_t *c, int x, int y) {
-    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565p(*c);
-    graphic_ops()->set_pixel(&pixel, x, y);
-}
-
-static void _pixel_rgb565p_get_pixel(rtgui_color_t *c, int x, int y) {
-    rtgui_color_t pixel;
-
-    graphic_ops()->get_pixel(&pixel, x, y);
-    *c = rtgui_color_from_565p((rt_uint16_t)pixel);
-}
-
-static void _pixel_rgb565p_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
-    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565p(*c);
-    graphic_ops()->draw_hline(&pixel, x1, x2, y);
-}
-
-static void _pixel_rgb565p_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
-    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565p(*c);
-    graphic_ops()->draw_vline(&pixel, x, y1, y2);
-}
-
-
-static void _pixel_rgb888_set_pixel(rtgui_color_t *c, int x, int y) {
-    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_888(*c);
-    graphic_ops()->set_pixel(&pixel, x, y);
-}
-
-static void _pixel_rgb888_get_pixel(rtgui_color_t *c, int x, int y) {
-    rtgui_color_t pixel;
-
-    graphic_ops()->get_pixel(&pixel, x, y);
-    *c = rtgui_color_from_888((rt_uint32_t)pixel);
-}
-
-static void _pixel_rgb888_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
-    rtgui_color_t pixel = rtgui_color_to_888(*c);
-    graphic_ops()->draw_hline(&pixel, x1, x2, y);
-}
-
-static void _pixel_rgb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
-    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_888(*c);
-    graphic_ops()->draw_vline(&pixel, x, y1, y2);
-}
-
-
-static void _pixel_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y) {
+static void _draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y) {
     if (x2 > x1)
         graphic_ops()->draw_raw_hline(pixels, x1, x2, y);
     else
         graphic_ops()->draw_raw_hline(pixels, x2, x2, y);
 }
 
+#if (CONFIG_USING_MONO)
+static void _mono_set_pixel(rtgui_color_t *c, int x, int y) {
+    rtgui_color_t pixel = rtgui_color_to_mono(*c);
+    graphic_ops()->set_pixel(&pixel, x, y);
+}
 
-static const struct rtgui_graphic_driver_ops _pixel_mono_ops = {
-    _pixel_mono_set_pixel,
-    _pixel_mono_get_pixel,
-    _pixel_mono_draw_hline,
-    _pixel_mono_draw_vline,
-    _pixel_draw_raw_hline,
-};
+static void _mono_get_pixel(rtgui_color_t *c, int x, int y) {
+    rtgui_color_t pixel;
 
-static const struct rtgui_graphic_driver_ops _pixel_rgb565p_ops = {
-    _pixel_rgb565p_set_pixel,
-    _pixel_rgb565p_get_pixel,
-    _pixel_rgb565p_draw_hline,
-    _pixel_rgb565p_draw_vline,
-    _pixel_draw_raw_hline,
-};
+    graphic_ops()->get_pixel(&pixel, x, y);
+    *c = rtgui_color_from_mono(pixel);
+}
 
-static const struct rtgui_graphic_driver_ops _pixel_rgb565_ops = {
-    _pixel_rgb565_set_pixel,
-    _pixel_rgb565_get_pixel,
-    _pixel_rgb565_draw_hline,
-    _pixel_rgb565_draw_vline,
-    _pixel_draw_raw_hline,
-};
+static void _mono_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
+    rtgui_color_t pixel = rtgui_color_to_mono(*c);
+    graphic_ops()->draw_hline(&pixel, x1, x2, y);
+}
 
-static const struct rtgui_graphic_driver_ops _pixel_rgb888_ops = {
-    _pixel_rgb888_set_pixel,
-    _pixel_rgb888_get_pixel,
-    _pixel_rgb888_draw_hline,
-    _pixel_rgb888_draw_vline,
-    _pixel_draw_raw_hline,
+static void _mono_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
+    rtgui_color_t pixel = rtgui_color_to_mono(*c);
+    graphic_ops()->draw_vline(&pixel, x, y1, y2);
+}
+
+static const struct rtgui_graphic_driver_ops _mono_ops = {
+    _mono_set_pixel,
+    _mono_get_pixel,
+    _mono_draw_hline,
+    _mono_draw_vline,
+    _draw_raw_hline,
 };
+#endif /* CONFIG_USING_MONO */
+
+#if (CONFIG_USING_RGB565)
+static void _rgb565_set_pixel(rtgui_color_t *c, int x, int y) {
+    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565(*c);
+    graphic_ops()->set_pixel(&pixel, x, y);
+}
+
+static void _rgb565_get_pixel(rtgui_color_t *c, int x, int y) {
+    graphic_ops()->get_pixel(c, x, y);
+    // *c = rtgui_color_from_565((rt_uint16_t)pixel);
+}
+
+static void _rgb565_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
+    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565(*c);
+    graphic_ops()->draw_hline(&pixel, x1, x2, y);
+}
+
+static void _rgb565_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
+    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565(*c);
+    graphic_ops()->draw_vline(&pixel, x, y1, y2);
+}
+
+static const struct rtgui_graphic_driver_ops _rgb565_ops = {
+    _rgb565_set_pixel,
+    _rgb565_get_pixel,
+    _rgb565_draw_hline,
+    _rgb565_draw_vline,
+    _draw_raw_hline,
+};
+#endif /* CONFIG_USING_RGB565 */
+
+#if (CONFIG_USING_RGB565P)
+static void _rgb565p_set_pixel(rtgui_color_t *c, int x, int y) {
+    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565p(*c);
+    graphic_ops()->set_pixel(&pixel, x, y);
+}
+
+static void _rgb565p_get_pixel(rtgui_color_t *c, int x, int y) {
+    rtgui_color_t pixel;
+
+    graphic_ops()->get_pixel(&pixel, x, y);
+    *c = rtgui_color_from_565p((rt_uint16_t)pixel);
+}
+
+static void _rgb565p_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
+    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565p(*c);
+    graphic_ops()->draw_hline(&pixel, x1, x2, y);
+}
+
+static void _rgb565p_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
+    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_565p(*c);
+    graphic_ops()->draw_vline(&pixel, x, y1, y2);
+}
+
+static const struct rtgui_graphic_driver_ops _rgb565p_ops = {
+    _rgb565p_set_pixel,
+    _rgb565p_get_pixel,
+    _rgb565p_draw_hline,
+    _rgb565p_draw_vline,
+    _draw_raw_hline,
+};
+#endif /* CONFIG_USING_RGB565P */
+
+#if (CONFIG_USING_RGB888)
+static void _rgb888_set_pixel(rtgui_color_t *c, int x, int y) {
+    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_888(*c);
+    graphic_ops()->set_pixel(&pixel, x, y);
+}
+
+static void _rgb888_get_pixel(rtgui_color_t *c, int x, int y) {
+    rtgui_color_t pixel;
+
+    graphic_ops()->get_pixel(&pixel, x, y);
+    *c = rtgui_color_from_888((rt_uint32_t)pixel);
+}
+
+static void _rgb888_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
+    rtgui_color_t pixel = rtgui_color_to_888(*c);
+    graphic_ops()->draw_hline(&pixel, x1, x2, y);
+}
+
+static void _rgb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
+    rtgui_color_t pixel = (rtgui_color_t)rtgui_color_to_888(*c);
+    graphic_ops()->draw_vline(&pixel, x, y1, y2);
+}
+
+static const struct rtgui_graphic_driver_ops _rgb888_ops = {
+    _rgb888_set_pixel,
+    _rgb888_get_pixel,
+    _rgb888_draw_hline,
+    _rgb888_draw_vline,
+    _draw_raw_hline,
+};
+#endif /* CONFIG_USING_RGB888 */
 
 static const struct rtgui_graphic_driver_ops *_get_pixel_ops(rt_uint32_t fmt) {
     switch (fmt) {
+
+    #if (CONFIG_USING_MONO)
     case RTGRAPHIC_PIXEL_FORMAT_MONO:
-        return &_pixel_mono_ops;
+        return &_mono_ops;
+    #endif
 
+    #if (CONFIG_USING_RGB565)
     case RTGRAPHIC_PIXEL_FORMAT_RGB565:
-        return &_pixel_rgb565_ops;
+        return &_rgb565_ops;
+    #endif
 
+    #if (CONFIG_USING_RGB565P)
     case RTGRAPHIC_PIXEL_FORMAT_RGB565P:
-        return &_pixel_rgb565p_ops;
+        return &_rgb565p_ops;
+    #endif
 
+    #if (CONFIG_USING_RGB888)
     case RTGRAPHIC_PIXEL_FORMAT_RGB888:
-        return &_pixel_rgb888_ops;
+        return &_rgb888_ops;
+    #endif
 
     default:
         return RT_NULL;
@@ -223,14 +234,15 @@ static const struct rtgui_graphic_driver_ops *_get_pixel_ops(rt_uint32_t fmt) {
 
 #define PIXEL(x, y)     ((rt_uint8_t **)display()->framebuffer)[y / 8][x]
 
-static void _mono_set_pixel(rtgui_color_t *c, int x, int y) {
+#if (CONFIG_USING_MONO)
+static void _frame_mono_set_pixel(rtgui_color_t *c, int x, int y) {
     if (*c == white)
         PIXEL(x, y) &= ~(1 << (y % 8));
     else
         PIXEL(x, y) |=  (1 << (y % 8));
 }
 
-static void _mono_get_pixel(rtgui_color_t *c, int x, int y) {
+static void _frame_mono_get_pixel(rtgui_color_t *c, int x, int y) {
     rtgui_gfx_driver_t *drv = rtgui_get_gfx_device();
 
     if (PIXEL(x, y) & (1 << (y % 8)))
@@ -239,7 +251,7 @@ static void _mono_get_pixel(rtgui_color_t *c, int x, int y) {
         *c = white;
 }
 
-static void _mono_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
+static void _frame_mono_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
     int x;
 
     if (*c == white) {
@@ -251,7 +263,7 @@ static void _mono_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
     }
 }
 
-static void _mono_draw_vline(rtgui_color_t *c, int x , int y1, int y2) {
+static void _frame_mono_draw_vline(rtgui_color_t *c, int x , int y1, int y2) {
     int y;
 
     if (*c == white) {
@@ -263,10 +275,11 @@ static void _mono_draw_vline(rtgui_color_t *c, int x , int y1, int y2) {
     }
 }
 
-static void _mono_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y) {
+static void _frame_mono_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2,
+    int y) {
     int x;
 
-    for (x = x1; x < x2; x++)     {
+    for (x = x1; x < x2; x++) {
         if (pixels[x / 8] && (1 << (x % 8)))
             PIXEL(x, y) |= (1 << (y % 8));
         else
@@ -275,198 +288,219 @@ static void _mono_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y) {
 }
 
 #undef PIXEL
+
+const struct rtgui_graphic_driver_ops _frame_mono_ops = {
+    _frame_mono_set_pixel,
+    _frame_mono_get_pixel,
+    _frame_mono_draw_hline,
+    _frame_mono_draw_vline,
+    _frame_mono_draw_raw_hline,
+};
+
+#endif /* CONFIG_USING_MONO */
+
 #define PIXEL(x, y)     (rtgui_get_gfx_device()->framebuffer + \
                          rtgui_get_gfx_device()->pitch * y + \
                          _BIT2BYTE(rtgui_get_gfx_device()->bits_per_pixel) * x)
 
-static void _rgb565_set_pixel(rtgui_color_t *c, int x, int y) {
-    *(rt_uint16_t *)PIXEL(x, y) = rtgui_color_to_565(*c);
-}
-
-static void _rgb565_get_pixel(rtgui_color_t *c, int x, int y) {
-    rt_uint16_t pixel = *(rt_uint16_t *)PIXEL(x, y);
-    *c = rtgui_color_from_565(pixel);
-}
-
-static void _rgb565_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
-    rt_uint16_t pixel = rtgui_color_to_565(*c);
-    rt_uint16_t *ptr = (rt_uint16_t *)PIXEL(x1, y);
-    int x;
-
-    for (x = x1; x < x2; x++, ptr++)
-        *ptr = pixel;
-}
-
-static void _rgb565_draw_vline(rtgui_color_t *c, int x , int y1, int y2) {
-    rt_uint16_t pixel = rtgui_color_to_565(*c);
-    rt_uint16_t *ptr = (rt_uint16_t *)PIXEL(x, y1);
-    int y;
-
-    for (y = y1; y < y2; y++, ptr += rtgui_get_gfx_device()->width)
-        *ptr = pixel;
-}
-
-static void _rgb565p_set_pixel(rtgui_color_t *c, int x, int y) {
-    *(rt_uint16_t *)PIXEL(x, y) = rtgui_color_to_565p(*c);
-}
-
-static void _rgb565p_get_pixel(rtgui_color_t *c, int x, int y) {
-    rt_uint16_t pixel = *(rt_uint16_t *)PIXEL(x, y);
-    *c = rtgui_color_from_565p(pixel);
-}
-
-static void _rgb565p_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
-    rt_uint16_t pixel = rtgui_color_to_565p(*c);
-    rt_uint16_t *ptr = (rt_uint16_t *)PIXEL(x1, y);
-    int x;
-
-    for (x = x1; x < x2; x++, ptr++)
-        *ptr = pixel;
-}
-
-static void _rgb565p_draw_vline(rtgui_color_t *c, int x , int y1, int y2) {
-    rt_uint16_t pixel = rtgui_color_to_565p(*c);
-    rt_uint16_t *ptr = (rt_uint16_t *)PIXEL(x, y1);
-    int y;
-
-    for (y = y1; y < y2; y++, ptr += rtgui_get_gfx_device()->width)
-        *ptr = pixel;
-}
-
-static void _rgb888_set_pixel(rtgui_color_t *c, int x, int y) {
-    #ifdef GUIENGINE_USING_RGB888_AS_32BIT
-        *(rtgui_color_t *)PIXEL(x, y) = *c;
-    #else
-        *(rtgui_color_t *)PIXEL(x, y) = *c & 0x00ffffff;
-    #endif
-}
-
-static void _rgb888_get_pixel(rtgui_color_t *c, int x, int y) {
-    #ifdef GUIENGINE_USING_RGB888_AS_32BIT
-        *c = *(rtgui_color_t *)PIXEL(x, y);
-    #else
-        *c = *(rtgui_color_t *)PIXEL(x, y) & 0x00ffffff;
-    #endif
-}
-
-static void _rgb888_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
-    rtgui_color_t *ptr = (rtgui_color_t *)PIXEL(x1, y);
-    int x;
-
-    for (x = x1; x < x2; x++, ptr++)
-        #ifdef GUIENGINE_USING_RGB888_AS_32BIT
-            *ptr = *c;
-        #else
-            *ptr = *c & 0x00ffffff;
-        #endif
-}
-
-static void _rgb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
-    rtgui_color_t *ptr = (rtgui_color_t *)PIXEL(x, y1);
-    int y;
-
-    for (y = y1; y < y2; y++, ptr += rtgui_get_gfx_device()->width)
-        #ifdef GUIENGINE_USING_RGB888_AS_32BIT
-            *ptr = *c;
-        #else
-            *ptr = *c & 0x00ffffff;
-        #endif
-}
-
-static void _argb888_set_pixel(rtgui_color_t *c, int x, int y) {
-    *(rtgui_color_t *)PIXEL(x, y) = *c;
-}
-
-static void _argb888_get_pixel(rtgui_color_t *c, int x, int y) {
-    *(rtgui_color_t *)PIXEL(x, y) = *c;
-}
-
-static void _argb888_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
-    rtgui_color_t *ptr = (rtgui_color_t *)PIXEL(x1, y);
-    int x;
-
-    for (x = x1; x < x2; x++, ptr++)
-        *ptr = *c;
-}
-
-static void _argb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
-    rtgui_color_t *ptr = (rtgui_color_t *)PIXEL(x, y1);
-    int y;
-
-    for (y = y1; y < y2; y++, ptr += rtgui_get_gfx_device()->width)
-        *ptr = *c;
-}
-
-static void _draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y) {
+static void _frame_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y) {
     rt_uint8_t *ptr = (rt_uint8_t *)PIXEL(x1, y);
 
     rt_memcpy(ptr, pixels,
         (x2 - x1) * _BIT2BYTE(rtgui_get_gfx_device()->bits_per_pixel));
 }
 
-#undef PIXEL
+#if (CONFIG_USING_RGB565)
+static void _frame_rgb565_set_pixel(rtgui_color_t *c, int x, int y) {
+    *(rt_uint16_t *)PIXEL(x, y) = rtgui_color_to_565(*c);
+}
 
+static void _frame_rgb565_get_pixel(rtgui_color_t *c, int x, int y) {
+    rt_uint16_t pixel = *(rt_uint16_t *)PIXEL(x, y);
+    *c = rtgui_color_from_565(pixel);
+}
 
-const struct rtgui_graphic_driver_ops _frame_mono_ops = {
-    _mono_set_pixel,
-    _mono_get_pixel,
-    _mono_draw_hline,
-    _mono_draw_vline,
-    _mono_draw_raw_hline,
-};
+static void _frame_rgb565_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
+    rt_uint16_t pixel = rtgui_color_to_565(*c);
+    rt_uint16_t *ptr = (rt_uint16_t *)PIXEL(x1, y);
+    int x;
+
+    for (x = x1; x < x2; x++, ptr++)
+        *ptr = pixel;
+}
+
+static void _frame_rgb565_draw_vline(rtgui_color_t *c, int x , int y1, int y2) {
+    rt_uint16_t pixel = rtgui_color_to_565(*c);
+    rt_uint16_t *ptr = (rt_uint16_t *)PIXEL(x, y1);
+    int y;
+
+    for (y = y1; y < y2; y++, ptr += rtgui_get_gfx_device()->width)
+        *ptr = pixel;
+}
 
 const struct rtgui_graphic_driver_ops _frame_rgb565_ops = {
-    _rgb565_set_pixel,
-    _rgb565_get_pixel,
-    _rgb565_draw_hline,
-    _rgb565_draw_vline,
-    _draw_raw_hline,
+    _frame_rgb565_set_pixel,
+    _frame_rgb565_get_pixel,
+    _frame_rgb565_draw_hline,
+    _frame_rgb565_draw_vline,
+    _frame_draw_raw_hline,
 };
+#endif /* CONFIG_USING_RGB565 */
+
+#if (CONFIG_USING_RGB565P)
+static void _frame_rgb565p_set_pixel(rtgui_color_t *c, int x, int y) {
+    *(rt_uint16_t *)PIXEL(x, y) = rtgui_color_to_565p(*c);
+}
+
+static void _frame_rgb565p_get_pixel(rtgui_color_t *c, int x, int y) {
+    rt_uint16_t pixel = *(rt_uint16_t *)PIXEL(x, y);
+    *c = rtgui_color_from_565p(pixel);
+}
+
+static void _frame_rgb565p_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
+    rt_uint16_t pixel = rtgui_color_to_565p(*c);
+    rt_uint16_t *ptr = (rt_uint16_t *)PIXEL(x1, y);
+    int x;
+
+    for (x = x1; x < x2; x++, ptr++)
+        *ptr = pixel;
+}
+
+static void _frame_rgb565p_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
+    rt_uint16_t pixel = rtgui_color_to_565p(*c);
+    rt_uint16_t *ptr = (rt_uint16_t *)PIXEL(x, y1);
+    int y;
+
+    for (y = y1; y < y2; y++, ptr += rtgui_get_gfx_device()->width)
+        *ptr = pixel;
+}
 
 const struct rtgui_graphic_driver_ops _frame_rgb565p_ops = {
-    _rgb565p_set_pixel,
-    _rgb565p_get_pixel,
-    _rgb565p_draw_hline,
-    _rgb565p_draw_vline,
-    _draw_raw_hline,
+    _frame_rgb565p_set_pixel,
+    _frame_rgb565p_get_pixel,
+    _frame_rgb565p_draw_hline,
+    _frame_rgb565p_draw_vline,
+    _frame_draw_raw_hline,
 };
+#endif /* CONFIG_USING_RGB565P */
+
+#if (CONFIG_USING_RGB888)
+static void _frame_rgb888_set_pixel(rtgui_color_t *c, int x, int y) {
+    #ifdef RTGUI_USING_RGB888_AS_32BIT
+        *(rtgui_color_t *)PIXEL(x, y) = *c;
+    #else
+        *(rtgui_color_t *)PIXEL(x, y) = *c & 0x00ffffff;
+    #endif
+}
+
+static void _frame_rgb888_get_pixel(rtgui_color_t *c, int x, int y) {
+    #ifdef RTGUI_USING_RGB888_AS_32BIT
+        *c = *(rtgui_color_t *)PIXEL(x, y);
+    #else
+        *c = *(rtgui_color_t *)PIXEL(x, y) & 0x00ffffff;
+    #endif
+}
+
+static void _frame_rgb888_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
+    rtgui_color_t *ptr = (rtgui_color_t *)PIXEL(x1, y);
+    int x;
+
+    for (x = x1; x < x2; x++, ptr++)
+        #ifdef RTGUI_USING_RGB888_AS_32BIT
+            *ptr = *c;
+        #else
+            *ptr = *c & 0x00ffffff;
+        #endif
+}
+
+static void _frame_rgb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
+    rtgui_color_t *ptr = (rtgui_color_t *)PIXEL(x, y1);
+    int y;
+
+    for (y = y1; y < y2; y++, ptr += rtgui_get_gfx_device()->width)
+        #ifdef RTGUI_USING_RGB888_AS_32BIT
+            *ptr = *c;
+        #else
+            *ptr = *c & 0x00ffffff;
+        #endif
+}
 
 const struct rtgui_graphic_driver_ops _frame_rgb888_ops = {
-    _rgb888_set_pixel,
-    _rgb888_get_pixel,
-    _rgb888_draw_hline,
-    _rgb888_draw_vline,
-    _draw_raw_hline,
+    _frame_rgb888_set_pixel,
+    _frame_rgb888_get_pixel,
+    _frame_rgb888_draw_hline,
+    _frame_rgb888_draw_vline,
+    _frame_draw_raw_hline,
 };
+#endif /* CONFIG_USING_RGB888 */
+
+#if (CONFIG_USING_ARGB888)
+static void _frame_argb888_set_pixel(rtgui_color_t *c, int x, int y) {
+    *(rtgui_color_t *)PIXEL(x, y) = *c;
+}
+
+static void _frame_argb888_get_pixel(rtgui_color_t *c, int x, int y) {
+    *(rtgui_color_t *)PIXEL(x, y) = *c;
+}
+
+static void _frame_argb888_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
+    rtgui_color_t *ptr = (rtgui_color_t *)PIXEL(x1, y);
+    int x;
+
+    for (x = x1; x < x2; x++, ptr++)
+        *ptr = *c;
+}
+
+static void _frame_argb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
+    rtgui_color_t *ptr = (rtgui_color_t *)PIXEL(x, y1);
+    int y;
+
+    for (y = y1; y < y2; y++, ptr += rtgui_get_gfx_device()->width)
+        *ptr = *c;
+}
 
 const struct rtgui_graphic_driver_ops _frame_argb888_ops = {
-    _argb888_set_pixel,
-    _argb888_get_pixel,
-    _argb888_draw_hline,
-    _argb888_draw_vline,
-    _draw_raw_hline,
+    _frame_argb888_set_pixel,
+    _frame_argb888_get_pixel,
+    _frame_argb888_draw_hline,
+    _frame_argb888_draw_vline,
+    _frame_draw_raw_hline,
 };
+#endif /* CONFIG_USING_ARGB888 */
+
+#undef PIXEL
 
 static const struct rtgui_graphic_driver_ops *_get_frame_ops(rt_uint32_t fmt) {
     switch (fmt) {
+
+    #if (CONFIG_USING_MONO)
     case RTGRAPHIC_PIXEL_FORMAT_MONO:
         return &_frame_mono_ops;
+    #endif
 
     case RTGRAPHIC_PIXEL_FORMAT_GRAY4:
     case RTGRAPHIC_PIXEL_FORMAT_GRAY16:
         return RT_NULL;
 
+    #if (CONFIG_USING_RGB565)
     case RTGRAPHIC_PIXEL_FORMAT_RGB565:
         return &_frame_rgb565_ops;
+    #endif
 
+    #if (CONFIG_USING_RGB565P)
     case RTGRAPHIC_PIXEL_FORMAT_RGB565P:
         return &_frame_rgb565p_ops;
+    #endif
 
+    #if (CONFIG_USING_RGB888)
     case RTGRAPHIC_PIXEL_FORMAT_RGB888:
         return &_frame_rgb888_ops;
+    #endif
 
+    #if (CONFIG_USING_ARGB888)
     case RTGRAPHIC_PIXEL_FORMAT_ARGB888:
         return &_frame_argb888_ops;
+    #endif
 
     default:
         return RT_NULL;

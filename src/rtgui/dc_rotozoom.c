@@ -50,9 +50,12 @@ distribution.
 Andreas Schiffler -- aschiffler at ferzkopp dot net
 */
 
+#include "include/rtgui.h"
+
+#ifdef RTGUI_USING_DC_BUFFER
+
 #include <math.h>
 
-#include "include/rtgui.h"
 #include "include/dc_draw.h"
 
 /* ---- Internally used structures */
@@ -1086,3 +1089,4 @@ rtgui_dc_t *rtgui_dc_shrink(rtgui_dc_t *dc, int factorx, int factory)
 }
 RTM_EXPORT(rtgui_dc_shrink);
 
+#endif /* RTGUI_USING_DC_BUFFER */

@@ -39,6 +39,8 @@ const rtgui_color_t high_light  = RTGUI_RGB(0xfc, 0xfc, 0xfc);
 const rtgui_color_t dark_grey   = RTGUI_RGB(0x7f, 0x7f, 0x7f);
 const rtgui_color_t light_grey  = RTGUI_RGB(0xc0, 0xc0, 0xc0);
 
+#ifdef RTGUI_USING_DC_BUFFER
+
 static const rt_uint8_t pixel_bits_table[] = {
     1,      /* mono */
     2,      /* 4 level for gray */
@@ -48,7 +50,7 @@ static const rt_uint8_t pixel_bits_table[] = {
     16,     /* RGB565 */
     16,     /* BGR565 */
     18,     /* RGB666 */
-    GUIENGINE_RGB888_PIXEL_BITS, /* RGB888 */
+    RTGUI_RGB888_PIXEL_BITS, /* RGB888 */
     32,     /* ARGB888 */
 };
 
@@ -131,3 +133,5 @@ rt_uint8_t rtgui_color_get_bpp(rt_uint8_t pixel_format) {
     return 4;
 }
 RTM_EXPORT(rtgui_color_get_bpp);
+
+#endif /* RTGUI_USING_DC_BUFFER */

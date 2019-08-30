@@ -25,9 +25,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 
-#ifdef RTGUI_USING_FONT_FILE
+#if (CONFIG_USING_FONT_FILE)
 # ifndef RT_USING_DFS
-#  error "Please enable RT_USING_DFS for RTGUI_USING_FONT_FILE"
+#  error "Please enable RT_USING_DFS for CONFIG_USING_FONT_FILE"
 # endif
 # include "components/dfs/include/dfs_posix.h"
 #endif
@@ -42,7 +42,7 @@
 #endif /* RT_USING_ULOG */
 
 /* Private function prototype ------------------------------------------------*/
-#ifdef RTGUI_USING_FONT_FILE
+#if (CONFIG_USING_FONT_FILE)
 static rt_err_t bmp_font_open(rtgui_font_t *font);
 static void bmp_font_close(rtgui_font_t *font);
 #endif
@@ -57,7 +57,7 @@ static rt_uint8_t bmp_font_get_width(rtgui_font_t *font, const char *utf8);
 /* Exported constants --------------------------------------------------------*/
 const rtgui_font_engine_t bmp_font_engine = {
     .font_init = RT_NULL,
-    #ifdef RTGUI_USING_FONT_FILE
+    #if (CONFIG_USING_FONT_FILE)
         .font_open = bmp_font_open,
         .font_close = bmp_font_close,
     #else
@@ -68,9 +68,9 @@ const rtgui_font_engine_t bmp_font_engine = {
     .font_get_width = bmp_font_get_width,
 };
 
-#ifdef GUIENGINE_USING_FONT12
-# ifdef GUIENGINE_USING_FONTHZ
-#  ifdef RTGUI_USING_FONT_FILE
+#if (CONFIG_USING_FONT_12)
+# if (CONFIG_USING_FONT_HZ)
+#  if (CONFIG_USING_FONT_FILE)
     static rtgui_bmp_font_t _hz12 = {
         .data = RT_NULL,
         .fname = "/font/hz12.fnt",
@@ -96,11 +96,11 @@ const rtgui_font_engine_t bmp_font_engine = {
         .refer_count = 1,
         .list = { RT_NULL },
     };
-# endif /* GUIENGINE_USING_FONTHZ */
-#endif /* GUIENGINE_USING_FONT12 */
+# endif /* CONFIG_USING_FONT_HZ */
+#endif /* CONFIG_USING_FONT_12 */
 
-#ifdef GUIENGINE_USING_FONT16
-# ifdef RTGUI_USING_FONT_FILE
+#if (CONFIG_USING_FONT_16)
+# if (CONFIG_USING_FONT_FILE)
     static rtgui_bmp_font_t _asc16 = {
         .data = RT_NULL,
         .fname = "/font/asc16.fnt",
@@ -127,8 +127,8 @@ const rtgui_font_engine_t bmp_font_engine = {
         .list = { RT_NULL },
     };
 
-# ifdef GUIENGINE_USING_FONTHZ
-#  ifdef RTGUI_USING_FONT_FILE
+# if (CONFIG_USING_FONT_HZ)
+#  if (CONFIG_USING_FONT_FILE)
     static rtgui_bmp_font_t _hz16 = {
         .data = RT_NULL,
         .fname = "/font/hz16.fnt",
@@ -154,11 +154,11 @@ const rtgui_font_engine_t bmp_font_engine = {
         .refer_count = 1,
         .list = { RT_NULL },
     };
-# endif /* GUIENGINE_USING_FONTHZ */
-#endif /* GUIENGINE_USING_FONT16 */
+# endif /* CONFIG_USING_FONT_HZ */
+#endif /* CONFIG_USING_FONT_16 */
 
 /* Private functions ---------------------------------------------------------*/
-#ifdef RTGUI_USING_FONT_FILE
+#if (CONFIG_USING_FONT_FILE)
 static rt_err_t bmp_font_open(rtgui_font_t *font) {
     rtgui_bmp_font_t *bmp_fnt;
     rt_err_t ret;
@@ -209,7 +209,7 @@ static void bmp_font_close(rtgui_font_t *font) {
         // LOG_D("closed %s", bmp_fnt->fname);
     }
 }
-#endif
+#endif /* CONFIG_USING_FONT_FILE */
 
 static const rt_uint8_t *_bmp_font_get_data(rtgui_font_t *font,
     rt_uint16_t code) {
@@ -224,7 +224,7 @@ static const rt_uint8_t *_bmp_font_get_data(rtgui_font_t *font,
         offset *= font->size;
     }
 
-    #ifdef RTGUI_USING_FONT_FILE
+    #if (CONFIG_USING_FONT_FILE)
         if (bmp_fnt->fname) {
             do {
                 if (bmp_fnt->fd < 0) {
@@ -247,7 +247,7 @@ static const rt_uint8_t *_bmp_font_get_data(rtgui_font_t *font,
 
         return bmp_fnt->data + offset;
 
-    #ifdef RTGUI_USING_FONT_FILE
+    #if (CONFIG_USING_FONT_FILE)
         }
     #endif
 }

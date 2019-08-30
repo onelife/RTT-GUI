@@ -25,7 +25,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 
-#ifdef GUIENGINE_IMAGE_PNG
+#if (CONFIG_USING_IMAGE_PNG)
 
 #include "include/image.h"
 #include "include/blit.h"
@@ -292,7 +292,7 @@ static void png_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect) {
             rt_uint8_t *ptr;
 
             if (png->pixel_format != display()->pixel_format) {
-                rtgui_blit_line_func2 blit_line;
+                rtgui_blit_line_func blit_line;
                 rt_uint8_t *src, *dst;
 
                 blit_line = rtgui_get_blit_line_func(png->pixel_format,
@@ -343,4 +343,4 @@ rt_err_t rtgui_image_png_init(void) {
     return rtgui_image_register_engine(&png_engine);
 }
 
-#endif /* GUIENGINE_IMAGE_PNG */
+#endif /* CONFIG_USING_IMAGE_PNG */

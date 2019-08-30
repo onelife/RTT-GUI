@@ -34,7 +34,7 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-#ifdef GUIENGINE_USING_DFS_FILERW
+#ifdef RTGUI_USING_DFS_FILERW
 
 /* standard file read/write */
 struct rtgui_filerw_stdio {
@@ -229,7 +229,7 @@ const rt_uint8_t *rtgui_filerw_mem_getdata(rtgui_filerw_t *context)
 }
 
 /* file read/write public interface */
-#ifdef GUIENGINE_USING_DFS_FILERW
+#ifdef RTGUI_USING_DFS_FILERW
 static int parse_mode(const char *mode)
 {
     int f = 0;
@@ -302,7 +302,7 @@ int rtgui_filerw_unlink(const char *filename) {
     #endif
 }
 
-#endif /* GUIENGINE_USING_DFS_FILERW */
+#endif /* RTGUI_USING_DFS_FILERW */
 
 rtgui_filerw_t *rtgui_filerw_create_mem(const rt_uint8_t *mem, rt_size_t size)
 {

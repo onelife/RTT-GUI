@@ -91,11 +91,12 @@ APP: {
 
 * [ChaN's TJpgDec](http://www.elm-chan.org/fsw/tjpgd/00index.html)
   - This is a tiny JPEG decoder developed by ChaN
-  - To enable, set "GUIENGINE_IMAGE_JPEG" in "guiconfig.h"
+  - To enable, set "CONFIG_USING_IMAGE_JPEG" in "guiconfig.h"
 
 * [Lode Vandevenne's LodePNG](http://lodev.org/lodepng/)
   - PNG decoder developed by Lode Vandevenne
-  - Encoder is disabled currently
+  - To enable, set "CONFIG_USING_IMAGE_PNG" in "guiconfig.h"
+  - Encoder is disabled
   - No dependency or linkage to zlib or libpng required
   - Made for C (ISO C90) and has C++ wrapper
 

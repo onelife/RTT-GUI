@@ -30,9 +30,9 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
-#ifdef GUIENGINE_USING_DFS_FILERW
+#ifdef RTGUI_USING_DFS_FILERW
 # ifndef RT_USING_DFS
-#  error "Please enable RT_USING_DFS for GUIENGINE_USING_DFS_FILERW"
+#  error "Please enable RT_USING_DFS for RTGUI_USING_DFS_FILERW"
 # endif
 # include "components/dfs/include/dfs_posix.h"
 #endif

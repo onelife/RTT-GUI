@@ -216,7 +216,6 @@ static r_op_status_t _alloc_rects(rtgui_region_t *rgn, rt_uint32_t n) {
 
 #if (RTGUI_LOG_LEVEL >= LOG_LVL_DBG)
     static void _show_region(rtgui_region_t *rgn) {
-        rtgui_rect_t *rect;
         rt_uint32_t i;
 
         LOG_D("rgn->ext: %d %d, %d %d", rgn->extents.x1, rgn->extents.x2,
@@ -228,7 +227,7 @@ static r_op_status_t _alloc_rects(rtgui_region_t *rgn, rt_uint32_t n) {
         }
 
         for (i = 0; i < rgn->data->numRects; i++) {
-            rect = REGION_RECT_AT(rgn, i);
+            rtgui_rect_t *rect = REGION_RECT_AT(rgn, i);
             LOG_D("rgn->rect%d: %d %d, %d %d", i, rect->x1, rect->x2, rect->y1,
                 rect->y2);
         }

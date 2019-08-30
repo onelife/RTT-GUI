@@ -30,41 +30,91 @@
 #ifndef CONFIG_ARDUINO
 # define CONFIG_ARDUINO
 #endif
+#ifndef RT_THREAD_PRIORITY_MAX
+# define RT_THREAD_PRIORITY_MAX             (32)
+#endif
 
-#define CONFIG_GUI_DEVICE_NAME              "SSD1331"
-#define CONFIG_KEY_DEVICE_NAME              "BTN"
-// #define CONFIG_GUI_DEVICE_NAME              "ILI9341"
-// #define CONFIG_TOUCH_DEVICE_NAME            "FT6206"
 
-#define CONFIG_JPEG_BUFFER_SIZE             (4 * 1024) 
-#define CONFIG_JPEG_OUTPUT_RGB565           (1)
-#define RTGUI_BIG_ENDIAN_OUTPUT
+/* User Config */
+
+/* RT-Thread Device Name */
+// #define CONFIG_GUI_DEVICE_NAME              "SSD1331"
+// #define CONFIG_KEY_DEVICE_NAME              "BTN"
+#define CONFIG_GUI_DEVICE_NAME              "ILI9341"
+#define CONFIG_TOUCH_DEVICE_NAME            "FT6206"
+
+/* Color */
+#define CONFIG_USING_MONO                   (0)
+#define CONFIG_USING_RGB565                 (1)
+#define CONFIG_USING_RGB565P                (0)
+#define CONFIG_USING_RGB888                 (0)
+
+/* Image Decoder */
+#define CONFIG_USING_IMAGE_XPM              (1)
+#define CONFIG_USING_IMAGE_BMP              (1)
+#define CONFIG_USING_IMAGE_JPEG             (1)
+#define CONFIG_USING_IMAGE_PNG              (0)
+
+/* Font */
+#define CONFIG_USING_FONT_12                (0)
+#define CONFIG_USING_FONT_16                (1)
+#define CONFIG_USING_FONT_HZ                (0)
 #define CONFIG_USING_FONT_FILE              (1)
+
+/* APP */
+#define CONFIG_APP_PRIORITY                 (RTGUI_SERVER_PRIORITY + (RT_THREAD_PRIORITY_MAX >> 3))
+#define CONFIG_APP_TIMESLICE                (RTGUI_SERVER_TIMESLICE)
+#define CONFIG_APP_STACK_SIZE               (3 * 512)
+
+
+/* Debug Config */
+
+#define RTGUI_LOG_LEVEL                     (LOG_LVL_DBG) // (LOG_LVL_INFO)
+#define RTGUI_CASTING_CHECK
+#define RTGUI_LOG_EVENT
+// #define RTGUI_OBJECT_TRACE
+// #define RTGUI_USING_CURSOR
+
+
+/* Event Config */
 
 #define RTGUI_MB_SIZE                       (16)
 #define RTGUI_EVENT_POOL_NUMBER             (32)
 #define RTGUI_EVENT_RESEND_DELAY            (RT_TICK_PER_SECOND / 50)
 
 
-#define RTGUI_LOG_LEVEL                     (LOG_LVL_DBG)
-#define RTGUI_CASTING_CHECK
-// #define RTGUI_OBJECT_TRACE
-#define RTGUI_LOG_EVENT
-// #define RTGUI_USING_CURSOR
+/* System Config */
 
-/* Font */
-#define GUIENGINE_USING_FONT12
-// #define GUIENGINE_USING_FONT16
-#define GUIENGINE_USING_FONTHZ
-#if CONFIG_USING_FONT_FILE
-# define RTGUI_USING_FONT_FILE
+#define RTGUI_SERVER_PRIORITY               ((RT_THREAD_PRIORITY_MAX >> 1) + (RT_THREAD_PRIORITY_MAX >> 3))
+#define RTGUI_SERVER_TIMESLICE              (15)
+#define RTGUI_SERVER_STACK_SIZE             (2 * 512)
+
+// #define GUIENGIN_USING_CALIBRATION
+// #define RTGUI_USING_DC_BUFFER
+// #define GUIENGIN_USING_VFRAMEBUFFER
+
+
+/* Color Config */
+
+#define RTGUI_BIG_ENDIAN_OUTPUT
+
+#ifdef RTGUI_USING_RGB888_AS_32BIT
+# define RTGUI_RGB888_PIXEL_BITS 32
+#else
+# define RTGUI_RGB888_PIXEL_BITS 24
 #endif
 
-/* Image Decoder */
-#define GUIENGINE_IMAGE_XPM
-#define GUIENGINE_IMAGE_BMP
-#define GUIENGINE_IMAGE_JPEG
-// #define GUIENGINE_IMAGE_PNG
+
+/* File Operation Config */
+
+#define RTGUI_USING_DFS_FILERW
+
+
+/* External Library Config*/
+
+/* JPEG */
+#define CONFIG_JPEG_BUFFER_SIZE             (4 * 1024) 
+#define CONFIG_JPEG_OUTPUT_RGB565           (1)
 
 /* LodePNG */
 #define LODEPNG_NO_COMPILE_ENCODER
@@ -72,30 +122,5 @@
 #define LODEPNG_NO_COMPILE_ERROR_TEXT
 #define LODEPNG_NO_COMPILE_ALLOCATORS
 #define LODEPNG_NO_COMPILE_CPP
-
-
-#define GUIENGINE_USING_DFS_FILERW
-
-#ifndef GUIENGINE_SVR_THREAD_PRIORITY
-# define GUIENGINE_SVR_THREAD_PRIORITY      (20)
-#endif
-#ifndef GUIENGINE_SVR_THREAD_TIMESLICE
-# define GUIENGINE_SVR_THREAD_TIMESLICE     (10)
-#endif
-#ifndef GUIENGIN_SVR_THREAD_STACK_SIZE
-# define GUIENGIN_SVR_THREAD_STACK_SIZE     (2 * 512)
-#endif
-
-// #define GUIENGIN_USING_CALIBRATION
-// #define RTGUI_USING_DC_BUFFER
-// #define GUIENGIN_USING_VFRAMEBUFFER
-
-#ifndef GUIENGINE_RGB888_PIXEL_BITS
-# ifdef GUIENGINE_USING_RGB888_AS_32BIT
-#  define GUIENGINE_RGB888_PIXEL_BITS 32
-# else
-#  define GUIENGINE_RGB888_PIXEL_BITS 24
-# endif
-#endif
 
 #endif /* __GUICONFIG_H__ */

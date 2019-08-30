@@ -5,7 +5,7 @@
  * @author  lindabell
  ******************************************************************************/
 #include "include/rtgui.h"
-#ifdef GUIENGINE_USING_FONTHZ
+#if (CONFIG_USING_FONT_HZ)
 
 const rt_uint16_t UnicodeToGB2312_Tab[][2] = {
     { 0x00A4, 0xA1E8 },
@@ -7482,4 +7482,4 @@ rt_uint16_t UnicodeToGB2312(rt_uint16_t unicode) {
     return 0;
 }
 
-#endif /* GUIENGINE_USING_FONTHZ */
+#endif /* CONFIG_USING_FONT_HZ */

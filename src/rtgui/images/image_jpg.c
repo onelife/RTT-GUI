@@ -26,7 +26,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 
-#ifdef GUIENGINE_IMAGE_JPEG
+#if (CONFIG_USING_IMAGE_JPEG)
 
 #include "include/image.h"
 #include "include/blit.h"
@@ -163,7 +163,7 @@ static rt_uint16_t tjpgd_out_func(JDEC *jdec, void *bitmap, JRECT *rect) {
         /* Left-top of destination rectangular */
         for (h = rect->top; h <= rect->bottom; h++) {
             /* process a line */
-            #if !JD_FORMAT && (GUIENGINE_RGB888_PIXEL_BITS == 32)
+            #if !JD_FORMAT && (RTGUI_RGB888_PIXEL_BITS == 32)
                 rt_uint16_t p;
 
                 for (p = 0; p < w; p++) {
@@ -263,7 +263,7 @@ static rt_bool_t jpeg_load(rtgui_image_t *img, rtgui_filerw_t *file,
             jpeg->pixel_format = RTGRAPHIC_PIXEL_FORMAT_RGB565;
         #else
             /* RGB888 */
-            #if (GUIENGINE_RGB888_PIXEL_BITS == 32)
+            #if (RTGUI_RGB888_PIXEL_BITS == 32)
                 jpeg->byte_PP = 4;
             #else
                 jpeg->byte_PP = 3;
@@ -419,4 +419,4 @@ rt_err_t rtgui_image_jpeg_init(void) {
     return ret;
 }
 
-#endif /* GUIENGINE_IMAGE_JPEG */
+#endif /* CONFIG_USING_IMAGE_JPEG */

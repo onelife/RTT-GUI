@@ -10,7 +10,7 @@
 #define LOG_TAG "APP_PIC"
 #include <log.h>
 
-#define USING_SMALL_DISPLAY
+// #define USING_SMALL_DISPLAY
 
 #define PATH_LEN_MAX  (20)
 #define PIC_DIR       "/pic"
@@ -326,7 +326,8 @@ static void picShow_entry(void *param) {
 // RT-Thread function called by "RT_T.begin()"
 void rt_setup(void) {
   rt_thread_t tid = rt_thread_create(
-    "picShow", picShow_entry, RT_NULL, 3 * 512, 25, 10);
+    "picShow", picShow_entry, RT_NULL,
+    CONFIG_APP_STACK_SIZE, CONFIG_APP_PRIORITY, CONFIG_APP_TIMESLICE);
   if (tid) {
     rt_thread_startup(tid);
   } else {

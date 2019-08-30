@@ -262,7 +262,7 @@ static void rtgui_dc_buffer_draw_vline(rtgui_dc_t *self, int x1, int y1, int y2)
         VLINE(rt_uint16_t, DRAW_SETPIXEL_BGR565, 0);
         break;
     case RTGRAPHIC_PIXEL_FORMAT_RGB888:
-#ifdef GUIENGINE_USING_RGB888_AS_32BIT
+#ifdef RTGUI_USING_RGB888_AS_32BIT
         VLINE(rt_uint32_t, DRAW_SETPIXEL_RGB888, 0);
 #else
         VLINE(rt_uint8_t, DRAW_SETPIXEL_RGB888, 0);
@@ -302,7 +302,7 @@ static void rtgui_dc_buffer_draw_hline(rtgui_dc_t *self, int x1, int x2, int y1)
         HLINE(rt_uint16_t, DRAW_SETPIXEL_BGR565, 0);
         break;
     case RTGRAPHIC_PIXEL_FORMAT_RGB888:
-#ifdef GUIENGINE_USING_RGB888_AS_32BIT
+#ifdef RTGUI_USING_RGB888_AS_32BIT
         HLINE(rt_uint32_t, DRAW_SETPIXEL_RGB888, 0);
 #else
         HLINE(rt_uint8_t, DRAW_SETPIXEL_RGB888, 0);
@@ -358,7 +358,7 @@ static void rtgui_dc_buffer_fill_rect(rtgui_dc_t *self, rtgui_rect_t *dst_rect)
         FILLRECT(rt_uint16_t, DRAW_SETPIXEL_BGR565);
         break;
     case RTGRAPHIC_PIXEL_FORMAT_RGB888:
-#ifdef GUIENGINE_USING_RGB888_AS_32BIT
+#ifdef RTGUI_USING_RGB888_AS_32BIT
         FILLRECT(rt_uint32_t, DRAW_SETPIXEL_RGB888);
 #else
         FILLRECT(rt_uint8_t, DRAW_SETPIXEL_RGB888);
@@ -435,7 +435,7 @@ static void rtgui_dc_buffer_blit(rtgui_dc_t *self,
     {
         int index;
         rt_uint8_t *line_ptr, *pixels;
-        rtgui_blit_line_func blit_line;
+        rtgui_blit_line_func_ blit_line;
         rtgui_gfx_driver_t *hw_driver;
 
         hw_driver = rtgui_get_gfx_device();

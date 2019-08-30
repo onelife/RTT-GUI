@@ -56,13 +56,12 @@ extern "C" {
 /* Exported constants --------------------------------------------------------*/
 /* Exported defines ----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
-typedef void (*rtgui_blit_line_func2)(rt_uint8_t *_dst, rt_uint8_t *_src,
+typedef void (*rtgui_blit_line_func)(rt_uint8_t *_dst, rt_uint8_t *_src,
     rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette);
 
 /* Exported functions ------------------------------------------------------- */
-rtgui_blit_line_func2 rtgui_get_blit_line_func(rt_uint8_t src_fmt,
+rtgui_blit_line_func rtgui_get_blit_line_func(rt_uint8_t src_fmt,
     rt_uint8_t dst_fmt);
-
 
 
 #ifdef RTGUI_USING_DC_BUFFER
@@ -99,7 +98,6 @@ rtgui_blit_line_func2 rtgui_get_blit_line_func(rt_uint8_t src_fmt,
 #define DUFFS_LOOP(pixel_copy_increment, width)                         \
     DUFFS_LOOP8(pixel_copy_increment, width)
 
-
 struct rtgui_image_info {
     rt_uint8_t *pixels;
     int src_pitch;
@@ -126,15 +124,12 @@ struct rtgui_blit_info {
 
 typedef struct rtgui_image_info rtgui_image_info_t;
 typedef struct rtgui_blit_info rtgui_blit_info_t;
-typedef void (*rtgui_blit_line_func)(rt_uint8_t *_dst, rt_uint8_t *_src,
+typedef void (*rtgui_blit_line_func_)(rt_uint8_t *_dst, rt_uint8_t *_src,
     rt_uint32_t len);
 
+rtgui_blit_line_func_ rtgui_blit_line_get(rt_uint8_t dst_bpp, rt_uint8_t src_bpp);
 
-rtgui_blit_line_func rtgui_blit_line_get(rt_uint8_t dst_bpp, rt_uint8_t src_bpp);
-
-# ifdef RTGUI_USING_DC_BUFFER
 void rtgui_blit(rtgui_blit_info_t * info);
-# endif
 
 #endif /* RTGUI_USING_DC_BUFFER */
 

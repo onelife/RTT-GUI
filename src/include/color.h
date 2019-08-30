@@ -74,7 +74,7 @@ extern const rtgui_color_t disable_foreground;
 #define LIGHT_GREY         RTGUI_RGB(0xc0, 0xc0, 0xc0)
 
 #ifdef  TRANSPARENT
-#undef  TRANSPARENT
+# undef  TRANSPARENT
 #endif
 #define TRANSPARENT        RTGUI_ARGB(0, 0, 0, 0)
 
@@ -108,7 +108,7 @@ extern const rt_uint8_t* rtgui_blit_expand_byte[9];
     pixel = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);              \
 }
 
-#ifdef GUIENGINE_USING_RGB888_AS_32BIT
+#ifdef RTGUI_USING_RGB888_AS_32BIT
 # define RGB888_FROM_RGB(pixel, r, g, b) {                              \
     pixel = (r << 16) | (g << 8) | b;                                   \
 }
@@ -158,7 +158,7 @@ extern const rt_uint8_t* rtgui_blit_expand_byte[9];
     b = rtgui_blit_expand_byte[3][(pixel & 0x001F)];                    \
 }
 
-#ifdef GUIENGINE_USING_RGB888_AS_32BIT
+#ifdef RTGUI_USING_RGB888_AS_32BIT
 # define RGB_FROM_RGB888(pixel, r, g, b) {                              \
     r = ((pixel & 0xFF0000)>>16);                                       \
     g = ((pixel & 0xFF00)>>8);                                          \
@@ -266,10 +266,12 @@ rt_inline rtgui_color_t rtgui_color_from_888(rt_uint32_t pixel) {
         (pixel & 0xff));
 }
 
-/* get the bits of specified pixle format */
-rt_uint8_t rtgui_color_get_bits(rt_uint8_t pixel_format) RTGUI_PURE;
-/* get the bytes of specified pixle format */
-rt_uint8_t rtgui_color_get_bpp(rt_uint8_t pixel_format) RTGUI_PURE;
+#ifdef RTGUI_USING_DC_BUFFER
+    /* get the bits of specified pixle format */
+    rt_uint8_t rtgui_color_get_bits(rt_uint8_t pixel_format) RTGUI_PURE;
+    /* get the bytes of specified pixle format */
+    rt_uint8_t rtgui_color_get_bpp(rt_uint8_t pixel_format) RTGUI_PURE;
+#endif
 
 #ifdef __cplusplus
 }

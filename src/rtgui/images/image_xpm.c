@@ -25,7 +25,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "include/rtgui.h"
 
-#ifdef GUIENGINE_IMAGE_XPM
+#if (CONFIG_USING_IMAGE_XPM)
 
 #include "include/image.h"
 
@@ -354,4 +354,4 @@ rt_err_t rtgui_image_xpm_init(void) {
     return rtgui_image_register_engine(&xpm_engine);
 }
 
-#endif /* GUIENGINE_IMAGE_XPM */
+#endif /* CONFIG_USING_IMAGE_XPM */
