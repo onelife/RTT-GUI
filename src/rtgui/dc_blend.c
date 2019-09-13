@@ -80,7 +80,7 @@
 
 #include "include/dc_draw.h"
 
-#define hw_driver               (rtgui_get_gfx_device())
+#define display()               (rtgui_get_gfx_device())
 #define _int_swap(x, y)         do {x ^= y; y ^= x; x ^= y;} while (0)
 
 rt_inline rt_uint8_t _dc_get_bits_per_pixel(rtgui_dc_t* dc)
@@ -88,7 +88,7 @@ rt_inline rt_uint8_t _dc_get_bits_per_pixel(rtgui_dc_t* dc)
     rt_uint8_t bits_per_pixel = 0;
 
     if (dc->type == RTGUI_DC_HW || dc->type == RTGUI_DC_CLIENT)
-        bits_per_pixel = hw_driver->bits_per_pixel;
+        bits_per_pixel = display()->bits_per_pixel;
     else if (dc->type == RTGUI_DC_BUFFER)
     {
         struct rtgui_dc_buffer *buffer = (struct rtgui_dc_buffer*)dc;
@@ -104,7 +104,7 @@ rt_inline rt_uint16_t _dc_get_pitch(rtgui_dc_t* dc)
     rt_uint16_t pitch = 0;
 
     if (dc->type == RTGUI_DC_HW || dc->type == RTGUI_DC_CLIENT)
-        pitch = hw_driver->pitch;
+        pitch = display()->pitch;
     else if (dc->type == RTGUI_DC_BUFFER)
     {
         struct rtgui_dc_buffer *dc_buffer;
@@ -122,10 +122,10 @@ rt_inline rt_uint8_t* _dc_get_pixel(rtgui_dc_t* dc, int x, int y)
 
     if ((dc->type == RTGUI_DC_HW) || (dc->type == RTGUI_DC_CLIENT))
     {
-        pixel = (rt_uint8_t*)(hw_driver->framebuffer);
+        pixel = (rt_uint8_t*)(display()->framebuffer);
         if (pixel == RT_NULL) return RT_NULL;
 
-        pixel = pixel + y * hw_driver->pitch + x * (_BIT2BYTE(hw_driver->bits_per_pixel));
+        pixel = pixel + y * display()->pitch + x * (_BIT2BYTE(display()->bits_per_pixel));
     }
     else if (dc->type == RTGUI_DC_BUFFER)
     {
@@ -1784,8 +1784,8 @@ rtgui_dc_blend_fill_rect(rtgui_dc_t* dst, const rtgui_rect_t *rect,
 
         draw_rect.x1 = dc->owner->extent.x1 > 0 ? dc->owner->extent.x1 : 0;
         draw_rect.y1 = dc->owner->extent.y1 > 0 ? dc->owner->extent.y1 : 0;
-        draw_rect.x2 = draw_rect.x2 > hw_driver->width ? hw_driver->width : draw_rect.x2;
-        draw_rect.y2 = draw_rect.y2 > hw_driver->height ? hw_driver->height : draw_rect.y2;
+        draw_rect.x2 = draw_rect.x2 > display()->width ? display()->width : draw_rect.x2;
+        draw_rect.y2 = draw_rect.y2 > display()->height ? display()->height : draw_rect.y2;
 
         func(dst, &draw_rect, blendMode, r, g, b, a);
     }

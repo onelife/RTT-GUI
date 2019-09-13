@@ -76,7 +76,7 @@ typedef struct rtgui_image_bmp {
 #define display()                   (rtgui_get_gfx_device())
 
 /* Private variables ---------------------------------------------------------*/
-rtgui_image_engine_t bmp_engine = {
+static rtgui_image_engine_t bmp_engine = {
     "bmp",
     { RT_NULL },
     bmp_check,
@@ -562,28 +562,69 @@ struct bmp_header {
 };
 #pragma pack(pop)
 
-static void bmp_set_header(struct bmp_header *hdr, rt_uint32_t w, rt_uint32_t h,
-    rt_uint8_t bits_per_pixel) {
-    rt_uint32_t img_size = w * h * _BIT2BYTE(bits_per_pixel);
+static rt_uint32_t bmp_write_header(int file, rt_uint8_t *buf, rt_uint32_t w,
+    rt_uint32_t h, rt_uint8_t bits_per_pixel) {
+    struct bmp_header *hdr = (struct bmp_header *)buf;
+    rt_uint32_t *color = (rt_uint32_t *)buf;
+    rt_uint32_t img_size = w * h;
+    rt_uint32_t color_size;
+
+    if (1 == bits_per_pixel)
+        img_size >>= 3;
+    else if (2 == bits_per_pixel)
+        img_size >>= 2;
+    else if (4 == bits_per_pixel)
+        img_size >>= 1;
+    else
+        img_size *= _BIT2BYTE(bits_per_pixel);
+
+    if (bits_per_pixel <= 8) {
+        color_size = 1 << (bits_per_pixel + 2);
+    } else {
+        color_size = 12;
+    }
 
     /* BMP header */
     hdr->bfType = 0x4d42;           /* "BM" */
-    hdr->bfSize = sizeof(struct bmp_header) + 12 + img_size;
+    hdr->bfSize = sizeof(struct bmp_header) + color_size + img_size;
     hdr->bfReserved1 = 0;
     hdr->bfReserved2 = 0;
-    hdr->bfOffBits = sizeof(struct bmp_header) + 12;
+    hdr->bfOffBits = sizeof(struct bmp_header) + color_size;
     /* DIB header (BITMAPV2INFOHEADER: BITMAPINFOHEADER + RGB bit masks) */
     hdr->biSize = 40;
     hdr->biWidth = w;
     hdr->biHeight = h;
     hdr->biPlanes = 1;              /* Fixed */
     hdr->biBitCount = bits_per_pixel;
-    hdr->biCompression = BI_BITFIELDS;
+    hdr->biCompression = (bits_per_pixel <= 8) ? BI_RGB : BI_BITFIELDS;
     hdr->biSizeImage = img_size;
     hdr->biXPelsPerMeter = 0;
     hdr->biYPelsPerMeter = 0;
     hdr->biClrUsed = 0;
     hdr->biClrImportant = 0;
+    if (write(file, buf, sizeof(struct bmp_header)) < 0) {
+        LOG_E("bad write");
+        return 0;
+    }
+
+    /* bit masks or palette */
+    if (hdr->biCompression == BI_BITFIELDS) {
+        *(color++) = 0x0000F800;        /* Red Mask */
+        *(color++) = 0x000007E0;        /* Green Mask */
+        *(color++) = 0x0000001F;        /* Blue Mask */
+    } else if (bits_per_pixel == 1) {
+        *(color++) = 0x00000000;        /* Black */
+        *(color++) = 0x00ffffff;        /* White */
+    } else {
+        LOG_E("not implemented");
+        return 0;
+    }
+    if (write(file, buf, color_size) < 0) {
+        LOG_E("bad write");
+        return 0;
+    }
+
+    return sizeof(struct bmp_header) + color_size;
 }
 
 /* Grab screen and save as BMP file */
@@ -594,11 +635,14 @@ rt_err_t screenshot(const char *filename) {
     rt_err_t ret = RT_EOK;
 
     do {
-        struct bmp_header *hdr;
         rt_uint32_t w = display()->width;
         rt_uint32_t h = display()->height;
+        rt_uint32_t len, i;
+        rtgui_color_t pixel;
+        rt_uint32_t x;
+        rt_int32_t y;
 
-        if (!display()->framebuffer && !display()->ops->get_pixel) {
+        if (!display()->ops->get_pixel) {
             LOG_E("no pixel read");
             break;
         }
@@ -614,95 +658,112 @@ rt_err_t screenshot(const char *filename) {
             LOG_E("bad file");
             break;
         }
+        rt_kprintf("\n00%%\r");
 
         /* header */
-        hdr = (struct bmp_header *)buf;
-        bmp_set_header(hdr, w, h, display()->bits_per_pixel);
-        if (write(file, buf, sizeof(struct bmp_header)) < 0) {
+        if (bmp_write_header(file, buf, w, h, display()->bits_per_pixel) == 0) {
             ret = -RT_EIO;
-            LOG_E("bad write");
             break;
-        }
-
-        if (BI_BITFIELDS == hdr->biCompression) {
-            rt_uint32_t *mask = (rt_uint32_t *)buf;
-
-            *(mask++) = 0x0000F800;     /* Red Mask */
-            *(mask++) = 0x000007E0;     /* Green Mask */
-            *(mask++) = 0x0000001F;     /* Blue Mask */
-            if (write(file, buf, 12) < 0) {
-                ret = -RT_EIO;
-                LOG_E("bad write");
-                break;
-            }
         }
 
         rtgui_screen_lock(RT_WAITING_FOREVER);
         locked = RT_TRUE;
 
-        if (display()->framebuffer) {
-            if (write(file, display()->framebuffer,
-                w * h * _BIT2BYTE(display()->bits_per_pixel)) < 0) {
-                ret = -RT_EIO;
-                LOG_E("bad write");
+        switch (display()->pixel_format) {
+        case RTGRAPHIC_PIXEL_FORMAT_MONO:
+        {
+            if (!display()->framebuffer) {
+                ret = -RT_ERROR;
+                LOG_E("no framebuffer");
                 break;
             }
-        } else {
-            rt_uint32_t len, i;
-            rtgui_color_t pixel;
-            rt_uint32_t x;
-            rt_int32_t y;
 
-            rt_kprintf("\n00%%\r");
-            if (RTGRAPHIC_PIXEL_FORMAT_RGB565 == display()->pixel_format) {
-                rt_uint16_t *c;
+            /* data */
+            len = WRITE_BUFFER_SIZE;
+            i = 0;
+            rt_memset(buf, 0x00, len);
 
-                len = WRITE_BUFFER_SIZE / sizeof(rt_uint16_t);
-                i = 0;
-                c = (rt_uint16_t *)buf;
-
-                for (y = h - 1; y >= 0; y--) {
-                    rt_kprintf("%02d%%\r", (h - 1 - y) * 100 / h);
-                    for (x = 0; x < w; x++) {
-                        display()->ops->get_pixel(&pixel, x, y);
-                        if (i >= len) {
-                            if (write(file, buf, sizeof(rt_uint16_t) * i) < 0) {
-                                ret = -RT_EIO;
-                                LOG_E("bad write");
-                                break;
-                            }
-                            i = 0;
+            for (y = h - 1; y >= 0; y--) {
+                rt_kprintf("%02d%%\r", (h - 1 - y) * 100 / h);
+                for (x = 0; x < w; x++) {
+                    display()->ops->get_pixel(&pixel, x, y);
+                    if (i >= len) {
+                        if (write(file, buf, len) < 0) {
+                            ret = -RT_EIO;
+                            LOG_E("bad write");
+                            break;
                         }
-                        *(c + i++) = ((pixel & 0x00f80000) >> 8) | \
-                                     ((pixel & 0x0000fc00) >> 5) | \
-                                     ((pixel & 0x000000f8) >> 3);
+                        fsync(file);
+                        i = 0;
+                        rt_memset(buf, 0x00, len);
                     }
-                    if (RT_EOK != ret) break;
+                    if (pixel != black)
+                        buf[i] |= (1 << (7 - (x & 0x07)));
+                    if ((x & 0x07) == 0x07)
+                        i++;
                 }
                 if (RT_EOK != ret) break;
-                if (i) {
-                    if (write(file, buf, sizeof(rt_uint16_t) * i) < 0) {
-                        ret = -RT_EIO;
-                        LOG_E("bad write");
-                        break;
-                    }
-                }
-            } else {
-                /* TODO */
-                ret = -RT_ERROR;
-                LOG_E("not implemented");
-                break;
             }
-            rt_kprintf("Done %s\n", filename);
+            if (RT_EOK != ret) break;
+            if (i) {
+                if (write(file, buf, i) < 0) {
+                    ret = -RT_EIO;
+                    LOG_E("bad write");
+                }
+            }
+            break;
         }
+
+        case RTGRAPHIC_PIXEL_FORMAT_RGB565:
+        {
+            rt_uint16_t *c;
+
+            len = WRITE_BUFFER_SIZE / sizeof(rt_uint16_t);
+            i = 0;
+            c = (rt_uint16_t *)buf;
+
+            for (y = h - 1; y >= 0; y--) {
+                rt_kprintf("%02d%%\r", (h - 1 - y) * 100 / h);
+                for (x = 0; x < w; x++) {
+                    display()->ops->get_pixel(&pixel, x, y);
+                    if (i >= len) {
+                        if (write(file, buf, sizeof(rt_uint16_t) * i) < 0) {
+                            ret = -RT_EIO;
+                            LOG_E("bad write");
+                            break;
+                        }
+                        i = 0;
+                    }
+                    *(c + i++) = ((pixel & 0x00f80000) >> 8) | \
+                                 ((pixel & 0x0000fc00) >> 5) | \
+                                 ((pixel & 0x000000f8) >> 3);
+                }
+                if (RT_EOK != ret) break;
+            }
+            if (RT_EOK != ret) break;
+            if (i) {
+                if (write(file, buf, sizeof(rt_uint16_t) * i) < 0) {
+                    ret = -RT_EIO;
+                    LOG_E("bad write");
+                }
+            }
+            break;
+        }
+
+        default:
+            ret = -RT_ERROR;
+            LOG_E("not implemented");
+            break;
+        }
+        rt_kprintf("Done %s\n", filename);
     } while (0);
 
     if (locked) rtgui_screen_unlock();
-    if (buf) rtgui_free(buf);
     if (file >= 0) {
         fsync(file);
         close(file);
     }
+    if (buf) rtgui_free(buf);
 
     return ret;
 }

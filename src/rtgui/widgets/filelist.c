@@ -253,18 +253,6 @@ static const char * const folder_xpm[] = {
     "                                "
 };
 
-static const rtgui_list_item_t _folder_act[] = {
-    #if (CONFIG_USING_FONT_HZ)
-        {"打开", RT_NULL},
-        {"选择", RT_NULL},
-        {"取消", RT_NULL}
-    #else
-        {"Open", RT_NULL},
-        {"Select", RT_NULL},
-        {"Cancel", RT_NULL}
-    #endif
-};
-
 static struct fileview_contex _contex = {
     .count = 0,
     .file_img = RT_NULL,

@@ -58,6 +58,7 @@ struct rtgui_image_jpeg {
     rt_uint8_t byte_PP;
     rt_uint8_t pixel_format;
     rt_uint32_t pitch;
+    rtgui_blit_line_func blit_line;
     rtgui_dc_t *dc;
     rt_uint16_t dst_x, dst_y;
     rt_uint16_t dst_w, dst_h;
@@ -77,7 +78,7 @@ static void jpeg_unload(rtgui_image_t *img);
 static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect);
 
 /* Private variables ---------------------------------------------------------*/
-rtgui_image_engine_t jpeg_engine = {
+static rtgui_image_engine_t jpeg_engine = {
     "jpeg",
     {RT_NULL},
     jpeg_check,
@@ -86,7 +87,7 @@ rtgui_image_engine_t jpeg_engine = {
     jpeg_blit
 };
 
-rtgui_image_engine_t jpg_engine = {
+static rtgui_image_engine_t jpg_engine = {
     "jpg",
     {RT_NULL},
     jpeg_check,
@@ -136,49 +137,19 @@ static rt_uint16_t tjpgd_out_func(JDEC *jdec, void *bitmap, JRECT *rect) {
         h = _MIN(rect->bottom, jpeg->dst_h);
         h = h - rect->top + 1;
 
-
-        for (y = 0; y < h; y++) {
-            #if JD_FORMAT && defined(RTGUI_BIG_ENDIAN_OUTPUT)
-                rt_uint16_t *_src = (rt_uint16_t *)src;
-                rt_uint16_t *_dst = (rt_uint16_t *)jpeg->pixels;
-                rt_uint16_t x;
-
-                for (x = 0; x < w; x++) {
-                    *_dst++ = (*_src << 8) | (*_src >> 8);
-                    _src++;
-                }
-                jpeg->dc->engine->blit_line(jpeg->dc,
-                    jpeg->dst_x + rect->left, jpeg->dst_x + rect->left + w - 1,
-                    jpeg->dst_y + rect->top + y, jpeg->pixels);
-            #else
-                jpeg->dc->engine->blit_line(jpeg->dc,
-                    jpeg->dst_x + rect->left, jpeg->dst_x + rect->left + w - 1,
-                    jpeg->dst_y + rect->top + y, src);
-            #endif
-            src += sz;
+        for (y = 0; y < h; y++, src += sz) {
+            jpeg->blit_line(jpeg->pixels, src, sz, 0, RT_NULL);
+            jpeg->dc->engine->blit_line(jpeg->dc,
+                jpeg->dst_x + rect->left, jpeg->dst_x + rect->left + w - 1,
+                jpeg->dst_y + rect->top + y, jpeg->pixels);
         }
     } else {
-        dst = jpeg->pixels + rect->top * jpeg->pitch + \
-              rect->left * jpeg->byte_PP;
+        dst = jpeg->pixels + rect->top * display()->pitch + \
+              rect->left / 8 * display()->bits_per_pixel;
         /* Left-top of destination rectangular */
-        for (h = rect->top; h <= rect->bottom; h++) {
-            /* process a line */
-            #if !JD_FORMAT && (RTGUI_RGB888_PIXEL_BITS == 32)
-                rt_uint16_t p;
-
-                for (p = 0; p < w; p++) {
-                    *dst++ = *(src + 2);
-                    *dst++ = *(src + 1);
-                    *dst++ = *(src);
-                    *dst++ = 0xff;
-                    src += 3;
-                }
-            #else
-                rt_memcpy(dst, src, sz);
-                dst += jpeg->pitch;
-                src += sz;
-            #endif
-        }
+        for (h = rect->top; h <= rect->bottom;
+             h++, src += sz, dst += display()->pitch)
+            jpeg->blit_line(dst, src, sz, 0, RT_NULL);
     }
     /* Continue to decompress */
     return 1;
@@ -271,6 +242,13 @@ static rt_bool_t jpeg_load(rtgui_image_t *img, rtgui_filerw_t *file,
             jpeg->pixel_format = RTGRAPHIC_PIXEL_FORMAT_RGB888;
         #endif
         jpeg->pitch = (jpeg->tjpgd.width >> scale) * jpeg->byte_PP;
+        jpeg->blit_line = rtgui_get_blit_line_func(jpeg->pixel_format,
+            display()->pixel_format);
+        if (!jpeg->blit_line) {
+            err = -RT_ERROR;
+            LOG_E("no blit func");
+            break;
+        }
 
         /* set image info */
         img->w = (rt_uint16_t)(jpeg->tjpgd.width >> scale);
@@ -340,12 +318,7 @@ static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect) {
     struct rtgui_image_jpeg *jpeg;
 
     if (!img || !dc || !rect || !img->data) return;
-
     jpeg = (struct rtgui_image_jpeg *)img->data;
-    if (jpeg->pixel_format != display()->pixel_format) {
-        LOG_E("pixel_format mismatch");
-        return;
-    }
 
     do {
         rt_uint16_t w, h;
@@ -363,16 +336,15 @@ static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect) {
             jpeg->dst_w = w;
             jpeg->dst_h = h;
 
-            #ifdef RTGUI_BIG_ENDIAN_OUTPUT
             jpeg->pixels = rtgui_malloc(JPEG_MAX_OUTPUT_WIDTH * jpeg->byte_PP);
             if (!jpeg->pixels) {
                 LOG_E("no mem to load (%d)",
                     JPEG_MAX_OUTPUT_WIDTH * jpeg->byte_PP);
                 break;
             }
-            #endif
 
             ret = jd_decomp(&jpeg->tjpgd, tjpgd_out_func, jpeg->tjpgd.scale);
+            rtgui_free(jpeg->pixels);
             if (JDR_OK != ret) {
                 LOG_E("jd_decomp %d", ret);
                 break;
@@ -387,7 +359,6 @@ static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect) {
                     scale = jpeg->tjpgd.scale;
 
                 LOG_D("JPG reload");
-                if (jpeg->pixels) rtgui_free(jpeg->pixels);
                 if (jpeg->buf) rtgui_free(jpeg->buf);
                 rtgui_free(jpeg);
                 (void)jpeg_load(img, file, scale, RT_FALSE);
@@ -398,7 +369,7 @@ static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect) {
 
             /* output the image */
             for (y = 0; y < h; y++) {
-                ptr = jpeg->pixels + (y * jpeg->pitch);
+                ptr = jpeg->pixels + (y * display()->pitch);
                 dc->engine->blit_line(dc, rect->x1, rect->x1 + w - 1,
                     rect->y1 + y, ptr);
             }

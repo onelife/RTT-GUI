@@ -59,8 +59,159 @@
 # define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
 
-#if (CONFIG_USING_RGB565)
+#if (CONFIG_USING_MONO)
+/* RGB888 / BGR888 -> MONO blending */
+static void blit_line_rgb888_to_mono(rt_uint8_t *dst, rt_uint8_t *src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint8_t *end = src + len;
+    rt_uint8_t step = _BIT2BYTE(RTGUI_RGB888_PIXEL_BITS) << scale;
+    rt_uint8_t bit;
+    (void)palette;
 
+    for (bit = 0, *dst = 0x00; src < end; src += step, bit++) {
+        if (bit >= 8) {
+            bit = 0;
+            dst++;
+            *dst = 0x00;
+        }
+        if (((rt_uint16_t)*(src + 0) + *(src + 1) + *(src + 2)) >= 0x017f)
+            *dst |= 0x01 << bit;
+    }
+}
+
+/* RGB565 -> MONO blending */
+static void blit_line_rgb565_to_mono(rt_uint8_t *dst, rt_uint8_t *_src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint16_t *src = (rt_uint16_t *)_src;
+    rt_uint8_t *end = _src + len;
+    rt_uint8_t step = 1 << scale;
+    rt_uint8_t bit;
+    (void)palette;
+
+    for (bit = 0, *dst = 0x00; src < (rt_uint16_t *)end; src += step, bit++) {
+        if (bit >= 8) {
+            bit = 0;
+            dst++;
+            *dst = 0x00;
+        }
+        if (((rt_uint16_t)((*src & 0xf800) >> 11) + \
+            ((*src & 0x07c0) >> 6) + \
+            (*src & 0x001f)) >= 0x2e)
+            *dst |= 0x01 << bit;
+    }
+}
+
+/* RGB8I -> MONO blending */
+static void blit_line_gray8i_to_mono(rt_uint8_t *dst, rt_uint8_t *src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint8_t *end = src + len;
+    rt_uint8_t step = 1 << scale;
+    rt_uint8_t bit;
+    (void)palette;
+
+    for (bit = 0, *dst = 0x00; src < end; src += step, bit++) {
+        if (bit >= 8) {
+            bit = 0;
+            dst++;
+            *dst = 0x00;
+        }
+        if (*src >= ((1 << 7) - 1))
+            *dst |= 0x01 << bit;
+    }
+}
+
+/* RGB4I -> MONO blending */
+static void blit_line_gray4i_to_mono(rt_uint8_t *dst, rt_uint8_t *src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint8_t *end = src + len;
+    rt_uint8_t step, shift_step, shift;
+    rt_uint8_t bit;
+    (void)palette;
+
+    if (scale > 1) {
+        shift_step = 8;
+        step = 1 << (scale - 1);
+    } else {
+        shift_step = 1 << (2 + scale);
+        step = 1;
+    }
+
+    for (bit = 0, *dst = 0x00; src < end; src += step)
+        for (shift = 0; shift < 8; shift += shift_step, bit++) {
+            if (bit >= 8) {
+                bit = 0;
+                dst++;
+                *dst = 0x00;
+            }
+            if (*src >= ((1 << 3) - 1))
+                *dst |= 0x01 << bit;
+        }
+}
+
+/* RGB2I -> MONO blending */
+static void blit_line_gray2i_to_mono(rt_uint8_t *dst, rt_uint8_t *src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint8_t *end = src + len;
+    rt_uint8_t step, shift_step, shift;
+    rt_uint8_t bit;
+    (void)palette;
+
+    if (scale > 2) {
+        shift_step = 8;
+        step = 1 << (scale - 2);
+    } else {
+        shift_step = 1 << (1 + scale);
+        step = 1;
+    }
+
+    for (bit = 0, *dst = 0x00; src < end; src += step)
+        for (shift = 0; shift < 8; shift += shift_step, bit++) {
+            if (bit >= 8) {
+                bit = 0;
+                dst++;
+                *dst = 0x00;
+            }
+            if (*src >= 1)
+                *dst |= 0x01 << bit;
+        }
+}
+
+/* MONO -> MONO blending */
+static void blit_line_mono_to_mono(rt_uint8_t *dst, rt_uint8_t *src,
+    rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
+    rt_uint8_t *end = src + len;
+    rt_uint8_t step, shift_step, shift;
+    rt_uint8_t bit;
+
+    if (scale > 3) {
+        shift_step = 8;
+        step = 1 << (scale - 3);
+    } else {
+        shift_step = 1 << scale;
+        step = 1;
+    }
+
+    for (bit = 0, *dst = 0x00; src < end; src += step)
+        for (shift = 0; shift < 8; shift += shift_step, bit++) {
+            if (bit >= 8) {
+                bit = 0;
+                dst++;
+                *dst = 0x00;
+            }
+            if (palette->colors[1] != black) {
+                if (*src & (1 << (7 - shift))) {
+                    *dst |= 0x01 << bit;
+                }
+            } else {
+                if (!(*src & (1 << (7 - shift)))) {
+                    *dst |= 0x01 << bit;
+                }
+            }
+        }
+}
+#endif
+
+#if (CONFIG_USING_RGB565)
 /* RGB888 -> RGB565 blending */
 static void blit_line_rgb888_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
     rt_uint32_t len, rt_uint8_t scale, rtgui_image_palette_t *palette) {
@@ -181,7 +332,7 @@ static void blit_line_mono_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
     rt_uint16_t *dst = (rt_uint16_t *)_dst;
     rt_uint8_t *end = src + len;
     rt_uint8_t step, shift_step, shift;
-    //  test
+
     if (scale > 3) {
         shift_step = 8;
         step = 1 << (scale - 3);
@@ -192,7 +343,7 @@ static void blit_line_mono_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
 
     for ( ; src < end; src += step)
         for (shift = 0; shift < 8; shift += shift_step)
-            if (*src & (0x01 << (7 - shift))) {
+            if (*src & (1 << (7 - shift))) {
                 RGB565_FROM_RGB(*dst++,
                     RTGUI_RGB_R(palette->colors[1]),
                     RTGUI_RGB_G(palette->colors[1]),
@@ -209,8 +360,33 @@ static void blit_line_mono_to_rgb565(rt_uint8_t *_dst, rt_uint8_t *src,
 
 rtgui_blit_line_func rtgui_get_blit_line_func(rt_uint8_t src_fmt,
     rt_uint8_t dst_fmt) {
-
     switch (dst_fmt) {
+    #if (CONFIG_USING_MONO)
+    case RTGRAPHIC_PIXEL_FORMAT_MONO:
+        switch (src_fmt) {
+        case RTGRAPHIC_PIXEL_FORMAT_RGB888:
+        case RTGRAPHIC_PIXEL_FORMAT_BGR888:
+            return blit_line_rgb888_to_mono;
+
+        case RTGRAPHIC_PIXEL_FORMAT_RGB565:
+            return blit_line_rgb565_to_mono;
+
+        case RTGRAPHIC_PIXEL_FORMAT_RGB8I:
+            return blit_line_gray8i_to_mono;
+
+        case RTGRAPHIC_PIXEL_FORMAT_RGB4I:
+            return blit_line_gray4i_to_mono;
+
+        case RTGRAPHIC_PIXEL_FORMAT_RGB2I:
+            return blit_line_gray2i_to_mono;
+
+        case RTGRAPHIC_PIXEL_FORMAT_MONO:
+            return blit_line_mono_to_mono;
+
+        default:
+            return RT_NULL;
+        }
+    #endif /* RTGRAPHIC_PIXEL_FORMAT_MONO */
 
     #if (CONFIG_USING_RGB565)
     case RTGRAPHIC_PIXEL_FORMAT_RGB565:
@@ -352,11 +528,6 @@ static void rtgui_blit_line_4_2(rt_uint8_t *_dst, rt_uint8_t *_src,
     }, width);
 }
 
-static void rtgui_blit_line_1_3(rt_uint8_t *_dst, rt_uint8_t *_src,
-    rt_uint32_t len)
-{
-    return;
-}
 
 #define HI  1
 #define LO  0
@@ -494,139 +665,6 @@ static const rt_uint32_t RGB565_RGBA8888_LUT[512] =
     0x001cf6ff, 0xffc20000, 0x001cffff, 0xffe20000,
 };
 
-/* Special optimized blit for RGB 5-6-5 --> ARGB 8-8-8-8 */
-static const rt_uint32_t RGB565_ARGB8888_LUT[512] =
-{
-    0x00000000, 0xff000000, 0x00000008, 0xff002000,
-    0x00000010, 0xff004000, 0x00000018, 0xff006100,
-    0x00000020, 0xff008100, 0x00000029, 0xff00a100,
-    0x00000031, 0xff00c200, 0x00000039, 0xff00e200,
-    0x00000041, 0xff080000, 0x0000004a, 0xff082000,
-    0x00000052, 0xff084000, 0x0000005a, 0xff086100,
-    0x00000062, 0xff088100, 0x0000006a, 0xff08a100,
-    0x00000073, 0xff08c200, 0x0000007b, 0xff08e200,
-    0x00000083, 0xff100000, 0x0000008b, 0xff102000,
-    0x00000094, 0xff104000, 0x0000009c, 0xff106100,
-    0x000000a4, 0xff108100, 0x000000ac, 0xff10a100,
-    0x000000b4, 0xff10c200, 0x000000bd, 0xff10e200,
-    0x000000c5, 0xff180000, 0x000000cd, 0xff182000,
-    0x000000d5, 0xff184000, 0x000000de, 0xff186100,
-    0x000000e6, 0xff188100, 0x000000ee, 0xff18a100,
-    0x000000f6, 0xff18c200, 0x000000ff, 0xff18e200,
-    0x00000400, 0xff200000, 0x00000408, 0xff202000,
-    0x00000410, 0xff204000, 0x00000418, 0xff206100,
-    0x00000420, 0xff208100, 0x00000429, 0xff20a100,
-    0x00000431, 0xff20c200, 0x00000439, 0xff20e200,
-    0x00000441, 0xff290000, 0x0000044a, 0xff292000,
-    0x00000452, 0xff294000, 0x0000045a, 0xff296100,
-    0x00000462, 0xff298100, 0x0000046a, 0xff29a100,
-    0x00000473, 0xff29c200, 0x0000047b, 0xff29e200,
-    0x00000483, 0xff310000, 0x0000048b, 0xff312000,
-    0x00000494, 0xff314000, 0x0000049c, 0xff316100,
-    0x000004a4, 0xff318100, 0x000004ac, 0xff31a100,
-    0x000004b4, 0xff31c200, 0x000004bd, 0xff31e200,
-    0x000004c5, 0xff390000, 0x000004cd, 0xff392000,
-    0x000004d5, 0xff394000, 0x000004de, 0xff396100,
-    0x000004e6, 0xff398100, 0x000004ee, 0xff39a100,
-    0x000004f6, 0xff39c200, 0x000004ff, 0xff39e200,
-    0x00000800, 0xff410000, 0x00000808, 0xff412000,
-    0x00000810, 0xff414000, 0x00000818, 0xff416100,
-    0x00000820, 0xff418100, 0x00000829, 0xff41a100,
-    0x00000831, 0xff41c200, 0x00000839, 0xff41e200,
-    0x00000841, 0xff4a0000, 0x0000084a, 0xff4a2000,
-    0x00000852, 0xff4a4000, 0x0000085a, 0xff4a6100,
-    0x00000862, 0xff4a8100, 0x0000086a, 0xff4aa100,
-    0x00000873, 0xff4ac200, 0x0000087b, 0xff4ae200,
-    0x00000883, 0xff520000, 0x0000088b, 0xff522000,
-    0x00000894, 0xff524000, 0x0000089c, 0xff526100,
-    0x000008a4, 0xff528100, 0x000008ac, 0xff52a100,
-    0x000008b4, 0xff52c200, 0x000008bd, 0xff52e200,
-    0x000008c5, 0xff5a0000, 0x000008cd, 0xff5a2000,
-    0x000008d5, 0xff5a4000, 0x000008de, 0xff5a6100,
-    0x000008e6, 0xff5a8100, 0x000008ee, 0xff5aa100,
-    0x000008f6, 0xff5ac200, 0x000008ff, 0xff5ae200,
-    0x00000c00, 0xff620000, 0x00000c08, 0xff622000,
-    0x00000c10, 0xff624000, 0x00000c18, 0xff626100,
-    0x00000c20, 0xff628100, 0x00000c29, 0xff62a100,
-    0x00000c31, 0xff62c200, 0x00000c39, 0xff62e200,
-    0x00000c41, 0xff6a0000, 0x00000c4a, 0xff6a2000,
-    0x00000c52, 0xff6a4000, 0x00000c5a, 0xff6a6100,
-    0x00000c62, 0xff6a8100, 0x00000c6a, 0xff6aa100,
-    0x00000c73, 0xff6ac200, 0x00000c7b, 0xff6ae200,
-    0x00000c83, 0xff730000, 0x00000c8b, 0xff732000,
-    0x00000c94, 0xff734000, 0x00000c9c, 0xff736100,
-    0x00000ca4, 0xff738100, 0x00000cac, 0xff73a100,
-    0x00000cb4, 0xff73c200, 0x00000cbd, 0xff73e200,
-    0x00000cc5, 0xff7b0000, 0x00000ccd, 0xff7b2000,
-    0x00000cd5, 0xff7b4000, 0x00000cde, 0xff7b6100,
-    0x00000ce6, 0xff7b8100, 0x00000cee, 0xff7ba100,
-    0x00000cf6, 0xff7bc200, 0x00000cff, 0xff7be200,
-    0x00001000, 0xff830000, 0x00001008, 0xff832000,
-    0x00001010, 0xff834000, 0x00001018, 0xff836100,
-    0x00001020, 0xff838100, 0x00001029, 0xff83a100,
-    0x00001031, 0xff83c200, 0x00001039, 0xff83e200,
-    0x00001041, 0xff8b0000, 0x0000104a, 0xff8b2000,
-    0x00001052, 0xff8b4000, 0x0000105a, 0xff8b6100,
-    0x00001062, 0xff8b8100, 0x0000106a, 0xff8ba100,
-    0x00001073, 0xff8bc200, 0x0000107b, 0xff8be200,
-    0x00001083, 0xff940000, 0x0000108b, 0xff942000,
-    0x00001094, 0xff944000, 0x0000109c, 0xff946100,
-    0x000010a4, 0xff948100, 0x000010ac, 0xff94a100,
-    0x000010b4, 0xff94c200, 0x000010bd, 0xff94e200,
-    0x000010c5, 0xff9c0000, 0x000010cd, 0xff9c2000,
-    0x000010d5, 0xff9c4000, 0x000010de, 0xff9c6100,
-    0x000010e6, 0xff9c8100, 0x000010ee, 0xff9ca100,
-    0x000010f6, 0xff9cc200, 0x000010ff, 0xff9ce200,
-    0x00001400, 0xffa40000, 0x00001408, 0xffa42000,
-    0x00001410, 0xffa44000, 0x00001418, 0xffa46100,
-    0x00001420, 0xffa48100, 0x00001429, 0xffa4a100,
-    0x00001431, 0xffa4c200, 0x00001439, 0xffa4e200,
-    0x00001441, 0xffac0000, 0x0000144a, 0xffac2000,
-    0x00001452, 0xffac4000, 0x0000145a, 0xffac6100,
-    0x00001462, 0xffac8100, 0x0000146a, 0xffaca100,
-    0x00001473, 0xffacc200, 0x0000147b, 0xfface200,
-    0x00001483, 0xffb40000, 0x0000148b, 0xffb42000,
-    0x00001494, 0xffb44000, 0x0000149c, 0xffb46100,
-    0x000014a4, 0xffb48100, 0x000014ac, 0xffb4a100,
-    0x000014b4, 0xffb4c200, 0x000014bd, 0xffb4e200,
-    0x000014c5, 0xffbd0000, 0x000014cd, 0xffbd2000,
-    0x000014d5, 0xffbd4000, 0x000014de, 0xffbd6100,
-    0x000014e6, 0xffbd8100, 0x000014ee, 0xffbda100,
-    0x000014f6, 0xffbdc200, 0x000014ff, 0xffbde200,
-    0x00001800, 0xffc50000, 0x00001808, 0xffc52000,
-    0x00001810, 0xffc54000, 0x00001818, 0xffc56100,
-    0x00001820, 0xffc58100, 0x00001829, 0xffc5a100,
-    0x00001831, 0xffc5c200, 0x00001839, 0xffc5e200,
-    0x00001841, 0xffcd0000, 0x0000184a, 0xffcd2000,
-    0x00001852, 0xffcd4000, 0x0000185a, 0xffcd6100,
-    0x00001862, 0xffcd8100, 0x0000186a, 0xffcda100,
-    0x00001873, 0xffcdc200, 0x0000187b, 0xffcde200,
-    0x00001883, 0xffd50000, 0x0000188b, 0xffd52000,
-    0x00001894, 0xffd54000, 0x0000189c, 0xffd56100,
-    0x000018a4, 0xffd58100, 0x000018ac, 0xffd5a100,
-    0x000018b4, 0xffd5c200, 0x000018bd, 0xffd5e200,
-    0x000018c5, 0xffde0000, 0x000018cd, 0xffde2000,
-    0x000018d5, 0xffde4000, 0x000018de, 0xffde6100,
-    0x000018e6, 0xffde8100, 0x000018ee, 0xffdea100,
-    0x000018f6, 0xffdec200, 0x000018ff, 0xffdee200,
-    0x00001c00, 0xffe60000, 0x00001c08, 0xffe62000,
-    0x00001c10, 0xffe64000, 0x00001c18, 0xffe66100,
-    0x00001c20, 0xffe68100, 0x00001c29, 0xffe6a100,
-    0x00001c31, 0xffe6c200, 0x00001c39, 0xffe6e200,
-    0x00001c41, 0xffee0000, 0x00001c4a, 0xffee2000,
-    0x00001c52, 0xffee4000, 0x00001c5a, 0xffee6100,
-    0x00001c62, 0xffee8100, 0x00001c6a, 0xffeea100,
-    0x00001c73, 0xffeec200, 0x00001c7b, 0xffeee200,
-    0x00001c83, 0xfff60000, 0x00001c8b, 0xfff62000,
-    0x00001c94, 0xfff64000, 0x00001c9c, 0xfff66100,
-    0x00001ca4, 0xfff68100, 0x00001cac, 0xfff6a100,
-    0x00001cb4, 0xfff6c200, 0x00001cbd, 0xfff6e200,
-    0x00001cc5, 0xffff0000, 0x00001ccd, 0xffff2000,
-    0x00001cd5, 0xffff4000, 0x00001cde, 0xffff6100,
-    0x00001ce6, 0xffff8100, 0x00001cee, 0xffffa100,
-    0x00001cf6, 0xffffc200, 0x00001cff, 0xffffe200
-};
-
 static void rtgui_blit_line_2_3(rt_uint8_t *_dst, rt_uint8_t *_src,
     rt_uint32_t len)
 {
@@ -660,10 +698,6 @@ static void rtgui_blit_line_4_3(rt_uint8_t *_dst, rt_uint8_t *_src,
     }
 }
 
-static void rtgui_blit_line_1_4(rt_uint8_t *_dst, rt_uint8_t *_src,
-    rt_uint32_t len)
-{
-}
 
 static void rtgui_blit_line_2_4(rt_uint8_t *_dst, rt_uint8_t *_src,
     rt_uint32_t len)
@@ -691,9 +725,9 @@ static const rtgui_blit_line_func_ _blit_table[4][4] = {
     /* 1_2, 2_2, 3_2, 4_2 */
     {RT_NULL, RT_NULL, rtgui_blit_line_3_2, rtgui_blit_line_4_2 },
     /* 1_3, 2_3, 3_3, 4_3 */
-    {rtgui_blit_line_1_3, rtgui_blit_line_2_3, RT_NULL, rtgui_blit_line_4_3 },
+    {RT_NULL, rtgui_blit_line_2_3, RT_NULL, rtgui_blit_line_4_3 },
     /* 1_4, 2_4, 3_4, 4_4 */
-    {rtgui_blit_line_1_4, rtgui_blit_line_2_4, rtgui_blit_line_3_4, RT_NULL },
+    {RT_NULL, rtgui_blit_line_2_4, rtgui_blit_line_3_4, RT_NULL },
 };
 
 rtgui_blit_line_func_ rtgui_blit_line_get(rt_uint8_t dst_bpp,

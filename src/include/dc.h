@@ -169,6 +169,7 @@ void rtgui_dc_draw_arc(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t r,
 void rtgui_dc_draw_ellipse(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t rx, rt_int16_t ry);
 void rtgui_dc_fill_ellipse(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t rx, rt_int16_t ry);
 
+#if RTGUI_USING_DC_BUFFER
 /* alpha blending functions */
 void rtgui_dc_draw_aa_line(rtgui_dc_t * dst,int x1,int y1,int x2,int y2);
 void rtgui_dc_draw_aa_lines(rtgui_dc_t * dst,const struct rtgui_point * points,int count);
@@ -186,6 +187,7 @@ void rtgui_dc_draw_aa_circle(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int1
 void rtgui_dc_draw_aa_ellipse(rtgui_dc_t *dc, rt_int16_t  x, rt_int16_t y, rt_int16_t rx, rt_int16_t ry);
 
 int rtgui_dc_draw_thick_line(rtgui_dc_t * dst, rt_int16_t x1, rt_int16_t y1, rt_int16_t x2, rt_int16_t y2, rt_uint8_t width);
+#endif
 
 /*
  * dc inline function
@@ -252,13 +254,17 @@ rt_uint8_t rtgui_dc_get_pixel_format(rtgui_dc_t *dc);
 void rtgui_dc_logic_to_device(rtgui_dc_t* dc, struct rtgui_point *point);
 void rtgui_dc_rect_to_device(rtgui_dc_t* dc, rtgui_rect_t* rect);
 
+#ifdef RTGUI_USING_DC_BUFFER
 /* dc rotation and zoom operations */
 rtgui_dc_t *rtgui_dc_shrink(rtgui_dc_t *dc, int factorx, int factory);
 rtgui_dc_t *rtgui_dc_zoom(rtgui_dc_t *dc, double zoomx, double zoomy, int smooth);
 rtgui_dc_t *rtgui_dc_rotozoom(rtgui_dc_t *dc, double angle, double zoomx, double zoomy, int smooth);
 
+#ifdef RT_USING_DFS
 /* dc buffer dump to file */
 void rtgui_dc_buffer_dump(rtgui_dc_t *self, char *fn);
+#endif
+#endif
 
 #endif /* IMPORT_TYPES */
 

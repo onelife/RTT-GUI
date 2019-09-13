@@ -314,6 +314,7 @@ static rt_bool_t _list_event_handler(void *obj, rtgui_evt_generic_t *evt) {
 
         rtgui_dc_end_drawing(dc, RT_TRUE);
         done = RT_TRUE;
+        break;
     }
 
     default:

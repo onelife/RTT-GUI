@@ -153,8 +153,9 @@ MEMBER_SETTER_PROTOTYPE(rtgui_win_t, win, rtgui_evt_hdl_t, on_key);
 MEMBER_GETTER_PROTOTYPE(rtgui_win_t, win, char*, title);
 
 void rtgui_win_set_title(rtgui_win_t *win, const char *title);
+#ifdef RTGUI_USING_DC_BUFFER
 rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t * win);
-
+#endif
 #endif /* IMPORT_TYPES */
 
 #ifdef __cplusplus

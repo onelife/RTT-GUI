@@ -38,14 +38,15 @@
 /* User Config */
 
 /* RT-Thread Device Name */
+// #define CONFIG_GUI_DEVICE_NAME              "ILI9341"
+// #define CONFIG_TOUCH_DEVICE_NAME            "FT6206"
 // #define CONFIG_GUI_DEVICE_NAME              "SSD1331"
 // #define CONFIG_KEY_DEVICE_NAME              "BTN"
-#define CONFIG_GUI_DEVICE_NAME              "ILI9341"
-#define CONFIG_TOUCH_DEVICE_NAME            "FT6206"
+#define CONFIG_GUI_DEVICE_NAME              "SSD1306"
 
 /* Color */
-#define CONFIG_USING_MONO                   (0)
-#define CONFIG_USING_RGB565                 (1)
+#define CONFIG_USING_MONO                   (1)
+#define CONFIG_USING_RGB565                 (0)
 #define CONFIG_USING_RGB565P                (0)
 #define CONFIG_USING_RGB888                 (0)
 
@@ -56,8 +57,8 @@
 #define CONFIG_USING_IMAGE_PNG              (0)
 
 /* Font */
-#define CONFIG_USING_FONT_12                (0)
-#define CONFIG_USING_FONT_16                (1)
+#define CONFIG_USING_FONT_12                (1)
+#define CONFIG_USING_FONT_16                (0)
 #define CONFIG_USING_FONT_HZ                (0)
 #define CONFIG_USING_FONT_FILE              (1)
 
@@ -88,16 +89,16 @@
 #define RTGUI_SERVER_PRIORITY               ((RT_THREAD_PRIORITY_MAX >> 1) + (RT_THREAD_PRIORITY_MAX >> 3))
 #define RTGUI_SERVER_TIMESLICE              (15)
 #define RTGUI_SERVER_STACK_SIZE             (2 * 512)
-
-// #define GUIENGIN_USING_CALIBRATION
-// #define RTGUI_USING_DC_BUFFER
-// #define GUIENGIN_USING_VFRAMEBUFFER
+#if (CONFIG_USING_MONO)
+# define RTGUI_USING_FRAMEBUFFER
+// # define RTGUI_USING_DC_BUFFER
+#endif
+// #define RTGUI_USING_CALIBRATION
 
 
 /* Color Config */
 
 #define RTGUI_BIG_ENDIAN_OUTPUT
-
 #ifdef RTGUI_USING_RGB888_AS_32BIT
 # define RTGUI_RGB888_PIXEL_BITS 32
 #else
@@ -113,7 +114,7 @@
 /* External Library Config*/
 
 /* JPEG */
-#define CONFIG_JPEG_BUFFER_SIZE             (4 * 1024) 
+#define CONFIG_JPEG_BUFFER_SIZE             (4 * 1024)
 #define CONFIG_JPEG_OUTPUT_RGB565           (1)
 
 /* LodePNG */

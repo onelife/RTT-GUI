@@ -31,32 +31,24 @@
 #endif
 
 #ifdef RT_USING_ULOG
-# define LOG_LVL                        RTGUI_LOG_LEVEL
-# define LOG_TAG                        "GUI_DRV"
+# define LOG_LVL                    RTGUI_LOG_LEVEL
+# define LOG_TAG                    "GUI_DRV"
 # include "components/utilities/ulog/ulog.h"
 #else /* RT_USING_ULOG */
-# define LOG_E(format, args...)         rt_kprintf(format "\n", ##args)
-# define LOG_D                          LOG_E
+# define LOG_E(format, args...)     rt_kprintf(format "\n", ##args)
+# define LOG_D                      LOG_E
 #endif /* RT_USING_ULOG */
-
-#ifdef GUIENGIN_USING_VFRAMEBUFFER
-# ifndef RTGUI_VFB_PIXEL_FMT
-#  define RTGUI_VFB_PIXEL_FMT           RTGRAPHIC_PIXEL_FORMAT_RGB565
-# endif
-#endif
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define graphic_ops()                   ((struct rtgui_graphic_driver_ops *)\
-    ((rtgui_get_gfx_device()->device)->user_data))
+#define display()                   rtgui_get_gfx_device()
+#define graphic_ops()               ((struct rtgui_graphic_driver_ops *) \
+                                    display()->device->user_data)
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static rtgui_gfx_driver_t _gfx_drv;
-static rtgui_gfx_driver_t *_cur_drv = &_gfx_drv;
-#ifdef GUIENGIN_USING_VFRAMEBUFFER
-    static rtgui_gfx_driver_t _vfb_drv = {0};
-#endif
+static rt_bool_t _vmode = RT_FALSE;
 #ifdef CONFIG_TOUCH_DEVICE_NAME
     static rt_bool_t _touch_done = RT_FALSE;
     static rt_device_t _touch;
@@ -230,64 +222,102 @@ static const struct rtgui_graphic_driver_ops *_get_pixel_ops(rt_uint32_t fmt) {
 }
 
 
-#ifdef GUIENGIN_USING_VFRAMEBUFFER
-
-#define PIXEL(x, y)     ((rt_uint8_t **)display()->framebuffer)[y / 8][x]
+#ifdef RTGUI_USING_FRAMEBUFFER
 
 #if (CONFIG_USING_MONO)
+#define BUFFER()                    (display()->framebuffer)
+#define WIDTH()                     (display()->width)
+
 static void _frame_mono_set_pixel(rtgui_color_t *c, int x, int y) {
-    if (*c == white)
-        PIXEL(x, y) &= ~(1 << (y % 8));
+    rt_uint8_t x1 = x & 0x000000ff;
+    rt_uint8_t y1 = y & 0x000000ff;
+    rt_uint8_t *ptr = &BUFFER()[(y1 >> 3) * WIDTH() + x1];
+
+    if (*c != black)
+        *ptr |=  (1 << (y1 & 0x07));
     else
-        PIXEL(x, y) |=  (1 << (y % 8));
+        *ptr &= ~(1 << (y1 & 0x07));
 }
 
 static void _frame_mono_get_pixel(rtgui_color_t *c, int x, int y) {
-    rtgui_gfx_driver_t *drv = rtgui_get_gfx_device();
+    rt_uint8_t x1 = x & 0x000000ff;
+    rt_uint8_t y1 = y & 0x000000ff;
+    rt_uint8_t *ptr = &BUFFER()[(y1 >> 3) * WIDTH() + x1];
 
-    if (PIXEL(x, y) & (1 << (y % 8)))
-        *c = black;
-    else
+    if (*ptr & (1 << (y1 & 0x07)))
         *c = white;
+    else
+        *c = black;
 }
 
 static void _frame_mono_draw_hline(rtgui_color_t *c, int x1, int x2, int y) {
-    int x;
+    rt_uint8_t y1 = y & 0x000000ff;
+    rt_uint8_t *ptr;
+    rt_uint8_t mask, i, len;
 
-    if (*c == white) {
-        for (x = x1; x < x2; x++)
-            PIXEL(x, y) &= ~(1 << (y % 8));
+    x1 &= 0x000000ff;
+    x2 &= 0x000000ff;
+    ptr = &BUFFER()[(y1 >> 3) * WIDTH() + x1];
+    mask = 1 << (y1 & 0x07);
+    len = x2 - x1 + 1;
+    if (*c != black) {
+        for (i = 0; i < len; i++, ptr++)
+            *ptr |=  mask;
     } else {
-        for (x = x1; x < x2; x++)
-            PIXEL(x, y) |= (1 << (y % 8));
+        for (i = 0; i < len; i++, ptr++)
+            *ptr &= ~mask;
     }
 }
 
 static void _frame_mono_draw_vline(rtgui_color_t *c, int x , int y1, int y2) {
-    int y;
+    rt_uint8_t x1 = x & 0x000000ff;
+    rt_uint8_t *ptr;
+    rt_uint8_t mask, y, len;
 
-    if (*c == white) {
-        for (y = y1; y < y2; y++)
-            PIXEL(x, y) &= ~(1 << (index % 8));
+    y1 &= 0x000000ff;
+    y2 &= 0x000000ff;
+    ptr = &BUFFER()[(y1 >> 3) * WIDTH() + x1];
+    len = 1;
+    if (*c != black) {
+        for (y = y1; y < y2; y++) {
+            mask = 1 << (y % 8);
+            *ptr |=  mask;
+            if (mask == 0x80) {
+                ptr++;
+                len++;
+            }
+        }
     } else {
-        for (y = y1; y < y2; y++)
-            PIXEL(x, y) |= (1 << (index % 8));
+        for (y = y1; y < y2; y++) {
+            mask = 1 << (y % 8);
+            *ptr &= ~mask;
+            if (mask == 0x80) {
+                ptr++;
+                len++;
+            }
+        }
     }
 }
 
 static void _frame_mono_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2,
     int y) {
-    int x;
+    rt_uint8_t y1 = y & 0x000000ff;
+    rt_uint8_t *ptr;
+    rt_uint8_t mask, i, len;
 
-    for (x = x1; x < x2; x++) {
-        if (pixels[x / 8] && (1 << (x % 8)))
-            PIXEL(x, y) |= (1 << (y % 8));
+    x1 &= 0x000000ff;
+    x2 &= 0x000000ff;
+    ptr = &BUFFER()[(y1 >> 3) * WIDTH() + x1];
+    mask = 1 << (y1 & 0x07);
+    len = x2 - x1 + 1;
+    for (i = 0; i < len; i++, ptr++) {
+        if (*(pixels + (i / 8)) & (1 << (i % 8)))
+            *ptr |=  mask;
         else
-            PIXEL(x, y) &= ~(1 << (y % 8));
+            *ptr &= ~mask;
     }
 }
 
-#undef PIXEL
 
 const struct rtgui_graphic_driver_ops _frame_mono_ops = {
     _frame_mono_set_pixel,
@@ -297,18 +327,22 @@ const struct rtgui_graphic_driver_ops _frame_mono_ops = {
     _frame_mono_draw_raw_hline,
 };
 
+#undef BUFFER
+#undef WIDTH
 #endif /* CONFIG_USING_MONO */
 
-#define PIXEL(x, y)     (rtgui_get_gfx_device()->framebuffer + \
-                         rtgui_get_gfx_device()->pitch * y + \
-                         _BIT2BYTE(rtgui_get_gfx_device()->bits_per_pixel) * x)
+#define PIXEL(x, y)     (display()->framebuffer + \
+                         display()->pitch * y + \
+                         _BIT2BYTE(display()->bits_per_pixel) * x)
 
+#if !(CONFIG_USING_MONO)
 static void _frame_draw_raw_hline(rt_uint8_t *pixels, int x1, int x2, int y) {
     rt_uint8_t *ptr = (rt_uint8_t *)PIXEL(x1, y);
 
     rt_memcpy(ptr, pixels,
-        (x2 - x1) * _BIT2BYTE(rtgui_get_gfx_device()->bits_per_pixel));
+        (x2 - x1) * _BIT2BYTE(display()->bits_per_pixel));
 }
+#endif
 
 #if (CONFIG_USING_RGB565)
 static void _frame_rgb565_set_pixel(rtgui_color_t *c, int x, int y) {
@@ -334,7 +368,7 @@ static void _frame_rgb565_draw_vline(rtgui_color_t *c, int x , int y1, int y2) {
     rt_uint16_t *ptr = (rt_uint16_t *)PIXEL(x, y1);
     int y;
 
-    for (y = y1; y < y2; y++, ptr += rtgui_get_gfx_device()->width)
+    for (y = y1; y < y2; y++, ptr += display()->width)
         *ptr = pixel;
 }
 
@@ -371,7 +405,7 @@ static void _frame_rgb565p_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
     rt_uint16_t *ptr = (rt_uint16_t *)PIXEL(x, y1);
     int y;
 
-    for (y = y1; y < y2; y++, ptr += rtgui_get_gfx_device()->width)
+    for (y = y1; y < y2; y++, ptr += display()->width)
         *ptr = pixel;
 }
 
@@ -417,7 +451,7 @@ static void _frame_rgb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
     rtgui_color_t *ptr = (rtgui_color_t *)PIXEL(x, y1);
     int y;
 
-    for (y = y1; y < y2; y++, ptr += rtgui_get_gfx_device()->width)
+    for (y = y1; y < y2; y++, ptr += display()->width)
         #ifdef RTGUI_USING_RGB888_AS_32BIT
             *ptr = *c;
         #else
@@ -455,7 +489,7 @@ static void _frame_argb888_draw_vline(rtgui_color_t *c, int x, int y1, int y2) {
     rtgui_color_t *ptr = (rtgui_color_t *)PIXEL(x, y1);
     int y;
 
-    for (y = y1; y < y2; y++, ptr += rtgui_get_gfx_device()->width)
+    for (y = y1; y < y2; y++, ptr += display()->width)
         *ptr = *c;
 }
 
@@ -507,40 +541,21 @@ static const struct rtgui_graphic_driver_ops *_get_frame_ops(rt_uint32_t fmt) {
     }
 }
 
-static void _gfx_driver_vmode_init(void) {
-    if ((_vfb_drv.width  == _gfx_drv.width) && \
-        (_vfb_drv.height == _gfx_drv.height))
-        return;
-
-    if (_vfb_drv.framebuffer) rtgui_free(_vfb_drv.framebuffer);
-
-    _vfb_drv.device = RT_NULL;
-    _vfb_drv.width = _gfx_drv.width;
-    _vfb_drv.height = _gfx_drv.height;
-    _vfb_drv.pixel_format = RTGUI_VFB_PIXEL_FMT;
-    _vfb_drv.bits_per_pixel = rtgui_color_get_bits(RTGUI_VFB_PIXEL_FMT);
-    _vfb_drv.pitch = _gfx_drv.width * _BIT2BYTE(_vfb_drv.bits_per_pixel);
-    _vfb_drv.framebuffer = rtgui_malloc(_vfb_drv.height * _vfb_drv.pitch);
-    rt_memset(_vfb_drv.framebuffer, 0x00, _vfb_drv.height * _vfb_drv.pitch);
-    _vfb_drv.ext_ops = RT_NULL;
-    _vfb_drv.ops = _get_frame_ops(_vfb_drv.pixel_format);
-}
-
-
+#if RTGUI_USING_DC_BUFFER
 void rtgui_gfx_driver_vmode_enter(void) {
     rtgui_screen_lock(RT_WAITING_FOREVER);
-    _cur_drv = &_vfb_drv;
+    _vmode = RT_TRUE;
 }
 RTM_EXPORT(rtgui_gfx_driver_vmode_enter);
 
 void rtgui_gfx_driver_vmode_exit(void) {
-    _cur_drv = &_gfx_drv;
     rtgui_screen_unlock();
+    _vmode = RT_FALSE;
 }
 RTM_EXPORT(rtgui_gfx_driver_vmode_exit);
 
 rt_bool_t rtgui_gfx_driver_is_vmode(void) {
-    return (_cur_drv == &_vfb_drv);
+    return _vmode;
 }
 RTM_EXPORT(rtgui_gfx_driver_is_vmode);
 
@@ -552,7 +567,7 @@ rtgui_dc_t *rtgui_gfx_driver_get_buffer(const rtgui_gfx_driver_t *drv,
     rt_uint8_t *pixel, *dst;
 
     if (!drv)
-        drv = _cur_drv;
+        drv = &_gfx_drv;
 
     rtgui_gfx_get_rect(drv, &rect);
     if (_rect)
@@ -583,9 +598,9 @@ rtgui_dc_t *rtgui_gfx_driver_get_buffer(const rtgui_gfx_driver_t *drv,
     return (rtgui_dc_t *)buf;
 }
 RTM_EXPORT(rtgui_gfx_driver_get_buffer);
+#endif
 
-#endif /* GUIENGIN_USING_VFRAMEBUFFER */
-
+#endif /* RTGUI_USING_DC_BUFFER */
 
 /* Public functions ----------------------------------------------------------*/
 rt_err_t rtgui_set_gfx_device(rt_device_t dev) {
@@ -618,7 +633,7 @@ rt_err_t rtgui_set_gfx_device(rt_device_t dev) {
         _gfx_drv.height = info.height;
         _gfx_drv.pixel_format = info.pixel_format;
         _gfx_drv.bits_per_pixel = info.bits_per_pixel;
-        _gfx_drv.pitch = _gfx_drv.width * _BIT2BYTE(_gfx_drv.bits_per_pixel);
+        _gfx_drv.pitch = _gfx_drv.width / 8 * _gfx_drv.bits_per_pixel;
         _gfx_drv.framebuffer = info.framebuffer;
 
         /* get extent ops */
@@ -632,10 +647,10 @@ rt_err_t rtgui_set_gfx_device(rt_device_t dev) {
         if (!_gfx_drv.framebuffer) {
             _gfx_drv.ops = _get_pixel_ops(_gfx_drv.pixel_format);
         } else {
-            #ifdef GUIENGIN_USING_VFRAMEBUFFER
+            #ifdef RTGUI_USING_FRAMEBUFFER
                 _gfx_drv.ops = _get_frame_ops(_gfx_drv.pixel_format);
             #else
-                _gfx_drv.ops = RT_NULL;
+                _gfx_drv.ops = _get_pixel_ops(_gfx_drv.pixel_format);
             #endif
         }
         if (!_gfx_drv.ops) {
@@ -643,10 +658,6 @@ rt_err_t rtgui_set_gfx_device(rt_device_t dev) {
             ret = -RT_ERROR;
             break;
         }
-
-        #ifdef GUIENGIN_USING_VFRAMEBUFFER
-            _gfx_driver_vmode_init();
-        #endif
 
         #ifdef RTGUI_USING_HW_CURSOR
             rtgui_cursor_set_image(RTGUI_CURSOR_ARROW);
@@ -657,13 +668,13 @@ rt_err_t rtgui_set_gfx_device(rt_device_t dev) {
 }
 RTM_EXPORT(rtgui_set_gfx_device);
 
-RTGUI_REFERENCE_GETTER(gfx_device, rtgui_gfx_driver_t, _cur_drv);
+RTGUI_REFERENCE_GETTER(gfx_device, rtgui_gfx_driver_t, &_gfx_drv);
 
 void rtgui_gfx_get_rect(const rtgui_gfx_driver_t *drv, rtgui_rect_t *rect) {
     RT_ASSERT(rect != RT_NULL);
 
     if (!drv)
-        drv = _cur_drv;
+        drv = &_gfx_drv;
 
     rect->x1 = rect->y1 = 0;
     rect->x2 = drv->width - 1;
@@ -694,17 +705,9 @@ void rtgui_gfx_update_screen(const rtgui_gfx_driver_t *drv,
 }
 RTM_EXPORT(rtgui_gfx_update_screen);
 
-void rtgui_gfx_set_framebuffer(void *fb) {
-    if (_cur_drv)
-        _cur_drv->framebuffer = fb;
-    else
-        _gfx_drv.framebuffer = fb;
-}
-
 rt_uint8_t *rtgui_gfx_get_framebuffer(const rtgui_gfx_driver_t *drv) {
     if (!drv)
-        drv = _cur_drv;
-
+        return _gfx_drv.framebuffer;
     return drv->framebuffer;
 }
 RTM_EXPORT(rtgui_gfx_get_framebuffer);
@@ -793,7 +796,7 @@ rt_err_t rtgui_set_key_device(rt_device_t dev) {
 void rtgui_cursor_set_position(rt_uint16_t x, rt_uint16_t y) {
     rt_uint32_t value;
 
-    if (_cur_drv->device) {
+    if (_gfx_drv.device) {
         value = (x << 16 | y);
         rt_device_control(_gfx_drv.device, RT_DEVICE_CTRL_CURSOR_SET_POSITION,
             &value);
@@ -803,7 +806,7 @@ void rtgui_cursor_set_position(rt_uint16_t x, rt_uint16_t y) {
 void rtgui_cursor_set_image(enum rtgui_cursor_type type) {
     rt_uint32_t value;
 
-    if (_cur_drv->device) {
+    if (_gfx_drv.device) {
         value = type;
         rt_device_control(_gfx_drv.device, RT_DEVICE_CTRL_CURSOR_SET_TYPE,
             &value);

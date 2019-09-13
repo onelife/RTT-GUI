@@ -308,9 +308,10 @@ static rt_bool_t _win_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         (void)_win_ondraw(win, evt);
         break;
 
-    #ifdef GUIENGIN_USING_VFRAMEBUFFER
+    #ifdef RTGUI_USING_DC_BUFFER
         case RTGUI_EVENT_VPAINT_REQ:
-            evt->vpaint_req.buffer = rtgui_win_get_drawing(win);
+            LOG_E("RTGUI_EVENT_VPAINT_REQ");
+            // evt->vpaint_req.buffer = rtgui_win_get_drawing(win);
             // rt_completion_done(evt->vpaint_req.origin->cmp);
             break;
     #endif
@@ -691,7 +692,7 @@ void rtgui_win_set_title(rtgui_win_t *win, const char *title) {
 RTM_EXPORT(rtgui_win_set_title);
 
 
-#ifdef GUIENGIN_USING_VFRAMEBUFFER
+#ifdef RTGUI_USING_DC_BUFFER
 
 rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t *win) {
     rtgui_dc_t *dc;
@@ -770,4 +771,4 @@ rtgui_dc_t *rtgui_win_get_drawing(rtgui_win_t *win) {
     return dc;
 }
 RTM_EXPORT(rtgui_win_get_drawing);
-#endif /* GUIENGIN_USING_VFRAMEBUFFER */
+#endif /* RTGUI_USING_DC_BUFFER */

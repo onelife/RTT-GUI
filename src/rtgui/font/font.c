@@ -277,11 +277,12 @@ rt_uint32_t rtgui_font_get_string_width(rtgui_font_t *font, const char *text) {
     w = 0;
     while (*utf8) {
         sz = UTF8_SIZE(*utf8);
-        if (IS_ASCII(utf8, sz) && ascii) {
+        if (IS_ASCII(utf8, sz) && ascii)
             w += rtgui_font_get_width(ascii, (const char *)utf8);
-        } else {
+        else if (non_ascii)
             w += rtgui_font_get_width(non_ascii, (const char *)utf8);
-        }
+        else
+            w += rtgui_font_get_width(font, (const char *)utf8);
         utf8 += sz;
     }
 

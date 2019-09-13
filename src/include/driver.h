@@ -84,17 +84,16 @@ rt_err_t rtgui_set_gfx_device(rt_device_t dev);
 REFERENCE_GETTER_PROTOTYPE(gfx_device, rtgui_gfx_driver_t);
 void rtgui_gfx_get_rect(const rtgui_gfx_driver_t *driver, rtgui_rect_t *rect);
 void rtgui_gfx_update_screen(const rtgui_gfx_driver_t *driver, rtgui_rect_t *rect);
-void rtgui_gfx_set_framebuffer(void *fb);
 rt_uint8_t *rtgui_gfx_get_framebuffer(const rtgui_gfx_driver_t *driver);
 
-#ifdef GUIENGIN_USING_VFRAMEBUFFER
+#ifdef RTGUI_USING_DC_BUFFER
 void rtgui_gfx_driver_vmode_enter(void);
 void rtgui_gfx_driver_vmode_exit(void);
 rtgui_dc_t* rtgui_gfx_driver_get_buffer(const rtgui_gfx_driver_t *driver, rtgui_rect_t *rect);
 rt_bool_t rtgui_gfx_driver_is_vmode(void);
-#else /* GUIENGIN_USING_VFRAMEBUFFER */
+#else /* RTGUI_USING_DC_BUFFER */
 # define rtgui_gfx_driver_is_vmode()    (RT_FALSE)
-#endif /* GUIENGIN_USING_VFRAMEBUFFER */
+#endif /* RTGUI_USING_DC_BUFFER */
 
 #ifdef CONFIG_TOUCH_DEVICE_NAME
 rt_err_t rtgui_set_touch_device(rt_device_t dev);
