@@ -48,7 +48,6 @@
 /* Private function prototypes -----------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static rtgui_gfx_driver_t _gfx_drv;
-static rt_bool_t _vmode = RT_FALSE;
 #ifdef CONFIG_TOUCH_DEVICE_NAME
     static rt_bool_t _touch_done = RT_FALSE;
     static rt_device_t _touch;
@@ -541,66 +540,7 @@ static const struct rtgui_graphic_driver_ops *_get_frame_ops(rt_uint32_t fmt) {
     }
 }
 
-#if RTGUI_USING_DC_BUFFER
-void rtgui_gfx_driver_vmode_enter(void) {
-    rtgui_screen_lock(RT_WAITING_FOREVER);
-    _vmode = RT_TRUE;
-}
-RTM_EXPORT(rtgui_gfx_driver_vmode_enter);
-
-void rtgui_gfx_driver_vmode_exit(void) {
-    rtgui_screen_unlock();
-    _vmode = RT_FALSE;
-}
-RTM_EXPORT(rtgui_gfx_driver_vmode_exit);
-
-rt_bool_t rtgui_gfx_driver_is_vmode(void) {
-    return _vmode;
-}
-RTM_EXPORT(rtgui_gfx_driver_is_vmode);
-
-rtgui_dc_t *rtgui_gfx_driver_get_buffer(const rtgui_gfx_driver_t *drv,
-    rtgui_rect_t *_rect) {
-    rtgui_rect_t rect;
-    rt_int16_t w, h;
-    struct rtgui_dc_buffer *buf;
-    rt_uint8_t *pixel, *dst;
-
-    if (!drv)
-        drv = &_gfx_drv;
-
-    rtgui_gfx_get_rect(drv, &rect);
-    if (_rect)
-        rtgui_rect_intersect(_rect, &rect);
-
-    w = RECT_W(rect);
-    h = RECT_H(rect);
-    if ((w <= 1) || (h <= 1) || !drv->framebuffer) return RT_NULL;
-
-    /* create buffer DC */
-    buf = (struct rtgui_dc_buffer *)rtgui_dc_buffer_create_pixformat(
-        drv->pixel_format, w, h);
-    if (!buf) return RT_NULL;
-
-    /* get source pixel */
-    pixel = (rt_uint8_t *)drv->framebuffer + \
-            rect.y1 * drv->pitch + \
-            rect.x1 * rtgui_color_get_bpp(drv->pixel_format);
-    dst = buf->pixel;
-
-    do {
-        rt_memcpy(dst, pixel, buf->pitch);
-        dst += buf->pitch;
-        pixel += drv->pitch;
-        h--;
-    } while (h > 0);
-
-    return (rtgui_dc_t *)buf;
-}
-RTM_EXPORT(rtgui_gfx_driver_get_buffer);
-#endif
-
-#endif /* RTGUI_USING_DC_BUFFER */
+#endif /* RTGUI_USING_FRAMEBUFFER */
 
 /* Public functions ----------------------------------------------------------*/
 rt_err_t rtgui_set_gfx_device(rt_device_t dev) {

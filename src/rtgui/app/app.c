@@ -271,7 +271,6 @@ static rt_bool_t _app_event_handler(void *obj, rtgui_evt_generic_t *evt) {
         break;
 
     case RTGUI_EVENT_PAINT:
-    case RTGUI_EVENT_VPAINT_REQ:
     case RTGUI_EVENT_CLIP_INFO:
     case RTGUI_EVENT_WIN_DEACTIVATE:
     case RTGUI_EVENT_WIN_CLOSE:

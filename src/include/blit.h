@@ -47,7 +47,7 @@
 #ifndef __RTGUI_BLIT_H__
 #define __RTGUI_BLIT_H__
 /* Includes ------------------------------------------------------------------*/
-#include "./rtgui.h"
+#include "include/rtgui.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,76 +62,6 @@ typedef void (*rtgui_blit_line_func)(rt_uint8_t *_dst, rt_uint8_t *_src,
 /* Exported functions ------------------------------------------------------- */
 rtgui_blit_line_func rtgui_get_blit_line_func(rt_uint8_t src_fmt,
     rt_uint8_t dst_fmt);
-
-
-#ifdef RTGUI_USING_DC_BUFFER
-
-/* 4-times unrolled loop */
-#define DUFFS_LOOP4(pixel_copy_increment, width) {                      \
-    int n = (width + 3) / 4;                                            \
-    switch (width & 3) {                                                \
-    case 0: do { pixel_copy_increment;                                  \
-    case 3:      pixel_copy_increment;                                  \
-    case 2:      pixel_copy_increment;                                  \
-    case 1:      pixel_copy_increment;                                  \
-               } while (--n > 0);                                       \
-    }                                                                   \
-}
-
-/* 8-times unrolled loop */
-#define DUFFS_LOOP8(pixel_copy_increment, width) {                      \
-    int n = (width + 7) / 8;                                            \
-    switch (width & 7) {                                                \
-    case 0: do { pixel_copy_increment;                                  \
-    case 7:      pixel_copy_increment;                                  \
-    case 6:      pixel_copy_increment;                                  \
-    case 5:      pixel_copy_increment;                                  \
-    case 4:      pixel_copy_increment;                                  \
-    case 3:      pixel_copy_increment;                                  \
-    case 2:      pixel_copy_increment;                                  \
-    case 1:      pixel_copy_increment;                                  \
-               } while ( --n > 0 );                                     \
-    }                                                                   \
-}
-
-/* Use the 8-times version of the loop by default */
-#define DUFFS_LOOP(pixel_copy_increment, width)                         \
-    DUFFS_LOOP8(pixel_copy_increment, width)
-
-struct rtgui_image_info {
-    rt_uint8_t *pixels;
-    int src_pitch;
-
-    rt_uint8_t src_fmt;
-    rt_uint8_t a;
-};
-
-struct rtgui_blit_info {
-    rt_uint8_t *src;
-    int src_w, src_h;
-    int src_pitch;
-    int src_skip;
-
-    rt_uint8_t *dst;
-    int dst_w, dst_h;
-    int dst_pitch;
-    int dst_skip;
-
-    rt_uint8_t src_fmt;
-    rt_uint8_t dst_fmt;
-    rt_uint8_t r, g, b, a;
-};
-
-typedef struct rtgui_image_info rtgui_image_info_t;
-typedef struct rtgui_blit_info rtgui_blit_info_t;
-typedef void (*rtgui_blit_line_func_)(rt_uint8_t *_dst, rt_uint8_t *_src,
-    rt_uint32_t len);
-
-rtgui_blit_line_func_ rtgui_blit_line_get(rt_uint8_t dst_bpp, rt_uint8_t src_bpp);
-
-void rtgui_blit(rtgui_blit_info_t * info);
-
-#endif /* RTGUI_USING_DC_BUFFER */
 
 #ifdef __cplusplus
 }

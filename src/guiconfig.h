@@ -91,9 +91,7 @@
 #define RTGUI_SERVER_STACK_SIZE             (2 * 512)
 #if (CONFIG_USING_MONO)
 # define RTGUI_USING_FRAMEBUFFER
-// # define RTGUI_USING_DC_BUFFER
 #endif
-// #define RTGUI_USING_CALIBRATION
 
 
 /* Color Config */

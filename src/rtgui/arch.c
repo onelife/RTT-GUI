@@ -388,8 +388,6 @@ const char *rtgui_event_text(rtgui_evt_generic_t *evt) {
     case RTGUI_EVENT_MONITOR_ADD:   return "<EVT>MonitorAdd";
     case RTGUI_EVENT_MONITOR_REMOVE:    return "<EVT>MonitorRemove";
     case RTGUI_EVENT_TIMER:         return "<EVT>Timer";
-    /* virtual paint event (server -> client) */
-    case RTGUI_EVENT_VPAINT_REQ:    return "<EVT>VPaintReq";
     /* clip rect information */
     case RTGUI_EVENT_CLIP_INFO:     return "<EVT>ClipInfo";
     /* mouse and keyboard event */

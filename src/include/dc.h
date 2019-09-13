@@ -35,14 +35,13 @@ extern "C" {
 
 /* Exported defines ----------------------------------------------------------*/
 #ifndef M_PI
-# define M_PI    3.14159265358979323846
+# define M_PI    (3.14159265358979323846)
 #endif
 
 /* Exported types ------------------------------------------------------------*/
 typedef enum rtgui_dc_type {
     RTGUI_DC_HW,
     RTGUI_DC_CLIENT,
-    RTGUI_DC_BUFFER,
 } rtgui_dc_type_t;
 
 struct rtgui_dc_engine {
@@ -80,21 +79,6 @@ struct rtgui_dc_hw {
     const rtgui_gfx_driver_t *hw_driver;
 };
 
-/**
- * The buffer dc is a device context with memory buffer.
- *
- * All the operations on this device context is reflected to the memory buffer.
- */
-struct rtgui_dc_buffer {
-    rtgui_dc_t _super;
-    rtgui_gc_t gc;              /* graphic context */
-    rt_uint8_t pixel_format;    /* pixel format */
-    rt_uint8_t blend_mode;		/* RTGUI_BLENDMODE: None/Blend/Add/Mod */
-    rt_uint16_t width, height;
-    rt_uint16_t pitch;
-    rt_uint8_t pixel_alpha;
-    rt_uint8_t *pixel;
-};
 
 #define RTGUI_DC(dc)            ((rtgui_dc_t*)(dc))
 #define RTGUI_DC_FC(dc)         (rtgui_dc_get_gc(RTGUI_DC(dc))->foreground)
@@ -108,31 +92,17 @@ struct rtgui_dc_buffer {
 #else /* IMPORT_TYPES */
 
 /* Exported functions ------------------------------------------------------- */
-#ifdef RTGUI_USING_DC_BUFFER
-rtgui_dc_t *rtgui_dc_buffer_create(int width, int height);
-rtgui_dc_t *rtgui_dc_buffer_create_pixformat(rt_uint8_t pixel_format, int w, int h);
-rtgui_dc_t *rtgui_dc_buffer_create_from_dc(rtgui_dc_t* dc);
-void rtgui_dc_buffer_set_alpha(rtgui_dc_t* dc, rt_uint8_t pixel_alpha);
-#endif
-
-/* create a widget dc */
-rtgui_dc_t *rtgui_dc_widget_create(rtgui_widget_t * owner);
-
-/* begin and end a drawing */
-rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner);
-void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update);
-
 /* destroy a dc */
 void rtgui_dc_destory(rtgui_dc_t *dc);
-
 /* create a hardware dc */
 rtgui_dc_t *rtgui_dc_hw_create(rtgui_widget_t *owner);
-
 /* create a client dc */
 rtgui_dc_t *rtgui_dc_client_create(rtgui_widget_t *owner);
 void rtgui_dc_client_init(rtgui_widget_t *owner);
 
-rt_uint8_t *rtgui_dc_buffer_get_pixel(rtgui_dc_t *dc);
+/* begin and end a drawing */
+rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner);
+void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update);
 
 void rtgui_dc_draw_line(rtgui_dc_t *dc, int x1, int y1, int x2, int y2);
 void rtgui_dc_draw_rect(rtgui_dc_t *dc, rtgui_rect_t *rect);
@@ -168,26 +138,6 @@ void rtgui_dc_draw_arc(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t r,
 
 void rtgui_dc_draw_ellipse(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t rx, rt_int16_t ry);
 void rtgui_dc_fill_ellipse(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t rx, rt_int16_t ry);
-
-#if RTGUI_USING_DC_BUFFER
-/* alpha blending functions */
-void rtgui_dc_draw_aa_line(rtgui_dc_t * dst,int x1,int y1,int x2,int y2);
-void rtgui_dc_draw_aa_lines(rtgui_dc_t * dst,const struct rtgui_point * points,int count);
-
-void rtgui_dc_blend_point(rtgui_dc_t * dst,int x,int y,rtgui_blend_mode_t blendMode,rt_uint8_t r,rt_uint8_t g,rt_uint8_t b,rt_uint8_t a);
-void rtgui_dc_blend_points(rtgui_dc_t * dst,const rtgui_point_t * points,int count,rtgui_blend_mode_t blendMode,rt_uint8_t r,rt_uint8_t g,rt_uint8_t b,rt_uint8_t a);
-
-void rtgui_dc_blend_line(rtgui_dc_t * dst,int x1,int y1,int x2,int y2,rtgui_blend_mode_t blendMode,rtgui_color_t color);
-void rtgui_dc_blend_lines(rtgui_dc_t * dst,const rtgui_point_t * points,int count,rtgui_blend_mode_t blendMode,rtgui_color_t color);
-
-void rtgui_dc_blend_fill_rect(rtgui_dc_t * dst,const rtgui_rect_t * rect,rtgui_blend_mode_t blendMode,rtgui_color_t color);
-void rtgui_dc_blend_fill_rects(rtgui_dc_t * dst,const rtgui_rect_t * rects,int count,rtgui_blend_mode_t blendMode,rtgui_color_t color);
-
-void rtgui_dc_draw_aa_circle(rtgui_dc_t *dc, rt_int16_t x, rt_int16_t y, rt_int16_t r);
-void rtgui_dc_draw_aa_ellipse(rtgui_dc_t *dc, rt_int16_t  x, rt_int16_t y, rt_int16_t rx, rt_int16_t ry);
-
-int rtgui_dc_draw_thick_line(rtgui_dc_t * dst, rt_int16_t x1, rt_int16_t y1, rt_int16_t x2, rt_int16_t y2, rt_uint8_t width);
-#endif
 
 /*
  * dc inline function
@@ -253,18 +203,6 @@ rt_uint8_t rtgui_dc_get_pixel_format(rtgui_dc_t *dc);
 /* coordinate conversion */
 void rtgui_dc_logic_to_device(rtgui_dc_t* dc, struct rtgui_point *point);
 void rtgui_dc_rect_to_device(rtgui_dc_t* dc, rtgui_rect_t* rect);
-
-#ifdef RTGUI_USING_DC_BUFFER
-/* dc rotation and zoom operations */
-rtgui_dc_t *rtgui_dc_shrink(rtgui_dc_t *dc, int factorx, int factory);
-rtgui_dc_t *rtgui_dc_zoom(rtgui_dc_t *dc, double zoomx, double zoomy, int smooth);
-rtgui_dc_t *rtgui_dc_rotozoom(rtgui_dc_t *dc, double angle, double zoomx, double zoomy, int smooth);
-
-#ifdef RT_USING_DFS
-/* dc buffer dump to file */
-void rtgui_dc_buffer_dump(rtgui_dc_t *self, char *fn);
-#endif
-#endif
 
 #endif /* IMPORT_TYPES */
 

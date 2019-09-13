@@ -1530,12 +1530,10 @@ RTM_EXPORT(rtgui_dc_fill_pie);
 /*
  * set gc of dc
  */
-void rtgui_dc_set_gc(rtgui_dc_t *dc, rtgui_gc_t *gc)
-{
+void rtgui_dc_set_gc(rtgui_dc_t *dc, rtgui_gc_t *gc) {
     RT_ASSERT(dc != RT_NULL);
 
-    switch (dc->type)
-    {
+    switch (dc->type) {
     case RTGUI_DC_CLIENT:
     {
         rtgui_widget_t *owner;
@@ -1544,6 +1542,7 @@ void rtgui_dc_set_gc(rtgui_dc_t *dc, rtgui_gc_t *gc)
         owner->gc = *gc;
         break;
     }
+
     case RTGUI_DC_HW:
     {
         struct rtgui_dc_hw *dc_hw;
@@ -1553,14 +1552,10 @@ void rtgui_dc_set_gc(rtgui_dc_t *dc, rtgui_gc_t *gc)
         dc_hw->owner->gc = *gc;
         break;
     }
-    case RTGUI_DC_BUFFER:
-    {
-        struct rtgui_dc_buffer *dc_buffer;
 
-        dc_buffer = (struct rtgui_dc_buffer *)dc;
-        dc_buffer->gc = *gc;
+    default:
+        LOG_E("bad dc type %d", dc->type);
         break;
-    }
     }
 }
 RTM_EXPORT(rtgui_dc_set_gc);
@@ -1568,14 +1563,11 @@ RTM_EXPORT(rtgui_dc_set_gc);
 /*
  * get gc of dc
  */
-rtgui_gc_t *rtgui_dc_get_gc(rtgui_dc_t *dc)
-{
+rtgui_gc_t *rtgui_dc_get_gc(rtgui_dc_t *dc) {
     rtgui_gc_t *gc = RT_NULL;
-
     RT_ASSERT(dc != RT_NULL);
 
-    switch (dc->type)
-    {
+    switch (dc->type) {
     case RTGUI_DC_CLIENT:
     {
         rtgui_widget_t *owner;
@@ -1584,6 +1576,7 @@ rtgui_gc_t *rtgui_dc_get_gc(rtgui_dc_t *dc)
         gc = &owner->gc;
         break;
     }
+
     case RTGUI_DC_HW:
     {
         struct rtgui_dc_hw *dc_hw;
@@ -1593,14 +1586,10 @@ rtgui_gc_t *rtgui_dc_get_gc(rtgui_dc_t *dc)
         gc = &dc_hw->owner->gc;
         break;
     }
-    case RTGUI_DC_BUFFER:
-    {
-        struct rtgui_dc_buffer *dc_buffer;
 
-        dc_buffer = (struct rtgui_dc_buffer *)dc;
-        gc = &dc_buffer->gc;
+    default:
+        LOG_E("bad dc type %d", dc->type);
         break;
-    }
     }
 
     return gc;
@@ -1611,8 +1600,6 @@ RTM_EXPORT(rtgui_dc_get_gc);
  * get visible status of dc
  */
 rt_bool_t rtgui_dc_get_visible(rtgui_dc_t *dc) {
-    if (rtgui_gfx_driver_is_vmode()) return RT_TRUE;
-
     switch (dc->type) {
     case RTGUI_DC_CLIENT:
         return IS_WIDGET_FLAG(
@@ -1622,6 +1609,7 @@ rt_bool_t rtgui_dc_get_visible(rtgui_dc_t *dc) {
         return IS_WIDGET_FLAG(((struct rtgui_dc_hw *)dc)->owner, DC_VISIBLE);
 
     default:
+        LOG_E("bad dc type %d", dc->type);
         return RT_TRUE;
     }
 }
@@ -1633,8 +1621,7 @@ RTM_EXPORT(rtgui_dc_get_visible);
 void rtgui_dc_get_rect(rtgui_dc_t *dc, rtgui_rect_t *rect) {
     RT_ASSERT(dc != RT_NULL);
 
-    switch (dc->type)
-    {
+    switch (dc->type) {
     case RTGUI_DC_CLIENT:
     {
         rtgui_widget_t *owner;
@@ -1648,6 +1635,7 @@ void rtgui_dc_get_rect(rtgui_dc_t *dc, rtgui_rect_t *rect) {
         // rtgui_widget_get_rect(owner, rect);
         break;
     }
+
     case RTGUI_DC_HW:
     {
         rtgui_widget_t *owner;
@@ -1659,34 +1647,25 @@ void rtgui_dc_get_rect(rtgui_dc_t *dc, rtgui_rect_t *rect) {
 
         if (owner->extent.x1 + rect->x2 > dc_hw->hw_driver->width)
             rect->x2 = dc_hw->hw_driver->width - owner->extent.x1;
-
         if (owner->extent.y1 + rect->y2 > dc_hw->hw_driver->height)
             rect->y2 = dc_hw->hw_driver->height - owner->extent.y1;
-
         break;
     }
-    case RTGUI_DC_BUFFER:
-    {
-        struct rtgui_dc_buffer *dc_buffer;
 
-        dc_buffer = (struct rtgui_dc_buffer *)dc;
-        rtgui_rect_init(rect, 0, 0, dc_buffer->width, dc_buffer->height);
+    default:
+        LOG_E("bad dc type %d", dc->type);
         break;
-    }
     }
 
     return;
 }
 RTM_EXPORT(rtgui_dc_get_rect);
 
-rt_uint8_t rtgui_dc_get_pixel_format(rtgui_dc_t *dc)
-{
+rt_uint8_t rtgui_dc_get_pixel_format(rtgui_dc_t *dc) {
     rt_uint8_t pixel_fmt = 0;
-
     RT_ASSERT(dc != RT_NULL);
 
-    switch (dc->type)
-    {
+    switch (dc->type) {
     case RTGUI_DC_CLIENT:
     case RTGUI_DC_HW:
     {
@@ -1696,26 +1675,19 @@ rt_uint8_t rtgui_dc_get_pixel_format(rtgui_dc_t *dc)
         pixel_fmt = hw_driver->pixel_format;
         break;
     }
-    case RTGUI_DC_BUFFER:
-    {
-        struct rtgui_dc_buffer *dc_buffer;
 
-        dc_buffer = (struct rtgui_dc_buffer *)dc;
-        pixel_fmt = dc_buffer->pixel_format;
-        break;
-    }
     default:
+        LOG_E("bad dc type %d", dc->type);
         RT_ASSERT(0);
+        break;
     }
 
     return pixel_fmt;
 }
 RTM_EXPORT(rtgui_dc_get_pixel_format);
 
-void rtgui_dc_logic_to_device(rtgui_dc_t *dc, struct rtgui_point *point)
-{
-    switch (dc->type)
-    {
+void rtgui_dc_logic_to_device(rtgui_dc_t *dc, struct rtgui_point *point) {
+    switch (dc->type) {
     case RTGUI_DC_CLIENT:
     {
         rtgui_widget_t *owner;
@@ -1725,6 +1697,7 @@ void rtgui_dc_logic_to_device(rtgui_dc_t *dc, struct rtgui_point *point)
         point->y += owner->extent.y1;
         break;
     }
+
     case RTGUI_DC_HW:
     {
         rtgui_widget_t *owner;
@@ -1737,16 +1710,15 @@ void rtgui_dc_logic_to_device(rtgui_dc_t *dc, struct rtgui_point *point)
         break;
     }
 
-    case RTGUI_DC_BUFFER: /* no conversion */
+    default:
+        LOG_E("bad dc type %d", dc->type);
         break;
     }
 }
 RTM_EXPORT(rtgui_dc_logic_to_device);
 
-void rtgui_dc_rect_to_device(rtgui_dc_t *dc, rtgui_rect_t *rect)
-{
-    switch (dc->type)
-    {
+void rtgui_dc_rect_to_device(rtgui_dc_t *dc, rtgui_rect_t *rect) {
+    switch (dc->type) {
     case RTGUI_DC_CLIENT:
     {
         rtgui_widget_t *owner;
@@ -1756,6 +1728,7 @@ void rtgui_dc_rect_to_device(rtgui_dc_t *dc, rtgui_rect_t *rect)
         rtgui_rect_move(rect, owner->extent.x1, owner->extent.y1);
         break;
     }
+
     case RTGUI_DC_HW:
     {
         rtgui_widget_t *owner;
@@ -1767,15 +1740,18 @@ void rtgui_dc_rect_to_device(rtgui_dc_t *dc, rtgui_rect_t *rect)
         break;
     }
 
-    case RTGUI_DC_BUFFER: /* no conversion */
+    default:
+        LOG_E("bad dc type %d", dc->type);
         break;
     }
 }
 RTM_EXPORT(rtgui_dc_rect_to_device);
 
-extern struct rt_mutex cursor_lock;
-extern void rtgui_cursor_show(void);
-extern void rtgui_cursor_hide(void);
+#ifdef RTGUI_USING_CURSOR
+    extern struct rt_mutex cursor_lock;
+    extern void rtgui_cursor_show(void);
+    extern void rtgui_cursor_hide(void);
+#endif
 
 rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
     rtgui_dc_t *dc;
@@ -1784,6 +1760,8 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
     dc = RT_NULL;
 
     do {
+        rtgui_widget_t *parent = owner->parent;
+        rt_bool_t visible = RT_TRUE;
         rtgui_win_t *win = owner->toplevel;
         if (!win) {
             LOG_W("no toplevel");
@@ -1791,30 +1769,21 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
         }
 
         if (!IS_WIN_FLAG(win, ACTIVATE)) {
-            rtgui_widget_t *parent;
-
             if (IS_RECT_NO_SIZE(win->outer_clip.extents)) break;
-            parent = TO_WIDGET(win);
-            if (IS_RECT_NO_SIZE(parent->clip.extents)) break;
+            if (IS_RECT_NO_SIZE(TO_WIDGET(win)->clip.extents)) break;
         }
 
-        /* always draw in virtual mode */
-        if (!rtgui_gfx_driver_is_vmode()) {
-            rtgui_widget_t *parent = owner->parent;
-            rt_bool_t visible = RT_TRUE;
-
-            /* check if widget visible */
-            while (parent && visible) {
-                if (!IS_WIDGET_FLAG(parent, SHOWN)) {
-                    visible = RT_FALSE;
-                    LOG_W("dc invisible");
-                    break;
-                }
-                parent = parent->parent;
+        /* check if widget visible */
+        while (parent && visible) {
+            if (!IS_WIDGET_FLAG(parent, SHOWN)) {
+                visible = RT_FALSE;
+                LOG_W("dc invisible");
+                break;
             }
-            if (!visible) break;
-            WIDGET_FLAG_SET(owner, DC_VISIBLE);
+            parent = parent->parent;
         }
+        if (!visible) break;
+        WIDGET_FLAG_SET(owner, DC_VISIBLE);
 
         rtgui_screen_lock(RT_WAITING_FOREVER);
 
@@ -1839,22 +1808,22 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
 
         if (win->drawing == 1) {
             RECT_CLEAR(win->drawing_rect);
-            if (!rtgui_gfx_driver_is_vmode()) {
-                if (!IS_TITLE(win)) {
-                    rtgui_evt_generic_t *evt;
 
-                    /* send RTGUI_EVENT_UPDATE_BEGIN */
-                    RTGUI_CREATE_EVENT(evt, UPDATE_BEGIN, RT_WAITING_FOREVER);
-                    if (!evt) break;
-                    evt->update_begin.rect = TO_WIDGET(win)->extent;
-                    (void)rtgui_send_request(evt, RT_WAITING_FOREVER);
-                } else {
-                    #ifdef RTGUI_USING_CURSOR
-                        rt_mutex_take(&cursor_lock, RT_WAITING_FOREVER);
-                        rtgui_cursor_hide();
-                        // LOG_E("hide in dc bg");
-                    #endif
-                }
+            if (!IS_TITLE(win)) {
+                rtgui_evt_generic_t *evt;
+
+                /* send RTGUI_EVENT_UPDATE_BEGIN */
+                RTGUI_CREATE_EVENT(evt, UPDATE_BEGIN, RT_WAITING_FOREVER);
+                if (!evt) break;
+                evt->update_begin.rect = TO_WIDGET(win)->extent;
+                (void)rtgui_send_request(evt, RT_WAITING_FOREVER);
+
+            #ifdef RTGUI_USING_CURSOR
+            } else {
+                rt_mutex_take(&cursor_lock, RT_WAITING_FOREVER);
+                rtgui_cursor_hide();
+                // LOG_E("hide in dc bg");
+            #endif
             }
         }
     } while (0);
@@ -1886,7 +1855,7 @@ void rtgui_dc_end_drawing(rtgui_dc_t *dc, rt_bool_t update) {
         LOG_D("<-draw cnt %d", win->drawing);
 
         if (win->drawing != 0) break;
-        if (rtgui_gfx_driver_is_vmode() || win->update || !update) break;
+        if (win->update || !update) break;
 
         if (!IS_TITLE(win)) {
             rtgui_evt_generic_t *evt;

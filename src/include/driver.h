@@ -86,29 +86,20 @@ void rtgui_gfx_get_rect(const rtgui_gfx_driver_t *driver, rtgui_rect_t *rect);
 void rtgui_gfx_update_screen(const rtgui_gfx_driver_t *driver, rtgui_rect_t *rect);
 rt_uint8_t *rtgui_gfx_get_framebuffer(const rtgui_gfx_driver_t *driver);
 
-#ifdef RTGUI_USING_DC_BUFFER
-void rtgui_gfx_driver_vmode_enter(void);
-void rtgui_gfx_driver_vmode_exit(void);
-rtgui_dc_t* rtgui_gfx_driver_get_buffer(const rtgui_gfx_driver_t *driver, rtgui_rect_t *rect);
-rt_bool_t rtgui_gfx_driver_is_vmode(void);
-#else /* RTGUI_USING_DC_BUFFER */
-# define rtgui_gfx_driver_is_vmode()    (RT_FALSE)
-#endif /* RTGUI_USING_DC_BUFFER */
-
 #ifdef CONFIG_TOUCH_DEVICE_NAME
-rt_err_t rtgui_set_touch_device(rt_device_t dev);
-GETTER_PROTOTYPE(touch_device, rt_device_t);
+    rt_err_t rtgui_set_touch_device(rt_device_t dev);
+    GETTER_PROTOTYPE(touch_device, rt_device_t);
 #endif /* CONFIG_TOUCH_DEVICE_NAME */
 
 #ifdef CONFIG_KEY_DEVICE_NAME
-rt_err_t rtgui_set_key_device(rt_device_t dev);
-GETTER_PROTOTYPE(key_device, rt_device_t);
+    rt_err_t rtgui_set_key_device(rt_device_t dev);
+    GETTER_PROTOTYPE(key_device, rt_device_t);
 #endif /* CONFIG_KEY_DEVICE_NAME */
 
 #ifdef RTGUI_USING_HW_CURSOR
-void rtgui_cursor_set_device(const char* device_name);
-void rtgui_cursor_set_position(rt_uint16_t x, rt_uint16_t y);
-void rtgui_cursor_set_image(enum rtgui_cursor_type type);
+    void rtgui_cursor_set_device(const char* device_name);
+    void rtgui_cursor_set_position(rt_uint16_t x, rt_uint16_t y);
+    void rtgui_cursor_set_image(enum rtgui_cursor_type type);
 #endif /* RTGUI_USING_HW_CURSOR */
 
 #endif /* IMPORT_TYPES */

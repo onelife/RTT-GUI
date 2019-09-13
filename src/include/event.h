@@ -77,28 +77,21 @@ extern "C" {
 
 /* type */
 #define IS_EVENT_TYPE(e, tname)             ((e)->base.type == RTGUI_EVENT_##tname)
+
 /* timer */
 #define IS_TIMER_EVENT_STATE(e, sname)      (e->timer.timer->state == RTGUI_TIMER_ST_##sname)
+
 /* mouse */
 #define IS_MOUSE_EVENT_BUTTON(e, bname)     (e->mouse.button & MOUSE_BUTTON_##bname)
+
 /* keyboard */
 #define IS_KBD_EVENT_KEY(e, kname)          (e->kbd.data.key == RTGUIK_##kname)
 #define IS_KBD_EVENT_MOD(e, mname)          (e->kbd.data.mod == RTGUI_KMOD_##mname)
 #define IS_KBD_EVENT_MOD_LR(e, mname)       (e->kbd.data.mod & (RTGUI_KMOD_L##mname | RTGUI_KMOD_R##mname))
 #define IS_KBD_EVENT_TYPE(e, tname)         (e->kbd.data.type == RTGUI_KEY##tname)
+
 /* touch */
 #define IS_TOUCH_EVENT_TYPE(e, tname)       (e->touch.data.type == RTGUI_TOUCH_##tname)
-
-// TODO: ?
-#define RTGUI_EVENT_VPAINT_REQ_INIT(e, win, cm) \
-    do {                                    \
-        RTGUI_EVENT_REINIT(e, VPAINT_REQ);  \
-        (e)->wid = win;                     \
-        (e)->cmp = cm;                      \
-        (e)->origin = (e);                  \
-        (e)->buffer = RT_NULL;              \
-        rt_completion_init((e)->cmp);       \
-    } while (0)
 
 /* gesture */
 #define RTGUI_EVENT_GESTURE_INIT(e, gtype)  \
@@ -190,8 +183,6 @@ typedef enum rtgui_evt_type {
     RTGUI_EVENT_MONITOR_ADD,
     RTGUI_EVENT_MONITOR_REMOVE,
     RTGUI_EVENT_TIMER,
-    /* virtual paint event (server -> client) */
-    RTGUI_EVENT_VPAINT_REQ,
     /* clip rect information */
     RTGUI_EVENT_CLIP_INFO,
     /* mouse and keyboard event */
@@ -319,17 +310,6 @@ struct rtgui_event_resize {
     rt_int16_t w, h;
 };
 
-// TODO(onelife): ??
-struct rt_completion {
-    void *hi;
-};
-
-struct rtgui_event_vpaint_req {
-    _WINDOW_EVENT_ELEMENTS;
-    // struct rt_completion *cmp;
-    rtgui_dc_t *buffer;
-};
-
 /* gesture */
 enum rtgui_gesture_type {
     RTGUI_GESTURE_NONE                      = 0x0000,
@@ -413,7 +393,7 @@ struct rtgui_event_touch {
 //     rt_uint8_t event;
 // };
 
-/* data model? */
+/* TODO(onelife): data model? */
 typedef enum rtgui_event_model_mode {
     RTGUI_MV_DATA_ADDED,
     RTGUI_MV_DATA_CHANGED,
@@ -467,7 +447,6 @@ union rtgui_evt_generic {
     struct rtgui_event_paint paint;
     struct rtgui_event_focused focused;
     struct rtgui_event_resize resize;
-    struct rtgui_event_vpaint_req vpaint_req;
     struct rtgui_event_clip_info clip_info;
     struct rtgui_event_mouse mouse;
     struct rtgui_event_kbd kbd;
