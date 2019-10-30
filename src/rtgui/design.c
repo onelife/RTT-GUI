@@ -66,6 +66,7 @@ enum object_token_type {
   ATTR_MIN_HEIGHT,
   ATTR_MIN_WIDTH,
   ATTR_ALIGN,
+  ATTR_TEXTALIGN,
 };
 
 /* Private define ------------------------------------------------------------*/
@@ -317,7 +318,7 @@ static rt_bool_t _parse_number(design_contex_t *ctx, rt_uint32_t *num) {
     return RT_FALSE;
 }
 
-static rt_bool_t _parse_size(design_contex_t *ctx, rtgui_rect_t *size) {
+static rt_bool_t _parse_size(design_contex_t *ctx, rtgui_rect_t **size) {
     do {
         char next;
         char buf[NUMBER_MAX_SIZE + 1];
@@ -335,7 +336,7 @@ static rt_bool_t _parse_size(design_contex_t *ctx, rtgui_rect_t *size) {
                 LOG_E("|size| expect \"NULL\" got \"N%s\"", buf);
                 break;
             }
-            size = RT_NULL;
+            *size = RT_NULL;
         } else if ('D' == next) {
             /* check if DEFAULT */
             len = _parse_token(ctx, buf, NUMBER_MAX_SIZE, ',');
@@ -344,7 +345,7 @@ static rt_bool_t _parse_size(design_contex_t *ctx, rtgui_rect_t *size) {
                 LOG_E("|size| expect \"DEFAULT\" got \"D%s\"", buf);
                 break;
             }
-            rtgui_get_screen_rect(size);
+            rtgui_get_screen_rect(*size);
         } else if ('[' != next) {
         /* the preceding mark */
             LOG_E("|size| expect \"[\" got \"%c\"", next);
@@ -353,13 +354,13 @@ static rt_bool_t _parse_size(design_contex_t *ctx, rtgui_rect_t *size) {
             rt_uint32_t num;
 
             if (!_parse_number(ctx, &num)) break;
-            size->x1 = num & 0x0000ffff;
+            (*size)->x1 = num & 0x0000ffff;
             if (!_parse_number(ctx, &num)) break;
-            size->y1 = num & 0x0000ffff;
+            (*size)->y1 = num & 0x0000ffff;
             if (!_parse_number(ctx, &num)) break;
-            size->x2 = num & 0x0000ffff;
+            (*size)->x2 = num & 0x0000ffff;
             if (!_parse_number(ctx, &num)) break;
-            size->y2 = num & 0x0000ffff;
+            (*size)->y2 = num & 0x0000ffff;
 
             /* skip preceding white space and comment */
             if (!_skip_none_token(ctx)) break;
@@ -378,11 +379,11 @@ static rt_bool_t _parse_size(design_contex_t *ctx, rtgui_rect_t *size) {
             }
         }
 
-        if (!size) {
+        if (!(*size)) {
             LOG_D("|size| (NULL)");
         } else {
-            LOG_D("|size| (%d,%d)-(%d,%d)", size->x1, size->y1, size->x2,
-                size->y2);
+            LOG_D("|size| (%d,%d)-(%d,%d)", (*size)->x1, (*size)->y1,
+                (*size)->x2, (*size)->y2);
         }
         return RT_TRUE;
     } while (0);
@@ -420,6 +421,7 @@ static enum object_token_type _get_object_type(char *buf) {
     if (!rt_strncmp("FILELIST", buf, 8))    return OBJ_FILELIST;
     if (!rt_strncmp("CONTAINER", buf, 9))   return OBJ_CONTAINER;
     if (!rt_strncmp("MIN_WIDTH", buf, 9))   return ATTR_MIN_WIDTH;
+    if (!rt_strncmp("TEXTALIGN", buf, 9))   return ATTR_TEXTALIGN;
     if (!rt_strncmp("BACKGROUND", buf, 10)) return ATTR_BACKGROUND;
     if (!rt_strncmp("FOREGROUND", buf, 10)) return ATTR_FOREGROUND;
     if (!rt_strncmp("MIN_HEIGHT", buf, 10)) return ATTR_MIN_HEIGHT;
@@ -493,6 +495,13 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             if (!_parse_number(ctx, &align)) break;
             WIDGET_ALIGN(parent) = align;
             LOG_D("|ALIGN| 0x%04x", align);
+            is_attr = RT_TRUE;
+        } else if (ATTR_TEXTALIGN == type) {
+            rt_uint32_t align;
+
+            if (!_parse_number(ctx, &align)) break;
+            WIDGET_TEXTALIGN(parent) = align;
+            LOG_D("|TEXTALIGN| 0x%04x", align);
             is_attr = RT_TRUE;
         }
         if (is_attr) {
@@ -594,7 +603,8 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             self = (void *)ctx->win;
         } else if (OBJ_WINDOW == type) {
             char str[STRING_MAX_SIZE + 1];
-            rtgui_rect_t rect;
+            rtgui_rect_t _rect;
+            rtgui_rect_t *rect = &_rect;
             rtgui_evt_hdl_t hdl, on_close;
             rtgui_win_t *win;
 
@@ -603,7 +613,7 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             if (!_parse_handler(ctx, (void**)&hdl)) break;
             if (!_parse_handler(ctx, (void**)&on_close)) break;
 
-            win = CREATE_WIN_INSTANCE(parent, hdl, &rect, str,
+            win = CREATE_WIN_INSTANCE(parent, hdl, rect, str,
                 RTGUI_WIN_STYLE_DEFAULT);
             if (!win) {
                 LOG_E("|WIN| Create failed!");
@@ -613,14 +623,15 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             LOG_D("|WIN| %p -> %p", win, parent);
             self = (void *)win;
         } else if (OBJ_CONTAINER == type) {
-            rtgui_rect_t rect;
+            rtgui_rect_t _rect;
+            rtgui_rect_t *rect = &_rect;
             rtgui_evt_hdl_t hdl;
             rtgui_container_t *cntr;
 
             if (!_parse_size(ctx, &rect)) break;
             if (!_parse_handler(ctx, (void**)&hdl)) break;
 
-            cntr = CREATE_CONTAINER_INSTANCE(parent, hdl, &rect);
+            cntr = CREATE_CONTAINER_INSTANCE(parent, hdl, rect);
             if (!cntr) {
                 LOG_E("|CONTAINER| Create failed!");
                 break;
@@ -646,7 +657,8 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             self = (void *)box;
         } else if (OBJ_LABEL == type) {
             char str[STRING_MAX_SIZE + 1];
-            rtgui_rect_t rect;
+            rtgui_rect_t _rect;
+            rtgui_rect_t *rect = &_rect;
             rtgui_evt_hdl_t hdl;
             rtgui_label_t *lab;
 
@@ -654,7 +666,7 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             if (!_parse_handler(ctx, (void**)&hdl)) break;
             if (!_parse_string(ctx, str)) break;
 
-            lab = CREATE_LABEL_INSTANCE(parent, hdl, &rect, str);
+            lab = CREATE_LABEL_INSTANCE(parent, hdl, rect, str);
             if (!lab) {
                 LOG_E("|LABEL| Create failed!");
                 break;
@@ -681,7 +693,8 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             LOG_D("|BUTTON| %p -> %p", btn, parent);
             self = (void *)btn;
         } else if (OBJ_PROGRESS == type) {
-            rtgui_rect_t rect;
+            rtgui_rect_t _rect;
+            rtgui_rect_t *rect = &_rect;
             rtgui_evt_hdl_t hdl;
             rt_uint32_t num1, num2;
             rtgui_progress_t *bar;
@@ -693,7 +706,7 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
 
             num1 &= 0x0000ffff;
             num2 &= 0x0000ffff;
-            bar = CREATE_PROGRESS_INSTANCE(parent, hdl, &rect,
+            bar = CREATE_PROGRESS_INSTANCE(parent, hdl, rect,
                 (rtgui_orient_t)num1, (rt_uint16_t)num2);
             if (!bar) {
                 LOG_E("|PROGRESS| Create failed!");
@@ -703,7 +716,8 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             self = (void *)bar;
         } else if (OBJ_PICTURE == type) {
             char str[STRING_MAX_SIZE + 1];
-            rtgui_rect_t rect;
+            rtgui_rect_t _rect;
+            rtgui_rect_t *rect = &_rect;
             rtgui_evt_hdl_t hdl;
             rt_uint32_t num1, num2;
             rtgui_picture_t *pic;
@@ -714,7 +728,7 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             if (!_parse_number(ctx, &num1)) break;
             if (!_parse_number(ctx, &num2)) break;
 
-            pic = rtgui_create_picture(TO_CONTAINER(parent), hdl, &rect,
+            pic = rtgui_create_picture(TO_CONTAINER(parent), hdl, rect,
                 str[0] == '\0' ? RT_NULL : str, num1, !(num2 == 0));
             if (!pic) {
                 LOG_E("|PICTURE| Create failed!");
@@ -724,7 +738,8 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             self = (void *)pic;
         } else if (OBJ_FILELIST == type) {
             char str[STRING_MAX_SIZE + 1];
-            rtgui_rect_t rect;
+            rtgui_rect_t _rect;
+            rtgui_rect_t *rect = &_rect;
             rtgui_evt_hdl_t hdl;
             rtgui_filelist_t *filelist;
 
@@ -732,7 +747,7 @@ static rt_bool_t _parse_object(design_contex_t *ctx, void *parent) {
             if (!_parse_handler(ctx, (void**)&hdl)) break;
             if (!_parse_string(ctx, str)) break;
 
-            filelist = CREATE_FILELIST_INSTANCE(parent, hdl, &rect, str);
+            filelist = CREATE_FILELIST_INSTANCE(parent, hdl, rect, str);
             if (!filelist) {
                 LOG_E("|FILELIST| Create failed!");
                 break;
@@ -823,7 +838,7 @@ rt_err_t rtgui_design_parse(design_contex_t *ctx) {
 
     do {
         if (!_parse_object(ctx, RT_NULL)) break;
-        LOG_W("obj +1");
+        LOG_D("obj +1");
 
         /* skip succeeding white space and comment */
         (void)_skip_none_token(ctx);

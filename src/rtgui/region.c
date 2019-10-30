@@ -218,18 +218,22 @@ static r_op_status_t _alloc_rects(rtgui_region_t *rgn, rt_uint32_t n) {
     static void _show_region(rtgui_region_t *rgn) {
         rt_uint32_t i;
 
-        LOG_D("rgn->ext: %d %d, %d %d", rgn->extents.x1, rgn->extents.x2,
-            rgn->extents.y1, rgn->extents.y2);
+        LOG_D("rgn->ext: (%d,%d)-(%d,%d)", rgn->extents.x1, rgn->extents.y1,
+            rgn->extents.x2, rgn->extents.y2);
 
         if (!rgn->data) {
             LOG_D("rgn->data: none");
             return;
         }
+        if (!rgn->data->numRects) {
+            LOG_D("rgn->data: 0");
+            return;
+        }
 
         for (i = 0; i < rgn->data->numRects; i++) {
             rtgui_rect_t *rect = REGION_RECT_AT(rgn, i);
-            LOG_D("rgn->rect%d: %d %d, %d %d", i, rect->x1, rect->x2, rect->y1,
-                rect->y2);
+            LOG_D("rgn->rect%d: (%d,%d)-(%d,%d)", i, rect->x1, rect->y1,
+                rect->x2, rect->y2);
         }
     }
 #else
@@ -508,7 +512,7 @@ static r_op_status_t region_op(
     rt_uint32_t num2;
     rtgui_rect_t *end1;             /* the end of rect in rgn1 */
     rtgui_rect_t *end2;             /* the end of rect in rgn2 */
-    rt_uint32_t prvStart;          /* previous coalesce starting index */
+    rt_uint32_t prvStart;           /* previous coalesce starting index */
     rt_uint32_t curStart;           /* current coalesce starting index */
 
     rt_int16_t top_y;
@@ -833,6 +837,7 @@ r_op_status_t rtgui_region_intersect(rtgui_region_t *dstRgn,
     rtgui_region_t *rgn1, rtgui_region_t *rgn2) {
     GOOD(rgn1); GOOD(rgn2); GOOD(dstRgn);
 
+    LOG_D("intersect");
     /* check for trivial reject */
     if (REGION_NO_RECT(rgn1) || REGION_NO_RECT(rgn2) || \
         !IS_R_INTERSECT(&rgn1->extents, &rgn2->extents)) {
@@ -950,7 +955,7 @@ static r_op_status_t _union_func(
         r2++;
     }
 
-    do {
+    while ((r1 != end1) && (r2 != end2)) {
         if (r1->x1 < r2->x1) {
             _merge_left(rgn, r1, end, x1, y1, x2, y2);
             r1++;
@@ -958,12 +963,12 @@ static r_op_status_t _union_func(
             _merge_left(rgn, r2, end, x1, y1, x2, y2);
             r2++;
         }
-    } while ((r1 != end1) && (r2 != end2));
+    }
 
     /* Finish off whoever (if any) is left */
     if (r1 != end1) {
         do {
-            _merge_left(rgn, r1, end, x1, y1, x2, y2); 
+            _merge_left(rgn, r1, end, x1, y1, x2, y2);
             r1++;
         } while (r1 != end1);
     } else if (r2 != end2) {
@@ -983,6 +988,7 @@ r_op_status_t rtgui_region_union(rtgui_region_t *dstRgn, rtgui_region_t *rgn1,
     rtgui_region_t *rgn2) {
     int notUsed;
 
+    LOG_D("union");
     GOOD(rgn1); GOOD(rgn2); GOOD(dstRgn);
 
     /*
@@ -1566,6 +1572,7 @@ r_op_status_t rtgui_region_subtract(rtgui_region_t *regD, rtgui_region_t *regM,
     rtgui_region_t *regS) {
     int notUsed;
 
+    LOG_D("subtract");
     GOOD(regM); GOOD(regS); GOOD(regD);
 
     /*

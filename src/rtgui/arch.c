@@ -412,7 +412,7 @@ static void rtgui_log_event(rtgui_app_t* tgt, rtgui_evt_generic_t *evt) {
     //     return;
     // }
 
-    rt_kprintf("[%-*.s ===> %-*.s]%-*.s",
+    rt_kprintf("[%-*.s ===> %-*.s] %-*.s",
         10, evt->base.origin ? (char *)evt->base.origin->name : "NULL",
         10, tgt->name, 10, rtgui_event_text(evt));
 
@@ -441,7 +441,7 @@ static void rtgui_log_event(rtgui_app_t* tgt, rtgui_evt_generic_t *evt) {
         break;
 
     case RTGUI_EVENT_WIN_CREATE:
-        rt_kprintf(": (%03d, %03d)-(%03d, %03d) %s @%p",
+        rt_kprintf(": (%03d,%03d)-(%03d,%03d) %s @%p",
             TO_WIDGET(evt->win_create.wid)->extent.x1,
             TO_WIDGET(evt->win_create.wid)->extent.y1,
             TO_WIDGET(evt->win_create.wid)->extent.x2,
@@ -450,7 +450,7 @@ static void rtgui_log_event(rtgui_app_t* tgt, rtgui_evt_generic_t *evt) {
         break;
 
     case RTGUI_EVENT_UPDATE_END:
-        rt_kprintf(": (%03d, %03d)-(%03d, %03d)",
+        rt_kprintf(": (%03d,%03d)-(%03d,%03d)",
             evt->update_end.rect.x1, evt->update_end.rect.y1,
             evt->update_end.rect.x2, evt->update_end.rect.y2);
         break;
@@ -467,13 +467,13 @@ static void rtgui_log_event(rtgui_app_t* tgt, rtgui_evt_generic_t *evt) {
         break;
 
     case RTGUI_EVENT_WIN_MOVE:
-        rt_kprintf(": (%03d, %03d) %s",
+        rt_kprintf(": (%03d,%03d) %s",
             evt->win_move.x, evt->win_move.y,
             evt->win_move.wid ? evt->win_move.wid->title : "<NONE>");
         break;
 
     case RTGUI_EVENT_WIN_RESIZE:
-    rt_kprintf(": (%03d, %03d)-(%03d, %03d) %s",
+    rt_kprintf(": (%03d,%03d)-(%03d,%03d) %s",
         TO_WIDGET(evt->win_resize.wid)->extent.x1,
         TO_WIDGET(evt->win_resize.wid)->extent.y1,
         TO_WIDGET(evt->win_resize.wid)->extent.x2,
@@ -483,14 +483,14 @@ static void rtgui_log_event(rtgui_app_t* tgt, rtgui_evt_generic_t *evt) {
 
     case RTGUI_EVENT_MOUSE_BUTTON:
     case RTGUI_EVENT_MOUSE_MOTION:
-        rt_kprintf("(%03d, %03d) <%s %s> %s", evt->mouse.x, evt->mouse.y,
+        rt_kprintf("(%03d,%03d) <%s %s> %s", evt->mouse.x, evt->mouse.y,
             IS_MOUSE_EVENT_BUTTON(evt, LEFT) ? "L" : "R",
             IS_MOUSE_EVENT_BUTTON(evt, DOWN) ? "down" : "up",
             evt->mouse.wid ? evt->mouse.wid->title : "<NONE>");
         break;
 
     case RTGUI_EVENT_MONITOR_ADD:
-        rt_kprintf(": (%03d, %03d)-(%03d, %03d) %s",
+        rt_kprintf(": (%03d,%03d)-(%03d,%03d) %s",
             evt->monitor.rect.x1, evt->monitor.rect.y1,
             evt->monitor.rect.x2, evt->monitor.rect.y2,
             evt->monitor.wid ? evt->monitor.wid->title : "<NONE>");

@@ -214,7 +214,7 @@ static rt_bool_t _win_do_close(rtgui_win_t *win, rt_bool_t force) {
 
 static rt_bool_t _win_ondraw(rtgui_win_t *win, rtgui_evt_generic_t *evt) {
     if (SUPER_CLASS_HANDLER(win)) {
-        LOG_I("ondraw, wid %p", evt->paint.wid);
+        LOG_D("ondraw, wid %p", evt->paint.wid);
         evt->paint.wid = RT_NULL;
         return SUPER_CLASS_HANDLER(win)(win, evt);
     }
@@ -464,7 +464,7 @@ void rtgui_win_uninit(rtgui_win_t *win) {
     }
 
     if (IS_WIN_FLAG(win, MODAL)) {
-        LOG_W("uninit MODAL");
+        LOG_D("uninit MODAL");
         /* set the DESTROY_ON_CLOSE flag so the win will be destroyed in
          * next event_loop? */
         WIN_STYLE_SET(win, DESTROY_ON_CLOSE);
@@ -500,7 +500,8 @@ rt_err_t rtgui_win_enter_modal(rtgui_win_t *win) {
         WIN_FLAG_SET(win, MODAL);
         win->_ref_count = win->app->ref_cnt + 1;
         exit_code = rtgui_app_run(win->app);
-        LOG_I("modal %s exit %d", win->title, exit_code);
+        LOG_D("modal %s exit %d", win->title, exit_code);
+        (void)exit_code;
 
         if (IS_WIN_STYLE(win, DESTROY_ON_CLOSE)) {
             DELETE_WIN_INSTANCE(win);

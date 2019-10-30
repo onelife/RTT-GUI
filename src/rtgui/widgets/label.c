@@ -106,13 +106,13 @@ static void _theme_draw_label(rtgui_label_t *lab) {
         }
 
         rtgui_widget_get_rect(TO_WIDGET(lab), &rect);
-        LOG_W("draw label (%d,%d)-(%d, %d)", rect.x1, rect.y1, rect.x2,
+        LOG_D("draw label (%d,%d)-(%d,%d)", rect.x1, rect.y1, rect.x2,
             rect.y2);
         rtgui_dc_fill_rect(dc, &rect);
         rtgui_dc_draw_text(dc, LABEL_GETTER(text)(lab), &rect);
 
         rtgui_dc_end_drawing(dc, RT_TRUE);
-        LOG_W("draw label done");
+        LOG_D("draw label done");
     } while (0);
 }
 

@@ -345,6 +345,7 @@ static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect) {
 
             ret = jd_decomp(&jpeg->tjpgd, tjpgd_out_func, jpeg->tjpgd.scale);
             rtgui_free(jpeg->pixels);
+            jpeg->pixels = RT_NULL;
             if (JDR_OK != ret) {
                 LOG_E("jd_decomp %d", ret);
                 break;
@@ -359,7 +360,10 @@ static void jpeg_blit(rtgui_image_t *img, rtgui_dc_t *dc, rtgui_rect_t *rect) {
                     scale = jpeg->tjpgd.scale;
 
                 LOG_D("JPG reload");
-                if (jpeg->buf) rtgui_free(jpeg->buf);
+                if (jpeg->buf) {
+                    rtgui_free(jpeg->buf);
+                    jpeg->buf = RT_NULL;
+                }
                 rtgui_free(jpeg);
                 (void)jpeg_load(img, file, scale, RT_FALSE);
             }

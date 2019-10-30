@@ -47,8 +47,11 @@ extern "C" {
 #define WIDGET_BORDER_STYLE(w)              (TO_WIDGET(w)->border_style)
 #define WIDGET_FOREGROUND(w)                (TO_WIDGET(w)->gc.foreground)
 #define WIDGET_BACKGROUND(w)                (TO_WIDGET(w)->gc.background)
-#define WIDGET_TEXTALIGN(w)                 (TO_WIDGET(w)->gc.textalign)
 #define WIDGET_FONT(w)                      (TO_WIDGET(w)->gc.font)
+#define WIDGET_TEXTALIGN(w)                 (TO_WIDGET(w)->gc.textalign)
+#define WIDGET_TEXTALIGN_CLEAR(w, fname)    WIDGET_TEXTALIGN(w) &= ~RTGUI_ALIGN_##fname
+#define WIDGET_TEXTALIGN_SET(w, fname)      WIDGET_TEXTALIGN(w) |= RTGUI_ALIGN_##fname
+#define IS_WIDGET_TEXTALIGN(w, fname)      (WIDGET_TEXTALIGN(w) & RTGUI_ALIGN_##fname)
 #define WIDGET_DC(w)                        ((rtgui_dc_t *)&((w)->dc_type))
 
 #define WIDGET_FLAG(w)                      (TO_WIDGET(w)->flag)

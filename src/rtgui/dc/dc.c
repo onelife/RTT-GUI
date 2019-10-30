@@ -1794,7 +1794,7 @@ rtgui_dc_t *rtgui_dc_begin_drawing(rtgui_widget_t *owner) {
             LOG_D("hw dc");
         } else {
             dc = rtgui_dc_client_create(owner);
-            LOG_W("client dc");
+            LOG_D("client dc");
         }
         if (!dc) {
             rtgui_screen_unlock();

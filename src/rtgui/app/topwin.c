@@ -87,7 +87,7 @@ static rtgui_topwin_t *_topwin_search_win_in_list(rtgui_win_t *win,
         top = (rtgui_topwin_t *)rt_list_entry(node, rtgui_topwin_t, list);
         if (win == top->wid) return top;
 
-        LOG_I("top->children %p", &top->children);
+        // LOG_D("top->children %p", &top->children);
         top = _topwin_search_win_in_list(win, &top->children);
         if (top) return top;
     }

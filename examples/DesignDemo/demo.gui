@@ -1,0 +1,43 @@
+APP: {
+  PARAM: {
+    // name, handler
+    "Demo App", NULL,
+  },
+
+  MWIN: {
+    PARAM: {
+      // title, handler
+      "Demo Window", hdl,
+    },
+
+    BOX: {
+      PARAM: {
+        // orient, border size
+        // orient: 1, HORIZONTAL; 2, VERTICAL
+        1, 0,
+      },
+      ID: 0,
+    },
+
+    LABEL: {
+      PARAM: {
+        // size, handler, text
+        NULL, NULL, "Label Demo",
+      },
+      // CENTER_HORIZONTAL
+      TEXTALIGN: 0x01,
+      // RTGUI_ALIGN_STRETCH
+      ALIGN: 0x20,
+    },
+
+    BUTTON: {
+      PARAM: {
+        // handler, type, text
+        // type: 0x00, NORMAL; 0x10, PUSH
+        NULL, 0, "Button Demo",
+      },
+      // RTGUI_ALIGN_STRETCH
+      ALIGN: 0x20,
+    },
+  },
+}

@@ -250,8 +250,6 @@ static void _theme_draw_title(rtgui_title_t *title) {
                 RTGUI_ALIGN_CENTER_VERTICAL | RTGUI_ALIGN_RIGHT);
             box_rect.x1 -= 3;
             box_rect.x2 -= 3;
-            // LOG_D("box (%d,%d)-(%d,%d)", box_rect.x1, box_rect.y1, box_rect.x2,
-            //     box_rect.y2);
 
             /* draw close button */
             rtgui_dc_fill_rect(dc, &box_rect);
@@ -270,7 +268,7 @@ static void _theme_draw_title(rtgui_title_t *title) {
     } while (0);
 
     rtgui_dc_end_drawing(dc, RT_TRUE);
-    LOG_W("draw theme done");
+    LOG_D("draw theme done");
 }
 
 /* Public functions ----------------------------------------------------------*/

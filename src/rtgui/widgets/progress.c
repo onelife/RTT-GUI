@@ -100,7 +100,7 @@ static void _theme_draw_progress(rtgui_progress_t *bar) {
         rt_uint16_t val;
 
         rtgui_widget_get_rect(TO_WIDGET(bar), &rect);
-        LOG_W("draw progress (%d,%d)-(%d, %d)", rect.x1, rect.y1, rect.x2,
+        LOG_D("draw progress (%d,%d)-(%d, %d)", rect.x1, rect.y1, rect.x2,
             rect.y2);
 
         bc = WIDGET_BACKGROUND(bar);
@@ -142,7 +142,7 @@ static void _theme_draw_progress(rtgui_progress_t *bar) {
     } while (0);
 
     rtgui_dc_end_drawing(dc, RT_TRUE);
-    LOG_W("draw progress done");
+    LOG_D("draw progress done");
 }
 
 /* Public functions ----------------------------------------------------------*/

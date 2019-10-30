@@ -140,7 +140,7 @@ static void _list_draw(void *obj) {
 
     dc = rtgui_dc_begin_drawing(wgt);
     if (!dc) {
-        LOG_E("no dc");
+        LOG_W("no dc");
         return;
     }
 

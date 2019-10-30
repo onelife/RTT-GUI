@@ -173,7 +173,7 @@ static rt_bool_t _button_event_handler(void *obj, rtgui_evt_generic_t *evt) {
                     win->last_mouse = RT_NULL;
             }
 
-            LOG_W("btn press: %d", IS_BUTTON_FLAG(btn, PRESS));
+            LOG_I("btn press: %d", IS_BUTTON_FLAG(btn, PRESS));
             rtgui_widget_update(TO_WIDGET(btn));
             if (do_call && btn->on_button)
                 btn->on_button(TO_WIDGET(btn), evt);
@@ -240,7 +240,7 @@ static void _theme_draw_button(rtgui_button_t *btn) {
 
         /* get widget rect */
         rtgui_widget_get_rect(TO_WIDGET(btn), &rect);
-        LOG_W("draw button (%d,%d)-(%d, %d)", rect.x1, rect.y1, rect.x2,
+        LOG_D("draw button (%d,%d)-(%d,%d)", rect.x1, rect.y1, rect.x2,
             rect.y2);
 
         /* draw image or border */
@@ -319,7 +319,7 @@ static void _theme_draw_button(rtgui_button_t *btn) {
         }
 
         rtgui_dc_end_drawing(dc, RT_TRUE);
-        LOG_W("draw button done");
+        LOG_D("draw button done");
     } while (0);
 }
 

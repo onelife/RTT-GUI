@@ -38,15 +38,15 @@
 /* User Config */
 
 /* RT-Thread Device Name */
-// #define CONFIG_GUI_DEVICE_NAME              "ILI9341"
-// #define CONFIG_TOUCH_DEVICE_NAME            "FT6206"
-// #define CONFIG_GUI_DEVICE_NAME              "SSD1331"
+#define CONFIG_GUI_DEVICE_NAME              "ILI9341"   // RGB565
+#define CONFIG_TOUCH_DEVICE_NAME            "FT6206"
+// #define CONFIG_GUI_DEVICE_NAME              "SSD1331"   // RGB565
 // #define CONFIG_KEY_DEVICE_NAME              "BTN"
-#define CONFIG_GUI_DEVICE_NAME              "SSD1306"
+// #define CONFIG_GUI_DEVICE_NAME              "SSD1306"   // MONO
 
 /* Color */
-#define CONFIG_USING_MONO                   (1)
-#define CONFIG_USING_RGB565                 (0)
+#define CONFIG_USING_MONO                   (0)
+#define CONFIG_USING_RGB565                 (1)
 #define CONFIG_USING_RGB565P                (0)
 #define CONFIG_USING_RGB888                 (0)
 
@@ -57,8 +57,8 @@
 #define CONFIG_USING_IMAGE_PNG              (0)
 
 /* Font */
-#define CONFIG_USING_FONT_12                (1)
-#define CONFIG_USING_FONT_16                (0)
+#define CONFIG_USING_FONT_12                (0)
+#define CONFIG_USING_FONT_16                (1)
 #define CONFIG_USING_FONT_HZ                (0)
 #define CONFIG_USING_FONT_FILE              (1)
 
@@ -70,9 +70,9 @@
 
 /* Debug Config */
 
-#define RTGUI_LOG_LEVEL                     (LOG_LVL_DBG) // (LOG_LVL_INFO)
+#define RTGUI_LOG_LEVEL                     (LOG_LVL_INFO)
 #define RTGUI_CASTING_CHECK
-#define RTGUI_LOG_EVENT
+// #define RTGUI_LOG_EVENT
 // #define RTGUI_OBJECT_TRACE
 // #define RTGUI_USING_CURSOR
 

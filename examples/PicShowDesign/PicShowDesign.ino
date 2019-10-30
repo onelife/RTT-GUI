@@ -49,9 +49,7 @@ static obj_tbl_entr_t obj_tbl[5];
 
 static rt_err_t design_read(char **_buf, rt_uint32_t *sz) {
   *sz = (rt_uint32_t)read(designFile, buf, sizeof(buf));
-
   *_buf = buf;
-  *sz = sizeof(buf);
   return RT_EOK;
 }
 

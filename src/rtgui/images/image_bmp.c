@@ -301,7 +301,7 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
             break;
         }
         bmp->pad = (bmp->pitch % 4) ? (4 - (bmp->pitch % 4)) : 0;
-        LOG_I("scale %d, pitch %d", bmp->scale, bmp->pitch);
+        LOG_D("scale %d, pitch %d", bmp->scale, bmp->pitch);
 
         /* set image info */
         img->w = (rt_uint16_t)(bmp->w >> scale);
@@ -385,7 +385,10 @@ static rt_bool_t bmp_load(rtgui_image_t *img, rtgui_filerw_t *file,
     /* release memory */
     if (lineBuf) rtgui_free(lineBuf);
     if ((RT_EOK != err) && bmp) {
-        if (img->palette) rtgui_free(img->palette);
+        if (img->palette) {
+            rtgui_free(img->palette);
+            img->palette = RT_NULL;
+        }
         if (bmp->pixels) rtgui_free(bmp->pixels);
         rtgui_free(bmp);
         LOG_E("load err");
