@@ -38,6 +38,7 @@
 /* User Config */
 
 /* RT-Thread Device Name */
+// #define CONFIG_GUI_DEVICE_NAME              "ST7735"   	// RGB565
 #define CONFIG_GUI_DEVICE_NAME              "ILI9341"   // RGB565
 #define CONFIG_TOUCH_DEVICE_NAME            "FT6206"
 // #define CONFIG_GUI_DEVICE_NAME              "SSD1331"   // RGB565

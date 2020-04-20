@@ -87,8 +87,8 @@ typedef struct rtgui_region_data rtgui_region_data_t;
 typedef struct rtgui_region rtgui_region_t;
 
 typedef enum {
-    FAILURE,
-    SUCCESS
+    FAIL,
+    PASS
 } r_op_status_t;
 
 typedef enum {
